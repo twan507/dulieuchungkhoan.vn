@@ -7,16 +7,16 @@ Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập d
 | Khối | Trạng thái | Bằng chứng |
 |---|---|---|
 | Tài liệu ba nguồn — thị trường · vĩ mô · tin | ✅ đo thật bằng lời gọi sống | 131 endpoint · 87 key · 307 URL |
-| Từ điển 729 mã trường FiinGroup | ✅ phủ 100% response thật | [tu-dien-ma-field.json](docs/10-nguon-du-lieu/thi-truong/tu-dien-ma-field.json) |
-| Chọn nguồn chuẩn cho từng chỉ tiêu | ✅ đã chốt | [ADR 0002](docs/00-tong-quan/quyet-dinh/0002-chon-nguon-du-lieu.md) |
-| Dự án skill | ✅ **đã đóng**, không còn việc treo | [ADR 0003](docs/00-tong-quan/quyet-dinh/0003-dong-du-an-skill.md) |
+| Từ điển 729 mã trường FiinGroup | ✅ phủ 100% response thật | [field-dictionary.json](docs/10-sources/market/field-dictionary.json) |
+| Chọn nguồn chuẩn cho từng chỉ tiêu | ✅ đã chốt | [ADR 0002](docs/00-overview/decisions/0002-data-source-selection.md) |
+| Dự án skill | ✅ **đã đóng**, không còn việc treo | [ADR 0003](docs/00-overview/decisions/0003-close-skill-project.md) |
 | Thiết kế kho dữ liệu · pipeline tin | ✅ đã duyệt | chưa cài đặt |
-| Tầng ngữ nghĩa nối dữ liệu ↔ skill | 🟡 đề xuất, **chưa duyệt** | [tang-ngu-nghia-chatbot.md](docs/20-thiet-ke/tang-ngu-nghia-chatbot.md) |
+| Tầng ngữ nghĩa nối dữ liệu ↔ skill | 🟡 đề xuất, **chưa duyệt** | [chatbot-semantic-layer.md](docs/20-design/chatbot-semantic-layer.md) |
 | Hai skill chứng khoán | ✅ xong, test 6 vòng, đã dừng tối ưu | 3.046 dòng |
 | Repo vào git | ✅ khởi tạo 2026-08-14 | commit đầu tiên |
 | Toàn bộ phần cài đặt | ❌ chưa bắt đầu | |
 
-Bảng đầy đủ kèm bằng chứng: [lộ trình §0](docs/00-tong-quan/lo-trinh.md).
+Bảng đầy đủ kèm bằng chứng: [lộ trình §0](docs/00-overview/roadmap.md).
 
 ---
 
@@ -24,8 +24,8 @@ Bảng đầy đủ kèm bằng chứng: [lộ trình §0](docs/00-tong-quan/lo-
 
 | Bạn muốn | Đọc |
 |---|---|
-| Hiểu toàn cảnh hệ thống | [Kiến trúc tổng thể](docs/00-tong-quan/kien-truc-tong-the.md) |
-| Biết làm gì tiếp theo | [Lộ trình hợp nhất](docs/00-tong-quan/lo-trinh.md) |
+| Hiểu toàn cảnh hệ thống | [Kiến trúc tổng thể](docs/00-overview/architecture.md) |
+| Biết làm gì tiếp theo | [Lộ trình hợp nhất](docs/00-overview/roadmap.md) |
 | Tra một endpoint cụ thể | [Bản đồ tài liệu](docs/README.md) |
 
 ## Cấu trúc repo
@@ -33,10 +33,10 @@ Bảng đầy đủ kèm bằng chứng: [lộ trình §0](docs/00-tong-quan/lo-
 ```
 finext-v2/
 ├── docs/            Toàn bộ tài liệu — 4 tầng, xem docs/README.md
-│   ├── 00-tong-quan/     hợp nhất · lộ trình · sổ quyết định
-│   ├── 10-nguon-du-lieu/ reference: API và nguồn tin bên ngoài
-│   ├── 20-thiet-ke/      explanation: lựa chọn kiến trúc của Finext
-│   └── 30-tri-thuc/      corpus và tài liệu bảo trì skill
+│   ├── 00-overview/     hợp nhất · lộ trình · sổ quyết định
+│   ├── 10-sources/ reference: API và nguồn tin bên ngoài
+│   ├── 20-design/      explanation: lựa chọn kiến trúc của Finext
+│   └── 30-skills/      corpus và tài liệu bảo trì skill
 ├── .claude/skills/  Hai skill chứng khoán — vừa là công cụ dev, vừa là artifact sản phẩm
 ├── config/          File cấu hình máy đọc (feeds.json — 47 feed + taxonomy)
 ├── scripts/         verify_wichart.py — tự kiểm 509 khẳng định tài liệu WiChart với API sống
@@ -60,12 +60,12 @@ Cả hai phụ thuộc bên ngoài, thời gian chờ không kiểm soát đư�
 1. **Xác nhận ngưỡng rate limit** với FiinGroup — chặn mọi ETL. Gửi kèm luôn danh sách 11 mã chỉ tiêu chưa giải mã được
 2. **Chốt giấy phép WiFeed** với WiGroup — 🔴 chưa có, chặn toàn bộ nhánh vĩ mô và hàng hoá, 87 endpoint
 
-> Việc thứ ba trước đây — *xin bảng ánh xạ mã chỉ tiêu báo cáo tài chính từ FiinGroup* — **đã tự giải quyết ngày 2026-08-14**, không cần chờ họ nữa: 729 mã lấy từ bundle JS của ứng dụng FiinTrade, phủ 100% response thật, kèm tên Việt/Anh (98,5%) và đơn vị dữ liệu (99,7%). Xem [Phụ lục A §A.5](docs/10-nguon-du-lieu/thi-truong/phu-luc-A-ma-field.md).
+> Việc thứ ba trước đây — *xin bảng ánh xạ mã chỉ tiêu báo cáo tài chính từ FiinGroup* — **đã tự giải quyết ngày 2026-08-14**, không cần chờ họ nữa: 729 mã lấy từ bundle JS của ứng dụng FiinTrade, phủ 100% response thật, kèm tên Việt/Anh (98,5%) và đơn vị dữ liệu (99,7%). Xem [Phụ lục A §A.5](docs/10-sources/market/appendix-A-field-codes.md).
 
 Và một việc gấp không chặn ai nhưng **mỗi ngày trì hoãn là một ngày mất vĩnh viễn**: dựng Ingester để bắt đầu tích luỹ nến 1 phút. Nến intraday không tồn tại ở bất kỳ nguồn nào — không backfill lại được.
 
 ## Nguyên tắc chung
 
 - **Mọi thứ nguồn tự khai về chính nó đều phải kiểm lại bằng dữ liệu.** Nguyên tắc này đã bắt được 22 cạm bẫy thật trên ba nguồn, không phải giả định.
-- **Tài liệu trong `10-nguon-du-lieu/` chỉ sửa khi đo lại.** Sửa số mà không đo là nói dối.
+- **Tài liệu trong `10-sources/` chỉ sửa khi đo lại.** Sửa số mà không đo là nói dối.
 - **Số liệu trong skill là tham số ví dụ, không phải dữ kiện.** Toàn bộ là 2022–2024 và đã chết. Công thức thì còn nguyên giá trị.
