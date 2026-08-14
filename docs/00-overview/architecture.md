@@ -51,7 +51,7 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
 |---|---|---|
 | [`10-sources/`](../10-sources/) | Sự thật đo được về hệ thống của người khác | **Chỉ khi đo lại.** Sửa mà không đo là nói dối |
 | [`20-design/`](../20-design/) | Lựa chọn của Finext | Được, nhưng lý do phải viết thẳng tại chỗ |
-| [`30-skills/`](../30-skills/) | Nguyên liệu và nhật ký dựng skill | Corpus bất biến; ghi chú chỉ thêm, không xoá |
+| [`30-skills/`](../30-skills/) | Corpus và tài liệu bảo trì hai skill chứng khoán | Corpus bất biến; tài liệu bảo trì cập nhật theo trạng thái thật |
 | [`.claude/skills/`](../../.claude/skills/) | Sản phẩm chạy được | Được, nhưng phải test lại — xem quy trình 6 vòng ở ghi chú |
 
 ## 3. Ba mắt xích nối ba khối
