@@ -314,7 +314,7 @@ Phát hiện ngày 2026-08-14, đo trên 19 doanh nghiệp thuộc 4 loại hìn
 |---|---|---|---|
 | `rtq12` ROE | `Percentage` | 0,098 – 0,339 | **thập phân** — phải ×100 mới ra % |
 | `rtd11` Vốn hoá | `BillionVND` | 2,03e12 – 4,99e14 | **VND đầy đủ**, không phải tỷ đồng |
-| `foreignerroom` | `ThousandUnit` | 8.127 – 2,3e9 | **cổ phiếu**, không phải nghìn cổ phiếu |
+| `foreignerRoom` | `ThousandUnit` | 8.127 – 2,3e9 | **cổ phiếu**, không phải nghìn cổ phiếu. ⚠️ Là room **CÒN LẠI** (= `foreignRemain` của BVSC), không phải tổng room — đo 2026-08-15, xem [§getScreenerItems](10-fiin-dictionary.md#ghi-chú-1) |
 | `rtd14` EPS | `Unit` | 1.308 – 6.666 | **VND/cổ phiếu** |
 
 Hiển thị `0.1821` với nhãn `Percentage` thành *"0,18%"* là **sai 100 lần** — con số thật là 18,21%.

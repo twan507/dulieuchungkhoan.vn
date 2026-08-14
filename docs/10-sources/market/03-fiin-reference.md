@@ -99,7 +99,7 @@ Ví dụ cần lưu ý:
 
 Không có quy luật nào để suy ra `organCode` từ `ticker` — bắt buộc tra bảng.
 
-⚠️ Danh sách này gồm **cả mã đã huỷ niêm yết**. Muốn chỉ lấy mã đang giao dịch, lọc chéo với [`getAllQuotes`](01-bvsc-rest.md) của BVSC (2.530 mã đang niêm yết, trong đó 1.972 cổ phiếu).
+⚠️ Danh sách này gồm **cả mã đã huỷ niêm yết**. Muốn chỉ lấy mã đang giao dịch, lọc chéo với [`getAllQuotes`](01-bvsc-rest.md) của BVSC (**2.534** mã đang niêm yết, trong đó **1.974** cổ phiếu — đếm lại 2026-08-15; ngày 2026-08-10 là 2.530 / 1.972, tức con số này **đổi theo tuần**, phải lọc động chứ đừng hardcode).
 
 ### Độ phủ & hiệu năng
 1.553 bản ghi · 51/51 mã mẫu có mặt · 355 KB · **~4,4 s** — endpoint chậm nhất nhóm tham chiếu. Nạp một lần lúc khởi động, cache dài hạn.

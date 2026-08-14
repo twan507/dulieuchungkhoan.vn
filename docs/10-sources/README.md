@@ -1,6 +1,6 @@
 # Nguồn dữ liệu — tài liệu tra cứu
 
-**Phiên bản:** 4.3 · **Ngày:** 2026-08-14 · **Trạng thái:** Hoàn chỉnh — 131 endpoint REST + 5 topic realtime + 47 feed tin
+**Phiên bản:** 4.4 · **Ngày:** 2026-08-15 · **Trạng thái:** Hoàn chỉnh — 131 endpoint REST + 5 topic realtime + 47 feed tin
 
 ---
 
@@ -126,6 +126,7 @@ Ký hiệu trong bảng tham số:
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
+| **4.4** | **2026-08-15** | **Đo lại thật, chốt 10/16 dòng `cần kiểm API` và ba chỗ vênh của tầng reference.** Gọi lại `GetScreenerParameters` (13 nhóm / 83 tiêu chí, không đổi), `GetScreenerItems` một tiêu chí trên `ALL` và `VN30`, BVSC `/quotes?symbols=ALL` và `/datafeed/instruments`, `GetSnapshot` + `GetSnapshotNoneBank`. **Ba chỗ vênh đã giải:** *(1)* **223 vs 193** — 223 là tổng kích thước 5 khối, 193 là số khoá **phân biệt**; 27 khoá nằm ở ≥2 khối, dư đúng 30. Không liên quan loại hình doanh nghiệp. *(2)* BVSC `datafeed/instruments` **62 trường** đúng, con số 50 ở tiêu đề [`01-bvsc-rest.md`](market/01-bvsc-rest.md) là lỗi đếm — đã sửa. *(3)* 🔴 **`foreignerRoom` của Screener là room CÒN LẠI** (= `foreignRemain` của BVSC), **không phải** tổng room; tổng room nằm ở `priceInfo.foreignTotalRoom`. **Sửa quy tắc hoa/thường:** `getScreenerItems` chỉ hạ **chữ cái đầu** (`ForeignerRoom` → `foreignerRoom`), viết thường toàn bộ trượt 31/83 khoá — đã sửa [`field-dictionary.json`](market/field-dictionary.json) `_meta.quy_tac_tra.chuan_hoa` và thu hẹp phạm vi tuyên bố độ phủ 100% về đúng ba endpoint BCTC. **Số đếm đo lại:** BVSC `getAllQuotes` **2.534** bản ghi *(2026-08-10: 2.530)* · Screener `totalCount` **1.549** *(2026-08-10: 1.517)* · `GetSnapshot` 54 khoá, `GetSnapshotNoneBank` **56**. `rtd39`/`rtd54` xác nhận **có thật** trong khối `financial` nhưng vẫn chưa có tên. Chi tiết từng mã: [chọn trường cho ETL thị trường](../20-design/market-field-selection.md) |
 | **4.3** | **2026-08-14** | **Chốt nguồn chuẩn cho từng chỉ tiêu.** Giá/kỹ thuật/khối ngoại/thoả thuận → BVSC. Screener giữ **80/193** trường, Snapshot cắt còn **16/54**, bỏ hẳn nhóm chấm điểm. Giữ MoneyFlow cho tự doanh và đóng góp chỉ số vì BVSC không có. Kèm 4 phát hiện: Screener timeout khi gửi nhiều tiêu chí · `isa20ttm` lệch tổng `isa20` tới 9,4% · `P/E = vốn hoá ÷ isa20ttm` khớp 9/10 · `revttm` không phải mẫu số P/S với ngân hàng. Xem [ADR 0002](../00-overview/decisions/0002-data-source-selection.md) |
 | **4.2** | **2026-08-14** | **Xác định đơn vị dữ liệu cho 727/729 mã** (99,7%), trong đó **392 mã xác thực bằng bằng chứng số học**. Phép kiểm bắt được 3 lỗi đơn vị của chính từ điển. Phát hiện 🔴 **nhãn `unit` của API không phải đơn vị của dữ liệu** — `Percentage` thực ra là thập phân, `BillionVND` thực ra là VND đầy đủ. Bổ sung tên tiếng Anh cho 26 mã, xác định 3 mã bằng đối chiếu số học |
 | **4.1** | **2026-08-14** | **Giải mã 729 mã chỉ tiêu** — toàn bộ họ `bs*`, `is*`, `cf*`, `nob*` cho cả bốn loại hình doanh nghiệp. Nguồn là bundle JS của ứng dụng FiinTrade, **không phải API**. Độ phủ đo trên 21 response thật của 5 mã: **100%**. Xem [Phụ lục A §A.5](market/appendix-A-field-codes.md) và [field-dictionary.json](market/field-dictionary.json) |

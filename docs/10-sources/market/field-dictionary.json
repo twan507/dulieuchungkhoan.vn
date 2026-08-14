@@ -2,6 +2,7 @@
   "_meta": {
     "mo_ta": "Tu dien ma truong FiinGroup — giai ma ma chi tieu tra ve tu API FiinTrade",
     "cap_nhat": "2026-08-14",
+    "kiem_lai": "2026-08-15 — bang 729 ma khong doi. Chi sua phan _meta theo so do moi: pham vi tuyen bo do phu (do_phu_da_kiem_chung), luat chuan hoa hoa/thuong (quy_tac_tra.chuan_hoa), va ghi chu cho foreignerroom.",
     "tong_ma": 729,
     "do_phu_ten_tieng_viet": "718/729 (98.5%)",
     "nguon": {
@@ -20,7 +21,7 @@
       "phu_luc_A2": "6 ma xac minh bang doi chieu so hoc — xem appendix-A-field-codes.md"
     },
     "quy_tac_tra": {
-      "chuan_hoa": "Chuan hoa ma ve chu THUONG. API tu dien tra Rtq12, du lieu tra rtq12.",
+      "chuan_hoa": "KHOA CUA TU DIEN NAY luon viet thuong toan bo — do la quy uoc tra cuu noi bo, tra thi ha ca chuoi ve thuong. NHUNG DUNG SUY NGUOC ra API: do lai 2026-08-15 cho thay GetScreenerParameters tra hoa chu dau (Rtq12, ForeignerRoom, AverageValue1Week) con getScreenerItems CHI HA CHU CAI DAU, giu nguyen phan sau (rtq12, foreignerRoom, averageValue1Week). Voi ma dang Rtq12 thi hai cach cho ket qua giong nhau nen loi an rat lau; voi 31/83 tieu chi co ten tieng Anh thi viet thuong toan bo se TRUOT KHOA khi doc response. Doi chieu that: ha chu cai dau khop 83/83, viet thuong toan bo truot 31/83.",
       "tien_to_bao_cao": {
         "bs": "can doi ke toan",
         "is": "ket qua kinh doanh",
@@ -48,7 +49,8 @@
       "suy_tu": "Ma co truong suy_tu nghia la ten duoc muon tu ma cung chi tieu khac ky, khong phai lay truc tiep tu nguon."
     },
     "do_phu_da_kiem_chung": {
-      "phuong_phap": "Goi that 11 endpoint tren BID (ngan hang), HPG (phi ngan hang), SSI (chung khoan), BVH (bao hiem) ngay 2026-08-14. Moi ma xuat hien trong response deu co mat trong tu dien nay.",
+      "phuong_phap": "Goi that 11 endpoint tren BID (ngan hang), HPG (phi ngan hang), SSI (chung khoan), BVH (bao hiem) ngay 2026-08-14. PHAM VI CUA TUYEN BO: moi ma xuat hien trong response cua BA endpoint bao cao tai chinh liet ke duoi day (GetBalanceSheet, GetIncomeStatement, GetCashFlow) deu co mat trong tu dien nay. KHONG bao Screener.",
+      "gioi_han_da_do": "Do lai 2026-08-15 tren Screener getScreenerItems (193 khoa phan biet): khoi `financial` chua rtd39 va rtd54 CO THAT, co gia tri so (rtd39 BID 3.42582495, FPT 15.93348656; rtd54 FPT 12.5858301, BID null) nhung KHONG co trong tu dien 729 ma. Day la vi du cu the cho thay tuyen bo 100% o tren chi dung trong pham vi ho ma bao cao tai chinh — ho ma ty so chi co 83/173 ma truy duoc qua GetScreenerParameters, phan con lai lay tu bundle va khong co nguon API xac nhan.",
       "BalanceSheet": "230/233 truong la ma chi tieu — 100% co trong tu dien",
       "IncomeStatement": "175/180 — 100% co trong tu dien",
       "CashFlow": "146/150 — 100% co trong tu dien",
@@ -69,7 +71,7 @@
         "ryd20",
         "ryd30"
       ],
-      "ghi_chu": "Da thu nam cach: (1) tim ten trong bundle, (2) suy tu ma cung chi tieu khac ky, (3) doi chieu so hoc bang nhau voi moi chi tieu da biet ten, (4) tim quan he TY LE on dinh voi moi chi tieu da biet tren 144 hang du lieu, (5) doi chieu voi chi tieu nganh tuong ung (vi du rtq137 vs ty le no xau). Deu khong ra ket luan chac chan. Moi ma deu co dai_gia_tri_quan_sat va phan lon co manh_moi de lan sau khong phai do lai. Khong ghi ten de tranh bia."
+      "ghi_chu": "Da thu nam cach: (1) tim ten trong bundle, (2) suy tu ma cung chi tieu khac ky, (3) doi chieu so hoc bang nhau voi moi chi tieu da biet ten, (4) tim quan he TY LE on dinh voi moi chi tieu da biet tren 144 hang du lieu, (5) doi chieu voi chi tieu nganh tuong ung (vi du rtq137 vs ty le no xau). Deu khong ra ket luan chac chan. Moi ma deu co dai_gia_tri_quan_sat va phan lon co manh_moi de lan sau khong phai do lai. Khong ghi ten de tranh bia. DO LAI 2026-08-15 tren khoi `financial` cua getScreenerItems: rtd53 va rtq81 CO THAT va co gia tri (FPT rtd53=5426.73780245 rtq81=-0.03335415; VNM 4702.49259309 va 0.22632399; BID ca hai null). rtd53 tra cung mot so o Screener va Snapshot voi FPT/VNM nen xac nhan la cung chi tieu; rieng BID thi Snapshot tra 0.0 con Screener tra null. So do chi them duoc dai gia tri, KHONG them duoc ten — 11 ma nay van chua giai ma."
     },
     "ten_tieng_viet": {
       "tu_nguon": 703,
@@ -152,7 +154,7 @@
         "co_phieu": "So luong co phieu.",
         "so_luong": "So dem (vi du so cong ty trong nganh)."
       },
-      "canh_bao_quan_trong": "Truong don_vi (nhan unit cua API Screener) KHONG phai don vi cua du lieu tra ve. Da kiem chung: rtq12 nhan Percentage nhung gia tri that la thap phan (0.18 = 18%); rtd11 nhan BillionVND nhung gia tri that la VND day du; foreignerroom nhan ThousandUnit nhung gia tri that la so co phieu. Luon dung don_vi_du_lieu.",
+      "canh_bao_quan_trong": "Truong don_vi (nhan unit cua API Screener) KHONG phai don vi cua du lieu tra ve. Da kiem chung: rtq12 nhan Percentage nhung gia tri that la thap phan (0.18 = 18%); rtd11 nhan BillionVND nhung gia tri that la VND day du; foreignerroom (khoa that trong response: foreignerRoom) nhan ThousandUnit nhung gia tri that la so co phieu. Luon dung don_vi_du_lieu.",
       "canh_bao_screener": "DINH CHINH 2026-08-14: Screener KHONG dung thang don vi khac cac endpoint con lai. Da kiem bang chinh valueRange cua API: ClosePrice = [100, 614345] tuc VND day du; Rtq12 (ROE) = [-127.56, 7.86] tuc thap phan, giong het endpoint khac. Diem THAT SU can luu y: du lieu Screener phu TOAN THI TRUONG nen chua gia tri cuc tri (bien loi nhuan rong toi 756 = 75.600% o doanh nghiep lo nang). Suy don vi bang nguong dai gia tri se that bai tren cuc tri do — phai dua vao ten chi tieu truoc.",
       "phuong_phap": "TEN chi tieu quyet dinh truoc, dai gia tri that chi dung de xac nhan. Ho ma bao cao tai chinh luon la VND. Ma khong co ten thi suy tu dai gia tri quan sat tren 19 doanh nghiep thuoc 4 loai hinh. Bo phan loai duoc kiem chung tren 19 ma co don vi biet truoc.",
       "xac_thuc_bang_dang_thuc": {
@@ -6939,8 +6941,9 @@
       "don_vi_do_tin_cay": "cao"
     },
     "foreignerroom": {
-      "ten_vi": "Room nước ngoài",
-      "ten_en": "Foreign Room",
+      "ten_vi": "Room nước ngoài còn lại",
+      "ten_en": "Foreign Room Remaining",
+      "ghi_chu_do_2026_08_15": "Khoa that trong response la foreignerRoom (khoi stockScreenerItem). Do tren BID/FPT/VNM: trung nghia voi foreignRemain cua BVSC (room CON LAI), KHONG phai foreignRoom (tong room) du ten gan giong het. Tong room nam o khoa khac: priceInfo.foreignTotalRoom, khop tuyet doi voi foreignRoom cua BVSC 3/3 ma. Anh xa nham hai khoa nay sai ~2,4 lan.",
       "don_vi": "ThousandUnit",
       "nhom": "Ownership",
       "dai_gia_tri": [

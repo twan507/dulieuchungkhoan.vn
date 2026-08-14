@@ -410,7 +410,7 @@
     "status": "chốt"
   },
   {
-    "code": "rtd20avg",
+    "code": "rtd20Avg",
     "name_vi": "Tỉ Suất Cổ Tức T.Bình 3 Năm",
     "name_src": "từ điển",
     "source": "Screener",
@@ -730,7 +730,7 @@
     "status": "chốt"
   },
   {
-    "code": "revgrowth",
+    "code": "revGrowth",
     "name_vi": "Tăng trưởng doanh thu quý gần nhất (YoY)",
     "name_src": "từ điển",
     "source": "Screener",
@@ -740,7 +740,7 @@
     "status": "chốt"
   },
   {
-    "code": "prfgrowth",
+    "code": "prfGrowth",
     "name_vi": "Tăng trưởng lợi nhuận thuần quý gần nhất (YoY)",
     "name_src": "từ điển",
     "source": "Screener",
@@ -760,7 +760,7 @@
     "status": "chốt"
   },
   {
-    "code": "corpownership",
+    "code": "corpOwnership",
     "name_vi": "Tỉ lệ tổ chức sở hữu",
     "name_src": "từ điển",
     "source": "Screener",
@@ -770,8 +770,8 @@
     "status": "chốt"
   },
   {
-    "code": "organizationownership",
-    "name_vi": "Sở hữu tổ chức (chỉ tiêu thứ hai, khác `corpownership`)",
+    "code": "organizationOwnership",
+    "name_vi": "Sở hữu tổ chức (chỉ tiêu thứ hai, khác `corpOwnership`)",
     "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "Screener",
@@ -780,113 +780,113 @@
     "status": "chốt"
   },
   {
-    "code": "revttm",
+    "code": "revTTM",
     "name_vi": "Doanh thu (tỉ đồng) (TTM)",
     "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
-    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20TTM` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20TTM` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
     "status": "chốt"
   },
   {
-    "code": "revy",
+    "code": "revY",
     "name_vi": "Doanh thu (tỉ đồng) (năm trước)",
     "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
-    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20TTM` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20TTM` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
     "status": "chốt"
   },
   {
-    "code": "isa1ttm",
+    "code": "isa1TTM",
     "name_vi": "Doanh số (TTM) — suy từ `isa1`",
     "name_src": "suy theo luật kỳ",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
-    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20TTM` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20TTM` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
     "status": "chốt"
   },
   {
-    "code": "isa1y",
+    "code": "isa1Y",
     "name_vi": "Doanh số (năm trước) — suy từ `isa1`",
     "name_src": "suy theo luật kỳ",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
-    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20TTM` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20TTM` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
     "status": "chốt"
   },
   {
-    "code": "isa20ttm",
+    "code": "isa20TTM",
     "name_vi": "LN ròng (tỉ đồng) (TTM)",
     "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
-    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20TTM` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20TTM` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
     "status": "chốt"
   },
   {
-    "code": "isa20y",
+    "code": "isa20Y",
     "name_vi": "LN ròng (tỉ đồng) (năm trước)",
     "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
-    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20TTM` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20TTM` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
     "status": "chốt"
   },
   {
-    "code": "isa3ttm",
+    "code": "isa3TTM",
     "name_vi": "Doanh số thuần (TTM) — suy từ `isa3`",
     "name_src": "suy theo luật kỳ",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
-    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20TTM` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20TTM` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
     "status": "chốt"
   },
   {
-    "code": "isb25ttm",
+    "code": "isb25TTM",
     "name_vi": "Thu nhập lãi và các khoản thu nhập tương tự (TTM) — suy từ `isb25`",
     "name_src": "suy theo luật kỳ",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
-    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20TTM` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20TTM` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
     "status": "chốt"
   },
   {
-    "code": "isb25y",
+    "code": "isb25Y",
     "name_vi": "Thu nhập lãi và các khoản thu nhập tương tự (năm trước) — suy từ `isb25`",
     "name_src": "suy theo luật kỳ",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
-    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20TTM` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20TTM` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
     "status": "chốt"
   },
   {
-    "code": "isi103ttm",
+    "code": "isi103TTM",
     "name_vi": "Doanh thu phí bảo hiểm (TTM) — suy từ `isi103`",
     "name_src": "suy theo luật kỳ",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
-    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20TTM` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20TTM` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
     "status": "chốt"
   },
   {
-    "code": "isi103y",
+    "code": "isi103Y",
     "name_vi": "Doanh thu phí bảo hiểm (năm trước) — suy từ `isi103`",
     "name_src": "suy theo luật kỳ",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
-    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20TTM` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20TTM` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
     "status": "chốt"
   },
   {
@@ -896,7 +896,7 @@
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
-    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20TTM` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20TTM` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
     "status": "chốt"
   },
   {
@@ -906,11 +906,11 @@
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
-    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20TTM` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20TTM` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
     "status": "chốt"
   },
   {
-    "code": "closeprice",
+    "code": "closePrice",
     "name_vi": "Giá",
     "name_src": "từ điển",
     "source": "Screener",
@@ -920,7 +920,7 @@
     "status": "chốt"
   },
   {
-    "code": "totalmatchvolume",
+    "code": "totalMatchVolume",
     "name_vi": "Khối lượng GD",
     "name_src": "từ điển",
     "source": "Screener",
@@ -930,7 +930,7 @@
     "status": "chốt"
   },
   {
-    "code": "totalmatchvalue",
+    "code": "totalMatchValue",
     "name_vi": "Giá trị GD",
     "name_src": "từ điển",
     "source": "Screener",
@@ -940,17 +940,17 @@
     "status": "chốt"
   },
   {
-    "code": "foreignerroom",
-    "name_vi": "Room nước ngoài",
+    "code": "foreignerRoom",
+    "name_vi": "Room nước ngoài còn lại",
     "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC",
     "keep": false,
-    "reason": "trùng BVSC — `foreignRoom`",
+    "reason": "trùng BVSC — `foreignRemain` (room CÒN LẠI), **không phải** `foreignRoom` (tổng room). Đo 2026-08-15: `foreignerRoom` của Screener khớp cỡ `foreignRemain` của BVSC chứ không khớp `foreignRoom` — BID 906.709.318 vs `foreignRemain` 906.101.718 vs `foreignRoom` 2.184.019.563; FPT 371.145.103 vs 368.745.271 vs 840.019.946. Tên hai bên đặt ngược nhau",
     "status": "chốt"
   },
   {
-    "code": "percentpricechange1day",
+    "code": "percentPriceChange1Day",
     "name_vi": "Biến động giá 1 ngày",
     "name_src": "từ điển",
     "source": "Screener",
@@ -960,7 +960,7 @@
     "status": "chốt"
   },
   {
-    "code": "percentpricechange1week",
+    "code": "percentPriceChange1Week",
     "name_vi": "Biến động giá 1 tuần",
     "name_src": "từ điển",
     "source": "Screener",
@@ -970,7 +970,7 @@
     "status": "chốt"
   },
   {
-    "code": "percentpricechange1month",
+    "code": "percentPriceChange1Month",
     "name_vi": "Biến động giá 1 tháng",
     "name_src": "từ điển",
     "source": "Screener",
@@ -980,7 +980,7 @@
     "status": "chốt"
   },
   {
-    "code": "percentpricechange3month",
+    "code": "percentPriceChange3Month",
     "name_vi": "Biến động giá 3 tháng",
     "name_src": "từ điển",
     "source": "Screener",
@@ -990,7 +990,7 @@
     "status": "chốt"
   },
   {
-    "code": "percentpricechange6month",
+    "code": "percentPriceChange6Month",
     "name_vi": "Biến động giá 6 tháng",
     "name_src": "từ điển",
     "source": "Screener",
@@ -1000,7 +1000,7 @@
     "status": "chốt"
   },
   {
-    "code": "percentpricechange52week",
+    "code": "percentPriceChange52Week",
     "name_vi": "Biến động giá 52 tuần",
     "name_src": "từ điển",
     "source": "Screener",
@@ -1010,7 +1010,7 @@
     "status": "chốt"
   },
   {
-    "code": "percentpricechangeytd",
+    "code": "percentPriceChangeYTD",
     "name_vi": "Biến động giá từ đầu năm",
     "name_src": "từ điển",
     "source": "Screener",
@@ -1020,7 +1020,7 @@
     "status": "chốt"
   },
   {
-    "code": "averagevolume1week",
+    "code": "averageVolume1Week",
     "name_vi": "Kl T.bình 5 phiên",
     "name_src": "từ điển",
     "source": "Screener",
@@ -1030,7 +1030,7 @@
     "status": "chốt"
   },
   {
-    "code": "averagevolume2week",
+    "code": "averageVolume2Week",
     "name_vi": "Kl T.bình 10 phiên",
     "name_src": "từ điển",
     "source": "Screener",
@@ -1040,7 +1040,7 @@
     "status": "chốt"
   },
   {
-    "code": "averagevolume1month",
+    "code": "averageVolume1Month",
     "name_vi": "Kl T.bình 20 phiên",
     "name_src": "từ điển",
     "source": "Screener",
@@ -1050,7 +1050,7 @@
     "status": "chốt"
   },
   {
-    "code": "averagevolume3month",
+    "code": "averageVolume3Month",
     "name_vi": "Kl T.bình 3 tháng",
     "name_src": "từ điển",
     "source": "Screener",
@@ -1060,7 +1060,7 @@
     "status": "chốt"
   },
   {
-    "code": "icbrank",
+    "code": "icbRank",
     "name_vi": "FiinTrade Rank",
     "name_src": "từ điển",
     "source": "Screener",
@@ -1110,7 +1110,7 @@
     "status": "chốt"
   },
   {
-    "code": "fscore",
+    "code": "fScore",
     "name_vi": "F-Score (TTM)",
     "name_src": "từ điển",
     "source": "Screener",
@@ -1130,7 +1130,7 @@
     "status": "chốt"
   },
   {
-    "code": "capitalstructure",
+    "code": "capitalStructure",
     "name_vi": "Thành phần chấm điểm VGM",
     "name_src": "tự đặt",
     "source": "Screener",
@@ -1140,7 +1140,7 @@
     "status": "chốt"
   },
   {
-    "code": "financialstrength",
+    "code": "financialStrength",
     "name_vi": "Thành phần chấm điểm VGM",
     "name_src": "tự đặt",
     "source": "Screener",
@@ -1150,7 +1150,7 @@
     "status": "chốt"
   },
   {
-    "code": "financialplan",
+    "code": "financialPlan",
     "name_vi": "Thành phần chấm điểm VGM",
     "name_src": "tự đặt",
     "source": "Screener",
@@ -1180,7 +1180,7 @@
     "status": "chốt"
   },
   {
-    "code": "equityinssurance",
+    "code": "equityInssurance",
     "name_vi": "Thành phần chấm điểm VGM",
     "name_src": "tự đặt",
     "source": "Screener",
@@ -1350,8 +1350,8 @@
     "status": "chốt"
   },
   {
-    "code": "oversma50",
-    "name_vi": "Giá so với trung bình động 50 phiên",
+    "code": "overSma50",
+    "name_vi": "Giá so với trung bình động 50 phiên (đo 2026-08-15: kiểu bool)",
     "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
@@ -1490,7 +1490,7 @@
     "status": "chốt"
   },
   {
-    "code": "totalbuytradevolume",
+    "code": "totalBuyTradeVolume",
     "name_vi": "Khối lượng theo chiều mua",
     "name_src": "tự đặt",
     "source": "Screener",
@@ -1500,7 +1500,7 @@
     "status": "chốt"
   },
   {
-    "code": "totalselltradevolume",
+    "code": "totalSellTradeVolume",
     "name_vi": "Khối lượng theo chiều bán",
     "name_src": "tự đặt",
     "source": "Screener",
@@ -1510,64 +1510,64 @@
     "status": "chốt"
   },
   {
-    "code": "foreignerpercentage",
+    "code": "foreignerPercentage",
     "name_vi": "Sở hữu nước ngoài",
     "name_src": "từ điển",
     "source": "Screener",
-    "nguon_chuan": null,
-    "keep": null,
-    "reason": "BVSC chỉ có room theo số cổ phiếu (`foreignRemain`/`foreignRoom`), không có trường tỷ lệ; không nhóm bỏ nào nêu đích danh trường này ⚠️ Snapshot cũng có trường này và ở đó đã bỏ với nguồn chuẩn *dự kiến* là Screener — hai bên phải chốt CÙNG LÚC: Screener mà cũng bỏ thì không nguồn nào lưu chỉ tiêu này",
-    "status": "cần kiểm API"
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "**đo 2026-08-15** — có thật trong khối `stockScreenerItem`, key camelCase `foreignerPercentage`. BVSC `datafeed/instruments` đo cùng lúc chỉ có room theo số cổ phiếu, không có trường tỷ lệ nào. Giá trị trùng khít Snapshot ở BID và FPT (0,17545313 · 0,27350383), lệch nhẹ ở VNM (0,496079 vs 0,49580332). Đây là nguồn duy nhất còn lại → **lấy**, và Snapshot bỏ theo",
+    "status": "chốt"
   },
   {
-    "code": "averagevalue1week",
-    "name_vi": "Giá trị GD T.bình 5D",
-    "name_src": "từ điển",
-    "source": "Screener",
-    "nguon_chuan": null,
-    "keep": null,
-    "reason": "nhóm bỏ chỉ nêu KHỐI LƯỢNG bình quân, không nêu GIÁ TRỊ bình quân; chưa đủ căn cứ xếp lấy hay bỏ",
-    "status": "cần kiểm API"
-  },
-  {
-    "code": "averagevalue2week",
-    "name_vi": "Giá trị GD T.bình 10D",
-    "name_src": "từ điển",
-    "source": "Screener",
-    "nguon_chuan": null,
-    "keep": null,
-    "reason": "nhóm bỏ chỉ nêu KHỐI LƯỢNG bình quân, không nêu GIÁ TRỊ bình quân; chưa đủ căn cứ xếp lấy hay bỏ",
-    "status": "cần kiểm API"
-  },
-  {
-    "code": "averagevalue1month",
-    "name_vi": "Giá trị GD T.bình 20D",
-    "name_src": "từ điển",
-    "source": "Screener",
-    "nguon_chuan": null,
-    "keep": null,
-    "reason": "nhóm bỏ chỉ nêu KHỐI LƯỢNG bình quân, không nêu GIÁ TRỊ bình quân; chưa đủ căn cứ xếp lấy hay bỏ",
-    "status": "cần kiểm API"
-  },
-  {
-    "code": "averagevalue3month",
-    "name_vi": "Giá trị GD T.bình 3M",
-    "name_src": "từ điển",
-    "source": "Screener",
-    "nguon_chuan": null,
-    "keep": null,
-    "reason": "nhóm bỏ chỉ nêu KHỐI LƯỢNG bình quân, không nêu GIÁ TRỊ bình quân; chưa đủ căn cứ xếp lấy hay bỏ",
-    "status": "cần kiểm API"
-  },
-  {
-    "code": "freefloatrate",
+    "code": "freeFloatRate",
     "name_vi": "% Free Float",
     "name_src": "từ điển",
     "source": "Screener",
-    "nguon_chuan": null,
-    "keep": null,
-    "reason": "không nhóm bỏ nào nêu, cũng không nằm trong danh sách giữ được liệt kê đích danh ⚠️ Snapshot cũng có trường này và ở đó đã bỏ với nguồn chuẩn *dự kiến* là Screener — hai bên phải chốt CÙNG LÚC: Screener mà cũng bỏ thì không nguồn nào lưu chỉ tiêu này",
-    "status": "cần kiểm API"
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "**đo 2026-08-15** — có thật trong khối `stockScreenerItem`, key camelCase `freeFloatRate`, giá trị trùng khít Snapshot cả 3/3 mã đo (BID 0,06 · FPT 0,85 · VNM 0,4). → **lấy** ở Screener, Snapshot bỏ theo",
+    "status": "chốt"
+  },
+  {
+    "code": "averageValue1Week",
+    "name_vi": "Giá trị GD T.bình 5D",
+    "name_src": "từ điển",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "**đo 2026-08-15** — có thật, key camelCase `averageValue1Week`…, nằm ngay cạnh `averageVolume*` trong cùng khối `stockScreenerItem` và cùng dạng chuỗi bình quân 5/10/20 phiên + 3 tháng. BVSC `datafeed/instruments` đo cùng lúc có `totalTradingValue` theo phiên, nên chuỗi GTGD bình quân tính lại được y như chuỗi KL bình quân → cùng nhóm lý do với `averageVolume*`, **bỏ**",
+    "status": "chốt"
+  },
+  {
+    "code": "averageValue2Week",
+    "name_vi": "Giá trị GD T.bình 10D",
+    "name_src": "từ điển",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "**đo 2026-08-15** — có thật, key camelCase `averageValue1Week`…, nằm ngay cạnh `averageVolume*` trong cùng khối `stockScreenerItem` và cùng dạng chuỗi bình quân 5/10/20 phiên + 3 tháng. BVSC `datafeed/instruments` đo cùng lúc có `totalTradingValue` theo phiên, nên chuỗi GTGD bình quân tính lại được y như chuỗi KL bình quân → cùng nhóm lý do với `averageVolume*`, **bỏ**",
+    "status": "chốt"
+  },
+  {
+    "code": "averageValue1Month",
+    "name_vi": "Giá trị GD T.bình 20D",
+    "name_src": "từ điển",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "**đo 2026-08-15** — có thật, key camelCase `averageValue1Week`…, nằm ngay cạnh `averageVolume*` trong cùng khối `stockScreenerItem` và cùng dạng chuỗi bình quân 5/10/20 phiên + 3 tháng. BVSC `datafeed/instruments` đo cùng lúc có `totalTradingValue` theo phiên, nên chuỗi GTGD bình quân tính lại được y như chuỗi KL bình quân → cùng nhóm lý do với `averageVolume*`, **bỏ**",
+    "status": "chốt"
+  },
+  {
+    "code": "averageValue3Month",
+    "name_vi": "Giá trị GD T.bình 3M",
+    "name_src": "từ điển",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "**đo 2026-08-15** — có thật, key camelCase `averageValue1Week`…, nằm ngay cạnh `averageVolume*` trong cùng khối `stockScreenerItem` và cùng dạng chuỗi bình quân 5/10/20 phiên + 3 tháng. BVSC `datafeed/instruments` đo cùng lúc có `totalTradingValue` theo phiên, nên chuỗi GTGD bình quân tính lại được y như chuỗi KL bình quân → cùng nhóm lý do với `averageVolume*`, **bỏ**",
+    "status": "chốt"
   },
   {
     "code": "rtd53",
@@ -1576,7 +1576,7 @@
     "source": "Screener",
     "nguon_chuan": null,
     "keep": null,
-    "reason": "có trong từ điển 729 mã nhưng mang trạng thái CHƯA GIẢI MÃ — không nguồn nào có tên, chưa biết là chỉ tiêu gì nên chưa xếp được vào nhóm nào",
+    "reason": "có trong từ điển 729 mã nhưng mang trạng thái CHƯA GIẢI MÃ — không nguồn nào có tên, chưa biết là chỉ tiêu gì nên chưa xếp được vào nhóm nào. **Đo 2026-08-15**: cả hai CÓ THẬT trong khối `financial` và có giá trị (FPT `rtd53`=5426,73780245 `rtq81`=−0,03335415 · VNM 4702,49259309 và 0,22632399 · BID cả hai `null`) — nhưng số đo chỉ chứng minh trường tồn tại, KHÔNG cho ra tên, nên vẫn chưa xếp được",
     "status": "cần kiểm API"
   },
   {
@@ -1586,7 +1586,7 @@
     "source": "Screener",
     "nguon_chuan": null,
     "keep": null,
-    "reason": "có trong từ điển 729 mã nhưng mang trạng thái CHƯA GIẢI MÃ — không nguồn nào có tên, chưa biết là chỉ tiêu gì nên chưa xếp được vào nhóm nào",
+    "reason": "có trong từ điển 729 mã nhưng mang trạng thái CHƯA GIẢI MÃ — không nguồn nào có tên, chưa biết là chỉ tiêu gì nên chưa xếp được vào nhóm nào. **Đo 2026-08-15**: cả hai CÓ THẬT trong khối `financial` và có giá trị (FPT `rtd53`=5426,73780245 `rtq81`=−0,03335415 · VNM 4702,49259309 và 0,22632399 · BID cả hai `null`) — nhưng số đo chỉ chứng minh trường tồn tại, KHÔNG cho ra tên, nên vẫn chưa xếp được",
     "status": "cần kiểm API"
   },
   {
@@ -1596,7 +1596,7 @@
     "source": "Screener",
     "nguon_chuan": null,
     "keep": null,
-    "reason": "có mặt trong khối `financial` của response nhưng KHÔNG có trong từ điển 729 mã — chưa biết là chỉ tiêu gì",
+    "reason": "có mặt trong khối `financial` của response nhưng KHÔNG có trong từ điển 729 mã — chưa biết là chỉ tiêu gì. **Đo 2026-08-15**: đã dump khoá khối `financial` — cả hai CÓ THẬT và có giá trị (`rtd39` BID 3,42582495 · FPT 15,93348656 · VNM 15,38168732; `rtd54` FPT 12,5858301 · VNM 13,09943584 · BID `null`). Vế *có thật không* đã xong; vế *là chỉ tiêu gì* thì số đo không trả lời được nên vẫn giữ",
     "status": "cần kiểm API"
   },
   {
@@ -1606,7 +1606,7 @@
     "source": "Screener",
     "nguon_chuan": null,
     "keep": null,
-    "reason": "có mặt trong khối `financial` của response nhưng KHÔNG có trong từ điển 729 mã — chưa biết là chỉ tiêu gì",
+    "reason": "có mặt trong khối `financial` của response nhưng KHÔNG có trong từ điển 729 mã — chưa biết là chỉ tiêu gì. **Đo 2026-08-15**: đã dump khoá khối `financial` — cả hai CÓ THẬT và có giá trị (`rtd39` BID 3,42582495 · FPT 15,93348656 · VNM 15,38168732; `rtd54` FPT 12,5858301 · VNM 13,09943584 · BID `null`). Vế *có thật không* đã xong; vế *là chỉ tiêu gì* thì số đo không trả lời được nên vẫn giữ",
     "status": "cần kiểm API"
   },
   {
@@ -1844,20 +1844,20 @@
     "name_vi": "Tỷ lệ free float",
     "name_src": "tài liệu endpoint",
     "source": "Snapshot",
-    "nguon_chuan": "Screener *(chờ chốt)*",
+    "nguon_chuan": "Screener",
     "keep": false,
-    "reason": "trùng Screener — `freefloatrate` / `foreignerpercentage` trong 83 tiêu chí, nên KHÔNG lấy ở Snapshot. ⚠️ Nhưng phía Screener hai mã này đang `cần kiểm API` chứ chưa chốt giữ — cho tới khi chốt, đây là nguồn chuẩn DỰ KIẾN, không phải nguồn chuẩn đã chốt. Chốt Screener trước, rồi mới cài phần này",
-    "status": "cần kiểm API"
+    "reason": "trùng Screener — **đo 2026-08-15 đã gỡ điều kiện**: cả hai có thật ở khối `stockScreenerItem` của `getScreenerItems` và đã chốt **lấy** bên Screener (xem §4.1), nên bỏ ở đây là bỏ đúng, không còn là *chờ chốt*. Giá trị hai bên trùng khít trên `freeFloatRate` 3/3 mã và trên `foreignerPercentage` 2/3 (VNM lệch 0,000276 — cùng chỉ tiêu, khác thời điểm chốt số)",
+    "status": "chốt"
   },
   {
     "code": "foreignerPercentage",
     "name_vi": "Tỷ lệ sở hữu nước ngoài",
     "name_src": "tài liệu endpoint",
     "source": "Snapshot",
-    "nguon_chuan": "Screener *(chờ chốt)*",
+    "nguon_chuan": "Screener",
     "keep": false,
-    "reason": "trùng Screener — `freefloatrate` / `foreignerpercentage` trong 83 tiêu chí, nên KHÔNG lấy ở Snapshot. ⚠️ Nhưng phía Screener hai mã này đang `cần kiểm API` chứ chưa chốt giữ — cho tới khi chốt, đây là nguồn chuẩn DỰ KIẾN, không phải nguồn chuẩn đã chốt. Chốt Screener trước, rồi mới cài phần này",
-    "status": "cần kiểm API"
+    "reason": "trùng Screener — **đo 2026-08-15 đã gỡ điều kiện**: cả hai có thật ở khối `stockScreenerItem` của `getScreenerItems` và đã chốt **lấy** bên Screener (xem §4.1), nên bỏ ở đây là bỏ đúng, không còn là *chờ chốt*. Giá trị hai bên trùng khít trên `freeFloatRate` 3/3 mã và trên `foreignerPercentage` 2/3 (VNM lệch 0,000276 — cùng chỉ tiêu, khác thời điểm chốt số)",
+    "status": "chốt"
   },
   {
     "code": "rtq25",
@@ -1936,7 +1936,7 @@
     "source": "Snapshot",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
-    "reason": "KLGD bình quân 1 tháng — tính lại từ chuỗi khối lượng BVSC; Screener cũng có trường tương đương `averagevolume1month` và cũng bỏ",
+    "reason": "KLGD bình quân 1 tháng — tính lại từ chuỗi khối lượng BVSC; Screener cũng có trường tương đương `averageVolume1Month` và cũng bỏ",
     "status": "chốt"
   },
   {
@@ -2090,33 +2090,33 @@
     "status": "chốt"
   },
   {
-    "code": "organCode",
-    "name_vi": "Mã doanh nghiệp",
-    "name_src": "tài liệu endpoint",
-    "source": "Snapshot",
-    "nguon_chuan": null,
-    "keep": null,
-    "reason": "khoá định danh, không phải chỉ tiêu — không nằm trong 16 trường độc quyền được liệt kê; khoá nối hiện lấy từ bảng `organization`",
-    "status": "cần kiểm API"
-  },
-  {
     "code": "outstandingShare",
     "name_vi": "Số CP đang lưu hành",
     "name_src": "tài liệu endpoint",
     "source": "Snapshot",
-    "nguon_chuan": null,
-    "keep": null,
-    "reason": "không nằm trong 16 trường độc quyền; BVSC có `ListedShare`/`TotalListingQtty` nhưng tài liệu nguồn không nói hai bên bằng nhau",
-    "status": "cần kiểm API"
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "**đo 2026-08-15** — phép kiểm đã định sẵn là *bằng `ListedShare` của BVSC thì bỏ, khác thì lấy*. Kết quả: BID 7.280.065.210 và VNM 2.089.955.445 bằng đúng `ListedShare`, nhưng **FPT 1.714.326.422 vs `ListedShare` 1.703.507.121 — lệch 10.819.301 CP (0,64%)**. Hai bên KHÔNG bằng nhau ⇒ **lấy**",
+    "status": "chốt"
   },
   {
     "code": "freeFloat",
     "name_vi": "Khối lượng tự do chuyển nhượng",
     "name_src": "tài liệu endpoint",
     "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "**đo 2026-08-15** — đã dump đủ 193 khoá `getScreenerItems`: Screener chỉ có tỷ lệ `freeFloatRate`, KHÔNG có trường khối lượng free float nào; BVSC `datafeed/instruments` (62 khoá) cũng không có. Snapshot là nguồn duy nhất (BID 436.803.912 · FPT 1.457.177.458 · VNM 835.982.178) ⇒ **lấy**",
+    "status": "chốt"
+  },
+  {
+    "code": "organCode",
+    "name_vi": "Mã doanh nghiệp",
+    "name_src": "tài liệu endpoint",
+    "source": "Snapshot",
     "nguon_chuan": null,
     "keep": null,
-    "reason": "không nằm trong 16 trường độc quyền; Screener chỉ có tỷ lệ `freefloatrate`, không có khối lượng",
+    "reason": "khoá định danh, không phải chỉ tiêu — không nằm trong 16 trường độc quyền được liệt kê; khoá nối hiện lấy từ bảng `organization`. **Đo 2026-08-15**: có mặt trong `summary` của Snapshot và trong CẢ NĂM khối của `getScreenerItems`, nên không thiếu nguồn — nhưng đây là quyết định lúc cài ETL (lưu lại khoá hay nối sang bảng `organization`), không phải câu hỏi số đo trả lời được",
     "status": "cần kiểm API"
   },
   {
@@ -2126,7 +2126,7 @@
     "source": "Snapshot",
     "nguon_chuan": null,
     "keep": null,
-    "reason": "mã mang trạng thái chưa giải mã; cũng có mặt trong khối `financial` của Screener nên nếu quyết định lưu thì nguồn chuẩn là Screener",
+    "reason": "mã mang trạng thái chưa giải mã; cũng có mặt trong khối `financial` của Screener nên nếu quyết định lưu thì nguồn chuẩn là Screener. **Đo 2026-08-15**: hai bên trả cùng một số ở FPT và VNM (5426,73780245 · 4702,49259309) nên xác nhận là cùng chỉ tiêu; riêng BID thì Snapshot trả `0.0` còn Screener trả `null`. Vẫn chưa có tên nên chưa xếp được lấy hay bỏ",
     "status": "cần kiểm API"
   }
 ]

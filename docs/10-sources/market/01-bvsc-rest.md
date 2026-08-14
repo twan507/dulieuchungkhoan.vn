@@ -54,24 +54,27 @@ GET BVSC/quotes?symbols=ALL
 | `exchange` | string | — | `HOSE` \| `HNX` \| `UPCOM` |
 | `tradelot` | integer | cổ phiếu | Đơn vị giao dịch tối thiểu |
 
-**Bảng `StockType`** *(đếm trên toàn bộ 2.530 mã)*
+**Bảng `StockType`** *(đếm lại 2026-08-15 trên toàn bộ **2.534** mã; cột 2026-08-10 giữ lại để thấy nhịp thay đổi)*
 
-| Giá trị | Nghĩa | Số lượng |
-|---|---|---|
-| `2` | Cổ phiếu | 1.972 |
-| `4` | Chứng quyền có bảo đảm (CW) | 342 |
-| `12` | Trái phiếu | 185 |
-| `3` | ETF / Chứng chỉ quỹ | 31 |
+| Giá trị | Nghĩa | Số lượng — 2026-08-15 | 2026-08-10 |
+|---|---|---:|---:|
+| `2` | Cổ phiếu | **1.974** | 1.972 |
+| `4` | Chứng quyền có bảo đảm (CW) | **342** | 342 |
+| `12` | Trái phiếu | **187** | 185 |
+| `3` | ETF / Chứng chỉ quỹ | **31** | 31 |
 
-**Phân bố theo sàn** *(toàn bộ)*: HOSE 804 · HNX 530 · UPCOM 1.196.
-**Riêng cổ phiếu (`StockType=2`)**: HOSE 432 · HNX 344 · UPCOM 1.196.
+**Phân bố theo sàn** *(toàn bộ, 2026-08-15)*: HOSE 805 · HNX 532 · UPCOM 1.197.
+**Riêng cổ phiếu (`StockType=2`)**: HOSE 433 · HNX 344 · UPCOM 1.197.
+
+Tổng tăng 4 mã trong 5 ngày (2 cổ phiếu + 2 trái phiếu) — bảng này **không tĩnh**, đừng hardcode con số.
 
 ### Ghi chú
 - Không chứa phái sinh. BVSC không cung cấp dữ liệu phái sinh qua bất kỳ endpoint public nào.
 - Giá trần/sàn/tham chiếu là của **phiên hiện tại**, cập nhật đầu ngày giao dịch.
 
 ### Độ phủ & hiệu năng
-2.530 bản ghi · 51/51 mã mẫu có mặt · 589 KB · ~580 ms.
+**2.534 bản ghi** *(đo 2026-08-15; 2026-08-10 là 2.530)* · 51/51 mã mẫu có mặt · 590 KB · ~280 ms.
+Mỗi bản ghi đúng **8 trường**, không hơn: `symbol` `FullName` `exchange` `StockType` `ceiling` `floor` `reference` `tradelot`.
 Nên cache trong ngày, làm mới đầu phiên.
 
 ---
@@ -109,6 +112,8 @@ Không có.
 ### Độ phủ & hiệu năng
 2.530 bản ghi · 51/51 mã mẫu có mặt · 324 KB · ~465 ms. Cache dài hạn.
 
+*Số này là đo 2026-08-10 và **chưa đo lại** ngày 2026-08-15 — endpoint `getAllQuotes` đo lại được 2.534, nên `/mapping` nhiều khả năng cũng đã là 2.534. Chưa gọi thì chưa sửa.*
+
 ---
 
 ## `getInstrumentSnapshot`
@@ -127,7 +132,9 @@ GET BVSC/datafeed/instruments?symbols={tickers}
 |---|---|---|---|---|
 | `symbols` | query | string | **bắt buộc** | Một hoặc nhiều **ticker**, cách nhau bởi dấu phẩy |
 
-### Response 200 — 50 trường
+### Response 200 — 62 trường
+
+> **Đính chính 2026-08-15.** Tiêu đề này trước ghi *50 trường* — đó là lỗi đếm, không phải mô tả một bản response khác. Đếm thật trên BID · FPT · VNM ngày 2026-08-15 ra **62/62/62 trường**, và ví dụ ngay dưới đây cũng đúng 62 khoá: không thừa khoá nào so với số đo, cũng không thiếu khoá nào. Con số 62 mà [quyết định chọn nguồn](../../20-design/market-field-selection.md) dùng là con số đúng.
 
 ```json
 {"s":"ok","d":[{

@@ -99,7 +99,7 @@ R_NAMED = ("tỷ số tài chính — nằm trong cụm 55 tỷ số được n�
 R_CLASS = ("tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, "
            "nên thuộc 80 trường giữ")
 add(["rtd26", "rtd27", "rtd28", "rtd40"], "Screener", "Screener", True, R_NAMED, block="Định giá")
-add(["rtd36", "rtd43", "rtd51", "rtd20avg"], "Screener", "Screener", True,
+add(["rtd36", "rtd43", "rtd51", "rtd20Avg"], "Screener", "Screener", True,
     R_NAMED + " · nhóm cổ tức", block="Cổ tức")
 add(["rtq4", "rtq6", "rtq7", "rtq77"], "Screener", "Screener", True,
     R_NAMED + " · nhóm đòn bẩy", block="Đòn bẩy, thanh toán")
@@ -113,58 +113,63 @@ add(["rtd11", "rtd21", "rtd25", "rtd14", "rtd7"], "Screener", "Screener", True,
 add(["rtq12", "rtq14", "rtq25", "ryq25", "rtq29", "ryq29", "rtq27"], "Screener", "Screener", True,
     R_CLASS, block="Sinh lời")
 add(["rqq6", "rtq3", "rtq2", "rtq1"], "Screener", "Screener", True, R_CLASS, block="Đòn bẩy, thanh toán")
-add(["revgrowth", "prfgrowth"], "Screener", "Screener", True, R_CLASS, block="Tăng trưởng")
+add(["revGrowth", "prfGrowth"], "Screener", "Screener", True, R_CLASS, block="Tăng trưởng")
 add(["rtd19"], "Screener", "Screener", True,
     "Beta — giữ theo quyết định của chủ dự án: tự tính được nhưng phải chọn chuẩn thị trường và số phiên, "
     "kết quả sẽ lệch số FiinTrade", block="Beta")
-add(["corpownership", "organizationownership"], "Screener", "Screener", True,
+add(["corpOwnership", "organizationOwnership"], "Screener", "Screener", True,
     "hai chỉ tiêu sở hữu tổ chức KHÁC NHAU, không phải trùng tên — FPT 0,0567 vs 0,1555, ACB có cái này "
     "thiếu cái kia; `GetOwnership` không có tỷ lệ tổng hợp mà chỉ có danh sách cổ đông lớn",
-    names={"organizationownership": "Sở hữu tổ chức (chỉ tiêu thứ hai, khác `corpownership`)"},
+    names={"organizationOwnership": "Sở hữu tổ chức (chỉ tiêu thứ hai, khác `corpOwnership`)"},
     nsrc="tự đặt", block="Sở hữu")
-add(["revttm", "revy", "isa1ttm", "isa1y", "isa20ttm", "isa20y", "isa3ttm",
-     "isb25ttm", "isb25y", "isi103ttm", "isi103y", "rev", "prf"], "Screener", "Screener", True,
-    "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp "
+add(["revTTM", "revY", "isa1TTM", "isa1Y", "isa20TTM", "isa20Y", "isa3TTM",
+     "isb25TTM", "isb25Y", "isi103TTM", "isi103Y", "rev", "prf"], "Screener", "Screener", True,
+    "khối TTM/Y lấy trọn cụm — `isa20TTM` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20TTM` khớp "
     "9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E "
     "ngay bên cạnh",
-    names={"isa1ttm": "Doanh số (TTM) — suy từ `isa1`", "isa1y": "Doanh số (năm trước) — suy từ `isa1`",
-           "isa3ttm": "Doanh số thuần (TTM) — suy từ `isa3`",
-           "isb25ttm": "Thu nhập lãi và các khoản thu nhập tương tự (TTM) — suy từ `isb25`",
-           "isb25y": "Thu nhập lãi và các khoản thu nhập tương tự (năm trước) — suy từ `isb25`",
-           "isi103ttm": "Doanh thu phí bảo hiểm (TTM) — suy từ `isi103`",
-           "isi103y": "Doanh thu phí bảo hiểm (năm trước) — suy từ `isi103`"},
+    names={"isa1TTM": "Doanh số (TTM) — suy từ `isa1`", "isa1Y": "Doanh số (năm trước) — suy từ `isa1`",
+           "isa3TTM": "Doanh số thuần (TTM) — suy từ `isa3`",
+           "isb25TTM": "Thu nhập lãi và các khoản thu nhập tương tự (TTM) — suy từ `isb25`",
+           "isb25Y": "Thu nhập lãi và các khoản thu nhập tương tự (năm trước) — suy từ `isb25`",
+           "isi103TTM": "Doanh thu phí bảo hiểm (TTM) — suy từ `isi103`",
+           "isi103Y": "Doanh thu phí bảo hiểm (năm trước) — suy từ `isi103`"},
     nsrc="suy theo luật kỳ", block="TTM/Y")
 
 # ───────────────────────── Screener — BO ─────────────────────────
-add(["closeprice"], "Screener", "BVSC", False,
+add(["closePrice"], "Screener", "BVSC", False,
     "trùng BVSC — `closePrice`/`reference`; giá lấy nguồn realtime khớp sàn", block="Trùng BVSC")
-add(["totalmatchvolume"], "Screener", "BVSC", False, "trùng BVSC — `totalTrading`", block="Trùng BVSC")
-add(["totalmatchvalue"], "Screener", "BVSC", False, "trùng BVSC — `totalTradingValue`", block="Trùng BVSC")
-add(["foreignerroom"], "Screener", "BVSC", False, "trùng BVSC — `foreignRoom`", block="Trùng BVSC")
-add(["percentpricechange1day", "percentpricechange1week", "percentpricechange1month",
-     "percentpricechange3month", "percentpricechange6month", "percentpricechange52week",
-     "percentpricechangeytd"], "Screener", "BVSC (tự tính)", False,
+add(["totalMatchVolume"], "Screener", "BVSC", False, "trùng BVSC — `totalTrading`", block="Trùng BVSC")
+add(["totalMatchValue"], "Screener", "BVSC", False, "trùng BVSC — `totalTradingValue`", block="Trùng BVSC")
+add(["foreignerRoom"], "Screener", "BVSC", False,
+    "trùng BVSC — `foreignRemain` (room CÒN LẠI), **không phải** `foreignRoom` (tổng room). "
+    "Đo 2026-08-15: `foreignerRoom` của Screener khớp cỡ `foreignRemain` của BVSC chứ không khớp "
+    "`foreignRoom` — BID 906.709.318 vs `foreignRemain` 906.101.718 vs `foreignRoom` 2.184.019.563; "
+    "FPT 371.145.103 vs 368.745.271 vs 840.019.946. Tên hai bên đặt ngược nhau",
+    block="Trùng BVSC")
+add(["percentPriceChange1Day", "percentPriceChange1Week", "percentPriceChange1Month",
+     "percentPriceChange3Month", "percentPriceChange6Month", "percentPriceChange52Week",
+     "percentPriceChangeYTD"], "Screener", "BVSC (tự tính)", False,
     "biến động giá — tính lại được từ chuỗi giá BVSC", block="Biến động giá")
-add(["averagevolume1week", "averagevolume2week", "averagevolume1month", "averagevolume3month"],
+add(["averageVolume1Week", "averageVolume2Week", "averageVolume1Month", "averageVolume3Month"],
     "Screener", "BVSC (tự tính)", False,
     "khối lượng bình quân 5/10/20 phiên và 3 tháng — tính lại được từ chuỗi khối lượng BVSC",
     block="KL bình quân")
-add(["icbrank", "value", "growth", "momentum", "vgm", "fscore", "canslim"], "Screener", "— (không lưu)", False,
+add(["icbRank", "value", "growth", "momentum", "vgm", "fScore", "canslim"], "Screener", "— (không lưu)", False,
     "nhóm chấm điểm riêng của FiinTrade — quyết định của chủ dự án: không dùng điểm do bên thứ ba chấm",
     block="Chấm điểm")
-add(["capitalstructure", "financialstrength", "financialplan", "cfo", "debt", "equityinssurance"],
+add(["capitalStructure", "financialStrength", "financialPlan", "cfo", "debt", "equityInssurance"],
     "Screener", "— (không lưu)", False,
     "thành phần chấm điểm VGM — bỏ cùng nhóm chấm điểm, không dùng điểm bên thứ ba chấm",
     names={c: "Thành phần chấm điểm VGM" for c in
-           ["capitalstructure", "financialstrength", "financialplan", "cfo", "debt", "equityinssurance"]},
+           ["capitalStructure", "financialStrength", "financialPlan", "cfo", "debt", "equityInssurance"]},
     nsrc="tự đặt", block="Chấm điểm")
 TECH = ["rsi", "adx", "cci", "roc", "stochastic", "williams", "mfi",
-        "ma9", "ma20", "ma50", "ma75", "ma100", "ma200", "sma20", "sma50", "sma100", "oversma50"]
+        "ma9", "ma20", "ma50", "ma75", "ma100", "ma200", "sma20", "sma50", "sma100", "overSma50"]
 add(TECH, "Screener", "BVSC (tự tính)", False,
     "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
     names={**{c: f"Trung bình động {c[2:]} phiên" for c in ["ma9", "ma20", "ma50", "ma75", "ma100", "ma200"]},
            **{c: f"Trung bình động giản đơn {c[3:]} phiên" for c in ["sma20", "sma50", "sma100"]},
-           "oversma50": "Giá so với trung bình động 50 phiên"},
+           "overSma50": "Giá so với trung bình động 50 phiên (đo 2026-08-15: kiểu bool)"},
     nsrc="tự đặt", block="Chỉ báo kỹ thuật")
 add(["c1", "c2", "h1", "h2", "l1", "l2", "o1", "o2"], "Screener", "BVSC", False,
     "OHLC hai phiên gần nhất — đã có trong chuỗi giá BVSC",
@@ -177,31 +182,51 @@ add(["rs52w", "rs6m"], "Screener", "BVSC (tự tính)", False,
     "sức mạnh tương đối — tính lại được từ chuỗi giá BVSC",
     names={"rs52w": "Sức mạnh tương đối 52 tuần", "rs6m": "Sức mạnh tương đối 6 tháng"},
     nsrc="tự đặt", block="Sức mạnh tương đối")
-add(["totalbuytradevolume", "totalselltradevolume"], "Screener", "MoneyFlow", False,
+add(["totalBuyTradeVolume", "totalSellTradeVolume"], "Screener", "MoneyFlow", False,
     "trùng MoneyFlow — chuỗi mua/bán chủ động lấy trọn bộ ở MoneyFlow",
-    names={"totalbuytradevolume": "Khối lượng theo chiều mua",
-           "totalselltradevolume": "Khối lượng theo chiều bán"},
+    names={"totalBuyTradeVolume": "Khối lượng theo chiều mua",
+           "totalSellTradeVolume": "Khối lượng theo chiều bán"},
     nsrc="tự đặt", block="Trùng MoneyFlow")
 
+# ───────────────────────── Screener — DA CHOT BANG SO DO 2026-08-15 ─────────────────────────
+# Bon nhom duoi day truoc mang trang thai `can kiem API`; loi goi that ngay 2026-08-15
+# (`GetScreenerItems`, 1 tieu chi ClosePrice, comGroupCode ALL va VN30) da tra loi.
+DO_0815 = {("Screener", "foreignerPercentage"), ("Screener", "freeFloatRate"),
+           ("Screener", "averageValue1Week"), ("Screener", "averageValue2Week"),
+           ("Screener", "averageValue1Month"), ("Screener", "averageValue3Month"),
+           ("Snapshot", "outstandingShare"), ("Snapshot", "freeFloat")}
+
+add(["foreignerPercentage"], "Screener", "Screener", True,
+    "**đo 2026-08-15** — có thật trong khối `stockScreenerItem`, key camelCase `foreignerPercentage`. "
+    "BVSC `datafeed/instruments` đo cùng lúc chỉ có room theo số cổ phiếu, không có trường tỷ lệ nào. "
+    "Giá trị trùng khít Snapshot ở BID và FPT (0,17545313 · 0,27350383), lệch nhẹ ở VNM "
+    "(0,496079 vs 0,49580332). Đây là nguồn duy nhất còn lại → **lấy**, và Snapshot bỏ theo",
+    block="Sở hữu")
+add(["freeFloatRate"], "Screener", "Screener", True,
+    "**đo 2026-08-15** — có thật trong khối `stockScreenerItem`, key camelCase `freeFloatRate`, "
+    "giá trị trùng khít Snapshot cả 3/3 mã đo (BID 0,06 · FPT 0,85 · VNM 0,4). "
+    "→ **lấy** ở Screener, Snapshot bỏ theo",
+    block="Sở hữu")
+add(["averageValue1Week", "averageValue2Week", "averageValue1Month", "averageValue3Month"],
+    "Screener", "BVSC (tự tính)", False,
+    "**đo 2026-08-15** — có thật, key camelCase `averageValue1Week`…, nằm ngay cạnh `averageVolume*` "
+    "trong cùng khối `stockScreenerItem` và cùng dạng chuỗi bình quân 5/10/20 phiên + 3 tháng. "
+    "BVSC `datafeed/instruments` đo cùng lúc có `totalTradingValue` theo phiên, nên chuỗi GTGD bình quân "
+    "tính lại được y như chuỗi KL bình quân → cùng nhóm lý do với `averageVolume*`, **bỏ**",
+    block="GTGD bình quân")
+
 # ───────────────────────── Screener — CAN KIEM API ─────────────────────────
-CROSS_SN = (" ⚠️ Snapshot cũng có trường này và ở đó đã bỏ với nguồn chuẩn *dự kiến* là Screener — hai bên "
-            "phải chốt CÙNG LÚC: Screener mà cũng bỏ thì không nguồn nào lưu chỉ tiêu này")
-add(["foreignerpercentage"], "Screener", None, None,
-    "BVSC chỉ có room theo số cổ phiếu (`foreignRemain`/`foreignRoom`), không có trường tỷ lệ; "
-    "không nhóm bỏ nào nêu đích danh trường này" + CROSS_SN, status="cần kiểm API", block="Sở hữu")
-add(["averagevalue1week", "averagevalue2week", "averagevalue1month", "averagevalue3month"],
-    "Screener", None, None,
-    "nhóm bỏ chỉ nêu KHỐI LƯỢNG bình quân, không nêu GIÁ TRỊ bình quân; chưa đủ căn cứ xếp lấy hay bỏ",
-    status="cần kiểm API", block="GTGD bình quân")
-add(["freefloatrate"], "Screener", None, None,
-    "không nhóm bỏ nào nêu, cũng không nằm trong danh sách giữ được liệt kê đích danh" + CROSS_SN,
-    status="cần kiểm API", block="Sở hữu")
 add(["rtd53", "rtq81"], "Screener", None, None,
     "có trong từ điển 729 mã nhưng mang trạng thái CHƯA GIẢI MÃ — không nguồn nào có tên, chưa biết là "
-    "chỉ tiêu gì nên chưa xếp được vào nhóm nào",
+    "chỉ tiêu gì nên chưa xếp được vào nhóm nào. **Đo 2026-08-15**: cả hai CÓ THẬT trong khối `financial` "
+    "và có giá trị (FPT `rtd53`=5426,73780245 `rtq81`=−0,03335415 · VNM 4702,49259309 và 0,22632399 · "
+    "BID cả hai `null`) — nhưng số đo chỉ chứng minh trường tồn tại, KHÔNG cho ra tên, nên vẫn chưa xếp được",
     status="cần kiểm API", block="Chưa giải mã")
 add(["rtd39", "rtd54"], "Screener", None, None,
-    "có mặt trong khối `financial` của response nhưng KHÔNG có trong từ điển 729 mã — chưa biết là chỉ tiêu gì",
+    "có mặt trong khối `financial` của response nhưng KHÔNG có trong từ điển 729 mã — chưa biết là chỉ tiêu gì. "
+    "**Đo 2026-08-15**: đã dump khoá khối `financial` — cả hai CÓ THẬT và có giá trị "
+    "(`rtd39` BID 3,42582495 · FPT 15,93348656 · VNM 15,38168732; `rtd54` FPT 12,5858301 · VNM 13,09943584 · "
+    "BID `null`). Vế *có thật không* đã xong; vế *là chỉ tiêu gì* thì số đo không trả lời được nên vẫn giữ",
     status="cần kiểm API", block="Chưa giải mã")
 
 # ───────────────────────── Snapshot — GIU 16 ─────────────────────────
@@ -227,12 +252,13 @@ add(["year", "quarter"], "Snapshot", "Snapshot", True,
 # ───────────────────────── Snapshot — BO ─────────────────────────
 add(["rtd11", "rtd14", "rtd21", "rtd25", "rtq12", "rtq14", "rtq29"], "Snapshot", "Screener", False,
     "trùng Screener — cùng mã, lấy ở Screener cho trọn bộ tỷ số", block="Trùng Screener")
-add(["freeFloatRate", "foreignerPercentage"], "Snapshot", "Screener *(chờ chốt)*", False,
-    "trùng Screener — `freefloatrate` / `foreignerpercentage` trong 83 tiêu chí, nên KHÔNG lấy ở Snapshot. "
-    "⚠️ Nhưng phía Screener hai mã này đang `cần kiểm API` chứ chưa chốt giữ — cho tới khi chốt, đây là "
-    "nguồn chuẩn DỰ KIẾN, không phải nguồn chuẩn đã chốt. Chốt Screener trước, rồi mới cài phần này",
+add(["freeFloatRate", "foreignerPercentage"], "Snapshot", "Screener", False,
+    "trùng Screener — **đo 2026-08-15 đã gỡ điều kiện**: cả hai có thật ở khối `stockScreenerItem` của "
+    "`getScreenerItems` và đã chốt **lấy** bên Screener (xem §4.1), nên bỏ ở đây là bỏ đúng, không còn là "
+    "*chờ chốt*. Giá trị hai bên trùng khít trên `freeFloatRate` 3/3 mã và trên `foreignerPercentage` 2/3 "
+    "(VNM lệch 0,000276 — cùng chỉ tiêu, khác thời điểm chốt số)",
     names={"freeFloatRate": "Tỷ lệ free float", "foreignerPercentage": "Tỷ lệ sở hữu nước ngoài"},
-    status="cần kiểm API", block="Trùng Screener")
+    block="Trùng Screener")
 add(["rtq25", "rtq1", "rtq2", "rtq3"], "Snapshot", "Screener", False,
     "trùng Screener — cùng mã trong 83 tiêu chí, lấy ở Screener", block="Trùng Screener")
 add(["foreignerRoom"], "Snapshot", "BVSC", False, "trùng BVSC — `foreignRemain` (room còn lại)",
@@ -243,7 +269,7 @@ add(["lowestPrice1Year", "highestPrice1Year"], "Snapshot", "BVSC (tự tính)", 
     block="Trùng BVSC")
 add(["averageMatchVolume1Month"], "Snapshot", "BVSC (tự tính)", False,
     "KLGD bình quân 1 tháng — tính lại từ chuỗi khối lượng BVSC; Screener cũng có trường tương đương "
-    "`averagevolume1month` và cũng bỏ",
+    "`averageVolume1Month` và cũng bỏ",
     names={"averageMatchVolume1Month": "KLGD bình quân 1 tháng"}, block="Trùng BVSC")
 add(["isa1", "isa22", "isb27", "isi103", "bsa53", "bsb104", "bsa1", "bsa23", "bsa54", "bsa78",
      "bsa80", "bsb98", "bsb113", "nob44", "cfa18"], "Snapshot", "BCTC đầy đủ", False,
@@ -251,20 +277,29 @@ add(["isa1", "isa22", "isb27", "isi103", "bsa53", "bsb104", "bsa1", "bsa23", "bs
     block="Trùng BCTC")
 
 # ───────────────────────── Snapshot — CAN KIEM API ─────────────────────────
+add(["outstandingShare"], "Snapshot", "Snapshot", True,
+    "**đo 2026-08-15** — phép kiểm đã định sẵn là *bằng `ListedShare` của BVSC thì bỏ, khác thì lấy*. "
+    "Kết quả: BID 7.280.065.210 và VNM 2.089.955.445 bằng đúng `ListedShare`, nhưng **FPT 1.714.326.422 "
+    "vs `ListedShare` 1.703.507.121 — lệch 10.819.301 CP (0,64%)**. Hai bên KHÔNG bằng nhau ⇒ **lấy**",
+    names={"outstandingShare": "Số CP đang lưu hành"}, block="Sở hữu chi tiết")
+add(["freeFloat"], "Snapshot", "Snapshot", True,
+    "**đo 2026-08-15** — đã dump đủ 193 khoá `getScreenerItems`: Screener chỉ có tỷ lệ `freeFloatRate`, "
+    "KHÔNG có trường khối lượng free float nào; BVSC `datafeed/instruments` (62 khoá) cũng không có. "
+    "Snapshot là nguồn duy nhất (BID 436.803.912 · FPT 1.457.177.458 · VNM 835.982.178) ⇒ **lấy**",
+    names={"freeFloat": "Khối lượng tự do chuyển nhượng"}, block="Sở hữu chi tiết")
+
+# ───────────────────────── Snapshot — CAN KIEM API ─────────────────────────
 add(["organCode"], "Snapshot", None, None,
     "khoá định danh, không phải chỉ tiêu — không nằm trong 16 trường độc quyền được liệt kê; "
-    "khoá nối hiện lấy từ bảng `organization`",
+    "khoá nối hiện lấy từ bảng `organization`. **Đo 2026-08-15**: có mặt trong `summary` của Snapshot và "
+    "trong CẢ NĂM khối của `getScreenerItems`, nên không thiếu nguồn — nhưng đây là quyết định lúc cài ETL "
+    "(lưu lại khoá hay nối sang bảng `organization`), không phải câu hỏi số đo trả lời được",
     names={"organCode": "Mã doanh nghiệp"}, status="cần kiểm API", block="Định danh")
-add(["outstandingShare"], "Snapshot", None, None,
-    "không nằm trong 16 trường độc quyền; BVSC có `ListedShare`/`TotalListingQtty` nhưng tài liệu nguồn "
-    "không nói hai bên bằng nhau",
-    names={"outstandingShare": "Số CP đang lưu hành"}, status="cần kiểm API", block="Sở hữu chi tiết")
-add(["freeFloat"], "Snapshot", None, None,
-    "không nằm trong 16 trường độc quyền; Screener chỉ có tỷ lệ `freefloatrate`, không có khối lượng",
-    names={"freeFloat": "Khối lượng tự do chuyển nhượng"}, status="cần kiểm API", block="Sở hữu chi tiết")
 add(["rtd53"], "Snapshot", None, None,
     "mã mang trạng thái chưa giải mã; cũng có mặt trong khối `financial` của Screener nên nếu quyết định "
-    "lưu thì nguồn chuẩn là Screener",
+    "lưu thì nguồn chuẩn là Screener. **Đo 2026-08-15**: hai bên trả cùng một số ở FPT và VNM "
+    "(5426,73780245 · 4702,49259309) nên xác nhận là cùng chỉ tiêu; riêng BID thì Snapshot trả `0.0` còn "
+    "Screener trả `null`. Vẫn chưa có tên nên chưa xếp được lấy hay bỏ",
     status="cần kiểm API", block="Chưa giải mã")
 
 # ───────────────────────── xuat file ─────────────────────────
@@ -300,6 +335,15 @@ scr_keep, scr_drop, scr_chk = n("Screener", True), n("Screener", False), n("Scre
 sn_keep, sn_drop, sn_chk = n("Snapshot", True), n("Snapshot", False), n("Snapshot", None)
 bv_keep = n("BVSC", True)
 
+# Dong "bo CO DIEU KIEN" cua Snapshot: da xep `bo` nhung van mang trang thai `can kiem API`.
+# Truoc 2026-08-15 co 2 dong nhu vay (`freeFloatRate`, `foreignerPercentage`); so do da go
+# dieu kien nen nay bang 0. Suy tu ROWS chu khong viet so cung — them dong moi thi phai
+# viet lai van ban §5 va §8, assert nay bat truong hop do.
+sn_cond_drop = n("Snapshot", False, "cần kiểm API")
+assert sn_cond_drop == 0, (
+    "Co %d dong Snapshot 'bo co dieu kien' — van ban §5.2/§5.3/§8 dang viet nhu the khong con dong nao. "
+    "Cap nhat van ban truoc khi chay lai." % sn_cond_drop)
+
 # doi soat theo nhom BO cua Screener (so cua quyet dinh 2026-08-14 vs so liet ke duoc)
 SCR_DROP_GROUPS = [
     ("Trùng BVSC (giá, KL, sổ lệnh, khối ngoại, thoả thuận)", 31, "Trùng BVSC"),
@@ -313,6 +357,9 @@ SCR_DROP_GROUPS = [
     ("Khối lượng bình quân 5/10/20 phiên, 3 tháng", 4, "KL bình quân"),
     ("Sức mạnh tương đối", 2, "Sức mạnh tương đối"),
     ("Trùng MoneyFlow", 2, "Trùng MoneyFlow"),
+    # Nhom nay khong co trong quyet dinh 2026-08-14 — chot bang so do 2026-08-15, nen cot
+    # "Da chot" de trong thay vi bia mot con so.
+    ("Giá trị GD bình quân 5/10/20 phiên, 3 tháng — *chốt bằng số đo 2026-08-15*", None, "GTGD bình quân"),
 ]
 
 
@@ -332,15 +379,20 @@ SCR_KEEP_GROUPS = [
      len([r for r in ROWS if r["source"] == "Screener" and r["keep"] and
           r["block"] in ("Định giá", "Cổ tức", "Đòn bẩy, thanh toán", "Tăng trưởng", "Sinh lời")])),
     ("`rtd19` Beta", 1, n("Screener", True) and len([r for r in ROWS if r["code"] == "rtd19"])),
-    ("`corpownership` + `organizationownership`", 2,
-     len([r for r in ROWS if r["source"] == "Screener" and r["keep"] and r["block"] == "Sở hữu"])),
+    ("`corpOwnership` + `organizationOwnership`", 2,
+     len([r for r in ROWS if r["source"] == "Screener" and r["keep"]
+          and r["code"] in ("corpOwnership", "organizationOwnership")])),
     ("Khối TTM/Y trọn cụm", 13,
      len([r for r in ROWS if r["source"] == "Screener" and r["block"] == "TTM/Y"])),
     ("Phần còn lại của 80 trường — không nguồn nào nêu đích danh", 9, 0),
+    ("`freeFloatRate` + `foreignerPercentage` — *chốt bằng số đo 2026-08-15*", None,
+     len([r for r in ROWS if r["source"] == "Screener" and r["keep"]
+          and r["code"] in ("freeFloatRate", "foreignerPercentage")])),
 ]
 
 SN_GROUPS = [
-    ("Giữ — 16 trường độc quyền", 16, sn_keep),
+    ("Giữ — 16 trường độc quyền", 16, sn_keep - 2),
+    ("Giữ thêm — `outstandingShare` + `freeFloat`, *chốt bằng số đo 2026-08-15*", None, 2),
     ("Bỏ — trùng Screener", 18,
      len([r for r in ROWS if r["source"] == "Snapshot" and r["block"] == "Trùng Screener"])),
     ("Bỏ — trùng BCTC đầy đủ", 15,
@@ -351,7 +403,13 @@ SN_GROUPS = [
 
 
 def lech(a, b):
+    if a is None:
+        return "mới đo 2026-08-15"
     return "khớp" if a == b else ("thiếu %d" % (a - b) if a > b else "dư %d" % (b - a))
+
+
+def cnt_txt(a):
+    return "—" if a is None else str(a)
 
 
 def group_tables(source, keep=..., status=...):
@@ -370,16 +428,26 @@ def group_tables(source, keep=..., status=...):
 
 md = """# Chọn trường cho ETL thị trường — bảng tường minh theo từng mã
 
-**Ngày:** 2026-08-14 · **Trạng thái:** ✅ đã chốt · **Trải từ quyết định chọn nguồn ngày 2026-08-14**
+**Ngày:** 2026-08-14 · **Đo lại và chốt thêm:** 2026-08-15 · **Trạng thái:** ✅ đã chốt ·
+**Trải từ quyết định chọn nguồn ngày 2026-08-14**
 
 **File sinh tự động** từ [`gen_field_selection.py`](gen_field_selection.py) — sửa qua script rồi chạy lại, không sửa tay. Bản [`market-field-selection.json`](market-field-selection.json) sinh cùng nguồn.
 
 Tài liệu này trả lời đúng một câu hỏi của người viết ETL: **trường này lấy hay bỏ, nguồn chuẩn là ai, vì sao.**
 Lý do ghi thẳng tại từng dòng — không phải tra chỗ khác, không phải diễn giải lại quyết định của ai.
 
-Số đo nền: Screener `getScreenerItems` trả **193 trường** quan sát được trên VN30 ngày 2026-08-14 *(tài liệu
-endpoint ghi 223 — chênh 30 trường chỉ xuất hiện ở một số loại hình doanh nghiệp)*, `GetSnapshot` **54**,
-BVSC `datafeed/instruments` **62** *(tài liệu endpoint mô tả 50)*.
+Số đo nền — **đo lại toàn bộ ngày 2026-08-15**, khớp con số cũ và giải luôn hai chỗ vênh:
+
+| Nguồn | Số trường | Ghi chú số đo 2026-08-15 |
+|---|---:|---|
+| Screener `getScreenerItems` | **193** | 193 là số khoá **phân biệt**. Con số 223 của tài liệu endpoint là **tổng kích thước 5 khối** (43+129+12+21+18) — 27 khoá nằm ở từ hai khối trở lên, dư đúng 30 lần. Cả hai đều đúng, không mâu thuẫn. Đo trên `comGroupCode=ALL` và `VN30` đều ra 193 |
+| `GetSnapshot` (BID, ngân hàng) | **54** | `summary` 28 + `quarterly[0]`/`yearly[0]` 27, hợp lại 54 khoá phân biệt |
+| BVSC `datafeed/instruments` | **62** | Đếm thật trên BID/FPT/VNM: 62/62/62 |
+
+Chốt luôn ba điểm vênh cũ: **223 vs 193** không phải do loại hình doanh nghiệp mà do khoá lặp giữa các khối ·
+BVSC **62 vs 50** thì 62 đúng *(chính ví dụ response trong tài liệu endpoint cũng có đủ 62 khoá — con số 50 ở
+tiêu đề là đếm sai của tài liệu, đã sửa)* · mã trường Screener **không viết thường toàn bộ** mà chỉ hạ chữ cái
+đầu: `ForeignerRoom` → `foreignerRoom`, `Rtq12` → `rtq12`.
 
 Nguồn dẫn của từng bảng: [10 — Từ điển mã trường & Bộ sàng lọc](../10-sources/market/10-fiin-dictionary.md) ·
 [Phụ lục A — mã trường](../10-sources/market/appendix-A-field-codes.md) ·
@@ -421,7 +489,7 @@ Hai đánh đổi đã chấp nhận, ghi ở đây để không ai hoảng khi 
 
 | Cột | Nghĩa |
 |---|---|
-| **Mã** | Tên trường đúng như endpoint trả về. Screener trả chữ thường (`rtq12`) còn `GetScreenerParameters` trả hoa chữ đầu (`Rtq12`) — cùng một chỉ tiêu |
+| **Mã** | Tên trường **đúng như endpoint trả về**, đã đối chiếu với 193 khoá thật ngày 2026-08-15. `GetScreenerParameters` trả hoa chữ đầu (`Rtq12`, `ForeignerRoom`) còn `getScreenerItems` **chỉ hạ chữ cái đầu**, giữ nguyên phần sau: `rtq12`, `foreignerRoom`, `freeFloatRate`, `averageValue1Week`, `overSma50`, `isa20TTM`. Chuẩn hoá bằng cách viết thường TOÀN BỘ là sai — tra khoá sẽ trượt |
 | **Tên** | Tên tiếng Việt. `—` nghĩa là **không nguồn nào đặt tên cho mã này, và tôi cũng không tự đặt** — mã mang trạng thái chưa giải mã trong từ điển, hoặc không có trong từ điển, mà mô tả nhóm ở tài liệu nguồn cũng không đủ để đặt một nhãn. Phân biệt với `tự đặt` ở dòng dưới: đó cũng là mã không nguồn nào đặt tên, nhưng có nhãn do tôi đặt theo mô tả nhóm |
 | **Nguồn tên** | Tên đó ở đâu ra. `từ điển` = `ten_vi` trong từ điển 729 mã · `tài liệu endpoint` = chép từ bảng mô tả trường của tài liệu endpoint · `suy theo luật kỳ` = mã TTM/Y, suy từ mã gốc theo luật *cùng chữ số + cùng chữ thứ ba = cùng chỉ tiêu, khác kỳ* · **`tự đặt` = tôi đặt theo mô tả NHÓM trong tài liệu nguồn, KHÔNG phải tên chính thức của FiinGroup** |
 | **Lấy/Bỏ** | `lấy` = ETL ghi vào kho · `bỏ` = không ghi · `chưa rõ` = chưa phân loại được |
@@ -463,16 +531,20 @@ Chỉ báo kỹ thuật **tự tính từ chuỗi giá này**, không lấy củ
 
 {scr_chk}
 
-🔴 **Hai mã phải chốt cùng lúc với Snapshot: `freefloatrate` và `foreignerpercentage`.** Ở §5.2, Snapshot bỏ
-hai trường cùng nghĩa (`freeFloatRate`, `foreignerPercentage`) với nguồn chuẩn ghi là *Screener (chờ chốt)*.
-Nếu đọc rời từng bảng rồi cài luôn, kết quả là **không nguồn nào lưu hai chỉ tiêu này** — sở hữu nước ngoài
-theo tỷ lệ và free float biến mất khỏi kho. Thứ tự đúng: chốt phía Screener trước (một lời gọi thật là đủ),
-rồi mới cài phần Snapshot theo kết quả đó. Nếu Screener hoá ra cũng bỏ, phải mở lại quyết định — không có
-nguồn thứ ba cho hai chỉ tiêu này.
+✅ **`freeFloatRate` và `foreignerPercentage` đã chốt bằng số đo 2026-08-15 — không còn treo.** Trước đây hai
+mã này phải chốt cùng lúc với §5.2 (Snapshot bỏ chúng với nguồn chuẩn *dự kiến* là Screener), và rủi ro là
+**không nguồn nào lưu**. Lời gọi thật đã trả lời: cả hai có mặt trong khối `stockScreenerItem`, giá trị trùng
+khít Snapshot, nên **Screener giữ · Snapshot bỏ** — xem §4.1 và §5.2. Không còn thứ tự cài đặt nào phải chờ.
+
+🔴 **Bẫy tên ngược ở `foreignerRoom`** *(đo 2026-08-15)*. Screener `foreignerRoom` là **room CÒN LẠI**, cùng
+nghĩa với `foreignRemain` của BVSC — **không phải** `foreignRoom` (tổng room) dù tên gần giống hệt. Số đo:
+BID `foreignerRoom` = 906.709.318 · BVSC `foreignRemain` = 906.101.718 · BVSC `foreignRoom` = 2.184.019.563.
+Tổng room của Screener nằm ở khoá khác, trong khối `priceInfo`: `foreignTotalRoom` (BID 2.184.019.563, bằng
+đúng `foreignRoom` của BVSC). Ánh xạ nhầm hai khoá này là sai gấp ~2,4 lần mà không có gì báo.
 
 ## 5 · Snapshot `GetSnapshot` / `GetSnapshotNoneBank`
 
-{sn_keep_n} lấy · {sn_drop_n} bỏ *(trong đó 2 dòng bỏ CÓ ĐIỀU KIỆN, mang trạng thái `cần kiểm API` — xem cuối §5.2)* · {sn_chk_n} chưa rõ — trên {sn_total} trường liệt kê được
+{sn_keep_n} lấy · {sn_drop_n} bỏ · {sn_chk_n} chưa rõ — trên {sn_total} trường liệt kê được
 (28 trường khối `summary` + các mã được nêu đích danh trong khối `quarterly`/`yearly`).
 
 🔴 Chọn sai endpoint **không báo lỗi** mà làm gần một nửa số trường thành `null`: `comTypeCode = NH` dùng
@@ -491,10 +563,10 @@ có tên chính thức.
 
 {sn_drop}
 
-🔴 Hai dòng `freeFloatRate` và `foreignerPercentage` mang nguồn chuẩn **dự kiến**, chưa chốt — đọc ô cảnh
-báo cuối §4.3 trước khi cài. Bỏ ở đây mà phía Screener cũng bỏ thì hai chỉ tiêu này không còn nguồn nào.
+✅ Hai dòng `freeFloatRate` và `foreignerPercentage` **đã hết "chờ chốt"** — số đo 2026-08-15 xác nhận
+Screener có và giữ cả hai (§4.1), nên bỏ ở đây là bỏ đúng. Cài được ngay, không phải chờ gì nữa.
 
-### 5.3 Cần kiểm API — {sn_chk_n} trường chưa phân loại (2 trường bỏ có điều kiện ở §5.2 cùng trạng thái)
+### 5.3 Cần kiểm API — {sn_chk_n} trường chưa phân loại
 
 {sn_chk}
 
@@ -552,8 +624,10 @@ Phép cộng khép kín: thiếu {scr_keep_lech_n} trường ở nhóm giữ + t
 | **Tổng** | **54** | **{sn_total}** | **{sn_total_lech}** |
 
 Phép cộng khép kín: thiếu {sn_gap_scr} trường ở nhóm trùng Screener + thiếu {sn_gap_bvsc} ở nhóm trùng BVSC
-= {sn_gap_total} trường chưa phân loại, bằng đúng {sn_chk_n} dòng `cần kiểm API` + {sn_missing} trường chưa
-liệt kê được.
+= {sn_gap_total} trường chưa phân loại theo các nhóm của quyết định 2026-08-14; trừ {sn_new_keep} trường đã
+chốt **lấy** bằng số đo 2026-08-15 *(`outstandingShare`, `freeFloat` — trước đây nằm trong chính khoảng
+trống này)* còn {sn_gap_left}, bằng đúng {sn_chk_n} dòng `cần kiểm API` + {sn_missing} trường chưa liệt kê
+được.
 
 **Khớp tuyệt đối ở hai nhóm quan trọng nhất:** 16/16 trường giữ và 15/15 trường trùng BCTC — đúng từng mã.
 Đây là bằng chứng mạnh rằng phân rã 54 trường khi chốt nguồn dựa trên đúng hai khối `summary` và
@@ -565,82 +639,96 @@ liệt kê được.
    83 tiêu chí của `GetScreenerParameters`, các mã được nêu đích danh khi chốt nguồn, và vài mã trong mô tả
    5 khối response (`priceInfo` 43 · `stockScreenerItem` 129 · `performance` 12 · `financial` 21 ·
    `technical` 18). Phần lớn 129 trường của `stockScreenerItem` không có mã nào được ghi ra.
-2. **Nhóm ATO/ATC (4 trường) không liệt kê được dòng nào** — quyết định nêu nhóm nhưng không nêu mã, và
-   không tài liệu endpoint nào ghi tên trường ATO/ATC của Screener.
-3. **Snapshot thiếu 2 trường trên 54.** Tài liệu endpoint mô tả `summary` 28 trường và một ví dụ khối
-   `quarterly` **của bản ngân hàng**; bản phi ngân hàng có bộ chỉ tiêu khác. Số 54 là số đo, không phải danh
-   sách được viết ra ở đâu.
+2. **Nhóm ATO/ATC (4 trường) vẫn không liệt kê được dòng nào** — quyết định nêu nhóm nhưng không nêu mã.
+   Số đo 2026-08-15 tìm được **hai** khoá ATO thật trong khối `priceInfo`: `atoPrice` và `atoVolume` (BID
+   38.700 · 26.700), **không có khoá ATC nào** trong 193 khoá. Nghĩa là nhóm "ATO/ATC 4 trường" của quyết
+   định 2026-08-14 không có đủ 4 mã tương ứng trong response. Chưa thêm dòng vào bảng vì chưa biết quyết
+   định định đếm 4 trường nào; ghi lại đây để lần sau khỏi đo lại.
+3. **Snapshot thiếu {sn_missing} trường trên 54.** Tài liệu endpoint mô tả `summary` 28 trường và một ví dụ
+   khối `quarterly` **của bản ngân hàng**; bản phi ngân hàng có bộ chỉ tiêu khác. Số 54 là số đo, không phải
+   danh sách được viết ra ở đâu. ✅ Đo 2026-08-15 xác nhận đúng như vậy: BID (`GetSnapshot`, ngân hàng) ra
+   **54** khoá, còn FPT và VNM (`GetSnapshotNoneBank`) ra **56** — `summary` 28 giống nhau, khác nhau ở khối
+   `quarterly`/`yearly` (27 của ngân hàng vs 28 của phi ngân hàng).
 
-### 7.6 Một giả định đã dùng, ghi rõ để ai cũng kiểm được
+### 7.6 Giả định đã dùng — **đã kiểm bằng số đo 2026-08-15**
 
 83 tiêu chí của `GetScreenerParameters` được coi là **đều có mặt trong response `getScreenerItems`**. Tài
-liệu nguồn không khẳng định điều đó — nó chỉ nói endpoint tham số là "bảng giải mã mã trường". Nếu một số
-tiêu chí chỉ dùng để lọc mà không trả về, tổng đối soát §7.3 đổi theo. Một lời gọi thật là đủ để chốt.
+liệu nguồn không khẳng định điều đó. Đã đối chiếu thật hai danh sách ngày 2026-08-15: **83/83 tiêu chí đều
+có mặt** trong 193 khoá response, sau khi hạ chữ cái đầu. Giả định đúng, tổng đối soát §7.3 không phải đổi.
 
-### 7.7 Hai điểm về tài liệu nguồn, đã truy nhưng chưa xử lý được
+### 7.7 Hai điểm về tài liệu nguồn — **đã xử lý bằng số đo 2026-08-15**
 
 - BVSC `datafeed/instruments`: quyết định chọn nguồn ghi **62 trường**, tài liệu endpoint ghi **50 trường**.
-  Không ảnh hưởng bảng §3 (34 trường lấy đều có trong cả hai bản mô tả), nhưng số 62 chưa truy được nguồn.
+  ✅ **Đếm thật ngày 2026-08-15 trên BID/FPT/VNM: 62/62/62.** Số 62 đúng. Con số 50 là lỗi đếm của tài liệu
+  endpoint — chính ví dụ response ngay dưới tiêu đề đó liệt kê đủ 62 khoá, không thiếu khoá nào so với số
+  đo. Tài liệu endpoint đã sửa tiêu đề.
 - `rtd39` và `rtd54` được tài liệu endpoint nêu là trường của khối `financial` của Screener, nhưng **không
   có trong từ điển 729 mã**. Đây **không** phải mâu thuẫn với tuyên bố phủ 100% của từ điển: các tuyên bố
   100% đều có phạm vi rõ ràng và **không phạm vi nào bao Screener** — 100% đo trên `GetBalanceSheet`,
   `GetIncomeStatement`, `GetCashFlow`, tức họ mã báo cáo tài chính. Với họ tỷ số thì từ điển tự ghi ngược
   lại: 173 mã nhưng chỉ **83 mã** truy được qua `GetScreenerParameters`, phần còn lại lấy từ bundle. Hai mã
-  này rơi đúng vào vùng 90 mã không có nguồn API xác nhận. Việc cần làm không phải là sửa chỗ nào sai, mà là
-  **đo khối `financial` một lần** để biết chúng có thật và là chỉ tiêu gì — đã đưa vào danh sách cần kiểm API.
+  này rơi đúng vào vùng 90 mã không có nguồn API xác nhận. ✅ **Đã đo khối `financial` ngày 2026-08-15: cả
+  hai có thật và có giá trị số** (`rtd39` BID 3,42582495 · FPT 15,93348656; `rtd54` FPT 12,5858301, BID
+  `null`). Vế *có thật không* đã xong. Vế *là chỉ tiêu gì* thì số đo không trả lời được, nên hai mã vẫn nằm
+  ở §8 — nhưng nay là chờ **tên**, không còn là chờ **bằng chứng tồn tại**.
+
+Số đo 2026-08-15 còn dựng được đủ 21 khoá của khối `financial`, trước đây tài liệu chỉ nêu một phần:
+`organCode` `rtd7` `rtd11` `rtd14` `rtd19` `rtd21` `rtd25` `rtd39` `rtd51` `rtd53` `rtd54` `rtq12` `rtq81`
+`rtq27` `rtq83` `isa3` `isa5` `isa20` `isa22` `cfa18` `fryq30`.
 
 ## 8 · Danh sách cần kiểm API — {chk_total} trường
 
-Mỗi dòng ghi phép kiểm nào sẽ kết luận được. Tất cả đều là **một lời gọi thật**, không cần đo lại toàn bộ.
-Gồm {chk_unknown} dòng chưa phân loại được lấy hay bỏ, cộng 2 dòng Snapshot đã xếp *bỏ* nhưng **bỏ có điều
-kiện** (`freeFloatRate`, `foreignerPercentage` — bỏ đúng chỉ khi Screener giữ).
+Danh sách này **đã rút từ 16 xuống {chk_total} sau đợt đo 2026-08-15**. Mười dòng được chốt bằng số đo thật;
+{chk_total} dòng còn lại thì số đo đã dùng hết công dụng — chúng chờ một cái **tên chỉ tiêu** hoặc một
+**quyết định lúc cài ETL**, không phải chờ một lời gọi API nào nữa.
 
 | Mã | Nguồn | Vì sao chưa chốt được | Phép kiểm sẽ kết luận |
 |---|---|---|---|
 {chk_rows}
 
-Ngoài ra, hai phép kiểm gỡ được phần lớn khoảng trống §7.5:
+Hai phép kiểm dự kiến gỡ khoảng trống §7.5 **đã chạy ngày 2026-08-15**, kết quả:
 
-1. **Gọi `getScreenerItems` một tiêu chí duy nhất, dump đủ khoá của 5 khối response.** Cho ra danh sách 193
-   mã thật → phân loại được {scr_missing} mã còn thiếu, chốt luôn giả định §7.6 và tìm ra 4 trường ATO/ATC.
-2. **Gọi `GetSnapshot` và `GetSnapshotNoneBank` cho một mã mỗi loại hình, dump khoá của cả ba khối.** Cho ra
-   đủ 54 trường và bộ chỉ tiêu khác nhau giữa hai bản.
+1. **`getScreenerItems` một tiêu chí duy nhất, dump đủ khoá của 5 khối** *(`ClosePrice`, `comGroupCode` =
+   `ALL` rồi `VN30`, `pageSize` 30)*. Ra đúng **193 khoá phân biệt / 223 lượt xuất hiện**, giống nhau ở cả
+   hai `comGroupCode`. Chốt được giả định §7.6 (83/83 tiêu chí đều có trong response), giải được cách chuẩn
+   hoá hoa/thường, và cho thấy nhóm ATO chỉ có 2 khoá (`atoPrice`, `atoVolume`) chứ không phải 4 (§7.5).
+   Vẫn còn **{scr_missing} mã chưa liệt kê được** — phần lớn nằm trong 129 khoá của `stockScreenerItem` mà
+   không tài liệu nguồn nào ghi mã ra; số đo cho biết chúng TÊN gì nhưng không cho biết chúng LÀ gì, nên
+   chưa xếp lấy/bỏ được.
+2. **`GetSnapshot` (BID) và `GetSnapshotNoneBank` (FPT, VNM), dump khoá cả ba khối.** Bản ngân hàng ra đúng
+   **54** khoá (`summary` 28 + `quarterly`/`yearly` 27); bản phi ngân hàng ra **56** (`summary` 28 +
+   `quarterly`/`yearly` 28) — tức hai bản thật sự khác bộ chỉ tiêu, đúng như §7.5 điểm 3 dự đoán. Con số 54
+   dùng làm mẫu số trong tài liệu này là của **bản ngân hàng**; với phi ngân hàng mẫu số là 56.
 
 ## 9 · Nhật ký thay đổi
 
 | Ngày | Thay đổi |
 |---|---|
-| 2026-08-14 | Bản đầu — trải quyết định chọn nguồn ngày 2026-08-14 ra từng mã trường. {total_rows} dòng: {keep_total} lấy · {drop_total} bỏ · {chk_unknown} chưa rõ. {chk_total} dòng mang trạng thái `cần kiểm API` (gồm 2 dòng đã xếp *bỏ* nhưng bỏ có điều kiện) |
+| 2026-08-14 | Bản đầu — trải quyết định chọn nguồn ngày 2026-08-14 ra từng mã trường. 213 dòng: 57+34+16 lấy · 92 bỏ · 14 chưa rõ. 16 dòng mang trạng thái `cần kiểm API` (gồm 2 dòng đã xếp *bỏ* nhưng bỏ có điều kiện) |
+| 2026-08-15 | **Đo thật, chốt 10/16 dòng `cần kiểm API`.** Gọi `GetScreenerParameters` (83 tiêu chí), `GetScreenerItems` 1 tiêu chí trên `ALL` và `VN30` (193 khoá), BVSC `/quotes?symbols=ALL` (2.534 bản ghi) và `/datafeed/instruments` (62 khoá), `GetSnapshot`/`GetSnapshotNoneBank` (54 / 56 khoá). Kết quả: `foreignerPercentage` + `freeFloatRate` → **lấy** ở Screener nên Snapshot bỏ hết điều kiện · `averageValue*` 4 mã → **bỏ** · `outstandingShare` + `freeFloat` → **lấy** ở Snapshot *(FPT lệch `ListedShare` 10.819.301 CP)* · `rtd39`/`rtd54` xác nhận có thật. Sửa **mã trường về đúng hoa/thường thật** — `getScreenerItems` chỉ hạ chữ cái đầu, viết thường toàn bộ sẽ trượt 31/83 khoá. Giải ba chỗ vênh: 223 = tổng 5 khối vs 193 khoá phân biệt · BVSC 62 đúng, 50 sai · `foreignerRoom` của Screener = `foreignRemain` của BVSC chứ không phải `foreignRoom`. Còn {chk_total} dòng `cần kiểm API`: {total_rows} dòng · {keep_total} lấy · {drop_total} bỏ · {chk_unknown} chưa rõ |
 """
 
 chk_rows = []
 for r in [x for x in ROWS if x["status"] == "cần kiểm API"]:
     if r["code"] in ("rtd39", "rtd54"):
-        test = ("dump khoá khối `financial` của một lời gọi thật: mã có thật thì bổ sung vào từ điển, "
-                "không có thì sửa mô tả endpoint")
+        test = ("**số đo đã dùng hết công dụng** — dump khối `financial` ngày 2026-08-15 xác nhận trường có "
+                "thật, nên việc còn lại là bổ sung vào từ điển 729 mã một cái TÊN. Không lời gọi nào cho ra "
+                "tên; chỉ giải được khi FiinGroup trả lời hoặc bundle JS mới có")
     elif r["code"] in ("rtd53", "rtq81"):
-        test = ("chưa có phép kiểm nào kết luận được — 5 cách đã thử đều không ra tên; chỉ giải được khi "
-                "FiinGroup trả lời hoặc bundle mới có tên")
-    elif r["code"] == "organCode":
+        test = ("chưa có phép kiểm nào kết luận được — 5 cách đã thử đều không ra tên, và số đo 2026-08-15 "
+                "chỉ thêm được dải giá trị chứ không thêm tên; chỉ giải được khi FiinGroup trả lời hoặc "
+                "bundle mới có tên")
+    else:  # organCode
         test = "quyết định lúc cài ETL: khoá nối lấy ở bảng `organization` hay lưu lại ở bảng Snapshot"
-    elif r["code"] in ("freeFloatRate", "foreignerPercentage"):
-        test = ("chốt phía Screener trước (dump 193 khoá) — Screener giữ thì bỏ hẳn ở đây, Screener bỏ thì "
-                "phải mở lại quyết định vì không còn nguồn nào")
-    elif r["code"] in ("outstandingShare", "freeFloat"):
-        test = ("dump đủ 54 khoá `GetSnapshot` và 193 khoá Screener, đối chiếu giá trị với `ListedShare` "
-                "của BVSC — bằng nhau thì bỏ, khác nhau thì lấy")
-    else:
-        test = ("dump đủ 193 khoá `getScreenerItems` để xác nhận trường có thật, rồi chốt: thuộc 9 trường "
-                "giữ chưa nêu tên hay thuộc một nhóm bỏ")
     chk_rows.append("| `%s` | %s | %s | %s |" % (r["code"], r["source"], esc(r["reason"]), test))
 
 scr_drop_rows = "\n".join(
-    "| %s | %d | %d | %s |" % (name, cnt, count_scr_drop(tag), lech(cnt, count_scr_drop(tag)))
+    "| %s | %s | %d | %s |" % (name, cnt_txt(cnt), count_scr_drop(tag), lech(cnt, count_scr_drop(tag)))
     for name, cnt, tag in SCR_DROP_GROUPS)
 scr_keep_rows = "\n".join(
-    "| %s | %d | %d | %s |" % (name, cnt, got, lech(cnt, got)) for name, cnt, got in SCR_KEEP_GROUPS)
+    "| %s | %s | %d | %s |" % (name, cnt_txt(cnt), got, lech(cnt, got)) for name, cnt, got in SCR_KEEP_GROUPS)
 sn_rows = "\n".join(
-    ["| %s | %d | %d | %s |" % (name, cnt, got, lech(cnt, got)) for name, cnt, got in SN_GROUPS]
+    ["| %s | %s | %d | %s |" % (name, cnt_txt(cnt), got, lech(cnt, got)) for name, cnt, got in SN_GROUPS]
     # 4 dong `can kiem API` nam ngoai bon nhom tren: quyet dinh chua xep chung vao
     # nhom nao. Ghi thanh mot dong rieng de cot "Liet ke duoc" cong dung bang Tong.
     + ["| Ngoài nhóm — `cần kiểm API`, chưa xếp được vào nhóm nào | — | %d | ngoài nhóm |" % sn_chk])
@@ -662,8 +750,10 @@ md = md.format(
     scr_gap_total=(113 - scr_drop) + (80 - scr_keep),
     scr_chot=scr_keep + scr_drop, scr_missing=193 - scr_total,
     sn_total_lech=lech(54, sn_total),
-    sn_gap_scr=18 - SN_GROUPS[1][2], sn_gap_bvsc=5 - SN_GROUPS[3][2],
-    sn_gap_total=(18 - SN_GROUPS[1][2]) + (5 - SN_GROUPS[3][2]), sn_missing=54 - sn_total,
+    sn_gap_scr=18 - SN_GROUPS[2][2], sn_gap_bvsc=5 - SN_GROUPS[4][2],
+    sn_gap_total=(18 - SN_GROUPS[2][2]) + (5 - SN_GROUPS[4][2]), sn_missing=54 - sn_total,
+    sn_new_keep=SN_GROUPS[1][2],
+    sn_gap_left=(18 - SN_GROUPS[2][2]) + (5 - SN_GROUPS[4][2]) - SN_GROUPS[1][2],
     chk_rows="\n".join(chk_rows), chk_total=len([r for r in ROWS if r["status"] == "cần kiểm API"]), chk_unknown=scr_chk + sn_chk,
     n_dict=len([r for r in ROWS if r["name_src"] == "từ điển"]),
     n_doc=len([r for r in ROWS if r["name_src"] == "tài liệu endpoint"]),
