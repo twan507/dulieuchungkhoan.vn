@@ -1,0 +1,1919 @@
+[
+  {
+    "code": "closePrice",
+    "name_vi": "Giá khớp gần nhất",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "giá — nguồn realtime khớp trực tiếp với sàn, ưu tiên tuyệt đối cho giá và mọi thứ dẫn xuất từ giá",
+    "status": "chốt"
+  },
+  {
+    "code": "ceiling",
+    "name_vi": "Trần",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "giá — nguồn realtime khớp trực tiếp với sàn, ưu tiên tuyệt đối cho giá và mọi thứ dẫn xuất từ giá",
+    "status": "chốt"
+  },
+  {
+    "code": "floor",
+    "name_vi": "Sàn",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "giá — nguồn realtime khớp trực tiếp với sàn, ưu tiên tuyệt đối cho giá và mọi thứ dẫn xuất từ giá",
+    "status": "chốt"
+  },
+  {
+    "code": "reference",
+    "name_vi": "Tham chiếu",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "giá — nguồn realtime khớp trực tiếp với sàn, ưu tiên tuyệt đối cho giá và mọi thứ dẫn xuất từ giá",
+    "status": "chốt"
+  },
+  {
+    "code": "open",
+    "name_vi": "Mở cửa",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "giá — nguồn realtime khớp trực tiếp với sàn, ưu tiên tuyệt đối cho giá và mọi thứ dẫn xuất từ giá",
+    "status": "chốt"
+  },
+  {
+    "code": "high",
+    "name_vi": "Cao nhất",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "giá — nguồn realtime khớp trực tiếp với sàn, ưu tiên tuyệt đối cho giá và mọi thứ dẫn xuất từ giá",
+    "status": "chốt"
+  },
+  {
+    "code": "low",
+    "name_vi": "Thấp nhất",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "giá — nguồn realtime khớp trực tiếp với sàn, ưu tiên tuyệt đối cho giá và mọi thứ dẫn xuất từ giá",
+    "status": "chốt"
+  },
+  {
+    "code": "averagePrice",
+    "name_vi": "Giá bình quân phiên",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "giá — nguồn realtime khớp trực tiếp với sàn, ưu tiên tuyệt đối cho giá và mọi thứ dẫn xuất từ giá",
+    "status": "chốt"
+  },
+  {
+    "code": "PRIOR_PRICE",
+    "name_vi": null,
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "giá — nguồn realtime khớp trực tiếp với sàn, ưu tiên tuyệt đối cho giá và mọi thứ dẫn xuất từ giá",
+    "status": "chốt"
+  },
+  {
+    "code": "totalTrading",
+    "name_vi": "Tổng khối lượng khớp lệnh",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "khối lượng và giá trị khớp lệnh — lấy cùng nguồn với giá để không lệch chuỗi",
+    "status": "chốt"
+  },
+  {
+    "code": "totalTradingValue",
+    "name_vi": "Tổng giá trị khớp lệnh",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "khối lượng và giá trị khớp lệnh — lấy cùng nguồn với giá để không lệch chuỗi",
+    "status": "chốt"
+  },
+  {
+    "code": "closeVol",
+    "name_vi": "Khối lượng của lệnh khớp gần nhất",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "khối lượng và giá trị khớp lệnh — lấy cùng nguồn với giá để không lệch chuỗi",
+    "status": "chốt"
+  },
+  {
+    "code": "bidPrice1",
+    "name_vi": "Giá dư mua bậc 1",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "sổ lệnh 3 bậc — chỉ có nghĩa ở nguồn realtime; BVSC cấp 3 bậc cho mọi sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "bidPrice2",
+    "name_vi": "Giá dư mua bậc 2",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "sổ lệnh 3 bậc — chỉ có nghĩa ở nguồn realtime; BVSC cấp 3 bậc cho mọi sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "bidPrice3",
+    "name_vi": "Giá dư mua bậc 3",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "sổ lệnh 3 bậc — chỉ có nghĩa ở nguồn realtime; BVSC cấp 3 bậc cho mọi sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "bidVol1",
+    "name_vi": "Khối lượng dư mua bậc 1",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "sổ lệnh 3 bậc — chỉ có nghĩa ở nguồn realtime; BVSC cấp 3 bậc cho mọi sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "bidVol2",
+    "name_vi": "Khối lượng dư mua bậc 2",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "sổ lệnh 3 bậc — chỉ có nghĩa ở nguồn realtime; BVSC cấp 3 bậc cho mọi sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "bidVol3",
+    "name_vi": "Khối lượng dư mua bậc 3",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "sổ lệnh 3 bậc — chỉ có nghĩa ở nguồn realtime; BVSC cấp 3 bậc cho mọi sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "offerPrice1",
+    "name_vi": "Giá dư bán bậc 1",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "sổ lệnh 3 bậc — chỉ có nghĩa ở nguồn realtime; BVSC cấp 3 bậc cho mọi sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "offerPrice2",
+    "name_vi": "Giá dư bán bậc 2",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "sổ lệnh 3 bậc — chỉ có nghĩa ở nguồn realtime; BVSC cấp 3 bậc cho mọi sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "offerPrice3",
+    "name_vi": "Giá dư bán bậc 3",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "sổ lệnh 3 bậc — chỉ có nghĩa ở nguồn realtime; BVSC cấp 3 bậc cho mọi sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "offerVol1",
+    "name_vi": "Khối lượng dư bán bậc 1",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "sổ lệnh 3 bậc — chỉ có nghĩa ở nguồn realtime; BVSC cấp 3 bậc cho mọi sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "offerVol2",
+    "name_vi": "Khối lượng dư bán bậc 2",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "sổ lệnh 3 bậc — chỉ có nghĩa ở nguồn realtime; BVSC cấp 3 bậc cho mọi sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "offerVol3",
+    "name_vi": "Khối lượng dư bán bậc 3",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "sổ lệnh 3 bậc — chỉ có nghĩa ở nguồn realtime; BVSC cấp 3 bậc cho mọi sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "TOTAL_BID_QTTY",
+    "name_vi": "Tổng dư mua",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "sổ lệnh 3 bậc — chỉ có nghĩa ở nguồn realtime; BVSC cấp 3 bậc cho mọi sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "TOTAL_OFFER_QTTY",
+    "name_vi": "Tổng dư bán",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "sổ lệnh 3 bậc — chỉ có nghĩa ở nguồn realtime; BVSC cấp 3 bậc cho mọi sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "foreignBuy",
+    "name_vi": "Khối ngoại mua trong phiên",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "khối ngoại trong phiên — nguồn realtime, khớp sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "foreignSell",
+    "name_vi": "Khối ngoại bán trong phiên",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "khối ngoại trong phiên — nguồn realtime, khớp sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "foreignRemain",
+    "name_vi": "Room còn lại",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "khối ngoại trong phiên — nguồn realtime, khớp sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "foreignRoom",
+    "name_vi": "Tổng room",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "khối ngoại trong phiên — nguồn realtime, khớp sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "PT_MATCH_QTTY",
+    "name_vi": "Khối lượng lệnh thoả thuận gần nhất",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "thoả thuận — nguồn realtime, khớp sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "PT_MATCH_PRICE",
+    "name_vi": "Giá lệnh thoả thuận gần nhất",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "thoả thuận — nguồn realtime, khớp sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "PT_TOTAL_TRADED_QTTY",
+    "name_vi": "Luỹ kế khối lượng thoả thuận trong phiên",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "thoả thuận — nguồn realtime, khớp sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "PT_TOTAL_TRADED_VALUE",
+    "name_vi": "Luỹ kế giá trị thoả thuận trong phiên",
+    "source": "BVSC",
+    "nguon_chuan": "BVSC",
+    "keep": true,
+    "reason": "thoả thuận — nguồn realtime, khớp sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd26",
+    "name_vi": "P/S (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd27",
+    "name_vi": "Giá - T.sản hữu hình (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd28",
+    "name_vi": "Giá - Dòng Tiền (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd40",
+    "name_vi": "Giá - Dòng Tiền Tự Do (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd36",
+    "name_vi": "Tỉ Suất Cổ Tức",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm cổ tức",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd43",
+    "name_vi": "Cổ Tức",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm cổ tức",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd51",
+    "name_vi": "Tỉ Lệ Chi Trả Cổ Tức",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm cổ tức",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd20avg",
+    "name_vi": "Tỉ Suất Cổ Tức T.Bình 3 Năm",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm cổ tức",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq4",
+    "name_vi": "Nợ dài hạn/ Vốn chủ sở hữu (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm đòn bẩy",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq6",
+    "name_vi": "Nợ phải trả/ Vốn chủ sở hữu (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm đòn bẩy",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq7",
+    "name_vi": "Nợ phải trả/ Tổng tài sản (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm đòn bẩy",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq77",
+    "name_vi": "Khả năng chi trả lãi vay (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm đòn bẩy",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq78",
+    "name_vi": "T.trưởng D.thu (YoY)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm tăng trưởng",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq79",
+    "name_vi": "T.trưởng LN gộp (YoY)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm tăng trưởng",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq83",
+    "name_vi": "Tăng Trưởng Lãi Thuần",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm tăng trưởng",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd52",
+    "name_vi": "T.trưởng EPS (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm tăng trưởng",
+    "status": "chốt"
+  },
+  {
+    "code": "ryq160",
+    "name_vi": "T.trưởng K.doanh 3 năm",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm tăng trưởng",
+    "status": "chốt"
+  },
+  {
+    "code": "ryq166",
+    "name_vi": "T.trưởng LN ròng 3 năm",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm tăng trưởng",
+    "status": "chốt"
+  },
+  {
+    "code": "ryq176",
+    "name_vi": "T.trưởng vốn CSH 3 năm",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm tăng trưởng",
+    "status": "chốt"
+  },
+  {
+    "code": "rqq23",
+    "name_vi": "ROIC (quý)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm chỉ tiêu theo quý",
+    "status": "chốt"
+  },
+  {
+    "code": "rqq25",
+    "name_vi": "Biên LN gộp (quý)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm chỉ tiêu theo quý",
+    "status": "chốt"
+  },
+  {
+    "code": "rqq27",
+    "name_vi": "Biên EBIT (quý)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm chỉ tiêu theo quý",
+    "status": "chốt"
+  },
+  {
+    "code": "rqq29",
+    "name_vi": "Biên LN ròng (quý)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm chỉ tiêu theo quý",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd11",
+    "name_vi": "Vốn hóa",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ; vốn hoá và EPS là mẫu số của chính các tỷ số FiinTrade nên phải lấy cùng bộ",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd21",
+    "name_vi": "P/E (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ; vốn hoá và EPS là mẫu số của chính các tỷ số FiinTrade nên phải lấy cùng bộ",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd25",
+    "name_vi": "P/B (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ; vốn hoá và EPS là mẫu số của chính các tỷ số FiinTrade nên phải lấy cùng bộ",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd14",
+    "name_vi": "EPS (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ; vốn hoá và EPS là mẫu số của chính các tỷ số FiinTrade nên phải lấy cùng bộ",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd7",
+    "name_vi": "Giá trị sổ sách trên mỗi cổ phiếu (BVPS)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ; vốn hoá và EPS là mẫu số của chính các tỷ số FiinTrade nên phải lấy cùng bộ",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq12",
+    "name_vi": "ROE (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq14",
+    "name_vi": "ROA (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq25",
+    "name_vi": "Biên Lãi Gộp",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ",
+    "status": "chốt"
+  },
+  {
+    "code": "ryq25",
+    "name_vi": "Biên Lãi Gộp",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq29",
+    "name_vi": "BIên Lãi Thuần",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ",
+    "status": "chốt"
+  },
+  {
+    "code": "ryq29",
+    "name_vi": "BIên Lãi Thuần",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq27",
+    "name_vi": "Biên EBIT (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ",
+    "status": "chốt"
+  },
+  {
+    "code": "rqq6",
+    "name_vi": "Nợ phải trả/ Vốn chủ sở hữu (quý)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq3",
+    "name_vi": "Tỉ suất thanh toán hiện hành (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq2",
+    "name_vi": "Tỉ suất thanh toán nhanh (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq1",
+    "name_vi": "Tỉ suất thanh toán tiền mặt (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ",
+    "status": "chốt"
+  },
+  {
+    "code": "revgrowth",
+    "name_vi": "Tăng trưởng doanh thu quý gần nhất (YoY)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ",
+    "status": "chốt"
+  },
+  {
+    "code": "prfgrowth",
+    "name_vi": "Tăng trưởng lợi nhuận thuần quý gần nhất (YoY)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd19",
+    "name_vi": "Beta",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "Beta — giữ theo quyết định của chủ dự án: tự tính được nhưng phải chọn chuẩn thị trường và số phiên, kết quả sẽ lệch số FiinTrade",
+    "status": "chốt"
+  },
+  {
+    "code": "corpownership",
+    "name_vi": "Tỉ lệ tổ chức sở hữu",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "hai chỉ tiêu sở hữu tổ chức KHÁC NHAU, không phải trùng tên — FPT 0,0567 vs 0,1555, ACB có cái này thiếu cái kia; `GetOwnership` không có tỷ lệ tổng hợp mà chỉ có danh sách cổ đông lớn",
+    "status": "chốt"
+  },
+  {
+    "code": "organizationownership",
+    "name_vi": "Sở hữu tổ chức (chỉ tiêu thứ hai, khác `corpownership`)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "hai chỉ tiêu sở hữu tổ chức KHÁC NHAU, không phải trùng tên — FPT 0,0567 vs 0,1555, ACB có cái này thiếu cái kia; `GetOwnership` không có tỷ lệ tổng hợp mà chỉ có danh sách cổ đông lớn",
+    "status": "chốt"
+  },
+  {
+    "code": "revttm",
+    "name_vi": "Doanh thu (tỉ đồng) (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "status": "chốt"
+  },
+  {
+    "code": "revy",
+    "name_vi": "Doanh thu (tỉ đồng) (năm trước)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "status": "chốt"
+  },
+  {
+    "code": "isa1ttm",
+    "name_vi": "Doanh số (TTM) — suy từ `isa1`",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "status": "chốt"
+  },
+  {
+    "code": "isa1y",
+    "name_vi": "Doanh số (năm trước) — suy từ `isa1`",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "status": "chốt"
+  },
+  {
+    "code": "isa20ttm",
+    "name_vi": "LN ròng (tỉ đồng) (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "status": "chốt"
+  },
+  {
+    "code": "isa20y",
+    "name_vi": "LN ròng (tỉ đồng) (năm trước)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "status": "chốt"
+  },
+  {
+    "code": "isa3ttm",
+    "name_vi": "Doanh số thuần (TTM) — suy từ `isa3`",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "status": "chốt"
+  },
+  {
+    "code": "isb25ttm",
+    "name_vi": "Thu nhập lãi và các khoản thu nhập tương tự (TTM) — suy từ `isb25`",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "status": "chốt"
+  },
+  {
+    "code": "isb25y",
+    "name_vi": "Thu nhập lãi và các khoản thu nhập tương tự (năm trước) — suy từ `isb25`",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "status": "chốt"
+  },
+  {
+    "code": "isi103ttm",
+    "name_vi": "Doanh thu phí bảo hiểm (TTM) — suy từ `isi103`",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "status": "chốt"
+  },
+  {
+    "code": "isi103y",
+    "name_vi": "Doanh thu phí bảo hiểm (năm trước) — suy từ `isi103`",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "status": "chốt"
+  },
+  {
+    "code": "rev",
+    "name_vi": "Doanh thu (tỉ đồng) (quý gần nhất)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "status": "chốt"
+  },
+  {
+    "code": "prf",
+    "name_vi": "Lợi nhuận ròng (tỉ đồng) (quý gần nhất)",
+    "source": "Screener",
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "khối TTM/Y lấy trọn cụm — `isa20ttm` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20ttm` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh",
+    "status": "chốt"
+  },
+  {
+    "code": "closeprice",
+    "name_vi": "Giá",
+    "source": "Screener",
+    "nguon_chuan": "BVSC",
+    "keep": false,
+    "reason": "trùng BVSC — `closePrice`/`reference`; giá lấy nguồn realtime khớp sàn",
+    "status": "chốt"
+  },
+  {
+    "code": "totalmatchvolume",
+    "name_vi": "Khối lượng GD",
+    "source": "Screener",
+    "nguon_chuan": "BVSC",
+    "keep": false,
+    "reason": "trùng BVSC — `totalTrading`",
+    "status": "chốt"
+  },
+  {
+    "code": "totalmatchvalue",
+    "name_vi": "Giá trị GD",
+    "source": "Screener",
+    "nguon_chuan": "BVSC",
+    "keep": false,
+    "reason": "trùng BVSC — `totalTradingValue`",
+    "status": "chốt"
+  },
+  {
+    "code": "foreignerroom",
+    "name_vi": "Room nước ngoài",
+    "source": "Screener",
+    "nguon_chuan": "BVSC",
+    "keep": false,
+    "reason": "trùng BVSC — `foreignRoom`",
+    "status": "chốt"
+  },
+  {
+    "code": "percentpricechange1day",
+    "name_vi": "Biến động giá 1 ngày",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "biến động giá — tính lại được từ chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "percentpricechange1week",
+    "name_vi": "Biến động giá 1 tuần",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "biến động giá — tính lại được từ chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "percentpricechange1month",
+    "name_vi": "Biến động giá 1 tháng",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "biến động giá — tính lại được từ chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "percentpricechange3month",
+    "name_vi": "Biến động giá 3 tháng",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "biến động giá — tính lại được từ chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "percentpricechange6month",
+    "name_vi": "Biến động giá 6 tháng",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "biến động giá — tính lại được từ chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "percentpricechange52week",
+    "name_vi": "Biến động giá 52 tuần",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "biến động giá — tính lại được từ chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "percentpricechangeytd",
+    "name_vi": "Biến động giá từ đầu năm",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "biến động giá — tính lại được từ chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "averagevolume1week",
+    "name_vi": "Kl T.bình 5 phiên",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "khối lượng bình quân 5/10/20 phiên và 3 tháng — tính lại được từ chuỗi khối lượng BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "averagevolume2week",
+    "name_vi": "Kl T.bình 10 phiên",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "khối lượng bình quân 5/10/20 phiên và 3 tháng — tính lại được từ chuỗi khối lượng BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "averagevolume1month",
+    "name_vi": "Kl T.bình 20 phiên",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "khối lượng bình quân 5/10/20 phiên và 3 tháng — tính lại được từ chuỗi khối lượng BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "averagevolume3month",
+    "name_vi": "Kl T.bình 3 tháng",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "khối lượng bình quân 5/10/20 phiên và 3 tháng — tính lại được từ chuỗi khối lượng BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "icbrank",
+    "name_vi": "FiinTrade Rank",
+    "source": "Screener",
+    "nguon_chuan": "— (không lưu)",
+    "keep": false,
+    "reason": "nhóm chấm điểm riêng của FiinTrade — quyết định của chủ dự án: không dùng điểm do bên thứ ba chấm",
+    "status": "chốt"
+  },
+  {
+    "code": "value",
+    "name_vi": "Value (FiinTrade Score)",
+    "source": "Screener",
+    "nguon_chuan": "— (không lưu)",
+    "keep": false,
+    "reason": "nhóm chấm điểm riêng của FiinTrade — quyết định của chủ dự án: không dùng điểm do bên thứ ba chấm",
+    "status": "chốt"
+  },
+  {
+    "code": "growth",
+    "name_vi": "Growth (FiinTrade Score)",
+    "source": "Screener",
+    "nguon_chuan": "— (không lưu)",
+    "keep": false,
+    "reason": "nhóm chấm điểm riêng của FiinTrade — quyết định của chủ dự án: không dùng điểm do bên thứ ba chấm",
+    "status": "chốt"
+  },
+  {
+    "code": "momentum",
+    "name_vi": "Momentum (FiinTrade Score)",
+    "source": "Screener",
+    "nguon_chuan": "— (không lưu)",
+    "keep": false,
+    "reason": "nhóm chấm điểm riêng của FiinTrade — quyết định của chủ dự án: không dùng điểm do bên thứ ba chấm",
+    "status": "chốt"
+  },
+  {
+    "code": "vgm",
+    "name_vi": "VGM (FiinTrade Score)",
+    "source": "Screener",
+    "nguon_chuan": "— (không lưu)",
+    "keep": false,
+    "reason": "nhóm chấm điểm riêng của FiinTrade — quyết định của chủ dự án: không dùng điểm do bên thứ ba chấm",
+    "status": "chốt"
+  },
+  {
+    "code": "fscore",
+    "name_vi": "F-Score (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "— (không lưu)",
+    "keep": false,
+    "reason": "nhóm chấm điểm riêng của FiinTrade — quyết định của chủ dự án: không dùng điểm do bên thứ ba chấm",
+    "status": "chốt"
+  },
+  {
+    "code": "canslim",
+    "name_vi": "Canslim (TTM)",
+    "source": "Screener",
+    "nguon_chuan": "— (không lưu)",
+    "keep": false,
+    "reason": "nhóm chấm điểm riêng của FiinTrade — quyết định của chủ dự án: không dùng điểm do bên thứ ba chấm",
+    "status": "chốt"
+  },
+  {
+    "code": "capitalstructure",
+    "name_vi": "Thành phần chấm điểm VGM",
+    "source": "Screener",
+    "nguon_chuan": "— (không lưu)",
+    "keep": false,
+    "reason": "thành phần chấm điểm VGM — bỏ cùng nhóm chấm điểm, không dùng điểm bên thứ ba chấm",
+    "status": "chốt"
+  },
+  {
+    "code": "financialstrength",
+    "name_vi": "Thành phần chấm điểm VGM",
+    "source": "Screener",
+    "nguon_chuan": "— (không lưu)",
+    "keep": false,
+    "reason": "thành phần chấm điểm VGM — bỏ cùng nhóm chấm điểm, không dùng điểm bên thứ ba chấm",
+    "status": "chốt"
+  },
+  {
+    "code": "financialplan",
+    "name_vi": "Thành phần chấm điểm VGM",
+    "source": "Screener",
+    "nguon_chuan": "— (không lưu)",
+    "keep": false,
+    "reason": "thành phần chấm điểm VGM — bỏ cùng nhóm chấm điểm, không dùng điểm bên thứ ba chấm",
+    "status": "chốt"
+  },
+  {
+    "code": "cfo",
+    "name_vi": "Thành phần chấm điểm VGM",
+    "source": "Screener",
+    "nguon_chuan": "— (không lưu)",
+    "keep": false,
+    "reason": "thành phần chấm điểm VGM — bỏ cùng nhóm chấm điểm, không dùng điểm bên thứ ba chấm",
+    "status": "chốt"
+  },
+  {
+    "code": "debt",
+    "name_vi": "Thành phần chấm điểm VGM",
+    "source": "Screener",
+    "nguon_chuan": "— (không lưu)",
+    "keep": false,
+    "reason": "thành phần chấm điểm VGM — bỏ cùng nhóm chấm điểm, không dùng điểm bên thứ ba chấm",
+    "status": "chốt"
+  },
+  {
+    "code": "equityinssurance",
+    "name_vi": "Thành phần chấm điểm VGM",
+    "source": "Screener",
+    "nguon_chuan": "— (không lưu)",
+    "keep": false,
+    "reason": "thành phần chấm điểm VGM — bỏ cùng nhóm chấm điểm, không dùng điểm bên thứ ba chấm",
+    "status": "chốt"
+  },
+  {
+    "code": "rsi",
+    "name_vi": "RSI",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "adx",
+    "name_vi": "ADX",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "cci",
+    "name_vi": "CCI",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "roc",
+    "name_vi": "ROC",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "stochastic",
+    "name_vi": "STOCH",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "williams",
+    "name_vi": "Williams",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "mfi",
+    "name_vi": "MFI",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "ma9",
+    "name_vi": "Trung bình động 9 phiên",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "ma20",
+    "name_vi": "Trung bình động 20 phiên",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "ma50",
+    "name_vi": "Trung bình động 50 phiên",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "ma75",
+    "name_vi": "Trung bình động 75 phiên",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "ma100",
+    "name_vi": "Trung bình động 100 phiên",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "ma200",
+    "name_vi": "Trung bình động 200 phiên",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "sma20",
+    "name_vi": "Trung bình động giản đơn 20 phiên",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "sma50",
+    "name_vi": "Trung bình động giản đơn 50 phiên",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "sma100",
+    "name_vi": "Trung bình động giản đơn 100 phiên",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "oversma50",
+    "name_vi": "Giá so với trung bình động 50 phiên",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "chỉ báo kỹ thuật — tự tính từ giá BVSC; lấy của FiinTrade thì chỉ báo và giá đến từ hai chuỗi khác nhau",
+    "status": "chốt"
+  },
+  {
+    "code": "c1",
+    "name_vi": "OHLC hai phiên gần nhất",
+    "source": "Screener",
+    "nguon_chuan": "BVSC",
+    "keep": false,
+    "reason": "OHLC hai phiên gần nhất — đã có trong chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "c2",
+    "name_vi": "OHLC hai phiên gần nhất",
+    "source": "Screener",
+    "nguon_chuan": "BVSC",
+    "keep": false,
+    "reason": "OHLC hai phiên gần nhất — đã có trong chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "h1",
+    "name_vi": "OHLC hai phiên gần nhất",
+    "source": "Screener",
+    "nguon_chuan": "BVSC",
+    "keep": false,
+    "reason": "OHLC hai phiên gần nhất — đã có trong chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "h2",
+    "name_vi": "OHLC hai phiên gần nhất",
+    "source": "Screener",
+    "nguon_chuan": "BVSC",
+    "keep": false,
+    "reason": "OHLC hai phiên gần nhất — đã có trong chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "l1",
+    "name_vi": "OHLC hai phiên gần nhất",
+    "source": "Screener",
+    "nguon_chuan": "BVSC",
+    "keep": false,
+    "reason": "OHLC hai phiên gần nhất — đã có trong chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "l2",
+    "name_vi": "OHLC hai phiên gần nhất",
+    "source": "Screener",
+    "nguon_chuan": "BVSC",
+    "keep": false,
+    "reason": "OHLC hai phiên gần nhất — đã có trong chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "o1",
+    "name_vi": "OHLC hai phiên gần nhất",
+    "source": "Screener",
+    "nguon_chuan": "BVSC",
+    "keep": false,
+    "reason": "OHLC hai phiên gần nhất — đã có trong chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "o2",
+    "name_vi": "OHLC hai phiên gần nhất",
+    "source": "Screener",
+    "nguon_chuan": "BVSC",
+    "keep": false,
+    "reason": "OHLC hai phiên gần nhất — đã có trong chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "isa20",
+    "name_vi": "LỢI NHUẬN THUẦN",
+    "source": "Screener",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "isa22",
+    "name_vi": "LỢI NHUẬN THUẦN",
+    "source": "Screener",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "cfa18",
+    "name_vi": "Lưu chuyển tiền thuần từ hoạt động kinh doanh",
+    "source": "Screener",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "rs52w",
+    "name_vi": "Sức mạnh tương đối 52 tuần",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "sức mạnh tương đối — tính lại được từ chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "rs6m",
+    "name_vi": "Sức mạnh tương đối 6 tháng",
+    "source": "Screener",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "sức mạnh tương đối — tính lại được từ chuỗi giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "totalbuytradevolume",
+    "name_vi": "Khối lượng theo chiều mua",
+    "source": "Screener",
+    "nguon_chuan": "MoneyFlow",
+    "keep": false,
+    "reason": "trùng MoneyFlow — chuỗi mua/bán chủ động lấy trọn bộ ở MoneyFlow",
+    "status": "chốt"
+  },
+  {
+    "code": "totalselltradevolume",
+    "name_vi": "Khối lượng theo chiều bán",
+    "source": "Screener",
+    "nguon_chuan": "MoneyFlow",
+    "keep": false,
+    "reason": "trùng MoneyFlow — chuỗi mua/bán chủ động lấy trọn bộ ở MoneyFlow",
+    "status": "chốt"
+  },
+  {
+    "code": "foreignerpercentage",
+    "name_vi": "Sở hữu nước ngoài",
+    "source": "Screener",
+    "nguon_chuan": null,
+    "keep": null,
+    "reason": "BVSC chỉ có room theo số cổ phiếu (`foreignRemain`/`foreignRoom`), không có trường tỷ lệ; không nhóm bỏ nào nêu đích danh trường này",
+    "status": "cần kiểm API"
+  },
+  {
+    "code": "averagevalue1week",
+    "name_vi": "Giá trị GD T.bình 5D",
+    "source": "Screener",
+    "nguon_chuan": null,
+    "keep": null,
+    "reason": "nhóm bỏ chỉ nêu KHỐI LƯỢNG bình quân, không nêu GIÁ TRỊ bình quân; chưa đủ căn cứ xếp lấy hay bỏ",
+    "status": "cần kiểm API"
+  },
+  {
+    "code": "averagevalue2week",
+    "name_vi": "Giá trị GD T.bình 10D",
+    "source": "Screener",
+    "nguon_chuan": null,
+    "keep": null,
+    "reason": "nhóm bỏ chỉ nêu KHỐI LƯỢNG bình quân, không nêu GIÁ TRỊ bình quân; chưa đủ căn cứ xếp lấy hay bỏ",
+    "status": "cần kiểm API"
+  },
+  {
+    "code": "averagevalue1month",
+    "name_vi": "Giá trị GD T.bình 20D",
+    "source": "Screener",
+    "nguon_chuan": null,
+    "keep": null,
+    "reason": "nhóm bỏ chỉ nêu KHỐI LƯỢNG bình quân, không nêu GIÁ TRỊ bình quân; chưa đủ căn cứ xếp lấy hay bỏ",
+    "status": "cần kiểm API"
+  },
+  {
+    "code": "averagevalue3month",
+    "name_vi": "Giá trị GD T.bình 3M",
+    "source": "Screener",
+    "nguon_chuan": null,
+    "keep": null,
+    "reason": "nhóm bỏ chỉ nêu KHỐI LƯỢNG bình quân, không nêu GIÁ TRỊ bình quân; chưa đủ căn cứ xếp lấy hay bỏ",
+    "status": "cần kiểm API"
+  },
+  {
+    "code": "freefloatrate",
+    "name_vi": "% Free Float",
+    "source": "Screener",
+    "nguon_chuan": null,
+    "keep": null,
+    "reason": "không nhóm bỏ nào nêu, cũng không nằm trong danh sách giữ được liệt kê đích danh",
+    "status": "cần kiểm API"
+  },
+  {
+    "code": "rtd53",
+    "name_vi": null,
+    "source": "Screener",
+    "nguon_chuan": null,
+    "keep": null,
+    "reason": "có trong từ điển 729 mã nhưng mang trạng thái CHƯA GIẢI MÃ — không nguồn nào có tên, chưa biết là chỉ tiêu gì nên chưa xếp được vào nhóm nào",
+    "status": "cần kiểm API"
+  },
+  {
+    "code": "rtq81",
+    "name_vi": null,
+    "source": "Screener",
+    "nguon_chuan": null,
+    "keep": null,
+    "reason": "có trong từ điển 729 mã nhưng mang trạng thái CHƯA GIẢI MÃ — không nguồn nào có tên, chưa biết là chỉ tiêu gì nên chưa xếp được vào nhóm nào",
+    "status": "cần kiểm API"
+  },
+  {
+    "code": "rtd39",
+    "name_vi": null,
+    "source": "Screener",
+    "nguon_chuan": null,
+    "keep": null,
+    "reason": "có mặt trong khối `financial` của response nhưng KHÔNG có trong từ điển 729 mã — chưa biết là chỉ tiêu gì",
+    "status": "cần kiểm API"
+  },
+  {
+    "code": "rtd54",
+    "name_vi": null,
+    "source": "Screener",
+    "nguon_chuan": null,
+    "keep": null,
+    "reason": "có mặt trong khối `financial` của response nhưng KHÔNG có trong từ điển 729 mã — chưa biết là chỉ tiêu gì",
+    "status": "cần kiểm API"
+  },
+  {
+    "code": "ceo",
+    "name_vi": "Tên tổng giám đốc",
+    "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "hồ sơ doanh nghiệp — chỉ Snapshot có; `competitors` là danh sách mã cùng ngành, dùng ngay cho so sánh ngang ngành; `comTypeCode` quyết định gọi `GetSnapshot` hay `GetSnapshotNoneBank`",
+    "status": "chốt"
+  },
+  {
+    "code": "competitors",
+    "name_vi": "Danh sách mã cùng ngành để so sánh",
+    "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "hồ sơ doanh nghiệp — chỉ Snapshot có; `competitors` là danh sách mã cùng ngành, dùng ngay cho so sánh ngang ngành; `comTypeCode` quyết định gọi `GetSnapshot` hay `GetSnapshotNoneBank`",
+    "status": "chốt"
+  },
+  {
+    "code": "majorHoldings",
+    "name_vi": "Các khoản đầu tư lớn",
+    "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "hồ sơ doanh nghiệp — chỉ Snapshot có; `competitors` là danh sách mã cùng ngành, dùng ngay cho so sánh ngang ngành; `comTypeCode` quyết định gọi `GetSnapshot` hay `GetSnapshotNoneBank`",
+    "status": "chốt"
+  },
+  {
+    "code": "comTypeCode",
+    "name_vi": "Loại hình doanh nghiệp",
+    "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "hồ sơ doanh nghiệp — chỉ Snapshot có; `competitors` là danh sách mã cùng ngành, dùng ngay cho so sánh ngang ngành; `comTypeCode` quyết định gọi `GetSnapshot` hay `GetSnapshotNoneBank`",
+    "status": "chốt"
+  },
+  {
+    "code": "statePercentage",
+    "name_vi": "Tỷ lệ sở hữu nhà nước",
+    "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "sở hữu chi tiết — nằm trong 16 trường độc quyền của Snapshot, không nguồn nào khác có",
+    "status": "chốt"
+  },
+  {
+    "code": "stateVolumn",
+    "name_vi": "Khối lượng nhà nước nắm",
+    "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "sở hữu chi tiết — nằm trong 16 trường độc quyền của Snapshot, không nguồn nào khác có",
+    "status": "chốt"
+  },
+  {
+    "code": "foreignerVolumn",
+    "name_vi": "Khối lượng nước ngoài nắm",
+    "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "sở hữu chi tiết — nằm trong 16 trường độc quyền của Snapshot, không nguồn nào khác có",
+    "status": "chốt"
+  },
+  {
+    "code": "totalForeignRoom",
+    "name_vi": "Tổng room",
+    "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "sở hữu chi tiết — nằm trong 16 trường độc quyền của Snapshot, không nguồn nào khác có",
+    "status": "chốt"
+  },
+  {
+    "code": "maximumForeignPercentage",
+    "name_vi": "Trần sở hữu nước ngoài",
+    "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "sở hữu chi tiết — nằm trong 16 trường độc quyền của Snapshot, không nguồn nào khác có",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq10",
+    "name_vi": "Nợ/VCSH",
+    "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "chỉ tiêu riêng của Snapshot — không có trong 83 tiêu chí Screener",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq44",
+    "name_vi": "Biên lãi thuần (NIM)",
+    "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "chỉ tiêu riêng của Snapshot — không có trong 83 tiêu chí Screener",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq137",
+    "name_vi": null,
+    "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "chỉ tiêu riêng của Snapshot — không có trong 83 tiêu chí Screener",
+    "status": "chốt"
+  },
+  {
+    "code": "rqq41",
+    "name_vi": null,
+    "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "chỉ tiêu riêng của Snapshot — không có trong 83 tiêu chí Screener",
+    "status": "chốt"
+  },
+  {
+    "code": "valuePerShare",
+    "name_vi": "Mệnh giá",
+    "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "chỉ tiêu riêng của Snapshot — không có trong 83 tiêu chí Screener",
+    "status": "chốt"
+  },
+  {
+    "code": "year",
+    "name_vi": "Năm báo cáo",
+    "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "metadata kỳ báo cáo — bắt buộc để gắn chuỗi `quarterly`/`yearly` vào đúng kỳ",
+    "status": "chốt"
+  },
+  {
+    "code": "quarter",
+    "name_vi": "Quý báo cáo",
+    "source": "Snapshot",
+    "nguon_chuan": "Snapshot",
+    "keep": true,
+    "reason": "metadata kỳ báo cáo — bắt buộc để gắn chuỗi `quarterly`/`yearly` vào đúng kỳ",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd11",
+    "name_vi": "Vốn hóa",
+    "source": "Snapshot",
+    "nguon_chuan": "Screener",
+    "keep": false,
+    "reason": "trùng Screener — cùng mã, lấy ở Screener cho trọn bộ tỷ số",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd14",
+    "name_vi": "EPS (TTM)",
+    "source": "Snapshot",
+    "nguon_chuan": "Screener",
+    "keep": false,
+    "reason": "trùng Screener — cùng mã, lấy ở Screener cho trọn bộ tỷ số",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd21",
+    "name_vi": "P/E (TTM)",
+    "source": "Snapshot",
+    "nguon_chuan": "Screener",
+    "keep": false,
+    "reason": "trùng Screener — cùng mã, lấy ở Screener cho trọn bộ tỷ số",
+    "status": "chốt"
+  },
+  {
+    "code": "rtd25",
+    "name_vi": "P/B (TTM)",
+    "source": "Snapshot",
+    "nguon_chuan": "Screener",
+    "keep": false,
+    "reason": "trùng Screener — cùng mã, lấy ở Screener cho trọn bộ tỷ số",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq12",
+    "name_vi": "ROE (TTM)",
+    "source": "Snapshot",
+    "nguon_chuan": "Screener",
+    "keep": false,
+    "reason": "trùng Screener — cùng mã, lấy ở Screener cho trọn bộ tỷ số",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq14",
+    "name_vi": "ROA (TTM)",
+    "source": "Snapshot",
+    "nguon_chuan": "Screener",
+    "keep": false,
+    "reason": "trùng Screener — cùng mã, lấy ở Screener cho trọn bộ tỷ số",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq29",
+    "name_vi": "BIên Lãi Thuần",
+    "source": "Snapshot",
+    "nguon_chuan": "Screener",
+    "keep": false,
+    "reason": "trùng Screener — cùng mã, lấy ở Screener cho trọn bộ tỷ số",
+    "status": "chốt"
+  },
+  {
+    "code": "freeFloatRate",
+    "name_vi": "Tỷ lệ free float",
+    "source": "Snapshot",
+    "nguon_chuan": "Screener",
+    "keep": false,
+    "reason": "trùng Screener — `freefloatrate` / `foreignerpercentage` trong 83 tiêu chí",
+    "status": "chốt"
+  },
+  {
+    "code": "foreignerPercentage",
+    "name_vi": "Tỷ lệ sở hữu nước ngoài",
+    "source": "Snapshot",
+    "nguon_chuan": "Screener",
+    "keep": false,
+    "reason": "trùng Screener — `freefloatrate` / `foreignerpercentage` trong 83 tiêu chí",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq25",
+    "name_vi": "Biên Lãi Gộp",
+    "source": "Snapshot",
+    "nguon_chuan": "Screener",
+    "keep": false,
+    "reason": "trùng Screener — cùng mã trong 83 tiêu chí, lấy ở Screener",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq1",
+    "name_vi": "Tỉ suất thanh toán tiền mặt (TTM)",
+    "source": "Snapshot",
+    "nguon_chuan": "Screener",
+    "keep": false,
+    "reason": "trùng Screener — cùng mã trong 83 tiêu chí, lấy ở Screener",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq2",
+    "name_vi": "Tỉ suất thanh toán nhanh (TTM)",
+    "source": "Snapshot",
+    "nguon_chuan": "Screener",
+    "keep": false,
+    "reason": "trùng Screener — cùng mã trong 83 tiêu chí, lấy ở Screener",
+    "status": "chốt"
+  },
+  {
+    "code": "rtq3",
+    "name_vi": "Tỉ suất thanh toán hiện hành (TTM)",
+    "source": "Snapshot",
+    "nguon_chuan": "Screener",
+    "keep": false,
+    "reason": "trùng Screener — cùng mã trong 83 tiêu chí, lấy ở Screener",
+    "status": "chốt"
+  },
+  {
+    "code": "foreignerRoom",
+    "name_vi": "Room còn lại",
+    "source": "Snapshot",
+    "nguon_chuan": "BVSC",
+    "keep": false,
+    "reason": "trùng BVSC — `foreignRemain` (room còn lại)",
+    "status": "chốt"
+  },
+  {
+    "code": "lowestPrice1Year",
+    "name_vi": "Thấp nhất 52 tuần",
+    "source": "Snapshot",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "giá thấp nhất/cao nhất 52 tuần — dẫn xuất từ chuỗi giá, nguồn chuẩn là giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "highestPrice1Year",
+    "name_vi": "Cao nhất 52 tuần",
+    "source": "Snapshot",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "giá thấp nhất/cao nhất 52 tuần — dẫn xuất từ chuỗi giá, nguồn chuẩn là giá BVSC",
+    "status": "chốt"
+  },
+  {
+    "code": "averageMatchVolume1Month",
+    "name_vi": "KLGD bình quân 1 tháng",
+    "source": "Snapshot",
+    "nguon_chuan": "BVSC (tự tính)",
+    "keep": false,
+    "reason": "KLGD bình quân 1 tháng — tính lại từ chuỗi khối lượng BVSC; Screener cũng có trường tương đương `averagevolume1month` và cũng bỏ",
+    "status": "chốt"
+  },
+  {
+    "code": "isa1",
+    "name_vi": "Doanh số",
+    "source": "Snapshot",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "isa22",
+    "name_vi": "LỢI NHUẬN THUẦN",
+    "source": "Snapshot",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "isb27",
+    "name_vi": "Thu nhập lãi thuần",
+    "source": "Snapshot",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "isi103",
+    "name_vi": "Doanh thu phí bảo hiểm",
+    "source": "Snapshot",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "bsa53",
+    "name_vi": "TỔNG TÀI SẢN",
+    "source": "Snapshot",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "bsb104",
+    "name_vi": "Cho vay khách hàng",
+    "source": "Snapshot",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "bsa1",
+    "name_vi": "TÀI SẢN NGẮN HẠN",
+    "source": "Snapshot",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "bsa23",
+    "name_vi": "TÀI SẢN DÀI HẠN",
+    "source": "Snapshot",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "bsa54",
+    "name_vi": "NỢ PHẢI TRẢ",
+    "source": "Snapshot",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "bsa78",
+    "name_vi": "VỐN CHỦ SỞ HỮU",
+    "source": "Snapshot",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "bsa80",
+    "name_vi": "Vốn góp",
+    "source": "Snapshot",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "bsb98",
+    "name_vi": "Tiền gửi tại các TCTD khác và cho vay các TCTD khác",
+    "source": "Snapshot",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "bsb113",
+    "name_vi": "Tiền gửi của khách hàng",
+    "source": "Snapshot",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "nob44",
+    "name_vi": null,
+    "source": "Snapshot",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "cfa18",
+    "name_vi": "Lưu chuyển tiền thuần từ hoạt động kinh doanh",
+    "source": "Snapshot",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã",
+    "status": "chốt"
+  },
+  {
+    "code": "organCode",
+    "name_vi": "Mã doanh nghiệp",
+    "source": "Snapshot",
+    "nguon_chuan": null,
+    "keep": null,
+    "reason": "khoá định danh, không phải chỉ tiêu — không nằm trong 16 trường độc quyền được liệt kê; khoá nối hiện lấy từ bảng `organization`",
+    "status": "cần kiểm API"
+  },
+  {
+    "code": "outstandingShare",
+    "name_vi": "Số CP đang lưu hành",
+    "source": "Snapshot",
+    "nguon_chuan": null,
+    "keep": null,
+    "reason": "không nằm trong 16 trường độc quyền; BVSC có `ListedShare`/`TotalListingQtty` nhưng tài liệu nguồn không nói hai bên bằng nhau",
+    "status": "cần kiểm API"
+  },
+  {
+    "code": "freeFloat",
+    "name_vi": "Khối lượng tự do chuyển nhượng",
+    "source": "Snapshot",
+    "nguon_chuan": null,
+    "keep": null,
+    "reason": "không nằm trong 16 trường độc quyền; Screener chỉ có tỷ lệ `freefloatrate`, không có khối lượng",
+    "status": "cần kiểm API"
+  },
+  {
+    "code": "rtd53",
+    "name_vi": null,
+    "source": "Snapshot",
+    "nguon_chuan": null,
+    "keep": null,
+    "reason": "mã mang trạng thái chưa giải mã; cũng có mặt trong khối `financial` của Screener nên nếu quyết định lưu thì nguồn chuẩn là Screener",
+    "status": "cần kiểm API"
+  }
+]

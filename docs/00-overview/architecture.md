@@ -117,7 +117,7 @@ Ba nguồn thị trường chồng lấn nhau nhiều: Screener 193 trường *(
 | Mọi mã `bs*` `is*` `cf*` `no*` | **BCTC đầy đủ** | 556 |
 | Tự doanh, đóng góp chỉ số, chuỗi khối ngoại | **MoneyFlow** | BVSC không có |
 
-Đầy đủ: [ADR 0002](decisions/0002-data-source-selection.md).
+Đầy đủ tới từng mã trường — lấy/bỏ, nguồn chuẩn, lý do tại chỗ: [chọn trường cho ETL thị trường](../20-design/market-field-selection.md).
 
 ## 4. Một lỗ hổng kiến trúc đã biết, chưa vá
 
