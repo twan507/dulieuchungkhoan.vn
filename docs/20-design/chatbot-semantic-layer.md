@@ -94,7 +94,7 @@ Ghi thẳng để không ai tưởng phần này đã chắc:
 |---|---|
 | **Skill có chịu được function calling không** — 6 vòng test đều chạy *không* có công cụ dữ liệu | Có thể xuất hiện lỗi mới: bot gọi function rồi bỏ qua mạch lập luận của L1, trả về bảng số trần |
 | **Ai gọi function trước — skill hay bot** | Nếu bot gọi trước rồi mới tải skill, L1 mất quyền định hình câu trả lời |
-| **Chi phí mỗi câu** | Chưa đo. L2 dày 2.273 dòng, tải cả vào context là tốn |
+| **Chi phí mỗi câu** | Chưa đo. L2 dày 2.272 dòng, tải cả vào context là tốn |
 | ~~Đơn vị của các mã chỉ tiêu~~ | ✅ **Đã giải quyết 2026-08-14** — 727/729 mã (99,7%) có `don_vi_du_lieu`, trong đó **392 mã đã xác thực bằng bằng chứng số học** (đẳng thức kế toán + kiểm nhất quán thang trên 25 doanh nghiệp), 308 mức cao, 27 trung bình. Quan trọng hơn: phát hiện **nhãn `unit` của API không phải đơn vị dữ liệu** (`Percentage` thực ra là thập phân, `BillionVND` thực ra là VND). Chatbot phải đọc `don_vi_du_lieu`, không đọc `don_vi` |
 
 **Việc kiểm chứng đầu tiên nên làm:** chạy lại đúng bộ test vòng 6 (10 câu tính toán trên số liệu thật, đã có đáp án đối chiếu) nhưng lần này cho phép gọi function. Nếu 10/10 vẫn đúng và câu trả lời vẫn giữ hình dạng của L1, hợp đồng này đứng vững. Bộ test hồi quy nằm ở [`30-skills/maintenance.md`](../30-skills/maintenance.md) §6.

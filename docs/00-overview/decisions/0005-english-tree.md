@@ -1,6 +1,6 @@
 # 0005 · Tái cấu trúc cây tiếng Anh
 
-**Ngày:** 2026-08-15 · **Trạng thái:** đã áp dụng · **Thay thế** [ADR 0001](0001-docs-structure.md) §1/§5 (một phần)
+**Ngày:** 2026-08-15 · **Trạng thái:** đã áp dụng · **Sửa đổi một phần** [ADR 0001](0001-docs-structure.md) §1/§5
 
 ## Bối cảnh
 
@@ -111,13 +111,13 @@ Hệ quả cần biết: **tên thư mục skill chính là định danh kích h
 
 **Phép kiểm:** xoá cả `decisions/` thì hệ tài liệu chỉ mất lịch sử, không mất tri thức vận hành.
 
-Luật này đã ghi vào bảng luật sửa của `docs/README.md`, nên nó là luật của kho chứ không phải điều khoản nằm trong một ADR. Hai việc kèm theo đã làm xong: mọi con trỏ "xem ADR" trong tài liệu sống được gỡ (ngoại lệ duy nhất: mục changelog — đó là bản ghi lịch sử), và quyết định chọn trường trước chỉ nằm trong [ADR 0002](0002-data-source-selection.md) nay có tài liệu sống tường minh tới từng mã trường ở `20-design/market-field-selection.md`. ADR này cũng theo đúng luật: không tài liệu sống nào trỏ về đây.
+Luật này đã ghi vào bảng luật sửa của `docs/README.md`, nên nó là luật của kho chứ không phải điều khoản nằm trong một ADR. Hai việc kèm theo đã làm xong: mọi con trỏ "xem ADR" trong tài liệu sống được gỡ (ngoại lệ duy nhất: mục changelog — đó là bản ghi lịch sử), và quyết định chọn trường trước chỉ nằm trong [ADR 0002](0002-data-source-selection.md) nay có tài liệu sống tường minh tới từng mã trường ở `docs/20-design/market-field-selection.md`. ADR này cũng theo đúng luật: không tài liệu sống nào trỏ về đây.
 
 ## Hệ quả
 
 **Tốt:**
 
-- Đọc tên là đoán được nội dung, không cần mở: `10-sources/market/` · `20-design/` · `30-skills/`. Một quy ước đặt tên duy nhất cho cả tài liệu lẫn code sắp thêm.
+- Đọc tên là đoán được nội dung, không cần mở: `docs/10-sources/market/` · `docs/20-design/` · `docs/30-skills/`. Một quy ước đặt tên duy nhất cho cả tài liệu lẫn code sắp thêm.
 - Gốc repo còn đúng bốn mục — `README.md`, `docs/`, `.claude/`, `.git/`. Chỗ trống ở gốc để dành cho code thật, không bị hai thư mục một-file chiếm tên.
 - Mở một nguồn ra là có đủ: tài liệu + file máy đọc + script tự kiểm của chính nguồn đó.
 - Phép kiểm "xoá `decisions/`" nay chạy được thật: tri thức vận hành nằm hết ở tài liệu sống.

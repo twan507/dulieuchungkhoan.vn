@@ -52,7 +52,7 @@ Hai đánh đổi đã chấp nhận, ghi ở đây để không ai hoảng khi 
 | Cột | Nghĩa |
 |---|---|
 | **Mã** | Tên trường đúng như endpoint trả về. Screener trả chữ thường (`rtq12`) còn `GetScreenerParameters` trả hoa chữ đầu (`Rtq12`) — cùng một chỉ tiêu |
-| **Tên** | Tên tiếng Việt. `—` nghĩa là **không nguồn nào có tên cho mã này** — hoặc mã mang trạng thái chưa giải mã trong từ điển, hoặc không có trong từ điển |
+| **Tên** | Tên tiếng Việt. `—` nghĩa là **không nguồn nào đặt tên cho mã này, và tôi cũng không tự đặt** — mã mang trạng thái chưa giải mã trong từ điển, hoặc không có trong từ điển, mà mô tả nhóm ở tài liệu nguồn cũng không đủ để đặt một nhãn. Phân biệt với `tự đặt` ở dòng dưới: đó cũng là mã không nguồn nào đặt tên, nhưng có nhãn do tôi đặt theo mô tả nhóm |
 | **Nguồn tên** | Tên đó ở đâu ra. `từ điển` = `ten_vi` trong từ điển 729 mã · `tài liệu endpoint` = chép từ bảng mô tả trường của tài liệu endpoint · `suy theo luật kỳ` = mã TTM/Y, suy từ mã gốc theo luật *cùng chữ số + cùng chữ thứ ba = cùng chỉ tiêu, khác kỳ* · **`tự đặt` = tôi đặt theo mô tả NHÓM trong tài liệu nguồn, KHÔNG phải tên chính thức của FiinGroup** |
 | **Lấy/Bỏ** | `lấy` = ETL ghi vào kho · `bỏ` = không ghi · `chưa rõ` = chưa phân loại được |
 | **Nguồn chuẩn** | Nơi duy nhất chỉ tiêu này được lấy. `(tự tính)` = tính lại từ chuỗi của nguồn đó |
@@ -481,7 +481,7 @@ có tên chính thức.
 🔴 Hai dòng `freeFloatRate` và `foreignerPercentage` mang nguồn chuẩn **dự kiến**, chưa chốt — đọc ô cảnh
 báo cuối §4.3 trước khi cài. Bỏ ở đây mà phía Screener cũng bỏ thì hai chỉ tiêu này không còn nguồn nào.
 
-### 5.3 Cần kiểm API — 4 trường
+### 5.3 Cần kiểm API — 4 trường chưa phân loại (2 trường bỏ có điều kiện ở §5.2 cùng trạng thái)
 
 **Định danh** — 1 trường
 

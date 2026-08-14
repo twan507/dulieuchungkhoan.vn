@@ -4,7 +4,7 @@ Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và m�
 
 | Tầng | Chứa gì | Luật sửa |
 |---|---|---|
-| [`00-overview/`](00-overview/) | Hợp nhất ba khối, lộ trình, sổ quyết định | Cập nhật khi kiến trúc đổi |
+| [`00-overview/`](00-overview/) | Hợp nhất ba khối, lộ trình, sổ quyết định (chỉ lịch sử) | Cập nhật khi kiến trúc đổi |
 | [`10-sources/`](10-sources/) | **Reference** — sự thật đo được về hệ thống của người khác | Chỉ sửa khi **đo lại** |
 | [`20-design/`](20-design/) | **Explanation** — lựa chọn của Finext | Sửa được, lý do viết thẳng tại chỗ |
 | [`30-skills/`](30-skills/) | Corpus và tài liệu bảo trì hai skill chứng khoán | Corpus bất biến; tài liệu bảo trì cập nhật theo trạng thái thật |

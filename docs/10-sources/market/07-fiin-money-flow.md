@@ -14,7 +14,7 @@ Base URL: `https://wlgw-market.fiintrade.vn` — ký hiệu `FIIN_MARKET`
 >
 > Kiểm chứng chéo: `getContribution` trả VN-INDEX **1.729,08** và thay đổi **−36,55** — khớp chính xác bảng giá BVSC cùng thời điểm. Hai nguồn độc lập, cùng một số.
 >
-> Ba endpoint này giữ ở FiinTrade vì BVSC không có nguồn thay thế; chi tiết lấy/bỏ từng trường: [chọn trường cho ETL thị trường §6](../../20-design/market-field-selection.md).
+> Chi tiết lấy/bỏ từng trường: [chọn trường cho ETL thị trường §6](../../20-design/market-field-selection.md).
 Header bắt buộc: `Origin: https://fiinapp.bvsc.com.vn`
 
 3 endpoint, đều ở **cấp thị trường** (nhận `ComGroupCode`, không nhận mã doanh nghiệp).
