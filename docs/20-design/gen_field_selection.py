@@ -4,17 +4,17 @@ tu MOT nguon du lieu duy nhat (bien ROWS ben duoi).
 
 Chay:  PYTHONIOENCODING=utf-8 python gen_field_selection.py
 """
-import json, os
+import json
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 
-REPO = r"D:\twan-projects\finext-v2"
-DICT = os.path.join(REPO, "docs", "10-sources", "market", "field-dictionary.json")
+DICT = HERE.parent / "10-sources" / "market" / "field-dictionary.json"
 OUT_MD = HERE / "market-field-selection.md"
 OUT_JSON = HERE / "market-field-selection.json"
 
-d = json.load(open(DICT, encoding="utf-8"))
+with open(DICT, encoding="utf-8") as f:
+    d = json.load(f)
 RATIO = d["chi_tieu_ty_so_va_thi_truong"]
 BCTC = d["chi_tieu_bao_cao_tai_chinh"]
 
@@ -764,18 +764,21 @@ md = md.format(
     drop_total=len([r for r in ROWS if r["keep"] is False]),
 )
 
-open(OUT_MD, "w", encoding="utf-8", newline="\n").write(md)
+# Kiem TRUOC khi ghi file: trung ma thi khong duoc de lai output hong tren dia.
+dups = {r["source"] + ":" + r["code"] for r in ROWS}
+assert len(dups) == len(ROWS), "TRUNG MA trong cung mot nguon"
 
 json_rows = [{"code": r["code"], "name_vi": r["name_vi"], "name_src": r["name_src"],
               "source": r["source"],
               "nguon_chuan": r["nguon_chuan"], "keep": r["keep"], "reason": r["reason"],
               "status": r["status"]} for r in ROWS]
-open(OUT_JSON, "w", encoding="utf-8", newline="\n").write(
-    json.dumps(json_rows, ensure_ascii=False, indent=2) + "\n")
+
+with open(OUT_MD, "w", encoding="utf-8", newline="\n") as f:
+    f.write(md)
+with open(OUT_JSON, "w", encoding="utf-8", newline="\n") as f:
+    f.write(json.dumps(json_rows, ensure_ascii=False, indent=2) + "\n")
 
 print("rows=%d  BVSC=%d  Screener=%d (keep %d / drop %d / check %d)  Snapshot=%d (keep %d / drop %d / check %d)"
       % (len(ROWS), bv_keep, scr_total, scr_keep, scr_drop, scr_chk, sn_total, sn_keep, sn_drop, sn_chk))
-dups = [c for c in {r["source"] + ":" + r["code"] for r in ROWS}]
-assert len(dups) == len(ROWS), "TRUNG MA trong cung mot nguon"
 print("md:", OUT_MD)
 print("json:", OUT_JSON)

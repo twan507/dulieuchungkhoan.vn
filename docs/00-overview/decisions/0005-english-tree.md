@@ -94,8 +94,8 @@ Hai `SKILL.md`: frontmatter `name:` đổi theo tên thư mục mới. `descript
 
 | File | Về đâu | Vì sao gắn chặt |
 |---|---|---|
-| `feeds.json` | `10-sources/news/` | Là bản máy đọc của chính tài liệu nguồn tin — 47 feed + taxonomy. Danh sách feed đổi thì tài liệu và file phải đổi cùng lúc |
-| `verify_wichart.py` | `10-sources/macro/` | Đọc registry 509 khẳng định nằm ngay trong `wichart.md`. Script và dữ liệu nó kiểm phải nằm cạnh nhau, nếu không sửa registry là script gãy mà không ai thấy |
+| `feeds.json` | `docs/10-sources/news/` | Là bản máy đọc của chính tài liệu nguồn tin — 47 feed + taxonomy. Danh sách feed đổi thì tài liệu và file phải đổi cùng lúc |
+| `verify_wichart.py` | `docs/10-sources/macro/` | Đọc registry 509 khẳng định nằm ngay trong `wichart.md`. Script và dữ liệu nó kiểm phải nằm cạnh nhau, nếu không sửa registry là script gãy mà không ai thấy |
 
 Tiêu chí đặt file: **file đi theo thứ nó mô tả, không đi theo dạng của chính nó.**
 
