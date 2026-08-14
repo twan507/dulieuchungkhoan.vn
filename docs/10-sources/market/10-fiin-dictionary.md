@@ -245,6 +245,6 @@ Finext chỉ lưu **80/193 trường**. 113 trường bị bỏ vì trùng BVSC,
 
 Phần giữ lại là **55 mã tỷ số tài chính không nguồn nào khác có** (P/S, Giá/Dòng tiền, nhóm cổ tức, nhóm đòn bẩy, nhóm tăng trưởng), Beta, hai chỉ tiêu sở hữu tổ chức, và trọn cụm TTM/Y.
 
-Danh sách đầy đủ và lý do từng nhóm: [ADR 0002 — Chọn nguồn dữ liệu](../../00-overview/decisions/0002-data-source-selection.md).
+Danh sách đầy đủ, lấy/bỏ và lý do tới từng mã: [chọn trường cho ETL thị trường](../../20-design/market-field-selection.md).
 
 ⚠️ **`isa20ttm` không bằng tổng 4 quý `isa20`** — lệch tới 9,4%. Screener dùng *lợi nhuận sau thuế của cổ đông công ty mẹ*, còn `isa20` trong BCTC là *lợi nhuận thuần* gồm cả lợi ích cổ đông thiểu số. Và `P/E = vốn hoá ÷ isa20ttm` khớp 9/10 mã VN30, nên đây chính là mẫu số FiinTrade dùng. Đừng tự tính lại.

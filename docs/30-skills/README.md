@@ -8,7 +8,7 @@ Tầng này chứa **nguyên liệu và tài liệu bảo trì** của hai skill
 | [terminology.md](terminology.md) | Bảng tra **bắt buộc** — hai trục phân loại, chuyển đổi thuật ngữ nguồn | Cùng lúc với file trên |
 | [corpus/](corpus/) | 96 file tóm tắt bài giảng — nguyên liệu, không phải tài liệu | Khi truy nguyên một luận điểm về nguồn |
 
-**Dự án skill đã đóng ngày 2026-08-14** — hai skill xong, test 6 vòng, không còn việc treo. Xem [ADR 0003](../00-overview/decisions/0003-close-skill-project.md).
+**Dự án skill đã đóng ngày 2026-08-14** — hai skill xong, test 6 vòng, không còn việc treo.
 
 ---
 

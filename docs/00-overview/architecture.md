@@ -50,7 +50,7 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
 | Tầng thư mục | Chứa gì | Sửa được không |
 |---|---|---|
 | [`10-sources/`](../10-sources/) | Sự thật đo được về hệ thống của người khác | **Chỉ khi đo lại.** Sửa mà không đo là nói dối |
-| [`20-design/`](../20-design/) | Lựa chọn của Finext | Được, nhưng ghi lý do vào [`decisions/`](decisions/) |
+| [`20-design/`](../20-design/) | Lựa chọn của Finext | Được, nhưng lý do phải viết thẳng tại chỗ |
 | [`30-skills/`](../30-skills/) | Nguyên liệu và nhật ký dựng skill | Corpus bất biến; ghi chú chỉ thêm, không xoá |
 | [`.claude/skills/`](../../.claude/skills/) | Sản phẩm chạy được | Được, nhưng phải test lại — xem quy trình 6 vòng ở ghi chú |
 
@@ -78,7 +78,7 @@ Hệ quả vận hành: bảng `organization` của [kho dữ liệu thị trư�
 
 ### 3.2 Cây ngành ICB → khung ngành cho skill
 
-Hai skill **cố ý bỏ trống danh sách ngành**. Đây không phải thiếu sót mà là quyết định đã ghi rõ: *"không được cố định danh sách ngành, vì khung ngành chuẩn sẽ do hệ thống dữ liệu cung cấp sau"* — đã gỡ ở 9 chỗ, xem [ADR 0003](decisions/0003-close-skill-project.md). ⚠️ Có bốn chỗ nêu tên ngành **không được gỡ nhầm** (kế toán, định giá, hành vi) — liệt kê ở [`30-skills/README.md`](../30-skills/README.md).
+Hai skill **cố ý bỏ trống danh sách ngành**. Đây không phải thiếu sót mà là quyết định đã ghi rõ: *"không được cố định danh sách ngành, vì khung ngành chuẩn sẽ do hệ thống dữ liệu cung cấp sau"* — đã gỡ ở 9 chỗ. ⚠️ Có bốn chỗ nêu tên ngành **không được gỡ nhầm** (kế toán, định giá, hành vi) — liệt kê ở [`30-skills/README.md`](../30-skills/README.md).
 
 Khung ngành đó chính là [`getAllIcbIndustry`](../10-sources/market/03-fiin-reference.md) — cây ICB **4 cấp**, có `icbCodePath` và `icbNamePath` nên lấy ngành cha ở cấp bất kỳ không cần duyệt cây.
 

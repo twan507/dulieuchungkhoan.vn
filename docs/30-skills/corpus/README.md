@@ -15,7 +15,7 @@ Nội dung: bản AI tóm tắt và hệ thống hoá từ các buổi giảng c
 
 ## Ba điều phải biết trước khi đọc
 
-**1 · Đây là bản tóm tắt, không phải bản gốc.** Transcript verbatim (`documents/`) đã được đưa ra khỏi repo — xem [ADR 0001](../../00-overview/decisions/0001-docs-structure.md).
+**1 · Đây là bản tóm tắt, không phải bản gốc.** Transcript verbatim (`documents/`) đã được đưa ra khỏi repo, chỉ còn ở bản lưu trữ ngoài repo.
 
 **2 · Tầng tóm tắt có thể khuếch đại nhiễu nhận dạng giọng nói.** Một từ nghe nhầm xuất hiện **1 lần** trong transcript gốc có thể thành thuật ngữ dùng **10 lần** ở đây. Đã xảy ra thật với «nội giải» — thực chất là *biên độ cây nến*. Gặp thuật ngữ nghe lạ, đối chiếu [bảng thuật ngữ](../terminology.md) trước khi tin.
 
@@ -44,4 +44,4 @@ Toàn bộ là **2022–2024**. Công thức và định nghĩa còn nguyên gi�
 - ✅ Giữ: *"số nhân tiền = 1 / tỷ lệ dự trữ bắt buộc"*
 - ❌ Bỏ: *"số nhân tiền khoảng 33 lần"*, *"P/E ngân hàng 8,06"*
 
-Ngân sách dòng đo thật và luật *"vượt thì nén đâu, không được cắt đâu"*: [maintenance.md §8](../maintenance.md). Bản đồ chi tiết 355 section → 8 file skill là tài liệu trung gian của Giai đoạn 1, đã bỏ theo [ADR 0004](../../00-overview/decisions/0004-drop-session-logs.md) — còn ở commit `a14eb54`.
+Ngân sách dòng đo thật và luật *"vượt thì nén đâu, không được cắt đâu"*: [maintenance.md §8](../maintenance.md). Bản đồ chi tiết 355 section → 8 file skill là tài liệu trung gian của Giai đoạn 1, đã bỏ khi dự án đóng vì hết hạn dùng — còn ở commit `a14eb54`.

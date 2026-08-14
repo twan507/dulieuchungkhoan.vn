@@ -14,7 +14,7 @@
 | **Lưu đầy đủ** | Kho ~10 GB chứa toàn bộ lịch sử khả dụng. Độc lập nhà cung cấp, chatbot không giới hạn |
 | **Giá lưu thô, điều chỉnh lúc đọc** | Không bao giờ sửa quá khứ. Hệ số suy ngược từ chính dữ liệu FiinTrade |
 | **Một socket vào, SSE ra** | Ingester tập trung ghép delta, fan-out một chiều qua SSE |
-| **Mỗi chỉ tiêu một nguồn chuẩn** | Nhiều nguồn cùng có thì chọn một. Nhóm chỉ tiêu dẫn xuất lẫn nhau thì lấy trọn bộ từ một nguồn — xem [ADR 0002](../00-overview/decisions/0002-data-source-selection.md) |
+| **Mỗi chỉ tiêu một nguồn chuẩn** | Nhiều nguồn cùng có thì chọn một. Nhóm chỉ tiêu dẫn xuất lẫn nhau thì lấy trọn bộ từ một nguồn, vì trộn nguồn giữa chừng tạo dữ liệu tự mâu thuẫn trong cùng một bảng. Nguồn chuẩn của từng mã trường: [chọn trường cho ETL thị trường](market-field-selection.md) |
 
 ### Vì sao cách ly hoàn toàn
 

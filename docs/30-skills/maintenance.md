@@ -1,6 +1,6 @@
 # Bảo trì hai skill chứng khoán
 
-**Ngày:** 2026-08-14 · **Trạng thái:** dự án đã đóng — [ADR 0003](../00-overview/decisions/0003-close-skill-project.md)
+**Ngày:** 2026-08-14 · **Trạng thái:** dự án đã đóng — hai skill xong, test 6 vòng, không còn việc treo
 
 Đọc file này **trước khi sửa bất cứ gì** trong [`.claude/skills/`](../../.claude/skills/). Nó không kể quá trình dựng skill; nó ghi những thứ mà **sửa nhầm sẽ làm hỏng skill và không có gì báo lỗi**.
 
@@ -59,7 +59,7 @@ Quyết định *"không nhúng danh sách ngành"* tốn 9 chỗ sửa và mộ
 | Chọn PB hay PE theo mức thâm dụng vốn | Là **phương pháp định giá** |
 | Cơ chế hành vi khi lãi suất thấp | Là **tâm lý**, tên ngành chỉ là ví dụ |
 
-Và một chỗ đã cân nhắc riêng rồi quyết **giữ**: *"ngân hàng đứng đầu xếp hạng an toàn nhưng hút tiền đầu tiên → **ngành báo hiệu**"* ở [`portfolio-and-rotation.md`](../../.claude/skills/vn-stock-knowledge/references/portfolio-and-rotation.md). Đây là **cơ chế**, không phải danh sách — [ADR 0003](../00-overview/decisions/0003-close-skill-project.md) §2.
+Và một chỗ đã cân nhắc riêng rồi quyết **giữ**: *"ngân hàng đứng đầu xếp hạng an toàn nhưng hút tiền đầu tiên → **ngành báo hiệu**"* ở [`portfolio-and-rotation.md`](../../.claude/skills/vn-stock-knowledge/references/portfolio-and-rotation.md). Đây là **cơ chế**, không phải danh sách.
 
 ## 4. Năm thứ trông như lỗi nhưng là cố ý
 
@@ -129,7 +129,7 @@ Skill dựng từ [`corpus/`](corpus/) — bản **AI tóm tắt** từ transcri
 
 Corpus là **nhiều thế hệ giáo trình dạy lại cùng nội dung** (V1 2022 → Ứng dụng 2024). Quy tắc xử lý mâu thuẫn: bản **mới nhất thắng** khi khác nhau về phương pháp · bản chi tiết cũ **bổ sung chiều sâu**, không ghi đè kết luận · mâu thuẫn thật thì **ghi cả hai kèm điều kiện áp dụng**. Ví dụ mâu thuẫn thật còn trong skill: số mã tối ưu — một nguồn nói 10–15, nguồn khác nói 6–8.
 
-🔴 **Corpus có thể khuếch đại nhiễu nhận dạng giọng nói** — một từ nghe nhầm xuất hiện 1 lần trong transcript thành thuật ngữ dùng 10 lần trong bản tóm tắt. Đã xảy ra thật với «nội giải». Gặp thuật ngữ nghe lạ thì đối chiếu ngược transcript, mà transcript nay chỉ còn ở **bản lưu trữ ngoài repo** — xem [ADR 0001](../00-overview/decisions/0001-docs-structure.md).
+🔴 **Corpus có thể khuếch đại nhiễu nhận dạng giọng nói** — một từ nghe nhầm xuất hiện 1 lần trong transcript thành thuật ngữ dùng 10 lần trong bản tóm tắt. Đã xảy ra thật với «nội giải». Gặp thuật ngữ nghe lạ thì đối chiếu ngược transcript, mà transcript nay chỉ còn ở **bản lưu trữ ngoài repo**.
 
 Số liệu trong skill toàn bộ là **2022–2024 và đã chết**. Giữ công thức và định nghĩa, bỏ quan sát tại thời điểm. Marker `[?…]` đánh dấu chỗ nguồn nghe không rõ — **cố ý giữ**, xoá là giả vờ chắc chắn về thứ không chắc.
 

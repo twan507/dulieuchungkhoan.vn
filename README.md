@@ -8,8 +8,8 @@ Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập d
 |---|---|---|
 | Tài liệu ba nguồn — thị trường · vĩ mô · tin | ✅ đo thật bằng lời gọi sống | 131 endpoint · 87 key · 307 URL |
 | Từ điển 729 mã trường FiinGroup | ✅ phủ 100% response thật | [field-dictionary.json](docs/10-sources/market/field-dictionary.json) |
-| Chọn nguồn chuẩn cho từng chỉ tiêu | ✅ đã chốt | [ADR 0002](docs/00-overview/decisions/0002-data-source-selection.md) |
-| Dự án skill | ✅ **đã đóng**, không còn việc treo | [ADR 0003](docs/00-overview/decisions/0003-close-skill-project.md) |
+| Chọn nguồn chuẩn cho từng chỉ tiêu | ✅ đã chốt | [chọn trường cho ETL thị trường](docs/20-design/market-field-selection.md) |
+| Dự án skill | ✅ **đã đóng**, không còn việc treo | [bảo trì skill](docs/30-skills/maintenance.md) |
 | Thiết kế kho dữ liệu · pipeline tin | ✅ đã duyệt | chưa cài đặt |
 | Tầng ngữ nghĩa nối dữ liệu ↔ skill | 🟡 đề xuất, **chưa duyệt** | [chatbot-semantic-layer.md](docs/20-design/chatbot-semantic-layer.md) |
 | Hai skill chứng khoán | ✅ xong, test 6 vòng, đã dừng tối ưu | 3.046 dòng |

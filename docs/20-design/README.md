@@ -2,7 +2,7 @@
 
 Tầng này ghi **lựa chọn của Finext** — cái gì xây thế nào và vì sao chọn thế. Khác với [`10-sources/`](../10-sources/) vốn chỉ ghi sự thật đo được về hệ thống của người khác.
 
-**Luật sửa:** sửa được, nhưng quyết định lớn phải để lại lý do ở [`00-overview/decisions/`](../00-overview/decisions/). Một thiết kế không có lý do là một thiết kế sẽ bị đảo ngược bởi người tiếp theo.
+**Luật sửa:** sửa được, nhưng lý do phải viết thẳng vào chính tài liệu. Một thiết kế không có lý do là một thiết kế sẽ bị đảo ngược bởi người tiếp theo.
 
 | File | Nội dung | Trạng thái |
 |---|---|---|
