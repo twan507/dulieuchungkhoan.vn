@@ -18,7 +18,7 @@ File này trả lời ba câu: dùng chỉ báo kỹ thuật thế nào cho đú
 
 ---
 
-## Hai nhóm chỉ số
+## Hai nhóm chỉ số và ba tác dụng
 
 Hàng nghìn chỉ số quy về **hai nhóm**, phân biệt bằng mắt không cần đọc công thức:
 
@@ -113,7 +113,7 @@ Khung quan sát: **khung ngày** là mặc định cho toàn bộ quy trình sá
 
 ---
 
-## Mẫu hình giá
+## Mẫu hình giá: bản chất, giới hạn, bốn yếu tố
 
 **Bản chất:** mẫu hình phản ánh **sự lưỡng lự giữa bên mua và bên bán** — thị trường chưa quyết định đi hướng nào. Thống kê cho thấy đa số mẫu hình nghiêng về một hướng với xác suất khoảng **60–80%**, tức 20–40% còn lại vẫn sai. Không bao giờ đạt 100%.
 
@@ -159,7 +159,7 @@ Nhóm dao động (1–8) và nhóm phễu (9–16). Điểm chung: **tất cả
 
 ---
 
-## Khoảng trống giá
+## Khoảng trống giá, đột phá, ba kiểu mua
 
 Ở thị trường có biên độ trong ngày bị chặn (mức trần theo quy định từng sàn, ở Việt Nam trong khoảng 7–10%), ý nghĩa của khoảng trống bị giới hạn: một nến thân rất dài về bản chất đã gần tương đương một khoảng trống. Bốn loại, phân biệt bằng **hai tiêu chí: khoảng trống rơi vào lần dao động thứ mấy, và đặc điểm khối lượng + thông tin tại đó**:
 
@@ -186,7 +186,7 @@ Mua ở hỗ trợ và mua sau breakout của một xu thế giảm về bản c
 
 ---
 
-## Ba lý thuyết
+## Ba lý thuyết kinh điển
 
 Ba lý thuyết này đưa vào để **biết**, không phải để áp dụng máy móc. Điểm chung: tất cả đều quy về **ba trạng thái — quá mua, trung tính, quá bán** — và nói lại bằng ngôn ngữ khác những gì cung cầu, giá lượng, kháng cự hỗ trợ đã nói. Đừng vì chúng nổi tiếng mà cố dùng cho phức tạp.
 
@@ -214,7 +214,7 @@ Cách nhớ đơn giản hóa: **1/3, 2/3, 1/2, 2/3** thay cho các tỷ lệ Fi
 
 ---
 
-## Sáu bước
+## Sáu bước phân tích kỹ thuật
 
 Quy trình tổng, chạy trên khung ngày. Đây là bản chi tiết cho người mới; khi đã quen thì không nhất thiết theo đủ các bước. **Phân tích thị trường chung trước, phân tích cổ phiếu sau** — cổ phiếu dù tốt cũng không nằm ngoài quy luật thị trường. Thiếu dữ liệu thì bỏ bước, không đảo thứ tự: **bước 1, 2 và 5 là bắt buộc** — chúng chỉ cần giá và khối lượng, và bước 2 là điều kiện chặn; bước 3, 4, 6 đòi dữ liệu chi tiết hơn, thiếu thì bỏ và hạ độ tin cậy của kết luận.
 
@@ -229,7 +229,7 @@ Sau sáu bước, nếu các tín hiệu mâu thuẫn nhau thì **cứ để th�
 
 ---
 
-## Ví dụ sáu bước
+## Ví dụ chạy đủ sáu bước
 
 Cổ phiếu **X**, giả định trung tính. Bối cảnh: giá giảm từ 30,0 xuống 18,0 trong bốn tháng, sau đó hồi lên 21,0 là mức hiện tại.
 

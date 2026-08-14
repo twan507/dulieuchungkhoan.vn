@@ -24,7 +24,7 @@ File này trả lời: đọc ba báo cáo tài chính theo thứ tự nào, rú
 
 ---
 
-## Ba báo cáo
+## Ba báo cáo và quy trình đọc
 
 | Báo cáo | Trả lời câu gì | Tính chất |
 |---|---|---|
@@ -93,7 +93,7 @@ Ba chỗ phải dừng lại:
 
 Ba dòng cộng lại ra lưu chuyển tiền thuần trong kỳ; cộng tiền đầu kỳ ra tiền cuối kỳ. **Vì sao lợi nhuận khác dòng tiền — bốn nguyên nhân:** (1) **bán chịu** — doanh thu ghi khi giao hàng, không phải khi thu tiền, phải thu tăng thì dòng tiền âm; (2) **tồn kho tăng** — tiền đã ra mua nguyên liệu, hàng chưa bán được; (3) **khấu hao**, chiều ngược lại — giảm lợi nhuận nhưng không chi tiền nên phải **cộng ngược lại** (lợi nhuận gộp 100, khấu hao 20, lợi nhuận trước thuế 80 → trong LCTT cộng lại 20); (4) **đầu tư lớn** — lợi nhuận tốt nhưng tiền đổ vào tài sản cố định thì tiền cuối kỳ vẫn cạn. Ví dụ đọc một chuỗi: kinh doanh −92, đầu tư +66 (chủ yếu thu hồi vốn góp), tài chính +10 (vay mới) → tiền thuần −16; tiền đầu kỳ 23, cuối kỳ 7. Đọc đúng: **lợi nhuận đẹp nhưng tiền âm vì phải thu và tồn kho**, và doanh nghiệp đang lấy tiền thu hồi vốn góp bù cho hoạt động kinh doanh. Chưa mất khả năng thanh toán, nhưng một kỳ nữa như vậy là hết tiền.
 
-## Dựng ngược BCTC
+## Dựng ngược báo cáo tài chính
 
 Cho trước một kịch bản kinh doanh, tự dựng ra ba báo cáo. Làm được một lần thì đọc báo cáo thật rất dễ vì biết từng con số sinh ra từ đâu. Đây là phần khó nhất, kể cả với người trong ngành. **Doanh nghiệp giả định: quán nước.** Doanh nghiệp niêm yết khác quán nước đúng hai thứ — tiêu chuẩn về vốn và tiêu chuẩn về kế toán. Bản chất giống hệt: có doanh thu, chi phí, lợi nhuận.
 
@@ -117,7 +117,7 @@ Cho trước một kịch bản kinh doanh, tự dựng ra ba báo cáo. Làm đ
 | 20%–50% | Công ty liên doanh liên kết | Dòng lãi/lỗ công ty liên doanh liên kết |
 | Trên 50% | Công ty con | **Hợp nhất** toàn bộ, trừ ra phần cổ đông không kiểm soát |
 
-## Bóc tách ROE
+## Bóc tách ROE — ví dụ tính đầu-cuối
 
 ROE = lợi nhuận sau thuế / vốn chủ sở hữu. Con số này một mình không nói được gì; bóc tách để biết nó tốt lên **nhờ cái gì**.
 
@@ -161,7 +161,7 @@ Ba thành phần trả lời ba câu: **bán có lời không — tài sản có
 
 - **Biên lợi nhuận gộp không đổi** — vị thế cạnh tranh không phụ thuộc cấu trúc vốn. **Lợi nhuận sau thuế giảm** ở kịch bản 2 vì lãi vay lớn hơn, nhưng **ROE tăng rõ rệt**.
 - **ROA gần như không đổi** vì tổng tài sản không đổi. ROA không bị cơ cấu vốn tác động, **ROE thì có** — và ROE mới là chỉ số của cổ đông.
-- **Điều kiện để đòn bẩy có lợi: ROA > lãi suất vay.** ROA càng cao thì vay càng nhiều càng lợi cho cổ đông. **ROA thấp mà vay nhiều thì đòn bẩy bào mòn giá trị cổ đông.** Áp vào DN-A: ROA 10,0%; lãi vay 60 trên dư nợ vay bình quân 800 ≈ lãi suất 7,5%; 10,0% > 7,5% nên đòn bẩy đang tạo giá trị — lãi suất thị trường lên trên 10% thì cùng cấu trúc vốn đó lập tức thành gánh nặng. Công thức DOL, DFL và cách ghép hai đòn bẩy với chu kỳ nằm ở `danh-muc-va-luan-chuyen.md`, mục *Hai đòn bẩy*.
+- **Điều kiện để đòn bẩy có lợi: ROA > lãi suất vay.** ROA càng cao thì vay càng nhiều càng lợi cho cổ đông. **ROA thấp mà vay nhiều thì đòn bẩy bào mòn giá trị cổ đông.** Áp vào DN-A: ROA 10,0%; lãi vay 60 trên dư nợ vay bình quân 800 ≈ lãi suất 7,5%; 10,0% > 7,5% nên đòn bẩy đang tạo giá trị — lãi suất thị trường lên trên 10% thì cùng cấu trúc vốn đó lập tức thành gánh nặng. Công thức DOL, DFL và cách ghép hai đòn bẩy với chu kỳ nằm ở `danh-muc-va-luan-chuyen.md`, mục *Hai đòn bẩy và cơ chế nhân*.
 
 **Tăng vốn.** Năm 2 quán nước làm hai việc: trả cổ tức bằng cổ phiếu tỷ lệ 1:10, và phát hành thêm 10.000 cp giá 35.000 đồng (mệnh giá 10.000). Số cổ phiếu: 3.000 ban đầu + 30.000 (cổ tức cổ phiếu) + 10.000 (phát hành) = **43.000 cổ**.
 
@@ -178,7 +178,7 @@ Ba thành phần trả lời ba câu: **bán có lời không — tài sản có
 - **So sánh PE hay EPS giữa các năm phải điều chỉnh tác động tăng vốn**, nếu không sẽ kết luận sai. **Tăng vốn mà không đưa vào kinh doanh thì giá trị theo PB là ảo ảnh.**
 - **Ngành có điều kiện về vốn** (ngân hàng, chứng khoán, bất động sản) mới có lợi thế thật khi tăng vốn, vì vốn vào thẳng hoạt động kinh doanh — ngân hàng cho vay, chứng khoán cấp margin. Lợi thế đó vẫn phụ thuộc thời điểm: công ty chứng khoán tăng vốn có lợi khi thị trường tốt (nhu cầu margin cao), vô nghĩa khi thị trường xấu. **Khi thị trường tốt thì doanh nghiệp nào cũng tranh thủ tăng vốn** — phân biệt tăng vốn có mục đích sử dụng rõ ràng với tăng vốn để tăng số.
 
-## Bộ chỉ tiêu
+## Bộ chỉ tiêu chất lượng doanh nghiệp
 
 Sáu nhóm chỉ tiêu các nhà cung cấp dữ liệu thường dựng sẵn. Mỗi nhóm là một **proxy** — không chỉ tiêu nào định nghĩa chính xác được khái niệm nó đại diện, nên dùng vài chỉ tiêu cùng lúc.
 
@@ -196,7 +196,7 @@ Nhóm thứ bảy — **định giá thị trường** (PE, PB) — không đo c
 - **Nhà đầu tư cá nhân chỉ cần hai câu:** có tạo lợi nhuận cho cổ đông không, và việc đó có ổn định không. **Đọc theo chuỗi năm, so sánh trong cùng nhóm ngành, không so tuyệt đối** — cùng một chỉ tiêu, năm cao năm thấp thất thường là rủi ro, đều đặn là an toàn. Chấm điểm từng chỉ tiêu rồi tổng hợp là cách phổ biến, nhưng con số tổng hợp chỉ là trung bình cộng các góc nhìn riêng lẻ.
 - **Phân tích chất lượng doanh nghiệp không ra được quyết định đầu tư**, nó chỉ phân loại tốt/xấu. Doanh nghiệp tốt có thể đã đắt, hoặc có thể không ai quan tâm. Giá trị thật nằm ở hai chỗ: chọn cổ phiếu nắm dài hạn ở vùng giá thấp, và nhận diện nhóm thất thường. **Riêng nhóm an toàn hoạt động phục vụ người cho vay, không phải nhà đầu tư** — người cho vay nhìn khả năng trả nợ, nhà đầu tư nhìn khả năng sinh lời; doanh nghiệp chưa có lợi nhuận nhưng trả được nợ thì ngân hàng vẫn cho vay, không có nghĩa đó là khoản đầu tư tốt.
 
-## Thủ thuật
+## Thủ thuật đằng sau những con số
 
 Mọi thủ thuật cuối cùng đều tác động vào lợi nhuận, qua doanh thu hoặc qua chi phí. Bốn nhóm:
 
@@ -210,7 +210,7 @@ Mọi thủ thuật cuối cùng đều tác động vào lợi nhuận, qua doa
 
 **Cách dùng.** **Khi nhìn thấy thì việc đã xong** — giá trị của việc phát hiện nằm ở chỗ hiểu lợi nhuận đến từ đâu, và ở chỗ **doanh nghiệp từng làm trò thì nhiều khả năng còn làm tiếp**. **Không cần thạo kế toán**, chỉ cần thấy bất thường là đã có tín hiệu; người làm thủ thuật giỏi thì hầu như không phát hiện được trước. **Nhóm có thủ thuật biến động mạnh: ngắn hạn là cơ hội, dài hạn không giải ngân được.** Muốn nắm giữ dài hạn thì chọn doanh nghiệp nghiêm túc — **doanh nghiệp tốt và cổ phiếu tốt là hai chuyện khác nhau.** Cuối cùng, **kiểm tra rủi ro huỷ niêm yết** trước khi coi một cổ phiếu giá thấp là cơ hội; vi phạm bất kỳ điều nào thì bỏ qua, bất kể rẻ tới đâu — ba điều dưới theo quy định niêm yết đang áp dụng, quy định đổi thì tra lại danh sách, cách dùng không đổi: (1) ba năm gần nhất có lỗ liên tiếp không; (2) lỗ luỹ kế có vượt vốn góp thực góp của chủ sở hữu không; (3) vốn chủ sở hữu có âm trong báo cáo tài chính kiểm toán không.
 
-## Key driver
+## Key driver theo ngành
 
 Mỗi ngành chỉ có một vài biến số thật sự chi phối. Đọc hết mọi chỉ tiêu chỉ làm rối. Nhận diện key driver rồi mới biết doanh nghiệp đang ở **đoạn nào của chu kỳ**, chứ không chỉ biết tốt hay xấu. Năm ngành dưới là ví dụ cách nhận diện, không phải danh sách đóng: với ngành khác, key driver là biến số mà lợi nhuận của cả ngành cùng biến động theo.
 
@@ -235,13 +235,13 @@ Mỗi ngành chỉ có một vài biến số thật sự chi phối. Đọc h�
 | Chi mua sắm tài sản cố định (capex); tiền vay, trả nợ gốc, cổ tức đã trả | LCTT | Phần II — đầu tư; phần III — tài chính |
 | Thời gian khấu hao và chính sách kế toán; dự phòng giảm giá tồn kho và phải thu khó đòi; tỷ lệ sở hữu công ty con và liên kết | Thuyết minh | Phần chính sách kế toán; chi tiết khoản mục; danh sách công ty con và liên kết |
 
-## Giới hạn
+## Giới hạn của báo cáo tài chính
 
 - **BCTC luôn chậm.** Công bố sau khi kỳ đã kết thúc, thường chậm thêm nữa. Dùng để **hiểu loại doanh nghiệp**, không dùng để dự đoán giá ngắn hạn. **Chỉ một đẳng thức đúng tuyệt đối** — mọi chỉ tiêu còn lại = phần thực tế + sai số + phần muốn nó thế nào. Sai số có hai loại: khách quan (thông lệ kế toán cho phép nhiều lựa chọn) và chủ quan.
 - **Giá cổ phiếu không do BCTC quyết định.** Thứ tự ảnh hưởng: nguồn tiền (chính sách tiền tệ) → định giá doanh nghiệp → tâm lý và dòng tiền. BCTC chỉ nuôi mắt xích thứ hai. **Chuẩn mực kế toán và suy nghĩ nhà đầu tư là hai phạm trù khác nhau.** Doanh nghiệp rất đẹp trên báo cáo nhưng nhà đầu tư không thích thì vẫn bị định giá thấp, vì mức rủi ro yêu cầu cao hơn. **Mỗi chỉ tiêu chỉ là một khía cạnh** — không con số tổng hợp nào đo được toàn bộ chất lượng doanh nghiệp.
 - **Số liệu kế toán trả lời "họ đã như thế nào", không trả lời "họ sẽ như thế nào".** Giá trị của nó là giả định quá khứ tiếp diễn — ít biến động thì giả định đó đáng tin hơn. Trong đầu tư, thứ chuyển động giá là **câu chuyện**, không phải con số kế toán; người cần huy động vốn luôn kể chuyện hay.
 
-## Phụ lục A ngân hàng
+## Phụ lục A — báo cáo tài chính ngân hàng
 
 Ngân hàng kinh doanh bằng tiền, nên khái niệm "có lợi nhuận mà không có tiền" không áp dụng được. **Bảng cân đối** không chia ngắn hạn/dài hạn mà xếp theo hạng mục nghiệp vụ.
 
@@ -268,7 +268,7 @@ Thu nhập dịch vụ − Chi phí dịch vụ = Lãi/lỗ thuần từ dịch 
 - **Chi phí dự phòng rủi ro tín dụng là chỗ phân biệt các ngân hàng.** Lấy chi phí dự phòng chia thu nhập từ hoạt động kinh doanh trước dự phòng: dưới 10% và ổn định là chất lượng tín dụng tốt; tới khoảng một nửa là kém hơn hẳn. Hai mốc này để so giữa các ngân hàng trong cùng kỳ, không phải chuẩn cố định. Đây là chỉ tiêu tách biệt rõ nhất hai ngân hàng có bảng cân đối trông giống hệt nhau. **Nhiều tài sản cũng chưa chắc sinh lời cao:** cho vay chiếm tỷ trọng thấp trong tổng tài sản thì ROA thấp hơn ngân hàng cho vay mạnh — ổn định và sinh lời là hai khía cạnh khác nhau.
 - **LCTT ít ý nghĩa với ngân hàng:** hoạt động kinh doanh và tài chính gắn liền nhau, hoạt động đầu tư rất nhỏ, tiền cuối kỳ phụ thuộc nặng vào tiền đầu kỳ. Chỉ số dùng: EPS, BVPS, PE, PB, ROA, ROE, NIM, tỷ lệ dự phòng/dư nợ. **Không dùng phương pháp dòng tiền.**
 
-## Phụ lục B chứng khoán
+## Phụ lục B — báo cáo tài chính công ty chứng khoán
 
 Mô hình ba mảng: **tự doanh, cho vay margin, môi giới** — cả ba đều phụ thuộc trạng thái thị trường. **Bảng cân đối** gần giống doanh nghiệp sản xuất; tài sản dài hạn hầu như không đáng kể vì hoạt động kinh doanh nằm ở tài sản ngắn hạn.
 
@@ -284,7 +284,7 @@ Kèm **dự phòng** cho khoản cho vay margin và các khoản phải thu. Ph�
 
 **Chỉ đọc ba mảng chính**, bỏ qua phần còn lại. **Câu hỏi không phải "tăng hay giảm" mà là "ổn định hay không ổn định"**, và luôn so với một công ty chứng khoán khác — phân tích tăng giảm đơn thuần dễ sai vì cả ba mảng đều bám theo trạng thái thị trường. Mảng tự doanh phụ thuộc **năng lực công ty**; mảng margin vận hành giống hoạt động ngân hàng, đọc như đọc tín dụng. Chỉ số dùng: EPS, BVPS, PE, PB, ROA, ROE.
 
-## Phụ lục C bảo hiểm
+## Phụ lục C — báo cáo tài chính bảo hiểm
 
 Mô hình: **thu phí bảo hiểm rồi đem đầu tư**; hoạt động đầu tư là phụ, không phải hoạt động chính. Hai loại hình: nhân thọ và phi nhân thọ. **Bảng cân đối** có hai đặc điểm chi phối toàn bộ cách đọc: **phía tài sản, phần lớn là trái phiếu** — đầu tư tài chính ngắn hạn và dài hạn đều chủ yếu là khoản nắm giữ đến ngày đáo hạn, nhiều nhất là trái phiếu Chính phủ; về hình thức có thể bán ngay, nhưng bản chất mô hình là nắm tới đáo hạn. **Phía nợ, lớn nhất là dự phòng nghiệp vụ** (dự phòng toán học) — khoản ước lượng để sẵn sàng chi trả bồi thường; ngoài ra có giao dịch mua bán lại trái phiếu Chính phủ, tương tự repo trong ngân hàng.
 
@@ -297,7 +297,7 @@ Phí bảo hiểm gộp − Phí nhượng tái bảo hiểm = Doanh thu thuần
 - Nhượng tái bảo hiểm là việc nhượng lại một phần hợp đồng cho công ty bảo hiểm khác — chuyện thường xuyên trong ngành. **Chỉ tiêu cốt lõi là doanh thu thuần phí bảo hiểm**, không phải doanh thu gộp. **Biến số quyết định là tình trạng nền kinh tế**, không phải biến động doanh thu từng quý: dân có thu nhập cao mới nghĩ tới bảo hiểm, giai đoạn khó khăn thì không.
 - **Cảnh báo về lãi suất.** Suy luận phổ biến "lãi suất tăng thì bảo hiểm hưởng lợi vì thu tiền trước đem gửi" sai ở trường hợp chung: tài sản phần lớn là trái phiếu, lãi suất tăng thì đánh giá lại các khoản đó giảm giá trị, trung hoà mất phần lợi từ tái đầu tư — mà doanh nghiệp lại phải nắm giữ nên không bán ra để hiện thực hoá lãi/lỗ. **Vị trí trong chu kỳ:** ngành phòng thủ, chạy cuối chu kỳ — sau khi các ngành khác đã tăng, và **trước** khi lãi suất tăng để chống lạm phát. Khi lãi suất đã tăng và thị trường bắt đầu nói nhiều về bảo hiểm thì đó là lúc nghĩ tới bán.
 
-## Đối chiếu chỉ tiêu
+## Đối chiếu chỉ tiêu phi tài chính ↔ tài chính
 
 Bốn nhóm báo cáo phản ánh cùng bộ chỉ tiêu, chỉ khác tên gọi. Dùng cột phi tài chính làm mốc để dịch ngang.
 

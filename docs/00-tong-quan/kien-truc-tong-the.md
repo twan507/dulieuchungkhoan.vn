@@ -78,7 +78,7 @@ Hệ quả vận hành: bảng `organization` của [kho dữ liệu thị trư�
 
 ### 3.2 Cây ngành ICB → khung ngành cho skill
 
-Hai skill **cố ý bỏ trống danh sách ngành**. Đây không phải thiếu sót mà là quyết định đã ghi rõ: *"không được cố định danh sách ngành, vì khung ngành chuẩn sẽ do hệ thống dữ liệu cung cấp sau"* — đã gỡ ở 9 chỗ, xem [`CAN-SUA.md` phần A](../30-tri-thuc/ghi-chu-xay-dung/CAN-SUA.md).
+Hai skill **cố ý bỏ trống danh sách ngành**. Đây không phải thiếu sót mà là quyết định đã ghi rõ: *"không được cố định danh sách ngành, vì khung ngành chuẩn sẽ do hệ thống dữ liệu cung cấp sau"* — đã gỡ ở 9 chỗ, xem [ADR 0003](quyet-dinh/0003-dong-du-an-skill.md). ⚠️ Có bốn chỗ nêu tên ngành **không được gỡ nhầm** (kế toán, định giá, hành vi) — liệt kê ở [`30-tri-thuc/README.md`](../30-tri-thuc/README.md).
 
 Khung ngành đó chính là [`getAllIcbIndustry`](../10-nguon-du-lieu/thi-truong/03-fiin-tham-chieu.md) — cây ICB **4 cấp**, có `icbCodePath` và `icbNamePath` nên lấy ngành cha ở cấp bất kỳ không cần duyệt cây.
 
@@ -123,7 +123,7 @@ Ba nguồn thị trường chồng lấn nhau nhiều: Screener 193 trường *(
 
 Skill **không thể tự gác cổng phạm vi của chính nó.** Luật *"chỉ trả lời chứng khoán, tài chính, kinh tế"* nằm trong thân `SKILL.md` chỉ đọc được **sau khi skill đã tải** — mà câu ngoài phạm vi thì không kích hoạt skill nào, nên luật không bao giờ tới đúng lúc. Đo được ở vòng test 5: **3/4 câu ngoài phạm vi vẫn được trả lời đầy đủ**, kể cả viết trọn một đoạn code Python.
 
-Cách vá duy nhất: dán đoạn giới hạn phạm vi vào **system prompt của sản phẩm**, không nhét thêm vào skill. Nguyên văn đoạn cần dán nằm ở [`HANDOFF.md`](../30-tri-thuc/ghi-chu-xay-dung/HANDOFF.md), mục *"Luật phạm vi KHÔNG chặn được câu ngoài hẳn"*.
+Cách vá duy nhất: dán đoạn giới hạn phạm vi vào **system prompt của sản phẩm**, không nhét thêm vào skill. Nguyên văn đoạn cần dán nằm ở [`bao-tri-skill.md` §5](../30-tri-thuc/bao-tri-skill.md).
 
 **Đây là việc của tầng sản phẩm, không phải tầng skill.** Ghi ở đây để nó không rơi mất khi dựng backend.
 

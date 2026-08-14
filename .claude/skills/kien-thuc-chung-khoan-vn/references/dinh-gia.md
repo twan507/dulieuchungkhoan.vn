@@ -37,7 +37,7 @@ Nhiều người thấy tài sản lớn liền kết luận cổ phiếu đáng
 
 ---
 
-## Hai cách tiếp cận
+## Hai cách tiếp cận: so sánh và dòng tiền
 
 | | **So sánh** (comparative) | **Chiết khấu dòng tiền** (valuation) |
 |---|---|---|
@@ -54,7 +54,7 @@ Khi nào định giá có tác dụng: **thị trường nhiều tiền, tăng n
 
 ---
 
-## Công thức chiết khấu
+## Công thức chiết khấu và mô hình tăng trưởng đều
 
 Dạng tổng quát, với CF1...CFn là dòng tiền tương lai và r là tỷ lệ chiết khấu. Không ai dự báo được dòng tiền từng năm quá vài năm, nên giả định dòng tiền tăng đều theo tỷ lệ g mỗi năm, ra **mô hình tăng trưởng đều** — và trường hợp riêng g = 0:
 
@@ -68,7 +68,7 @@ CF0 là dòng tiền năm gốc, r là tỷ suất chiết khấu (cũng là t�
 
 ---
 
-## Tỷ suất chiết khấu
+## Tỷ suất chiết khấu: CAPM và WACC
 
 Tỷ lệ chiết khấu là cái nhà đầu tư yêu cầu. Gốc của nó là **chi phí cơ hội** — cái đáng ra nhận được nếu làm việc khác mà tin chắc sẽ nhận. Khi đầu tư chứng khoán, cơ hội mất đi là tiền lãi tiết kiệm.
 
@@ -94,7 +94,7 @@ Vì Rf và Rm giống nhau cho mọi cổ phiếu, **toàn bộ khác biệt v�
 
 ---
 
-## FCFF và FCFE
+## FCFF và FCFE — 4 bước mỗi loại
 
 Đây là phần lõi. Hai dòng tiền hoàn toàn khác nhau; khác biệt nằm ở phần nợ.
 
@@ -130,7 +130,7 @@ Ba điểm dễ sai. **Vốn lưu động phải loại tiền mặt** vì tiề
 
 ---
 
-## Ví dụ 1 — DCF
+## Ví dụ 1 — một bài DCF đầy đủ
 
 Doanh nghiệp giả định **Công ty X**, sản xuất, 100 triệu cổ phần lưu hành, giá thị trường 24.000 đ/cp. Đơn vị: tỷ đồng. Năm gần nhất là N, thuế suất 20%.
 
@@ -161,7 +161,7 @@ Giá trị doanh nghiệp = 270 × 1,06 / (0,127 − 0,06) = 286,2 / 0,067 = **4
 
 ---
 
-## Mô hình cổ tức
+## Mô hình cổ tức và cách thay bằng thu nhập
 
 Trường hợp riêng của mô hình tăng trưởng đều, với CF là cổ tức mỗi cổ phiếu (DPS): **V = DPS × (1 + g) / (r − g)**.
 
@@ -171,7 +171,7 @@ g tính được từ **g = ROE × tỷ lệ giữ lại lợi nhuận**. Nhưng
 
 ---
 
-## Quy trình bảy bước
+## Quy trình bảy bước định giá
 
 Quy trình chuẩn để định giá bằng mô hình tăng trưởng đều trên nền thu nhập:
 
@@ -183,13 +183,13 @@ Quy trình chuẩn để định giá bằng mô hình tăng trưởng đều tr
 6. **Áp công thức tăng trưởng đều.** Vì bước 1 dùng tổng thu nhập nên bước này ra **tổng giá trị vốn hoá hợp lý**, không phải giá một cổ phiếu.
 7. **Quy đổi về giá một cổ phiếu:** **Giá hợp lý mỗi cp = Giá hiện tại × Giá trị hợp lý tổng / Vốn hoá hiện tại.** Cả ba thông số đều có trên các trang tài chính; cách này tránh được vấn đề pha loãng khi doanh nghiệp tăng vốn.
 
-Bảy bước đều bắt buộc để ra một con số dùng được. Chỗ dễ thiếu dữ liệu nhất là bước 3 — không có nguồn Rm và beta thống nhất thì dùng đường tắt ở mục *Định giá nhanh*, đổi độ chính xác lấy tốc độ.
+Bảy bước đều bắt buộc để ra một con số dùng được. Chỗ dễ thiếu dữ liệu nhất là bước 3 — không có nguồn Rm và beta thống nhất thì dùng đường tắt ở mục *Định giá nhanh bằng cơ hội đầu tư thay thế*, đổi độ chính xác lấy tốc độ.
 
 Khi định giá hai công ty để so sánh: **cùng phương pháp, cùng nguồn dữ liệu, cùng kỳ hạn, lý tưởng nhất là cùng một người thực hiện.** Không thể lấy định giá DCF của công ty chứng khoán A đem so với định giá PE/PB của công ty chứng khoán B.
 
 ---
 
-## Thu nhập còn lại
+## Định giá theo thu nhập còn lại
 
 Phương pháp thứ ba trong nhóm dòng tiền (residual income), dựa trên giá trị sổ sách cộng phần thu nhập thặng dư. Giả định gốc: **thu nhập tạo ra phải đảm bảo được chi phí vốn; phần cao hơn chi phí vốn mới là giá trị được tạo ra.** Đầu tư sinh 10% trong khi gửi ngân hàng được 9,5% thì giá trị thực tạo ra chỉ 0,5%. Sinh 8% trong khi ngân hàng 9,5% thì không tạo ra giá trị nào, dù báo cáo vẫn ghi có lãi. ROE 12% hay 20% chưa nói lên gì cho tới khi biết chi phí vốn.
 
@@ -200,7 +200,7 @@ BV là giá trị sổ sách vốn chủ sở hữu. Các bước: (1) lấy l�
 
 ---
 
-## Định giá so sánh
+## Định giá so sánh: PE, PB và năm bước
 
 Công thức cốt lõi: **Giá trị = EPS × PE trung bình ngành**, hoặc **Giá trị = book value per share × PB trung bình ngành**.
 
@@ -230,7 +230,7 @@ Hai biến thể đáng biết. **Cộng dồn** đại diện ngành tốt hơn
 
 ---
 
-## Ví dụ 2 — so sánh
+## Ví dụ 2 — định giá so sánh đủ năm bước
 
 Vẫn là **Công ty X** ở ví dụ 1: EPS = 400 tỷ / 100 triệu cp = **4.000 đ/cp**; BVPS = 2.000 tỷ / 100 triệu cp = **20.000 đ/cp**; giá 24.000 đ/cp.
 
@@ -249,7 +249,7 @@ Vẫn là **Công ty X** ở ví dụ 1: EPS = 400 tỷ / 100 triệu cp = **4.0
 
 ---
 
-## PE thấp có tốt không
+## PE thấp có phải tốt không
 
 Phần lớn mọi người nghĩ PE thấp là tốt vì thu hồi vốn nhanh hơn. **Quan niệm này sai** ở mức tổng quát: PE thấp có thể vì không ai quan tâm, PE cao có thể vì nhiều người kỳ vọng vào khả năng tăng trưởng. PE cao hay thấp là vấn đề thị trường đang thế nào, không phải bản chất cổ phiếu. Khung nhân tố cho ba lát cắt dùng được ở đây — hai nhân tố đầu là của Fama-French, momentum do Carhart bổ sung (chi tiết ở `nang-cao.md`): **Size** — ngắn hạn theo chu kỳ công ty lớn tăng tốt, nắm giữ nhiều năm thì vốn hoá nhỏ tốt hơn, dùng cho lựa chọn danh mục dài hạn; **Value** — PE thấp là cổ phiếu giá trị, PE cao là cổ phiếu tăng trưởng, dùng cho định giá; **Momentum** — cổ phiếu đang tăng tốt có xu hướng tiếp tục tăng trong một chu kỳ tăng trưởng, dùng cho định thời điểm.
 
@@ -261,7 +261,7 @@ Không có chuyện tốt xấu, chỉ có phù hợp với giai đoạn nào. N
 
 ---
 
-## Định giá nhanh
+## Định giá nhanh bằng cơ hội đầu tư thay thế
 
 **Cách 1 — cơ hội đầu tư thay thế.** Khó nhất trong định giá so sánh là chọn công ty tương đương. Nếu không chọn được thì lấy luôn cơ hội tương đương là gửi tiền ngân hàng — vừa nhanh vừa tránh bias khi chọn cổ phiếu so sánh.
 
@@ -298,7 +298,7 @@ Cách đọc: những yếu tố trên chỉ có ý nghĩa **khi so sánh các c
 
 ---
 
-## Mối liên hệ
+## Mối liên hệ giữa các phương pháp
 
 **So sánh và dòng tiền bản chất là một.** Xuất phát từ V = DPS × (1+g) / (r − g). Chia hai vế cho EPS: vế trái thành **PE**, vế phải có DPS/EPS chính là **payout ratio** — vậy PE hoàn toàn ước lượng được từ số liệu tài chính. Payout không đổi thì PE cao hay thấp phụ thuộc r; payout cao thì PE cao. Điều này giải thích vì sao công ty trả cổ tức lớn thì PE tăng, và vì sao **PE cao chưa hẳn xấu**: không biết cao do g tăng hay do r giảm. Chia hai vế cho book value per share, dùng g = ROE × tỷ lệ giữ lại: ra công thức cho **PB**, phụ thuộc ROE và r — ROE cao và r thấp thì tốt, ROE cao mà r cũng cao thì chưa chắc.
 
@@ -315,7 +315,7 @@ Cùng một bộ số liệu, kết quả chênh gấp đôi. Khác biệt nằm
 
 ---
 
-## Dùng kết quả định giá
+## Dùng kết quả định giá thế nào
 
 **Đừng nhìn con số, nhìn phần trăm — rồi cũng đừng dính vào phần trăm.** Cổ phiếu A giá 10, định giá 20 → +100%. Công ty B cùng ngành cùng phương pháp: giá 10, định giá 30 → +200%. Chọn B, không phải vì mua B để chờ lên 30, mà vì 200% tốt hơn 100%.
 

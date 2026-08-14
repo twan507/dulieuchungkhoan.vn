@@ -20,15 +20,15 @@ Hai khối kiến thức đứng riêng. Khối A trả lời "cái gì thực s
 
 ---
 
-## Câu hỏi và giới hạn CAPM
+## Câu hỏi và giới hạn của CAPM
 
 Câu hỏi này là bước cuối của chuỗi định giá. Chiết khấu dòng tiền về hiện tại cần một **tỷ suất lợi nhuận yêu cầu**. Hỏi cái gì quyết định tỷ suất đó chính là hỏi cái gì quyết định giá cổ phiếu. Mục đích không phải học thuộc kết luận nghiên cứu mà hiểu mô hình được dựng thế nào, để biết khi nào dùng được.
 
-**CAPM chỉ có một nhân tố**: thị trường, truyền vào cổ phiếu qua beta (công thức và cách lấy từng biến ở `dinh-gia.md`, mục *Tỷ suất chiết khấu*). Thực tế giá còn chịu hàng loạt biến vĩ mô và vi mô khác, nên giới nghiên cứu mở rộng sang mô hình nhiều nhân tố.
+**CAPM chỉ có một nhân tố**: thị trường, truyền vào cổ phiếu qua beta (công thức và cách lấy từng biến ở `dinh-gia.md`, mục *Tỷ suất chiết khấu: CAPM và WACC*). Thực tế giá còn chịu hàng loạt biến vĩ mô và vi mô khác, nên giới nghiên cứu mở rộng sang mô hình nhiều nhân tố.
 
 Nguyên lý xuyên suốt mọi mô hình dạng này: **mọi nhân tố đều đo bằng `F − E(F)`** — thực tế trừ kỳ vọng. Nhà đầu tư đã ra quyết định dựa trên kỳ vọng của mình, nên phần trùng kỳ vọng đã nằm trong giá và không tạo tác động. Không đọc "lãi suất tăng bao nhiêu" mà đọc "tăng bao nhiêu **so với kỳ vọng**"; lạm phát, tăng trưởng, lợi nhuận doanh nghiệp đều vậy. Cách nói tương đương: mọi biến số xét "so với bình thường", không xét giá trị tuyệt đối.
 
-## APT
+## APT — cách nhà nghiên cứu đi tìm nhân tố
 
 **APT** (Arbitrage Pricing Theory) là dạng tổng quát đầu tiên cho phép đưa vào nhiều nhân tố. Cách nhà nghiên cứu đi tìm nhân tố:
 
@@ -38,7 +38,7 @@ Nguyên lý xuyên suốt mọi mô hình dạng này: **mọi nhân tố đều
 
 Khác CAPM ở chỗ: CAPM áp đặt trước một nhân tố duy nhất bằng lý thuyết; APT không nói trước có bao nhiêu nhân tố và là nhân tố nào — để dữ liệu chọn. Điểm yếu của APT: ra quá nhiều nhân tố, không ai theo dõi hết nổi. Vì vậy các mô hình về sau đều là **bản rút gọn của APT**.
 
-## Fama-French
+## Fama-French 3 và 5 nhân tố
 
 Bản rút gọn phổ biến nhất. Bản 3 nhân tố ra thập niên 1990, bản 5 nhân tố bổ sung năm 2015. Dữ liệu nghiên cứu gốc trải 50 năm (1963–2013).
 
@@ -56,14 +56,14 @@ Mô hình 5 nhân tố: `R_i − R_f = α + β·(Rm − Rf) + s·SMB + h·HML + 
 - **Quy mô đầu tư** = tổng tài sản kỳ này / tổng tài sản kỳ trước (năm so năm hoặc quý so quý). Dùng CAPE cũng được nhưng phức tạp hơn mà không thêm được gì.
 - **Đọc ngược chiều B/P.** Nghiên cứu gốc dùng B/P chứ không dùng P/B. B/P cao = giá trị sổ sách lớn hơn thị giá = **P/B thấp** = cổ phiếu giá trị. Quy về cách nói Việt Nam: P/E và P/B thấp đại diện cho cổ phiếu giá trị.
 
-## Nhân tố thị trường
+## Nhân tố thị trường quan trọng tới mức nào
 
 Con số cần nhớ: **5 nhân tố Fama-French cùng giải thích khoảng 95% lợi nhuận yêu cầu; riêng nhân tố thị trường đã chiếm hơn 80%.** Còn 5% không mô hình nào giải thích được.
 
 - **Xác định thị trường trước, lọc cơ bản sau.** Áp bộ tiêu chí vốn hóa nhỏ, giá trị, lợi nhuận tốt vào một thị trường đang xuống vẫn thua lỗ.
 - Quan điểm "chọn cổ phiếu tốt rồi nắm giữ dài hạn" thiếu vế thị trường thì hỏng. Giá trị, lợi nhuận, tăng trưởng là yếu tố phụ. Trong thực hành, chọn vài yếu tố chính là đủ — đào sâu các yếu tố phụ là tranh giành phần 5% không đáng thời gian.
 
-## Phân loại nhân tố
+## Phân loại nhân tố theo nhóm
 
 | Nhóm | Nhân tố có ý nghĩa và chiều tác động |
 |---|---|
@@ -79,7 +79,7 @@ Con số cần nhớ: **5 nhân tố Fama-French cùng giải thích khoảng 95
 - **Sự kiện không tạo giá trị.** Cổ tức và cổ phiếu thưởng tạo "hiệu ứng giá trị"; chia tách tạo "hiệu ứng giá rẻ" và tăng thanh khoản; mua cổ phiếu quỹ tạo cảm giác doanh nghiệp đang tăng trưởng. Tổng tài sản cổ đông không đổi. Chiến lược sự kiện là **bán trước ngày chốt quyền**.
 - **Phát hành riêng lẻ khác hẳn phát hành cho cổ đông hiện hữu.** Phát hành cho cổ đông hiện hữu điều chỉnh giá theo bình quân gia quyền giá cũ và giá phát hành nên có động lực đánh giá lên để cổ đông chịu nộp tiền. Phát hành riêng lẻ không bị điều chỉnh giá và bên mua vào ở giá thấp — bán xuống sát giá mua vẫn lời, nên động lực đánh lên rất thấp.
 
-## Kết hợp nhân tố
+## Kết hợp các nhân tố và hạn chế
 
 Quy trình lọc danh mục, làm được bằng công cụ lọc của bất kỳ trang dữ liệu tài chính nào:
 
@@ -94,7 +94,7 @@ Kết quả khi kết hợp: **nhỏ vừa + B/P cao (P/B thấp) + lợi nhuậ
 - **Kết luận chỉ đúng ở tầm vài chục năm.** Một nhà đầu tư có thể rơi trọn vào đoạn quy tắc không hiệu quả. Không áp máy móc.
 - **Áp dụng phải kiên trì và nhất quán.** Nay vốn hóa nhỏ mai vốn hóa lớn thì mất hết chiều sâu — đó là giao dịch ngắn hạn, không phải đầu tư theo nhân tố.
 
-## Áp dụng Việt Nam
+## Áp dụng vào Việt Nam
 
 - **Vĩ mô:** vẫn là bộ ba lạm phát — lãi suất — tăng trưởng, trong đó tăng trưởng gắn liền với hai cái kia nên thường gộp còn lạm phát và lãi suất. Các quan hệ này là quan hệ **dài hạn**; với tầm nhìn ngắn hạn thì chu kỳ chính sách quan trọng hơn.
 - **Cơ bản:** bốn nhân tố giữ nguyên. Nhân tố quy mô hoạt động khá tốt ở Việt Nam, kèm hiệu ứng thị giá nhỏ — nhà đầu tư cá nhân chuộng cổ phiếu thị giá thấp vì cảm giác rẻ và cảm giác dễ tăng. Khi thị trường tăng mạnh, nhóm P/E và P/B cao đôi khi chạy tốt hơn; nhưng dài hạn thì P/E và P/B thấp vẫn vượt trội.
@@ -106,7 +106,7 @@ Kết quả khi kết hợp: **nhỏ vừa + B/P cao (P/B thấp) + lợi nhuậ
 
 ---
 
-## Hai kỹ thuật rào chắn
+## Hai kỹ thuật rào chắn vị thế
 
 Phân biệt ba trạng thái trước khi bàn kỹ thuật:
 
@@ -116,7 +116,7 @@ Phân biệt ba trạng thái trước khi bàn kỹ thuật:
 
 Hai kỹ thuật rào chắn vị thế cổ phiếu: **rebalancing** — mua bán **cùng một lượng** cổ phiếu quanh vùng hỗ trợ/kháng cự để cơ cấu lại vị thế mà không đổi số cổ phiếu nắm giữ (chi tiết ở `danh-muc-va-luan-chuyen.md`, mục *Rebalancing*); và **hedging bằng hợp đồng tương lai** — mở vị thế phái sinh ngược chiều để trung hòa rủi ro thị trường của danh mục, toàn bộ phần dưới.
 
-## Hợp đồng tương lai
+## Hợp đồng tương lai làm công cụ rào chắn
 
 **Hợp đồng tương lai chỉ số** là thỏa thuận mua hoặc bán chỉ số cơ sở (ở Việt Nam là VN30) ở một mức giá xác định vào một ngày trong tương lai. Nói gọn: đoán chỉ số. **Long** = mua = đoán lên. **Short** = bán = đoán xuống.
 
@@ -132,7 +132,7 @@ Hai kỹ thuật rào chắn vị thế cổ phiếu: **rebalancing** — mua b�
 
 **Đọc mùa vụ của phái sinh.** Phần lớn vị thế mở trong tháng phục vụ phòng ngừa; chỉ tới gần ngày đáo hạn mới chuyển sang đầu cơ. Vì vậy theo dõi số hợp đồng mở và đóng suốt tháng, đậm nhất là tuần cuối trước đáo hạn.
 
-## Tính tỷ lệ rào chắn
+## Tính tỷ lệ rào chắn và số hợp đồng
 
 1. **Giá trị danh mục cần khóa** `V = Σ (số cổ phiếu × thị giá)` của từng mã.
 2. **Beta danh mục** `β_p = Σ (tỷ trọng mã i × beta mã i)`. Beta từng mã lấy từ hồi quy lợi nhuận mã đó theo lợi nhuận chỉ số cơ sở. Beta là hệ số biến động: danh mục beta 1,2 kỳ vọng biến động 1,2% khi chỉ số biến động 1%.
@@ -142,7 +142,7 @@ Hai kỹ thuật rào chắn vị thế cổ phiếu: **rebalancing** — mua b�
 
 Khi `β_p = 1` và `h = 1`, công thức thu về đúng quy tắc đơn giản: bán hợp đồng tương lai có tổng giá trị bằng giá trị danh mục.
 
-## Ví dụ rào chắn
+## Ví dụ chạy được: rào chắn một danh mục
 
 **Dữ liệu giả định.** Danh mục 6 mã, tổng giá trị `V = 1,25 tỷ đồng`, beta danh mục `β_p = 1,2`. Hợp đồng tương lai kỳ hạn 1 tháng đang ở `F = 1.250 điểm`, hệ số nhân `m = 100.000 đồng/điểm`, tỷ lệ ký quỹ giả định 13%. Khóa toàn phần: `h = 1`.
 
@@ -158,7 +158,7 @@ Khi `β_p = 1` và `h = 1`, công thức thu về đúng quy tắc đơn giản:
 
 **Kịch bản 3 — hedge không hoàn hảo.** Chỉ số vẫn giảm 5% nhưng danh mục thực tế chỉ giảm 4%: cổ phiếu lỗ 50 triệu, phái sinh lãi 75 triệu → **lãi ròng 25 triệu**. Nếu danh mục giảm 8%: cổ phiếu lỗ 100 triệu, phái sinh lãi 75 triệu → **lỗ ròng 25 triệu**. Phần lệch này là rủi ro tương quan, không bao giờ khử hết được.
 
-## Giới hạn hedging
+## Giới hạn và rủi ro của hedging
 
 Phần hay bị bỏ qua nhất. Hedge không phải cái khiên tuyệt đối.
 
@@ -170,7 +170,7 @@ Phần hay bị bỏ qua nhất. Hedge không phải cái khiên tuyệt đối.
 - **Bên đối diện mạnh hơn.** Quỹ lớn nắm cả cổ phiếu cơ sở lẫn vị thế phái sinh, có thể tác động lên chỉ số để phục vụ vị thế của họ — hiện tượng ép vị thế đối ứng qua tác động lên chỉ số cơ sở. Đây là nghi vấn về động cơ, không phải kết luận.
 - **Đừng trượt từ hedge sang đầu cơ.** Đòn bẩy khiến lãi có thể rất lớn trong 1–2 ngày, nhưng lỗ đến đúng tốc độ đó.
 
-## Open Interest
+## Open Interest và dòng tiền phái sinh
 
 **Open Interest (OI)** là số hợp đồng đang mở tại một thời điểm. Khác **khối lượng giao dịch** (volume) — volume là số hợp đồng khớp trong phiên, kể cả những người đang có vị thế trao tay cho nhau. OI tăng nghĩa là có người mới mở vị thế, tiền mới vào; OI giảm là có người đóng vị thế rời đi; OI đứng yên mà volume lớn là người trong cuộc trao tay nhau, gần với giao dịch trao tay giữa các vị thế cũ. Đọc OI theo vùng giá, tương tự phân tích giá — khối lượng:
 

@@ -21,7 +21,7 @@ Tầng cơ chế của việc dựng danh mục: phân bậc rủi ro cổ phi�
 
 ---
 
-## Hai lớp luân chuyển
+## Hai lớp luân chuyển: ngành và dòng tiền
 
 Đây là khác biệt cốt lõi, hay bị gộp làm một. **Luân chuyển ngành** và **luân chuyển dòng tiền** chạy theo hai logic ngược nhau.
 
@@ -39,7 +39,7 @@ Tầng cơ chế của việc dựng danh mục: phân bậc rủi ro cổ phi�
 
 ---
 
-## Sáu tiêu chí phân bậc dòng tiền
+## Sáu tiêu chí phân bậc dòng tiền cho một cổ phiếu
 
 Sáu tiêu chí đơn giản để xếp một cổ phiếu vào ba bậc dòng tiền. Tất cả đều tra được từ dữ liệu thị trường thông thường, không cần mô hình. Đây là bộ tối thiểu, không phải bộ đóng: hệ thống dữ liệu có tiêu chí đo được khác thì thêm vào cùng cách xếp, thiếu tiêu chí nào thì xếp bằng các tiêu chí còn lại.
 
@@ -62,7 +62,7 @@ Năm lưu ý kèm theo, phải giữ nguyên:
 
 ---
 
-## Lưới ngành × dòng tiền
+## Lưới ngành × dòng tiền và trật tự chạy
 
 Ghép hai trục thành lưới ba × ba, chín ô — bản đồ để biết đang ở đâu trong sóng.
 
@@ -78,7 +78,7 @@ Năm quy tắc đọc lưới:
 
 ---
 
-## Bảng luân chuyển theo chu kỳ
+## Bảng luân chuyển theo chu kỳ tăng và chu kỳ giảm
 
 ### Xếp hạng ngành theo độ nhạy
 
@@ -120,7 +120,7 @@ Chiều đi xuống đảo ngược thứ tự chiều đi lên: tiền quay v�
 
 ---
 
-## Đa dạng hoá danh mục
+## Đa dạng hoá: bao nhiêu mã
 
 Một tập hợp mã chỉ thành **danh mục** khi có cấu trúc bù trừ: đủ nhóm ngành, đủ mức rủi ro, đủ vốn hoá lớn nhỏ, đủ tăng trưởng lẫn giá trị. Danh sách 50 mã không cấu trúc vẫn chỉ là danh sách. Mục đích của đa dạng hoá là loại **rủi ro đặc thù doanh nghiệp** (specific risk) để chỉ còn lại **rủi ro thị trường** (systematic risk) — cái không loại được.
 
@@ -136,7 +136,7 @@ Quy tắc gỡ mâu thuẫn: **số mã bị chặn trên bởi hai thứ — t�
 
 ---
 
-## Lý thuyết danh mục hiện đại
+## Lý thuyết danh mục hiện đại và tỷ suất Sharpe
 
 Lý thuyết danh mục hiện đại dựng trên đúng hai đặc tính của mọi tài sản tài chính: **lợi nhuận kỳ vọng** và **rủi ro**. Có từ hai tài sản trở lên thì xuất hiện đặc tính thứ ba: **mức tương quan**.
 
@@ -163,7 +163,7 @@ Lý thuyết danh mục hiện đại dựng trên đúng hai đặc tính của
 
 ---
 
-## Phân bổ tài sản
+## Phân bổ tài sản, tiền mặt như một vị thế
 
 **Phân bổ hạng tài sản quan trọng hơn nhiều so với chọn từng cổ phiếu** — chọn khu rừng quan trọng hơn chọn từng cây. Các hạng: chứng khoán, bất động sản, hàng hoá, hàng sưu tầm, tiền số; trong chứng khoán lại có cổ phiếu, trái phiếu, tiền. Đánh đổi giữa các hạng: chứng khoán thanh khoản hơn bất động sản nhưng dao động mạnh hơn; hàng sưu tập cho cảm giác yên tâm nhưng gần như không thanh khoản.
 
@@ -177,7 +177,7 @@ Tỷ trọng cổ phiếu rủi ro nên gắn với tình trạng cá nhân, kh�
 
 ---
 
-## Hai đòn bẩy
+## Hai đòn bẩy và cơ chế nhân
 
 Phân tích ngành theo từng chỉ tiêu một thì không bao giờ hết. Cuối cùng quy về hai biến, và cả hai cùng đo một thứ: **độ nhạy của lợi nhuận trước một đồng doanh thu thêm và một điểm lãi suất thêm.**
 
@@ -217,7 +217,7 @@ Phân biệt momentum và ngược dòng cho chặt: **momentum** mua ngay lúc 
 
 ## Ba cách mua
 
-Ba lý thuyết mua phổ biến, không phải bí kíp riêng của ai: **mua hỗ trợ**, **mua đột phá (breakout)**, **mua theo đà (momentum)**. Bảng cách làm và đặc điểm từng kiểu nằm ở `ky-thuat-chi-bao.md`, mục *Khoảng trống giá* — không lặp lại ở đây. Ba điểm bổ sung khi chọn cách mua cho một danh mục:
+Ba lý thuyết mua phổ biến, không phải bí kíp riêng của ai: **mua hỗ trợ**, **mua đột phá (breakout)**, **mua theo đà (momentum)**. Bảng cách làm và đặc điểm từng kiểu nằm ở `ky-thuat-chi-bao.md`, mục *Khoảng trống giá, đột phá, ba kiểu mua* — không lặp lại ở đây. Ba điểm bổ sung khi chọn cách mua cho một danh mục:
 
 - **Khối lượng đi kèm là dấu hiệu xác nhận:** mua hỗ trợ thì khối lượng còn **nhỏ** mới đúng, hợp giai đoạn tích luỹ; mua đột phá và mua theo đà đòi khối lượng **lớn**, hợp giai đoạn tăng mạnh.
 - **Đột phá và theo đà khác nhau đúng một chỗ:** theo đà chờ đột phá thành công rồi mới vào; đột phá vào ngay khi vượt. **Mua đột phá ở vùng giá đã tăng mạnh là rủi ro nhất** trong ba cách; mua ở lần vượt đầu tiên cũng rủi ro, mua sau một khung dao động hẹp thì bình thường.
@@ -275,7 +275,7 @@ Hai loại rủi ro khác hẳn nhau; phần lớn sai lầm đến từ việc 
 
 ---
 
-## Ví dụ chạy đủ
+## Ví dụ chạy đủ: một danh mục giả định
 
 Số liệu giả định trung tính, doanh nghiệp đặt tên A–E. Vốn 1.000 triệu đồng.
 

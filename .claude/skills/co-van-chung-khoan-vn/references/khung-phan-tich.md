@@ -16,7 +16,7 @@ Khi cần công thức, quy trình tính, hay định nghĩa chi tiết — đ�
 
 ---
 
-## Chu kỳ chính sách
+## Chu kỳ chính sách — đang ở đoạn nào
 
 Câu chẩn đoán quan trọng nhất, hỏi trước mọi câu khác: **tiền có đang nhiều thêm không?**
 
@@ -39,7 +39,7 @@ Quy tắc đọc chính sách:
 
 ---
 
-## Luân chuyển
+## Luân chuyển ngành và dòng tiền — tiền đang ở đâu, sắp tới đâu
 
 Hai trục để định vị bất kỳ cổ phiếu nào — dùng đúng bộ tên chung của hai skill:
 
@@ -57,7 +57,7 @@ Quy tắc hành động rút từ luân chuyển:
 
 ---
 
-## Đòn bẩy kép
+## Đòn bẩy kép — ngành nào hưởng lợi
 
 Công cụ chọn ngành gọn nhất — mọi phân tích ngành cuối cùng quy về hai biến:
 
@@ -70,7 +70,7 @@ Ghép với chu kỳ: đoạn tiền rẻ chọn đòn bẩy tài chính; đoạ
 
 ---
 
-## Giá và khối lượng
+## Giá và khối lượng — ai đang mua, ai đang bán
 
 Bảng đọc nhanh — trả lời "ai đang mua, ai đang bán":
 
@@ -87,7 +87,7 @@ Dòng cuối là quy tắc bảo vệ vốn quan trọng nhất của cả bản
 
 ---
 
-## Kỹ thuật
+## Kỹ thuật — bao giờ vào, vào ở đâu
 
 Kỹ thuật là một **chuỗi câu hỏi**, mỗi công cụ trả lời một câu — không phải một đống chỉ báo dùng cùng lúc:
 
@@ -112,7 +112,7 @@ Quy tắc cụ thể giữ lại vì dùng thường xuyên:
 
 ---
 
-## Định giá và chất lượng
+## Định giá và chất lượng — có đáng mua không
 
 **Vai trò đúng của định giá: tài sản đảm bảo.** Khi dòng tiền mạnh, giá chạy xa giá trị và định giá gần như không có ý nghĩa — *"đi tìm giá trị hợp lý trong một thị trường phi lý là quyết định tồi"*. Định giá phát huy tác dụng khi thị trường điều chỉnh hoặc đi xuống, vì lúc đó dòng tiền rủi ro đã rút và người ta mới quay về hỏi giá trị. Dài hạn giá vẫn về phản ánh giá trị — nhưng "dài hạn" có thể là một năm hoặc mười năm, nên định giá là cái đỡ mình khi sai, không phải cái hẹn ngày tăng giá.
 

@@ -7,7 +7,7 @@ Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và m�
 | [`00-tong-quan/`](00-tong-quan/) | Hợp nhất ba khối, lộ trình, sổ quyết định | Cập nhật khi kiến trúc đổi |
 | [`10-nguon-du-lieu/`](10-nguon-du-lieu/) | **Reference** — sự thật đo được về hệ thống của người khác | Chỉ sửa khi **đo lại** |
 | [`20-thiet-ke/`](20-thiet-ke/) | **Explanation** — lựa chọn của Finext | Sửa được, ghi lý do vào [`quyet-dinh/`](00-tong-quan/quyet-dinh/) |
-| [`30-tri-thuc/`](30-tri-thuc/) | Corpus và nhật ký dựng hai skill chứng khoán | Corpus bất biến; nhật ký chỉ thêm |
+| [`30-tri-thuc/`](30-tri-thuc/) | Corpus và tài liệu bảo trì hai skill chứng khoán | Corpus bất biến; tài liệu bảo trì cập nhật theo trạng thái thật |
 
 ---
 
@@ -19,7 +19,7 @@ Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và m�
 
 **Sắp gọi API** → [quy ước chung](10-nguon-du-lieu/thi-truong/00-quy-uoc-chung.md) trước tiên, 9 bẫy triển khai nằm ở đó.
 
-**Sắp sửa skill** → [ghi chú xây dựng](30-tri-thuc/ghi-chu-xay-dung/) và [bảng thuật ngữ](30-tri-thuc/thuat-ngu.md). Bảng thuật ngữ là **bắt buộc**, không phải tham khảo.
+**Sắp sửa skill** → [bảo trì skill](30-tri-thuc/bao-tri-skill.md) và [bảng thuật ngữ](30-tri-thuc/thuat-ngu.md). Cả hai là **bắt buộc**, không phải tham khảo — file đầu ghi những chỗ sửa nhầm sẽ hỏng skill mà không có gì báo lỗi.
 
 ## Toàn bộ tài liệu
 
@@ -29,7 +29,7 @@ Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và m�
 |---|---|
 | [kien-truc-tong-the.md](00-tong-quan/kien-truc-tong-the.md) | Bốn tầng L0–L4 · ranh giới tài liệu · ba mắt xích nối ba khối · lỗ hổng gác cổng phạm vi · rủi ro pháp lý theo nguồn |
 | [lo-trinh.md](00-tong-quan/lo-trinh.md) | Trạng thái từng khối · việc chặn nhiều nhất · việc gấp vì mất dữ liệu · cây phụ thuộc · việc còn để ngỏ · ba bẫy ngày đầu |
-| [quyet-dinh/](00-tong-quan/quyet-dinh/) | Sổ quyết định kiến trúc (ADR) |
+| [quyet-dinh/](00-tong-quan/quyet-dinh/) | Sổ quyết định kiến trúc (ADR) — 0001 cấu trúc kho · 0002 chọn nguồn dữ liệu · 0003 đóng dự án skill · 0004 bỏ nhật ký phiên |
 
 ### 10 · Nguồn dữ liệu — *reference*
 
@@ -53,8 +53,8 @@ Mục lục chi tiết từng file: [10-nguon-du-lieu/README.md](10-nguon-du-lie
 
 | Đường dẫn | Nội dung |
 |---|---|
+| [bao-tri-skill.md](30-tri-thuc/bao-tri-skill.md) | **Đọc trước khi sửa skill** — quyết định không được đảo · 5 lỗi nguồn đã sửa · 5 thứ cố ý · bộ test hồi quy · đoạn dán vào system prompt · ngân sách dòng |
 | [thuat-ngu.md](30-tri-thuc/thuat-ngu.md) | Bảng tra **bắt buộc** — hai trục phân loại, chuyển đổi thuật ngữ nguồn, lỗi nhận dạng giọng nói đã sửa |
-| [ghi-chu-xay-dung/](30-tri-thuc/ghi-chu-xay-dung/) | Nhật ký dựng hai skill: quyết định, bài học, lỗi nguồn đã sửa, kết quả 6 vòng test |
 | [corpus/](30-tri-thuc/corpus/) | 96 file tóm tắt bài giảng HP0–HP6 + Trà Chiều — nguyên liệu, không phải tài liệu |
 
 ### Ngoài `docs/`

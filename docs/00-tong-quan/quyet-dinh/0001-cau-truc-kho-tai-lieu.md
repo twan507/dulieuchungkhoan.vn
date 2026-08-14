@@ -1,6 +1,6 @@
 # 0001 · Cấu trúc kho tài liệu
 
-**Ngày:** 2026-08-14 · **Trạng thái:** đã áp dụng
+**Ngày:** 2026-08-14 · **Trạng thái:** đã áp dụng · ⚠️ **§6 đã bị thay thế bởi [ADR 0004](0004-bo-nhat-ky-phien.md)** — nhật ký phiên nay bỏ hẳn, không còn giữ cả bốn file. Các mục còn lại vẫn hiệu lực.
 
 ## Bối cảnh
 

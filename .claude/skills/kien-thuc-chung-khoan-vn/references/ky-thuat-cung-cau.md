@@ -125,7 +125,7 @@ Xu hướng tăng **khoẻ hay yếu** đo bằng khoảng chênh giữa đỉnh
 
 **Khoảng trống (gap)** là khoảng hở giá giữa hai phiên liên tiếp. Phân loại bằng ba câu hỏi: *có tin gì mới không, tiền có vào không, tâm lý thế nào.* Nếu khối lượng không tăng đủ mạnh thì diễn biến vẫn chỉ ngắn hạn, chưa đủ nhận diện một xu hướng mới.
 
-**Bảng phân loại bốn loại khoảng trống, hai tiêu chí phân biệt, và giới hạn của gap ở thị trường có biên độ trong ngày nằm ở `ky-thuat-chi-bao.md`, mục *Khoảng trống giá*** — file này không lặp lại.
+**Bảng phân loại bốn loại khoảng trống, hai tiêu chí phân biệt, và giới hạn của gap ở thị trường có biên độ trong ngày nằm ở `ky-thuat-chi-bao.md`, mục *Khoảng trống giá, đột phá, ba kiểu mua*** — file này không lặp lại.
 
 ## Đọc một cây nến
 

@@ -92,7 +92,7 @@ Bốn hệ quả phải nhớ:
 
 ---
 
-## Dự trữ bắt buộc và số nhân tiền
+## Dự trữ bắt buộc và số nhân tiền — ví dụ chạy đủ vòng
 
 **Dự trữ bắt buộc** là phần tiền gửi mà ngân hàng thương mại buộc phải giữ lại, không được cho vay — gồm tiền trong két và tiền gửi tại ngân hàng trung ương. Phần giữ vượt mức bắt buộc gọi là **dự trữ vượt quá** (excess reserve), phần này cho vay được. Hai công thức:
 
@@ -337,7 +337,7 @@ Ba quy tắc hành động ở vùng bão hoà:
 | **Ngành lan toả** | Doanh thu gắn với sản lượng thực của nền kinh tế, ít chịu tác động lạm phát hơn nhóm trên | Khi kinh tế tới đỉnh chu kỳ mở rộng, lo ngại chuyển sang lạm phát |
 | **Ngành phòng thủ** | Nhu cầu tồn tại bất kể chu kỳ, nên doanh thu gần như không co theo cầu | Khi kinh tế suy thoái |
 
-**Đây là tiêu chí phân bậc, không phải danh sách ngành.** Nguồn của bảng này tự nói rõ là "phân loại tương đối" và chỉ nêu vài ngành làm ví dụ. **Cách chấm điểm để xếp một ngành cụ thể vào bậc — bốn thành phần rủi ro — nằm ở `danh-muc-va-luan-chuyen.md`, mục *Bảng luân chuyển theo chu kỳ*.** Dùng cách chấm đó với khung phân ngành mà hệ thống dữ liệu đang áp dụng; dùng bảng trên khi cần hiểu *vì sao* một ngành rơi vào bậc ấy.
+**Đây là tiêu chí phân bậc, không phải danh sách ngành.** Nguồn của bảng này tự nói rõ là "phân loại tương đối" và chỉ nêu vài ngành làm ví dụ. **Cách chấm điểm để xếp một ngành cụ thể vào bậc — bốn thành phần rủi ro — nằm ở `danh-muc-va-luan-chuyen.md`, mục *Bảng luân chuyển theo chu kỳ tăng và chu kỳ giảm*.** Dùng cách chấm đó với khung phân ngành mà hệ thống dữ liệu đang áp dụng; dùng bảng trên khi cần hiểu *vì sao* một ngành rơi vào bậc ấy.
 
 Bảng này chỉ trả lời "ngành nào hợp đoạn nào của chu kỳ". **Hai chu kỳ lồng nhau, trật tự tiền chảy qua chín ô của lưới ngành × dòng tiền, và cách đọc vị trí trong lưới nằm ở `danh-muc-va-luan-chuyen.md`** — file này không lặp lại. Một điểm phải nhớ khi phân bậc dòng tiền: cách phân loại rủi ro phổ biến nhất là theo vốn hoá, ngoài ra có thể theo thị giá, P/E, cổ tức, danh tiếng — **điều quyết định là thị trường nghĩ gì, không phải mình nghĩ gì.**
 

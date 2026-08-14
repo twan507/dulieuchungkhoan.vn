@@ -26,7 +26,7 @@ Một doanh nghiệp rất tốt ở mức giá hiện tại vẫn có thể *kh
 
 ---
 
-## Bốn tình huống mở đầu
+## Bốn tình huống mở đầu — bốn thứ tự lập luận
 
 Chuỗi top-down cố định về logic, nhưng **điểm vào của lập luận đổi theo cách câu hỏi đến với mình**. Đây là đặc điểm quan trọng nhất của phương pháp — cùng bộ công cụ, bốn thứ tự dùng khác nhau:
 

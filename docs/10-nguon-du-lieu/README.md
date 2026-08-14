@@ -1,6 +1,6 @@
 # Nguồn dữ liệu — tài liệu tra cứu
 
-**Phiên bản:** 3.0 · **Ngày:** 2026-08-12 · **Trạng thái:** Hoàn chỉnh — 131 endpoint REST + 5 topic realtime + 47 feed tin
+**Phiên bản:** 4.3 · **Ngày:** 2026-08-14 · **Trạng thái:** Hoàn chỉnh — 131 endpoint REST + 5 topic realtime + 47 feed tin
 
 ---
 

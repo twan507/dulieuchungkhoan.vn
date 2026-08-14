@@ -2,7 +2,7 @@
 
 **96 file · 1,85 MB · bất biến.** Đây là **nguyên liệu**, không phải tài liệu dự án. Đừng sửa; đừng trích thẳng cho người dùng cuối.
 
-> Kích thước đo ngày 2026-08-14: HP0–HP6 **1.331 KB** (67 file) + Trà Chiều **564 KB** (29 file). Con số *"~2,1 MB"* trong [`HANDOFF.md`](../ghi-chu-xay-dung/HANDOFF.md) là ước lượng của phiên trước, không phải số đo.
+> Kích thước đo ngày 2026-08-14: HP0–HP6 **1.331 KB** (67 file) + Trà Chiều **564 KB** (29 file). Tài liệu cũ từng ghi *"~2,1 MB"* — đó là ước lượng, không phải số đo.
 
 Nội dung: bản AI tóm tắt và hệ thống hoá từ các buổi giảng của một chuyên gia chứng khoán Việt Nam.
 
@@ -44,4 +44,4 @@ Toàn bộ là **2022–2024**. Công thức và định nghĩa còn nguyên gi�
 - ✅ Giữ: *"số nhân tiền = 1 / tỷ lệ dự trữ bắt buộc"*
 - ❌ Bỏ: *"số nhân tiền khoảng 33 lần"*, *"P/E ngân hàng 8,06"*
 
-Bản đồ đầy đủ 355 section → 8 file skill, kèm ngân sách dòng đo thật: [BAN-DO-KHAI-NIEM.md](../ghi-chu-xay-dung/BAN-DO-KHAI-NIEM.md).
+Ngân sách dòng đo thật và luật *"vượt thì nén đâu, không được cắt đâu"*: [bao-tri-skill.md §8](../bao-tri-skill.md). Bản đồ chi tiết 355 section → 8 file skill là tài liệu trung gian của Giai đoạn 1, đã bỏ theo [ADR 0004](../../00-tong-quan/quyet-dinh/0004-bo-nhat-ky-phien.md) — còn ở commit `a14eb54`.
