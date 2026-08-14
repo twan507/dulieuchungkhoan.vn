@@ -6,7 +6,7 @@ Tài liệu này ghi **lựa chọn của Finext**: kiến trúc xử lý, taxon
 
 > **Đánh số mục kế thừa tài liệu gốc v3** và cố ý không đánh lại, vì hàng chục tham chiếu chéo dạng *"xem mục 6.5"* nằm rải trong cả hai file. Mục 4, 5, 6, 11.1–11.3 và 13 nằm ở [danh mục nguồn tin](../10-sources/news/README.md); các mục còn lại ở file này.
 
-**File máy đọc đi kèm:** [`docs/10-sources/news/feeds.json`](../10-sources/news/feeds.json).
+**File máy đọc đi kèm:** [`news/feeds.json`](../10-sources/news/feeds.json).
 
 ---
 
@@ -387,4 +387,4 @@ Bảy cạm bẫy trong tài liệu này đều đã gặp thật, không phải
 
 ---
 
-*Tài liệu này đi kèm [`docs/10-sources/news/feeds.json`](../10-sources/news/feeds.json) — danh sách 47 feed ở dạng máy đọc được.*
+*Tài liệu này đi kèm [`news/feeds.json`](../10-sources/news/feeds.json) — danh sách 47 feed ở dạng máy đọc được.*

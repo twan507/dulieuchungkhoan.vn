@@ -17,7 +17,7 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
 ┌───────▼────────────────────────▼─────────────────────▼─────────────┐
 │  L1 · THU THẬP                                                      │
 │  ETL Workers · Ingester (active+standby)   │  Gom tin · Lưới AI    │
-│  → market-data-store.md               │  → news-pipeline.md│
+│  → market-data-store.md                    │  → news-pipeline.md   │
 └───────┬─────────────────────────────────────────────┬──────────────┘
         │                                             │
 ┌───────▼─────────────────────────────────────────────▼──────────────┐
@@ -34,8 +34,8 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
         │
 ┌───────▼─────────────────────────────────────────────────────────────┐
 │  L4 · TRI THỨC — .claude/skills/                                     │
-│  vn-stock-advisor   (tư duy, văn phong — luôn có mặt)          │
-│  vn-stock-knowledge (công thức, quy trình — tải khi cần)      │
+│  vn-stock-advisor    (tư duy, văn phong — luôn có mặt)              │
+│  vn-stock-knowledge  (công thức, quy trình — tải khi cần)           │
 └───────┬─────────────────────────────────────────────────────────────┘
         │
    Chatbot · SSE realtime · REST · giao diện web

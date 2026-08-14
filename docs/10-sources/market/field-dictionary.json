@@ -17,7 +17,7 @@
         "url": "https://wlgw-tools.fiintrade.vn/Screener/GetScreenerParameters?language=vi",
         "header_bat_buoc": "Origin: https://fiinapp.bvsc.com.vn"
       },
-      "phu_luc_A2": "6 ma xac minh bang doi chieu so hoc — xem phu-luc-A-ma-field.md"
+      "phu_luc_A2": "6 ma xac minh bang doi chieu so hoc — xem appendix-A-field-codes.md"
     },
     "quy_tac_tra": {
       "chuan_hoa": "Chuan hoa ma ve chu THUONG. API tu dien tra Rtq12, du lieu tra rtq12.",

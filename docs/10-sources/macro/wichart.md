@@ -493,7 +493,7 @@ Lưu **hai cột giá trị**:
 
 ## 7. Bộ giám sát hợp đồng
 
-Bổ sung vào bộ giám sát đã mô tả ở [12-finext-kien-truc-trien-khai.md §7.1](../../20-design/market-data-store.md):
+Bổ sung vào bộ giám sát đã mô tả ở [market-data-store.md §7.1](../../20-design/market-data-store.md):
 
 | Kiểm tra | Bắt được |
 |---|---|

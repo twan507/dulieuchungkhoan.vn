@@ -31,7 +31,7 @@ Khi đang phân tích mà cần một phép tính cụ thể thì mở file tư�
 | Lý thuyết trò chơi, cân bằng Nash, thông tin bất cân xứng, event study, thị trường hiệu quả, tài chính hành vi, thiên lệch tâm lý | `references/psychology-information.md` |
 | Fama-French, APT, hạn chế của CAPM, phân loại nhân tố giá, hợp đồng tương lai, hedging, Open Interest | `references/advanced.md` |
 
-Câu hỏi lớn thường cần hai file. Ví dụ *"cổ phiếu này đắt hay rẻ"* cần `dinh-gia` để tính và `doc-bao-cao-tai-chinh` để biết lấy số ở đâu.
+Câu hỏi lớn thường cần hai file. Ví dụ *"cổ phiếu này đắt hay rẻ"* cần `valuation` để tính và `financial-statements` để biết lấy số ở đâu.
 
 ## Từ vựng chung — hai trục luân chuyển
 

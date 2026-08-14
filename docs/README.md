@@ -39,6 +39,8 @@ Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và m�
 | [macro/](10-sources/macro/) | WiChart (WiGroup) | 87 REST | 2026-08-12, toàn bộ 87 key |
 | [news/](10-sources/news/) | 10 báo điện tử | 47 RSS + 6 crawler | 2026-08-13, 307 URL · 1.408 tiêu đề |
 
+Mỗi nguồn tự chứa đủ đồ nghề: `macro/` có [`verify_wichart.py`](10-sources/macro/verify_wichart.py) — tự kiểm 509 khẳng định của tài liệu WiChart với API sống; `news/` có [`feeds.json`](10-sources/news/feeds.json) — 47 feed + taxonomy dạng máy đọc.
+
 Mục lục chi tiết từng file: [10-sources/README.md](10-sources/README.md).
 
 ### 20 · Thiết kế — *explanation*
@@ -62,5 +64,3 @@ Mục lục chi tiết từng file: [10-sources/README.md](10-sources/README.md)
 | Đường dẫn | Nội dung |
 |---|---|
 | [`.claude/skills/`](../.claude/skills/) | Hai skill chứng khoán — sản phẩm chạy được, 3.045 dòng |
-| [`docs/10-sources/news/feeds.json`](10-sources/news/feeds.json) | 47 feed + taxonomy dạng máy đọc |
-| [`docs/10-sources/macro/verify_wichart.py`](10-sources/macro/verify_wichart.py) | Tự kiểm 509 khẳng định của tài liệu WiChart với API sống |

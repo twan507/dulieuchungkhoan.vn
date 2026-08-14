@@ -32,15 +32,13 @@ Bảng đầy đủ kèm bằng chứng: [lộ trình §0](docs/00-overview/road
 
 ```
 finext-v2/
-├── docs/            Toàn bộ tài liệu — 4 tầng, xem docs/README.md
-│   ├── 00-overview/     hợp nhất · lộ trình · sổ quyết định
-│   ├── 10-sources/ reference: API và nguồn tin bên ngoài
-│   ├── 20-design/      explanation: lựa chọn kiến trúc của Finext
-│   └── 30-skills/      corpus và tài liệu bảo trì skill
-├── .claude/skills/  Hai skill chứng khoán — vừa là công cụ dev, vừa là artifact sản phẩm
-├── config/          File cấu hình máy đọc (feeds.json — 47 feed + taxonomy)
-├── scripts/         verify_wichart.py — tự kiểm 509 khẳng định tài liệu WiChart với API sống
-└── (chưa có)        Chỗ cho frontend / backend — layout sẽ chốt khi bắt đầu code
+├── docs/                Toàn bộ tài liệu — bản đồ ở docs/README.md
+│   ├── 00-overview/     kiến trúc · lộ trình · sổ quyết định (chỉ lịch sử)
+│   ├── 10-sources/      reference: market · macro · news — mỗi nguồn tự chứa đủ đồ nghề
+│   ├── 20-design/       lựa chọn kiến trúc của Finext
+│   └── 30-skills/       tài liệu bảo trì + corpus của hai skill
+├── .claude/skills/      vn-stock-advisor · vn-stock-knowledge — sản phẩm chạy được
+└── (chưa có)            chỗ cho frontend / backend — chốt khi bắt đầu code
 ```
 
 ## Bốn tầng hệ thống

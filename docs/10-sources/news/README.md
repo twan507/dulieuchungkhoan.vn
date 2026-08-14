@@ -17,7 +17,7 @@ Tài liệu này mô tả **nguồn tin có gì và cư xử thế nào** — 47
 > | 11.4 Ý tưởng thiết kế bị loại · 12 Còn để ngỏ · 14 Trạng thái | [thiết kế](../../20-design/news-pipeline.md) |
 > | **13 Khối lượng đã đo** | **file này** |
 
-**File máy đọc đi kèm:** [`docs/10-sources/news/feeds.json`](feeds.json) — 47 feed, taxonomy 20 sub, nhật ký loại bỏ.
+**File máy đọc đi kèm:** [`feeds.json`](feeds.json) — 47 feed, taxonomy 20 sub, nhật ký loại bỏ.
 
 ---
 

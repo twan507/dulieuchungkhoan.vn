@@ -119,9 +119,9 @@ Luật trong L1 §Ranh giới **vẫn giữ** vì nó xử lý tốt ca nửa tr
 
 Tổng corpus trong phạm vi **875.415 byte**, nén tỷ lệ **3,5 : 1**. Ngân sách đo từ dung lượng nội dung thật, không suy từ số section. Mọi file hiện nằm trong sai số ±10%.
 
-Bốn chỗ lệch tỷ lệ **có lý do, đừng "cân bằng" lại**: `dinh-gia` và `doc-bao-cao-tai-chinh` dày hơn vì công thức và quy trình không nén theo tỷ lệ như văn nói — đây là lõi *"tự làm được"*. `nang-cao` chiếm 4,7% corpus nhưng 8% ngân sách vì Fama-French, APT, CAPM là công thức thuần. `danh-muc` và `tam-ly` mỏng hơn vì chồng lấn skill 1 nhiều nhất, chỉ viết tầng cơ chế mà skill 1 cố tình bỏ.
+Bốn chỗ lệch tỷ lệ **có lý do, đừng "cân bằng" lại**: `valuation` và `financial-statements` dày hơn vì công thức và quy trình không nén theo tỷ lệ như văn nói — đây là lõi *"tự làm được"*. `advanced` chiếm 4,7% corpus nhưng 8% ngân sách vì Fama-French, APT, CAPM là công thức thuần. `portfolio-and-rotation` và `psychology-information` mỏng hơn vì chồng lấn skill 1 nhiều nhất, chỉ viết tầng cơ chế mà skill 1 cố tình bỏ.
 
-**Nếu vượt ngân sách:** nén tiếp đúng `danh-muc` và `tam-ly`. **Không cắt** khối HP3 — đó là mức "tự làm được" đã chốt. **Không cắt** `nang-cao` — 4,7% corpus, cắt không tiết kiệm được gì mà mất hẳn Fama-French/APT/hedging vì không nguồn nào khác có.
+**Nếu vượt ngân sách:** nén tiếp đúng `portfolio-and-rotation` và `psychology-information`. **Không cắt** khối HP3 — đó là mức "tự làm được" đã chốt. **Không cắt** `advanced` — 4,7% corpus, cắt không tiết kiệm được gì mà mất hẳn Fama-French/APT/hedging vì không nguồn nào khác có.
 
 ## 9. Nguồn và giới hạn của nó
 

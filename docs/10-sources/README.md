@@ -76,14 +76,14 @@ Chứng quyền · Lô lẻ · Phái sinh · Trái phiếu · ETF/Quỹ · Toàn
 | File | Nội dung | Số endpoint |
 |---|---|---|
 | [wichart.md](macro/wichart.md) | **WiChart** — vĩ mô, tiền tệ, giá hàng hoá. 6 bẫy, bộ ký hiệu, bảng tra 87 key kèm hệ số đơn vị, bảng hardcode Python, bản đồ hàng hoá → mã niêm yết | 87 |
-| [`docs/10-sources/macro/verify_wichart.py`](macro/verify_wichart.py) | **Script tự kiểm chứng** — đọc registry ngay trong `wichart.md` rồi đối chiếu 509 khẳng định với API sống. Dùng làm bộ giám sát hợp đồng hàng ngày | — |
+| [`verify_wichart.py`](macro/verify_wichart.py) | **Script tự kiểm chứng** — đọc registry ngay trong `wichart.md` rồi đối chiếu 509 khẳng định với API sống. Dùng làm bộ giám sát hợp đồng hàng ngày | — |
 
 ### 3.3 Nguồn tin tức — `news/`
 
 | File | Nội dung | Số nguồn |
 |---|---|---|
 | [news/README.md](news/README.md) | 47 feed RSS, 6 crawler HTML, quy tắc chuẩn hoá encoding và thời gian đăng, khối lượng đo được, nguồn đã loại | 10 báo |
-| [`docs/10-sources/news/feeds.json`](news/feeds.json) | Cùng nội dung ở dạng máy đọc — feed, taxonomy 20 sub, nhật ký loại bỏ | 47 feed |
+| [`news/feeds.json`](news/feeds.json) | Cùng nội dung ở dạng máy đọc — feed, taxonomy 20 sub, nhật ký loại bỏ | 47 feed |
 
 ### 3.4 Tài liệu thiết kế dựng trên các nguồn này
 
