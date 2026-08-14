@@ -2,6 +2,7 @@
   {
     "code": "closePrice",
     "name_vi": "Giá khớp gần nhất",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -11,6 +12,7 @@
   {
     "code": "ceiling",
     "name_vi": "Trần",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -20,6 +22,7 @@
   {
     "code": "floor",
     "name_vi": "Sàn",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -29,6 +32,7 @@
   {
     "code": "reference",
     "name_vi": "Tham chiếu",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -38,6 +42,7 @@
   {
     "code": "open",
     "name_vi": "Mở cửa",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -47,6 +52,7 @@
   {
     "code": "high",
     "name_vi": "Cao nhất",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -56,6 +62,7 @@
   {
     "code": "low",
     "name_vi": "Thấp nhất",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -65,6 +72,7 @@
   {
     "code": "averagePrice",
     "name_vi": "Giá bình quân phiên",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -74,6 +82,7 @@
   {
     "code": "PRIOR_PRICE",
     "name_vi": null,
+    "name_src": "—",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -83,6 +92,7 @@
   {
     "code": "totalTrading",
     "name_vi": "Tổng khối lượng khớp lệnh",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -92,6 +102,7 @@
   {
     "code": "totalTradingValue",
     "name_vi": "Tổng giá trị khớp lệnh",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -101,6 +112,7 @@
   {
     "code": "closeVol",
     "name_vi": "Khối lượng của lệnh khớp gần nhất",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -110,6 +122,7 @@
   {
     "code": "bidPrice1",
     "name_vi": "Giá dư mua bậc 1",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -119,6 +132,7 @@
   {
     "code": "bidPrice2",
     "name_vi": "Giá dư mua bậc 2",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -128,6 +142,7 @@
   {
     "code": "bidPrice3",
     "name_vi": "Giá dư mua bậc 3",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -137,6 +152,7 @@
   {
     "code": "bidVol1",
     "name_vi": "Khối lượng dư mua bậc 1",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -146,6 +162,7 @@
   {
     "code": "bidVol2",
     "name_vi": "Khối lượng dư mua bậc 2",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -155,6 +172,7 @@
   {
     "code": "bidVol3",
     "name_vi": "Khối lượng dư mua bậc 3",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -164,6 +182,7 @@
   {
     "code": "offerPrice1",
     "name_vi": "Giá dư bán bậc 1",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -173,6 +192,7 @@
   {
     "code": "offerPrice2",
     "name_vi": "Giá dư bán bậc 2",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -182,6 +202,7 @@
   {
     "code": "offerPrice3",
     "name_vi": "Giá dư bán bậc 3",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -191,6 +212,7 @@
   {
     "code": "offerVol1",
     "name_vi": "Khối lượng dư bán bậc 1",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -200,6 +222,7 @@
   {
     "code": "offerVol2",
     "name_vi": "Khối lượng dư bán bậc 2",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -209,6 +232,7 @@
   {
     "code": "offerVol3",
     "name_vi": "Khối lượng dư bán bậc 3",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -218,6 +242,7 @@
   {
     "code": "TOTAL_BID_QTTY",
     "name_vi": "Tổng dư mua",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -227,6 +252,7 @@
   {
     "code": "TOTAL_OFFER_QTTY",
     "name_vi": "Tổng dư bán",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -236,6 +262,7 @@
   {
     "code": "foreignBuy",
     "name_vi": "Khối ngoại mua trong phiên",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -245,6 +272,7 @@
   {
     "code": "foreignSell",
     "name_vi": "Khối ngoại bán trong phiên",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -254,6 +282,7 @@
   {
     "code": "foreignRemain",
     "name_vi": "Room còn lại",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -263,6 +292,7 @@
   {
     "code": "foreignRoom",
     "name_vi": "Tổng room",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -272,6 +302,7 @@
   {
     "code": "PT_MATCH_QTTY",
     "name_vi": "Khối lượng lệnh thoả thuận gần nhất",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -281,6 +312,7 @@
   {
     "code": "PT_MATCH_PRICE",
     "name_vi": "Giá lệnh thoả thuận gần nhất",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -290,6 +322,7 @@
   {
     "code": "PT_TOTAL_TRADED_QTTY",
     "name_vi": "Luỹ kế khối lượng thoả thuận trong phiên",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -299,6 +332,7 @@
   {
     "code": "PT_TOTAL_TRADED_VALUE",
     "name_vi": "Luỹ kế giá trị thoả thuận trong phiên",
+    "name_src": "tài liệu endpoint",
     "source": "BVSC",
     "nguon_chuan": "BVSC",
     "keep": true,
@@ -308,6 +342,7 @@
   {
     "code": "rtd26",
     "name_vi": "P/S (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -317,6 +352,7 @@
   {
     "code": "rtd27",
     "name_vi": "Giá - T.sản hữu hình (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -326,6 +362,7 @@
   {
     "code": "rtd28",
     "name_vi": "Giá - Dòng Tiền (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -335,6 +372,7 @@
   {
     "code": "rtd40",
     "name_vi": "Giá - Dòng Tiền Tự Do (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -344,6 +382,7 @@
   {
     "code": "rtd36",
     "name_vi": "Tỉ Suất Cổ Tức",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -353,6 +392,7 @@
   {
     "code": "rtd43",
     "name_vi": "Cổ Tức",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -362,6 +402,7 @@
   {
     "code": "rtd51",
     "name_vi": "Tỉ Lệ Chi Trả Cổ Tức",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -371,6 +412,7 @@
   {
     "code": "rtd20avg",
     "name_vi": "Tỉ Suất Cổ Tức T.Bình 3 Năm",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -380,6 +422,7 @@
   {
     "code": "rtq4",
     "name_vi": "Nợ dài hạn/ Vốn chủ sở hữu (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -389,6 +432,7 @@
   {
     "code": "rtq6",
     "name_vi": "Nợ phải trả/ Vốn chủ sở hữu (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -398,6 +442,7 @@
   {
     "code": "rtq7",
     "name_vi": "Nợ phải trả/ Tổng tài sản (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -407,6 +452,7 @@
   {
     "code": "rtq77",
     "name_vi": "Khả năng chi trả lãi vay (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -416,6 +462,7 @@
   {
     "code": "rtq78",
     "name_vi": "T.trưởng D.thu (YoY)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -425,6 +472,7 @@
   {
     "code": "rtq79",
     "name_vi": "T.trưởng LN gộp (YoY)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -434,6 +482,7 @@
   {
     "code": "rtq83",
     "name_vi": "Tăng Trưởng Lãi Thuần",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -443,6 +492,7 @@
   {
     "code": "rtd52",
     "name_vi": "T.trưởng EPS (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -452,6 +502,7 @@
   {
     "code": "ryq160",
     "name_vi": "T.trưởng K.doanh 3 năm",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -461,6 +512,7 @@
   {
     "code": "ryq166",
     "name_vi": "T.trưởng LN ròng 3 năm",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -470,6 +522,7 @@
   {
     "code": "ryq176",
     "name_vi": "T.trưởng vốn CSH 3 năm",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -479,6 +532,7 @@
   {
     "code": "rqq23",
     "name_vi": "ROIC (quý)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -488,6 +542,7 @@
   {
     "code": "rqq25",
     "name_vi": "Biên LN gộp (quý)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -497,6 +552,7 @@
   {
     "code": "rqq27",
     "name_vi": "Biên EBIT (quý)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -506,6 +562,7 @@
   {
     "code": "rqq29",
     "name_vi": "Biên LN ròng (quý)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -515,6 +572,7 @@
   {
     "code": "rtd11",
     "name_vi": "Vốn hóa",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -524,6 +582,7 @@
   {
     "code": "rtd21",
     "name_vi": "P/E (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -533,6 +592,7 @@
   {
     "code": "rtd25",
     "name_vi": "P/B (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -542,6 +602,7 @@
   {
     "code": "rtd14",
     "name_vi": "EPS (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -551,6 +612,7 @@
   {
     "code": "rtd7",
     "name_vi": "Giá trị sổ sách trên mỗi cổ phiếu (BVPS)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -560,6 +622,7 @@
   {
     "code": "rtq12",
     "name_vi": "ROE (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -569,6 +632,7 @@
   {
     "code": "rtq14",
     "name_vi": "ROA (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -578,6 +642,7 @@
   {
     "code": "rtq25",
     "name_vi": "Biên Lãi Gộp",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -587,6 +652,7 @@
   {
     "code": "ryq25",
     "name_vi": "Biên Lãi Gộp",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -596,6 +662,7 @@
   {
     "code": "rtq29",
     "name_vi": "BIên Lãi Thuần",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -605,6 +672,7 @@
   {
     "code": "ryq29",
     "name_vi": "BIên Lãi Thuần",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -614,6 +682,7 @@
   {
     "code": "rtq27",
     "name_vi": "Biên EBIT (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -623,6 +692,7 @@
   {
     "code": "rqq6",
     "name_vi": "Nợ phải trả/ Vốn chủ sở hữu (quý)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -632,6 +702,7 @@
   {
     "code": "rtq3",
     "name_vi": "Tỉ suất thanh toán hiện hành (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -641,6 +712,7 @@
   {
     "code": "rtq2",
     "name_vi": "Tỉ suất thanh toán nhanh (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -650,6 +722,7 @@
   {
     "code": "rtq1",
     "name_vi": "Tỉ suất thanh toán tiền mặt (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -659,6 +732,7 @@
   {
     "code": "revgrowth",
     "name_vi": "Tăng trưởng doanh thu quý gần nhất (YoY)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -668,6 +742,7 @@
   {
     "code": "prfgrowth",
     "name_vi": "Tăng trưởng lợi nhuận thuần quý gần nhất (YoY)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -677,6 +752,7 @@
   {
     "code": "rtd19",
     "name_vi": "Beta",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -686,6 +762,7 @@
   {
     "code": "corpownership",
     "name_vi": "Tỉ lệ tổ chức sở hữu",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -695,6 +772,7 @@
   {
     "code": "organizationownership",
     "name_vi": "Sở hữu tổ chức (chỉ tiêu thứ hai, khác `corpownership`)",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -704,6 +782,7 @@
   {
     "code": "revttm",
     "name_vi": "Doanh thu (tỉ đồng) (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -713,6 +792,7 @@
   {
     "code": "revy",
     "name_vi": "Doanh thu (tỉ đồng) (năm trước)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -722,6 +802,7 @@
   {
     "code": "isa1ttm",
     "name_vi": "Doanh số (TTM) — suy từ `isa1`",
+    "name_src": "suy theo luật kỳ",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -731,6 +812,7 @@
   {
     "code": "isa1y",
     "name_vi": "Doanh số (năm trước) — suy từ `isa1`",
+    "name_src": "suy theo luật kỳ",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -740,6 +822,7 @@
   {
     "code": "isa20ttm",
     "name_vi": "LN ròng (tỉ đồng) (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -749,6 +832,7 @@
   {
     "code": "isa20y",
     "name_vi": "LN ròng (tỉ đồng) (năm trước)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -758,6 +842,7 @@
   {
     "code": "isa3ttm",
     "name_vi": "Doanh số thuần (TTM) — suy từ `isa3`",
+    "name_src": "suy theo luật kỳ",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -767,6 +852,7 @@
   {
     "code": "isb25ttm",
     "name_vi": "Thu nhập lãi và các khoản thu nhập tương tự (TTM) — suy từ `isb25`",
+    "name_src": "suy theo luật kỳ",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -776,6 +862,7 @@
   {
     "code": "isb25y",
     "name_vi": "Thu nhập lãi và các khoản thu nhập tương tự (năm trước) — suy từ `isb25`",
+    "name_src": "suy theo luật kỳ",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -785,6 +872,7 @@
   {
     "code": "isi103ttm",
     "name_vi": "Doanh thu phí bảo hiểm (TTM) — suy từ `isi103`",
+    "name_src": "suy theo luật kỳ",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -794,6 +882,7 @@
   {
     "code": "isi103y",
     "name_vi": "Doanh thu phí bảo hiểm (năm trước) — suy từ `isi103`",
+    "name_src": "suy theo luật kỳ",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -803,6 +892,7 @@
   {
     "code": "rev",
     "name_vi": "Doanh thu (tỉ đồng) (quý gần nhất)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -812,6 +902,7 @@
   {
     "code": "prf",
     "name_vi": "Lợi nhuận ròng (tỉ đồng) (quý gần nhất)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "Screener",
     "keep": true,
@@ -821,6 +912,7 @@
   {
     "code": "closeprice",
     "name_vi": "Giá",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC",
     "keep": false,
@@ -830,6 +922,7 @@
   {
     "code": "totalmatchvolume",
     "name_vi": "Khối lượng GD",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC",
     "keep": false,
@@ -839,6 +932,7 @@
   {
     "code": "totalmatchvalue",
     "name_vi": "Giá trị GD",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC",
     "keep": false,
@@ -848,6 +942,7 @@
   {
     "code": "foreignerroom",
     "name_vi": "Room nước ngoài",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC",
     "keep": false,
@@ -857,6 +952,7 @@
   {
     "code": "percentpricechange1day",
     "name_vi": "Biến động giá 1 ngày",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -866,6 +962,7 @@
   {
     "code": "percentpricechange1week",
     "name_vi": "Biến động giá 1 tuần",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -875,6 +972,7 @@
   {
     "code": "percentpricechange1month",
     "name_vi": "Biến động giá 1 tháng",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -884,6 +982,7 @@
   {
     "code": "percentpricechange3month",
     "name_vi": "Biến động giá 3 tháng",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -893,6 +992,7 @@
   {
     "code": "percentpricechange6month",
     "name_vi": "Biến động giá 6 tháng",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -902,6 +1002,7 @@
   {
     "code": "percentpricechange52week",
     "name_vi": "Biến động giá 52 tuần",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -911,6 +1012,7 @@
   {
     "code": "percentpricechangeytd",
     "name_vi": "Biến động giá từ đầu năm",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -920,6 +1022,7 @@
   {
     "code": "averagevolume1week",
     "name_vi": "Kl T.bình 5 phiên",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -929,6 +1032,7 @@
   {
     "code": "averagevolume2week",
     "name_vi": "Kl T.bình 10 phiên",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -938,6 +1042,7 @@
   {
     "code": "averagevolume1month",
     "name_vi": "Kl T.bình 20 phiên",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -947,6 +1052,7 @@
   {
     "code": "averagevolume3month",
     "name_vi": "Kl T.bình 3 tháng",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -956,6 +1062,7 @@
   {
     "code": "icbrank",
     "name_vi": "FiinTrade Rank",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "— (không lưu)",
     "keep": false,
@@ -965,6 +1072,7 @@
   {
     "code": "value",
     "name_vi": "Value (FiinTrade Score)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "— (không lưu)",
     "keep": false,
@@ -974,6 +1082,7 @@
   {
     "code": "growth",
     "name_vi": "Growth (FiinTrade Score)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "— (không lưu)",
     "keep": false,
@@ -983,6 +1092,7 @@
   {
     "code": "momentum",
     "name_vi": "Momentum (FiinTrade Score)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "— (không lưu)",
     "keep": false,
@@ -992,6 +1102,7 @@
   {
     "code": "vgm",
     "name_vi": "VGM (FiinTrade Score)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "— (không lưu)",
     "keep": false,
@@ -1001,6 +1112,7 @@
   {
     "code": "fscore",
     "name_vi": "F-Score (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "— (không lưu)",
     "keep": false,
@@ -1010,6 +1122,7 @@
   {
     "code": "canslim",
     "name_vi": "Canslim (TTM)",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "— (không lưu)",
     "keep": false,
@@ -1019,6 +1132,7 @@
   {
     "code": "capitalstructure",
     "name_vi": "Thành phần chấm điểm VGM",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "— (không lưu)",
     "keep": false,
@@ -1028,6 +1142,7 @@
   {
     "code": "financialstrength",
     "name_vi": "Thành phần chấm điểm VGM",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "— (không lưu)",
     "keep": false,
@@ -1037,6 +1152,7 @@
   {
     "code": "financialplan",
     "name_vi": "Thành phần chấm điểm VGM",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "— (không lưu)",
     "keep": false,
@@ -1046,6 +1162,7 @@
   {
     "code": "cfo",
     "name_vi": "Thành phần chấm điểm VGM",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "— (không lưu)",
     "keep": false,
@@ -1055,6 +1172,7 @@
   {
     "code": "debt",
     "name_vi": "Thành phần chấm điểm VGM",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "— (không lưu)",
     "keep": false,
@@ -1064,6 +1182,7 @@
   {
     "code": "equityinssurance",
     "name_vi": "Thành phần chấm điểm VGM",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "— (không lưu)",
     "keep": false,
@@ -1073,6 +1192,7 @@
   {
     "code": "rsi",
     "name_vi": "RSI",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1082,6 +1202,7 @@
   {
     "code": "adx",
     "name_vi": "ADX",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1091,6 +1212,7 @@
   {
     "code": "cci",
     "name_vi": "CCI",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1100,6 +1222,7 @@
   {
     "code": "roc",
     "name_vi": "ROC",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1109,6 +1232,7 @@
   {
     "code": "stochastic",
     "name_vi": "STOCH",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1118,6 +1242,7 @@
   {
     "code": "williams",
     "name_vi": "Williams",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1127,6 +1252,7 @@
   {
     "code": "mfi",
     "name_vi": "MFI",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1136,6 +1262,7 @@
   {
     "code": "ma9",
     "name_vi": "Trung bình động 9 phiên",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1145,6 +1272,7 @@
   {
     "code": "ma20",
     "name_vi": "Trung bình động 20 phiên",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1154,6 +1282,7 @@
   {
     "code": "ma50",
     "name_vi": "Trung bình động 50 phiên",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1163,6 +1292,7 @@
   {
     "code": "ma75",
     "name_vi": "Trung bình động 75 phiên",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1172,6 +1302,7 @@
   {
     "code": "ma100",
     "name_vi": "Trung bình động 100 phiên",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1181,6 +1312,7 @@
   {
     "code": "ma200",
     "name_vi": "Trung bình động 200 phiên",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1190,6 +1322,7 @@
   {
     "code": "sma20",
     "name_vi": "Trung bình động giản đơn 20 phiên",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1199,6 +1332,7 @@
   {
     "code": "sma50",
     "name_vi": "Trung bình động giản đơn 50 phiên",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1208,6 +1342,7 @@
   {
     "code": "sma100",
     "name_vi": "Trung bình động giản đơn 100 phiên",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1217,6 +1352,7 @@
   {
     "code": "oversma50",
     "name_vi": "Giá so với trung bình động 50 phiên",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1226,6 +1362,7 @@
   {
     "code": "c1",
     "name_vi": "OHLC hai phiên gần nhất",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC",
     "keep": false,
@@ -1235,6 +1372,7 @@
   {
     "code": "c2",
     "name_vi": "OHLC hai phiên gần nhất",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC",
     "keep": false,
@@ -1244,6 +1382,7 @@
   {
     "code": "h1",
     "name_vi": "OHLC hai phiên gần nhất",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC",
     "keep": false,
@@ -1253,6 +1392,7 @@
   {
     "code": "h2",
     "name_vi": "OHLC hai phiên gần nhất",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC",
     "keep": false,
@@ -1262,6 +1402,7 @@
   {
     "code": "l1",
     "name_vi": "OHLC hai phiên gần nhất",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC",
     "keep": false,
@@ -1271,6 +1412,7 @@
   {
     "code": "l2",
     "name_vi": "OHLC hai phiên gần nhất",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC",
     "keep": false,
@@ -1280,6 +1422,7 @@
   {
     "code": "o1",
     "name_vi": "OHLC hai phiên gần nhất",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC",
     "keep": false,
@@ -1289,6 +1432,7 @@
   {
     "code": "o2",
     "name_vi": "OHLC hai phiên gần nhất",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC",
     "keep": false,
@@ -1298,6 +1442,7 @@
   {
     "code": "isa20",
     "name_vi": "LỢI NHUẬN THUẦN",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1307,6 +1452,7 @@
   {
     "code": "isa22",
     "name_vi": "LỢI NHUẬN THUẦN",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1316,6 +1462,7 @@
   {
     "code": "cfa18",
     "name_vi": "Lưu chuyển tiền thuần từ hoạt động kinh doanh",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1325,6 +1472,7 @@
   {
     "code": "rs52w",
     "name_vi": "Sức mạnh tương đối 52 tuần",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1334,6 +1482,7 @@
   {
     "code": "rs6m",
     "name_vi": "Sức mạnh tương đối 6 tháng",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1343,6 +1492,7 @@
   {
     "code": "totalbuytradevolume",
     "name_vi": "Khối lượng theo chiều mua",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "MoneyFlow",
     "keep": false,
@@ -1352,6 +1502,7 @@
   {
     "code": "totalselltradevolume",
     "name_vi": "Khối lượng theo chiều bán",
+    "name_src": "tự đặt",
     "source": "Screener",
     "nguon_chuan": "MoneyFlow",
     "keep": false,
@@ -1361,15 +1512,17 @@
   {
     "code": "foreignerpercentage",
     "name_vi": "Sở hữu nước ngoài",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": null,
     "keep": null,
-    "reason": "BVSC chỉ có room theo số cổ phiếu (`foreignRemain`/`foreignRoom`), không có trường tỷ lệ; không nhóm bỏ nào nêu đích danh trường này",
+    "reason": "BVSC chỉ có room theo số cổ phiếu (`foreignRemain`/`foreignRoom`), không có trường tỷ lệ; không nhóm bỏ nào nêu đích danh trường này ⚠️ Snapshot cũng có trường này và ở đó đã bỏ với nguồn chuẩn *dự kiến* là Screener — hai bên phải chốt CÙNG LÚC: Screener mà cũng bỏ thì không nguồn nào lưu chỉ tiêu này",
     "status": "cần kiểm API"
   },
   {
     "code": "averagevalue1week",
     "name_vi": "Giá trị GD T.bình 5D",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": null,
     "keep": null,
@@ -1379,6 +1532,7 @@
   {
     "code": "averagevalue2week",
     "name_vi": "Giá trị GD T.bình 10D",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": null,
     "keep": null,
@@ -1388,6 +1542,7 @@
   {
     "code": "averagevalue1month",
     "name_vi": "Giá trị GD T.bình 20D",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": null,
     "keep": null,
@@ -1397,6 +1552,7 @@
   {
     "code": "averagevalue3month",
     "name_vi": "Giá trị GD T.bình 3M",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": null,
     "keep": null,
@@ -1406,15 +1562,17 @@
   {
     "code": "freefloatrate",
     "name_vi": "% Free Float",
+    "name_src": "từ điển",
     "source": "Screener",
     "nguon_chuan": null,
     "keep": null,
-    "reason": "không nhóm bỏ nào nêu, cũng không nằm trong danh sách giữ được liệt kê đích danh",
+    "reason": "không nhóm bỏ nào nêu, cũng không nằm trong danh sách giữ được liệt kê đích danh ⚠️ Snapshot cũng có trường này và ở đó đã bỏ với nguồn chuẩn *dự kiến* là Screener — hai bên phải chốt CÙNG LÚC: Screener mà cũng bỏ thì không nguồn nào lưu chỉ tiêu này",
     "status": "cần kiểm API"
   },
   {
     "code": "rtd53",
     "name_vi": null,
+    "name_src": "—",
     "source": "Screener",
     "nguon_chuan": null,
     "keep": null,
@@ -1424,6 +1582,7 @@
   {
     "code": "rtq81",
     "name_vi": null,
+    "name_src": "—",
     "source": "Screener",
     "nguon_chuan": null,
     "keep": null,
@@ -1433,6 +1592,7 @@
   {
     "code": "rtd39",
     "name_vi": null,
+    "name_src": "—",
     "source": "Screener",
     "nguon_chuan": null,
     "keep": null,
@@ -1442,6 +1602,7 @@
   {
     "code": "rtd54",
     "name_vi": null,
+    "name_src": "—",
     "source": "Screener",
     "nguon_chuan": null,
     "keep": null,
@@ -1451,6 +1612,7 @@
   {
     "code": "ceo",
     "name_vi": "Tên tổng giám đốc",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": "Snapshot",
     "keep": true,
@@ -1460,6 +1622,7 @@
   {
     "code": "competitors",
     "name_vi": "Danh sách mã cùng ngành để so sánh",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": "Snapshot",
     "keep": true,
@@ -1469,6 +1632,7 @@
   {
     "code": "majorHoldings",
     "name_vi": "Các khoản đầu tư lớn",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": "Snapshot",
     "keep": true,
@@ -1478,6 +1642,7 @@
   {
     "code": "comTypeCode",
     "name_vi": "Loại hình doanh nghiệp",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": "Snapshot",
     "keep": true,
@@ -1487,6 +1652,7 @@
   {
     "code": "statePercentage",
     "name_vi": "Tỷ lệ sở hữu nhà nước",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": "Snapshot",
     "keep": true,
@@ -1496,6 +1662,7 @@
   {
     "code": "stateVolumn",
     "name_vi": "Khối lượng nhà nước nắm",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": "Snapshot",
     "keep": true,
@@ -1505,6 +1672,7 @@
   {
     "code": "foreignerVolumn",
     "name_vi": "Khối lượng nước ngoài nắm",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": "Snapshot",
     "keep": true,
@@ -1514,6 +1682,7 @@
   {
     "code": "totalForeignRoom",
     "name_vi": "Tổng room",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": "Snapshot",
     "keep": true,
@@ -1523,6 +1692,7 @@
   {
     "code": "maximumForeignPercentage",
     "name_vi": "Trần sở hữu nước ngoài",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": "Snapshot",
     "keep": true,
@@ -1532,6 +1702,7 @@
   {
     "code": "rtq10",
     "name_vi": "Nợ/VCSH",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "Snapshot",
     "keep": true,
@@ -1541,6 +1712,7 @@
   {
     "code": "rtq44",
     "name_vi": "Biên lãi thuần (NIM)",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "Snapshot",
     "keep": true,
@@ -1550,6 +1722,7 @@
   {
     "code": "rtq137",
     "name_vi": null,
+    "name_src": "—",
     "source": "Snapshot",
     "nguon_chuan": "Snapshot",
     "keep": true,
@@ -1559,6 +1732,7 @@
   {
     "code": "rqq41",
     "name_vi": null,
+    "name_src": "—",
     "source": "Snapshot",
     "nguon_chuan": "Snapshot",
     "keep": true,
@@ -1568,6 +1742,7 @@
   {
     "code": "valuePerShare",
     "name_vi": "Mệnh giá",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": "Snapshot",
     "keep": true,
@@ -1577,6 +1752,7 @@
   {
     "code": "year",
     "name_vi": "Năm báo cáo",
+    "name_src": "tự đặt",
     "source": "Snapshot",
     "nguon_chuan": "Snapshot",
     "keep": true,
@@ -1586,6 +1762,7 @@
   {
     "code": "quarter",
     "name_vi": "Quý báo cáo",
+    "name_src": "tự đặt",
     "source": "Snapshot",
     "nguon_chuan": "Snapshot",
     "keep": true,
@@ -1595,6 +1772,7 @@
   {
     "code": "rtd11",
     "name_vi": "Vốn hóa",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "Screener",
     "keep": false,
@@ -1604,6 +1782,7 @@
   {
     "code": "rtd14",
     "name_vi": "EPS (TTM)",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "Screener",
     "keep": false,
@@ -1613,6 +1792,7 @@
   {
     "code": "rtd21",
     "name_vi": "P/E (TTM)",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "Screener",
     "keep": false,
@@ -1622,6 +1802,7 @@
   {
     "code": "rtd25",
     "name_vi": "P/B (TTM)",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "Screener",
     "keep": false,
@@ -1631,6 +1812,7 @@
   {
     "code": "rtq12",
     "name_vi": "ROE (TTM)",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "Screener",
     "keep": false,
@@ -1640,6 +1822,7 @@
   {
     "code": "rtq14",
     "name_vi": "ROA (TTM)",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "Screener",
     "keep": false,
@@ -1649,6 +1832,7 @@
   {
     "code": "rtq29",
     "name_vi": "BIên Lãi Thuần",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "Screener",
     "keep": false,
@@ -1658,24 +1842,27 @@
   {
     "code": "freeFloatRate",
     "name_vi": "Tỷ lệ free float",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
-    "nguon_chuan": "Screener",
+    "nguon_chuan": "Screener *(chờ chốt)*",
     "keep": false,
-    "reason": "trùng Screener — `freefloatrate` / `foreignerpercentage` trong 83 tiêu chí",
-    "status": "chốt"
+    "reason": "trùng Screener — `freefloatrate` / `foreignerpercentage` trong 83 tiêu chí, nên KHÔNG lấy ở Snapshot. ⚠️ Nhưng phía Screener hai mã này đang `cần kiểm API` chứ chưa chốt giữ — cho tới khi chốt, đây là nguồn chuẩn DỰ KIẾN, không phải nguồn chuẩn đã chốt. Chốt Screener trước, rồi mới cài phần này",
+    "status": "cần kiểm API"
   },
   {
     "code": "foreignerPercentage",
     "name_vi": "Tỷ lệ sở hữu nước ngoài",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
-    "nguon_chuan": "Screener",
+    "nguon_chuan": "Screener *(chờ chốt)*",
     "keep": false,
-    "reason": "trùng Screener — `freefloatrate` / `foreignerpercentage` trong 83 tiêu chí",
-    "status": "chốt"
+    "reason": "trùng Screener — `freefloatrate` / `foreignerpercentage` trong 83 tiêu chí, nên KHÔNG lấy ở Snapshot. ⚠️ Nhưng phía Screener hai mã này đang `cần kiểm API` chứ chưa chốt giữ — cho tới khi chốt, đây là nguồn chuẩn DỰ KIẾN, không phải nguồn chuẩn đã chốt. Chốt Screener trước, rồi mới cài phần này",
+    "status": "cần kiểm API"
   },
   {
     "code": "rtq25",
     "name_vi": "Biên Lãi Gộp",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "Screener",
     "keep": false,
@@ -1685,6 +1872,7 @@
   {
     "code": "rtq1",
     "name_vi": "Tỉ suất thanh toán tiền mặt (TTM)",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "Screener",
     "keep": false,
@@ -1694,6 +1882,7 @@
   {
     "code": "rtq2",
     "name_vi": "Tỉ suất thanh toán nhanh (TTM)",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "Screener",
     "keep": false,
@@ -1703,6 +1892,7 @@
   {
     "code": "rtq3",
     "name_vi": "Tỉ suất thanh toán hiện hành (TTM)",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "Screener",
     "keep": false,
@@ -1712,6 +1902,7 @@
   {
     "code": "foreignerRoom",
     "name_vi": "Room còn lại",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": "BVSC",
     "keep": false,
@@ -1721,6 +1912,7 @@
   {
     "code": "lowestPrice1Year",
     "name_vi": "Thấp nhất 52 tuần",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1730,6 +1922,7 @@
   {
     "code": "highestPrice1Year",
     "name_vi": "Cao nhất 52 tuần",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1739,6 +1932,7 @@
   {
     "code": "averageMatchVolume1Month",
     "name_vi": "KLGD bình quân 1 tháng",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": "BVSC (tự tính)",
     "keep": false,
@@ -1748,6 +1942,7 @@
   {
     "code": "isa1",
     "name_vi": "Doanh số",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1757,6 +1952,7 @@
   {
     "code": "isa22",
     "name_vi": "LỢI NHUẬN THUẦN",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1766,6 +1962,7 @@
   {
     "code": "isb27",
     "name_vi": "Thu nhập lãi thuần",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1775,6 +1972,7 @@
   {
     "code": "isi103",
     "name_vi": "Doanh thu phí bảo hiểm",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1784,6 +1982,7 @@
   {
     "code": "bsa53",
     "name_vi": "TỔNG TÀI SẢN",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1793,6 +1992,7 @@
   {
     "code": "bsb104",
     "name_vi": "Cho vay khách hàng",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1802,6 +2002,7 @@
   {
     "code": "bsa1",
     "name_vi": "TÀI SẢN NGẮN HẠN",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1811,6 +2012,7 @@
   {
     "code": "bsa23",
     "name_vi": "TÀI SẢN DÀI HẠN",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1820,6 +2022,7 @@
   {
     "code": "bsa54",
     "name_vi": "NỢ PHẢI TRẢ",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1829,6 +2032,7 @@
   {
     "code": "bsa78",
     "name_vi": "VỐN CHỦ SỞ HỮU",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1838,6 +2042,7 @@
   {
     "code": "bsa80",
     "name_vi": "Vốn góp",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1847,6 +2052,7 @@
   {
     "code": "bsb98",
     "name_vi": "Tiền gửi tại các TCTD khác và cho vay các TCTD khác",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1856,6 +2062,7 @@
   {
     "code": "bsb113",
     "name_vi": "Tiền gửi của khách hàng",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1865,6 +2072,7 @@
   {
     "code": "nob44",
     "name_vi": null,
+    "name_src": "—",
     "source": "Snapshot",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1874,6 +2082,7 @@
   {
     "code": "cfa18",
     "name_vi": "Lưu chuyển tiền thuần từ hoạt động kinh doanh",
+    "name_src": "từ điển",
     "source": "Snapshot",
     "nguon_chuan": "BCTC đầy đủ",
     "keep": false,
@@ -1883,6 +2092,7 @@
   {
     "code": "organCode",
     "name_vi": "Mã doanh nghiệp",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": null,
     "keep": null,
@@ -1892,6 +2102,7 @@
   {
     "code": "outstandingShare",
     "name_vi": "Số CP đang lưu hành",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": null,
     "keep": null,
@@ -1901,6 +2112,7 @@
   {
     "code": "freeFloat",
     "name_vi": "Khối lượng tự do chuyển nhượng",
+    "name_src": "tài liệu endpoint",
     "source": "Snapshot",
     "nguon_chuan": null,
     "keep": null,
@@ -1910,6 +2122,7 @@
   {
     "code": "rtd53",
     "name_vi": null,
+    "name_src": "—",
     "source": "Snapshot",
     "nguon_chuan": null,
     "keep": null,
