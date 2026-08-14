@@ -1,0 +1,373 @@
+{
+  "_meta": {
+    "version": "v3",
+    "cap_nhat": "2026-08-13",
+    "nguon_bao": 10,
+    "feed_rss": 47,
+    "crawl_html": 6,
+    "phan_bo_nhom_mac_dinh": {
+      "vi_mo_trong_nuoc": 14,
+      "tai_chinh_quoc_te": 12,
+      "doanh_nghiep_niem_yet": 21
+    },
+    "nguyen_tac": [
+      "Nhom tu feed chi la GOI Y mac dinh. Classifier duoc quyen ghi de sang nhom khac.",
+      "TAT CA tin deu di qua classifier - khong co fast-path.",
+      "Tin duoc phan vao nhom 3 BAT BUOC chay buoc gan ma CP (ket qua co the rong).",
+      "lastBuildDate cua moi feed luon = gio hien tai, KHONG dung do do tuoi. Doc pubDate item dau tien."
+    ],
+    "chot_ngay": "2026-08-13",
+    "trang_thai": "da chot thiet ke, chua trien khai",
+    "khoi_luong_do_that": {
+      "tin_moi_ngay_chua_dedupe": 570,
+      "do_ngay": "11-13/08/2026",
+      "chi_tiet": "47 feed RSS 416 + TinnhanhCK 76 + CafeF CBTT 75 + BaoChinhPhu 3"
+    },
+    "luu_y_parse": {
+      "utf16": [
+        "vietnambiz",
+        "bnews"
+      ],
+      "utf16_cach_doc": "iconv -f UTF-16LE (KHONG phai UTF-16). Kiem bang cach dem null byte trong 100B dau, tren 10 la UTF-16.",
+      "baochinhphu_pubdate": "M/D/YYYY h:mm:ss AM/PM, KHONG co timezone, gia dinh +07. URL cung nhung gio: 102+YYMMDD+HHMMSS+serial",
+      "vietstock_bnews_slug": "slug trong URL chi la trang tri, chi ID quyet dinh. Lay ID tu trang index: vietstock.vn/rss, bnews.vn/rss.html",
+      "vietnambiz_pubdate": "pubDate RONG hoan toan - phai lay gio tu URL: YYYY+M+DD+HHMMSS+serial. Chuoi rong parse thanh gio hien tai nen feed chet van bao tuoi.",
+    "dedupe": "theo URL chuan hoa (bo utm_*, gidzl). Nhieu feed cung site tro chung mot kenh."
+    }
+  },
+  "taxonomy": {
+    "1_vi_mo_trong_nuoc": {
+      "1a": "the che va van ban phap quy",
+      "1b": "dieu hanh Chinh phu (gom ca kien nghi/tieng noi khu vuc tu nhan)",
+      "1c": "tien te va ty gia",
+      "1d": "dau tu cong va ha tang",
+      "1e": "so lieu vi mo",
+      "1f": "thue va ngan sach"
+    },
+    "2_tai_chinh_quoc_te": {
+      "2a": "chung khoan the gioi",
+      "2b": "ngan hang trung uong",
+      "2c": "hang hoa va nang luong",
+      "2d": "an ninh va dia chinh tri",
+      "2e": "thuong mai va thue quan"
+    },
+    "3_doanh_nghiep_niem_yet": {
+      "3a": "CBTT va su kien quyen",
+      "3b": "giao dich noi bo va co dong lon",
+      "3c": "von va cau truc",
+      "3d": "KQKD va van hanh",
+      "3e": "nhan dinh va dien bien thi truong",
+      "3f": "phai sinh, chung quyen, ETF/quy",
+      "3g": "vi pham va xu phat",
+      "3h": "margin va ky quy",
+      "3i": "xep hang tin nhiem va ESG"
+    },
+    "x": "loai bo: tin xa hoi/the thao/giao duc/y te thuan, PR va advertorial"
+  },
+  "1_vi_mo_trong_nuoc": [
+    {
+      "nguon": "cafef",
+      "url": "https://cafef.vn/vi-mo-dau-tu.rss",
+      "items": 50
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/761/kinh-te/vi-mo.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/758/tai-chinh/thue-va-ngan-sach.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vneconomy",
+      "url": "https://vneconomy.vn/tieu-diem.rss",
+      "items": 50
+    },
+    {
+      "nguon": "vneconomy",
+      "url": "https://vneconomy.vn/dau-tu.rss",
+      "items": 50
+    },
+    {
+      "nguon": "vietnambiz",
+      "url": "https://vietnambiz.vn/thoi-su.rss",
+      "items": 30
+    },
+    {
+      "nguon": "vietnambiz",
+      "url": "https://vietnambiz.vn/du-bao.rss",
+      "items": 30
+    },
+    {
+      "nguon": "bnews",
+      "url": "https://bnews.vn/rss/kinh-te-viet-nam-1.rss",
+      "items": 20
+    },
+    {
+      "nguon": "nguoiquansat",
+      "url": "https://nguoiquansat.vn/rss/vi-mo",
+      "items": 40
+    },
+    {
+      "nguon": "baochinhphu",
+      "url": "https://baochinhphu.vn/kinh-te.rss",
+      "items": 50
+    },
+    {
+      "nguon": "baochinhphu",
+      "url": "https://baochinhphu.vn/chinh-sach-va-cuoc-song.rss",
+      "items": 50
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/757/tai-chinh/ngan-hang.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vietnambiz",
+      "url": "https://vietnambiz.vn/tai-chinh.rss",
+      "items": 30
+    },
+    {
+      "nguon": "bnews",
+      "url": "https://bnews.vn/rss/ngan-hang-18.rss",
+      "items": 20
+    }
+  ],
+  "2_tai_chinh_quoc_te": [
+    {
+      "nguon": "cafef",
+      "url": "https://cafef.vn/tai-chinh-quoc-te.rss",
+      "items": 50
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/772/the-gioi/tai-chinh-quoc-te.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/773/the-gioi/chung-khoan-the-gioi.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vneconomy",
+      "url": "https://vneconomy.vn/chung-khoan-quoc-te.rss",
+      "items": 50
+    },
+    {
+      "nguon": "vneconomy",
+      "url": "https://vneconomy.vn/kinh-te-the-gioi.rss",
+      "items": 50
+    },
+    {
+      "nguon": "bnews",
+      "url": "https://bnews.vn/rss/kinh-te-the-gioi-2.rss",
+      "items": 20
+    },
+    {
+      "nguon": "nguoiquansat",
+      "url": "https://nguoiquansat.vn/rss/the-gioi",
+      "items": 40
+    },
+    {
+      "nguon": "vneconomy",
+      "url": "https://vneconomy.vn/thi-truong-von-tai-chinh.rss",
+      "items": 50
+    },
+    {
+      "nguon": "vneconomy",
+      "url": "https://vneconomy.vn/thi-truong-xuat-nhap-khau.rss",
+      "items": 50
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/118/hang-hoa/nong-san-thuc-pham.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/742/hang-hoa/kim-loai.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/34/hang-hoa/nhien-lieu.rss",
+      "items": 20
+    }
+  ],
+  "3_doanh_nghiep_niem_yet": [
+    {
+      "nguon": "cafef",
+      "url": "https://cafef.vn/thi-truong-chung-khoan.rss",
+      "items": 50
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/144/chung-khoan.rss",
+      "items": 30
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/830/chung-khoan/co-phieu.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/733/doanh-nghiep.rss",
+      "items": 30
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/741/chung-khoan/niem-yet.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/738/doanh-nghiep/co-tuc.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/739/chung-khoan/giao-dich-noi-bo.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/746/doanh-nghiep/ipo-co-phan-hoa.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/764/doanh-nghiep/tang-von-m-a.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/3118/doanh-nghiep/trai-phieu-doanh-nghiep.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/4186/chung-khoan/chung-khoan-phai-sinh.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/3358/chung-khoan/etf-va-cac-quy.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vietstock",
+      "url": "https://vietstock.vn/1636/nhan-dinh-phan-tich/nhan-dinh-thi-truong.rss",
+      "items": 20
+    },
+    {
+      "nguon": "vneconomy",
+      "url": "https://vneconomy.vn/doanh-nghiep-niem-yet.rss",
+      "items": 50
+    },
+    {
+      "nguon": "vneconomy",
+      "url": "https://vneconomy.vn/chung-khoan.rss",
+      "items": 50
+    },
+    {
+      "nguon": "vneconomy",
+      "url": "https://vneconomy.vn/khung-phap-ly-chung-khoan.rss",
+      "items": 50
+    },
+    {
+      "nguon": "vietnambiz",
+      "url": "https://vietnambiz.vn/chung-khoan.rss",
+      "items": 30
+    },
+    {
+      "nguon": "vietnambiz",
+      "url": "https://vietnambiz.vn/doanh-nghiep.rss",
+      "items": 30
+    },
+    {
+      "nguon": "bnews",
+      "url": "https://bnews.vn/rss/chung-khoan-33.rss",
+      "items": 20
+    },
+    {
+      "nguon": "nguoiquansat",
+      "url": "https://nguoiquansat.vn/rss/chung-khoan",
+      "items": 40
+    },
+    {
+      "nguon": "nguoiquansat",
+      "url": "https://nguoiquansat.vn/rss/doanh-nghiep",
+      "items": 40
+    }
+  ],
+  "crawl_html": [
+    {
+      "nguon": "cafef",
+      "url": "https://cafef.vn/du-lieu/tin-doanh-nghiep.chn",
+      "nhom_mac_dinh": 3,
+      "sub_mac_dinh": "3a",
+      "ghi_chu": "Cong bo thong tin. Ma CP nam trong URL /du-lieu/{MA}-{id}/ - do tin cay cao nhat. Trang chi giu ~26 tin (~1 gio) nen poll <=15 phut. Loai HNX/HOSE/UPCOM khoi danh sach ma. Dedupe them theo (ma+tieu de)."
+    },
+    {
+      "nguon": "tinnhanhck",
+      "url": "https://www.tinnhanhchungkhoan.vn/sitemaps/news-2026-{M}.xml",
+      "nhom_mac_dinh": null,
+      "ghi_chu": "Khong co RSS. lastmod = gio dang that +07:00, giu ca thang nen backfill duoc. Ghep voi trang chuyen muc theo post ID de gan nhom."
+    },
+    {
+      "nguon": "tinnhanhck",
+      "url": "https://www.tinnhanhchungkhoan.vn/ck-quoc-te/",
+      "nhom_mac_dinh": 2
+    },
+    {
+      "nguon": "tinnhanhck",
+      "url": "https://www.tinnhanhchungkhoan.vn/chung-khoan/",
+      "nhom_mac_dinh": 3
+    },
+    {
+      "nguon": "tinnhanhck",
+      "url": "https://www.tinnhanhchungkhoan.vn/dau-tu/",
+      "nhom_mac_dinh": 1
+    },
+    {
+      "nguon": "baochinhphu",
+      "url": "https://baochinhphu.vn/chi-dao-dieu-hanh.htm",
+      "nhom_mac_dinh": 1,
+      "sub_mac_dinh": "1b",
+      "ghi_chu": "RSS cua muc nay CHET tu 2014, phai crawl HTML."
+    }
+  ],
+  "luu_y_parse": {
+    "utf16": [
+      "vietnambiz",
+      "bnews"
+    ],
+    "utf16_cach_doc": "iconv -f UTF-16LE (KHONG phai UTF-16). Kiem bang cach dem null byte trong 100B dau, tren 10 la UTF-16.",
+    "baochinhphu_pubdate": "M/D/YYYY h:mm:ss AM/PM, KHONG co timezone, gia dinh +07. URL cung nhung gio: 102+YYMMDD+HHMMSS+serial",
+    "vietstock_bnews_slug": "slug trong URL chi la trang tri, chi ID quyet dinh. Lay ID tu trang index: vietstock.vn/rss, bnews.vn/rss.html",
+    "vietnambiz_pubdate": "pubDate RONG hoan toan - phai lay gio tu URL: YYYY+M+DD+HHMMSS+serial. Chuoi rong parse thanh gio hien tai nen feed chet van bao tuoi.",
+    "dedupe": "theo URL chuan hoa (bo utm_*, gidzl). Nhieu feed cung site tro chung mot kenh."
+  },
+  "canh_bao_van_hanh": {
+    "feed_chet_am_tham": "Canh bao neu pubDate cua item dau tien > 7 ngay. Da tung gap feed chet tu 2014 van tra lastBuildDate = hom nay.",
+    "pr_advertorial": "cafef/doanh-nghiep-gioi-thieu tuoi nhung la PR tra tien - da loai. Classifier can gan nhan x cho PR lot qua feed khac.",
+    "ma_CP_false_positive": "Chuoi 3 ky tu in hoa trung tu viet tat: USD GDP CPI FDI ESG IPO ETF SME EVN. Phai doi chieu danh sach niem yet, khong nhan dang bang regex don thuan."
+  },
+  "da_loai_bo": {
+    "vietnamfinance": "Toan bo feed chuyen muc DONG BANG tu 28/07/2026 (chung-khoan tu 10/06). Trang van xuat ban (trang chu d149026 vs RSS d148245, chenh ~780 bai). Moi duong dan KHONG ton tai lai tra feed tuoi - CMS co handler mac dinh. Dung duoc nhung la xay tren loi cua ho. Gia tri rieng thap: nang bat dong san/advertorial, khong giu mang nao doc quyen.",
+    "stockbiz": "Khong RSS, khong sitemap. Next.js SPA chi render 11 bai/chuyen muc. Backend la FireAnt, token nhung trong trang - khong dung. robots cho phep crawl tham chieu nhung chan bot AI.",
+    "fili_vn": "Mirror 100% cua Vietstock (cung VAFE). Feed vi mo hai ben: cung 20 item, cung tieu de, cung thu tu.",
+    "chinhphu_vn": "Khong tu host bai nao - moi link tro sang baochinhphu.vn. Khong RSS, khong sitemap. ASP.NET WebForms, phan trang bang __doPostBack.",
+    "baochinhphu_timelinelist": "Phan trang sach (20 bai/trang, khong trung) nhung 54% khong phan loai duoc - tron ca the thao, giao duc, y te, hinh su. Dung RSS chuyen muc thay the.",
+    "baochinhphu_4_feed_chet": "chi-dao-dieu-hanh (moi nhat 6/2014), thi-truong (1/2022), chinh-sach (12/2021), doanh-nghiep (5/2026).",
+    "cafef_doanh_nghiep_gioi_thieu": "Tuoi 50 bai nhung la PR tra tien.",
+    "vietstock_775_kinh_te_nganh": "Bien: 10% thuong mai, 20% dia chinh tri. Khong du dac trung.",
+    "10_feed_bi_loai_vong_cuoi": "768/kinh-te-dau-tu, chuyen-dong-kinh-te-the-gioi-24h, baochinhphu/quoc-te, vneconomy/chuyen-dong-doanh-nghiep, cafef/doanh-nghiep, cafef/tai-chinh-ngan-hang, vietnambiz/chuyen-dong-thi-truong, bnews/doanh-nghiep-6, bnews/phan-tich-doanh-nghiep-41, nguoiquansat/tai-chinh-ngan-hang",
+    "2_feed_chet_hon_1_nam": "vietstock/1328/dong-duong (518 ngay), vneconomy/an-pham-tu-van-va-tieu-dung (499 ngay)"
+  }
+}

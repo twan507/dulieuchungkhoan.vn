@@ -1,0 +1,675 @@
+# 12 — Kiến trúc triển khai Finext
+
+**Phạm vi:** thiết kế hệ thống thu thập, lưu trữ và phân phối lại dữ liệu từ 44 endpoint REST và 5 topic realtime sang nền tảng Finext.
+
+**Bối cảnh:** Finext được phép thu thập, lưu trữ và phái sinh toàn bộ dữ liệu từ nguồn BVSC/FiinTrade, phục vụ khách hàng cuối và một chatbot AI truy vấn không giới hạn.
+
+---
+
+## 1. Bốn nguyên tắc
+
+| | |
+|---|---|
+| **Cách ly hoàn toàn** | Finext không bao giờ gọi thẳng BVSC/FiinTrade khi phục vụ người dùng. Mọi truy vấn đi qua kho riêng |
+| **Lưu đầy đủ** | Kho ~10 GB chứa toàn bộ lịch sử khả dụng. Độc lập nhà cung cấp, chatbot không giới hạn |
+| **Giá lưu thô, điều chỉnh lúc đọc** | Không bao giờ sửa quá khứ. Hệ số suy ngược từ chính dữ liệu FiinTrade |
+| **Một socket vào, SSE ra** | Ingester tập trung ghép delta, fan-out một chiều qua SSE |
+| **Mỗi chỉ tiêu một nguồn chuẩn** | Nhiều nguồn cùng có thì chọn một. Nhóm chỉ tiêu dẫn xuất lẫn nhau thì lấy trọn bộ từ một nguồn — xem [ADR 0002](../00-tong-quan/quyet-dinh/0002-chon-nguon-du-lieu.md) |
+
+### Vì sao cách ly hoàn toàn
+
+Ba lý do, đều đo được:
+
+1. **Độ trễ.** `GetCorporateEarning` 7,4 s · `getPriceData` 3,5 s · `GetScreenerItems` 2,4 s · `GetListOrganization` 4,4 s. Từ PostgreSQL là 1–10 ms — chênh khoảng 1.000 lần. Cache TTL không cứu được lần gọi đầu, mà với 1.972 mã thì đa số truy vấn là lần đầu.
+2. **Không có cam kết.** API này không có versioning, không thông báo thay đổi, schema đổi bất cứ lúc nào (xem [00-quy-uoc-chung.md](../10-nguon-du-lieu/thi-truong/00-quy-uoc-chung.md)). Phụ thuộc trực tiếp là đặt sản phẩm lên nền không kiểm soát được.
+3. **Chatbot.** Bot hỏi hàng chục câu mỗi phút. Mỗi câu đi ra FiinTrade sẽ vừa chậm vừa chạm rate limit.
+
+---
+
+## 2. Sơ đồ tổng thể
+
+```
+                       ┌──────────────────────────────────────────┐
+BVSC / FiinTrade       │                                          │
+  44 endpoint REST ────┼──→ ETL Workers (rải lô, rate-limited)     │
+                       │         │                                │
+  wss://wss.bvsc.com.vn┼──→ Ingester (active + standby)           │
+    5 topic            │         │                                │
+                       │         ├──→ Redis                        │
+                       │         │     ├─ HASH: trạng thái hiện tại│
+                       │         │     └─ Pub/Sub: fan-out         │
+                       │         │                                │
+                       │         └──→ PostgreSQL + TimescaleDB     │
+                       │                    (kho đầy đủ)           │
+                       └──────────────────┬───────────────────────┘
+                                          │
+                              ┌───────────┴───────────┐
+                              │      Finext API       │
+                              ├─ SSE   → realtime     │
+                              ├─ REST  → lịch sử, BCTC│
+                              └─ Chatbot AI           │
+                                 (function calling)
+```
+
+---
+
+## 3. Luồng realtime
+
+### 3.1 Ingester
+
+Một instance chạy, một standby giữ kết nối ấm nhưng không publish. Leader election qua Redis lock, tiếp quản trong **dưới 2 giây**.
+
+```
+wss://wss.bvsc.com.vn/market/socket.io/?EIO=3&transport=websocket
+    &__sails_io_sdk_version=1.2.1&__sails_io_sdk_platform=browser
+    &__sails_io_sdk_language=javascript
+```
+
+Topic đăng ký:
+
+| Topic | Nội dung |
+|---|---|
+| `i:<mã>` | Snapshot delta — 34 trường |
+| **`o10:<mã>`** | Sổ lệnh 3 bậc |
+| `t:<mã>` | Từng lệnh khớp, có chiều BU/SD |
+| `idx:<chỉ số>` | 15 mã chỉ số |
+| `ptm:<sàn>` | Thoả thuận đã khớp |
+
+> 🔴 **Phải dùng `o10:`, không phải `o:`.** Topic `o:` được server chấp nhận và trả ack `statusCode: 200` nhưng không bao giờ đẩy dữ liệu. Xem [11-bvsc-realtime.md](../10-nguon-du-lieu/thi-truong/11-bvsc-realtime.md).
+
+### 3.2 Xử lý trong Ingester
+
+```
+1. Ghép delta      → dựng state đầy đủ mỗi mã (i và idx chỉ gửi trường thay đổi)
+2. Ép kiểu         → o, t, idx trả số dưới dạng CHUỖI
+3. Ghi Redis       → HASH state + PUBLISH kênh fan-out   ← ưu tiên, trong hot path
+4. Đẩy hàng đợi    → batch writer gom nến 1 phút, COPY mỗi 1–2 giây  ← ngoài hot path
+```
+
+**Không ghi database trong hot path.** Ghi đồng bộ cộng thêm 5–20 ms vào mọi frame.
+
+### 3.3 Xử lý mất kết nối
+
+Đo được **2 lần rớt trong 4 phút** vận hành liên tục. Quy trình bắt buộc:
+
+```
+onclose → chờ 3–5 s → nối lại
+        → đăng ký lại TOÀN BỘ topic      (server không nhớ trạng thái đăng ký)
+        → gọi /datafeed/instruments      (đồng bộ lại state, vì delta đã mất)
+```
+
+⚠️ **Khoảng thời gian Ingester chết là mất vĩnh viễn** — API không có endpoint replay. Đây là lý do bắt buộc phải có standby.
+
+### 3.4 Phân phối SSE
+
+Dữ liệu thị trường chảy một chiều từ sàn tới màn hình. SSE đủ dùng và đơn giản hơn WebSocket: không cần sticky session, trình duyệt tự lo việc nối lại qua `Last-Event-ID`.
+
+| Hạng mục | Cấu hình |
+|---|---|
+| Giao thức | **HTTP/2 bắt buộc** |
+| Khởi tạo | Client tải **snapshot đầy đủ** qua REST, sau đó chỉ nhận **delta** qua SSE |
+| Gộp frame | **250 ms** mặc định · **100 ms** cho mã đang mở chi tiết |
+| Lọc | Mỗi kết nối chỉ nhận mã trên màn hình người dùng |
+| Fan-out đa instance | Redis Pub/Sub |
+
+> 🔴 **HTTP/1.1 giới hạn 6 kết nối đồng thời mỗi domain.** SSE giữ 1 kết nối mở → người dùng mở 6 tab là treo. HTTP/2 multiplexing giải quyết triệt để.
+
+Cấu hình Nginx bắt buộc — thiếu là độ trễ nhảy lên hàng giây:
+
+```nginx
+proxy_buffering off;
+proxy_read_timeout 24h;
+add_header X-Accel-Buffering no;
+```
+
+### 3.5 Vì sao gộp frame 250 ms
+
+Đo được **2–2,5 frame/giây mỗi mã hoạt động mạnh**. Bảng 50 mã ≈ **100 frame/giây**. Mắt người không phân biệt được dưới 200 ms, nên gộp về 4 gói/giây — **giảm khoảng 10 lần lưu lượng** mà trải nghiệm không đổi.
+
+Giữ nguyên mô hình delta tới tận trình duyệt: đo được `V1` (khối lượng mua bậc 1) đổi 292 lần trong khi `FB` (khối ngoại mua) chỉ đổi 16 lần trên cùng 843 frame. Đẩy đủ 34 trường mỗi lần là lãng phí.
+
+### 3.6 Ngân sách độ trễ
+
+| Chặng | Mục tiêu |
+|---|---|
+| BVSC → Ingester | 1–5 ms |
+| Parse + ghép delta | < 1 ms |
+| Redis publish | < 1 ms |
+| Fan-out SSE | < 5 ms |
+| Gộp frame | 0–250 ms |
+| **Tổng cộng thêm** | **~10 ms + chu kỳ gộp** |
+
+---
+
+## 4. ETL REST
+
+### 4.1 Lịch chạy
+
+| Nhóm | Nhịp | Số lời gọi |
+|---|---|---|
+| Danh bạ, ngành ICB, `/quotes`, `/mapping` | Trước phiên | 4 |
+| `getPriceData` Page 1 | Sau 15:00 | 1.972 |
+| Snapshot ngày: **lưu 16/54 trường** — hồ sơ DN, sở hữu chi tiết | Sau 15:00 | ~4.000 |
+| `GetScreenerItems` — **lưu 80/193 trường** *(gửi 1 tiêu chí, nhiều hơn sẽ timeout)* | Sau 15:00 | 51 |
+| Lịch sự kiện *(dùng `FromDate` lấy phần mới)* | Hằng ngày | ~10 |
+| BCTC + PDF | **Kích hoạt** theo `GetCorporateEarning` | ~100–300/quý |
+| Re-crawl giá một mã | **Kích hoạt** theo sự kiện quyền của mã đó | tuỳ |
+
+**Hằng ngày ≈ 6.000 lời gọi ≈ 20–30 phút** với 8 luồng.
+
+### 4.2 Backfill một lần
+
+| Việc | Lời gọi | Thời gian |
+|---|---|---|
+| `getPriceData` toàn bộ 52 trang × 1.972 mã | **102.500** | ~12 giờ ở 8 luồng |
+| BCTC 3 loại × 1.972 mã | 5.916 | ~25 phút |
+| Lịch sự kiện toàn bộ | ~500 | vài phút |
+
+⚠️ Giới hạn **2 request/giây**, chạy ngoài giờ giao dịch, **rải 1–2 tuần**. Quét ồ ạt 102.500 lời gọi là mức tải đáng kể lên hạ tầng FiinGroup.
+
+### 4.3 Rate limiter
+
+Token bucket riêng cho từng host FiinTrade. ETL và chatbot **dùng chung ngân sách** — nếu không, quét đêm sẽ làm chatbot ban ngày bị chặn.
+
+Cần hỏi FiinGroup ngưỡng cụ thể. Hiện chưa biết giới hạn thật.
+
+---
+
+## 5. Lược đồ dữ liệu
+
+### 5.1 Bảng tham chiếu
+
+```sql
+CREATE TABLE organization (
+  organ_code        text PRIMARY KEY,
+  ticker            text NOT NULL,
+  com_group_code    text,          -- VNINDEX | HNXIndex | UpcomIndex
+  icb_code          text,
+  com_type_code     text,          -- NH | CT | CK | BH | QU
+  organ_name        text,
+  organ_short_name  text,
+  updated_at        timestamptz DEFAULT now()
+);
+CREATE INDEX ON organization (ticker);
+```
+
+> `com_type_code` quyết định gọi `GetSnapshot` (khi `NH`) hay `GetSnapshotNoneBank` (còn lại). Chọn sai làm ~46% trường thành `null` mà API vẫn báo thành công.
+
+> `organ_code` là **khoá chính**, `ticker` chỉ là thuộc tính hiển thị. 41% doanh nghiệp có hai giá trị này khác nhau.
+
+```sql
+CREATE TABLE icb_industry (
+  icb_code        text PRIMARY KEY,
+  icb_name        text,
+  icb_short_name  text,
+  parent_icb_code text,
+  icb_level       smallint,        -- 1..4
+  icb_code_path   text,            -- '8000/8300/8350'
+  icb_name_path   text
+);
+
+CREATE TABLE instrument (
+  symbol      text PRIMARY KEY,
+  exchange    text,                -- HOSE | HNX | UPCOM
+  stock_type  text,                -- 2 CP | 3 ETF | 4 CW | 12 TP
+  tradelot    int,
+  full_name   text,
+  updated_at  timestamptz DEFAULT now()
+);
+```
+
+### 5.2 Giá theo ngày — hypertable
+
+```sql
+CREATE TABLE price_daily (
+  organ_code    text NOT NULL,
+  trading_date  date NOT NULL,
+  close_adj     numeric,      -- getPriceData.closeValue  → ĐÃ điều chỉnh
+  close_raw     numeric,      -- /datafeed/instruments EOD → giá THÔ
+  open_value    numeric,
+  highest_value numeric,
+  lowest_value  numeric,
+  -- ... 90+ trường còn lại: khối lượng, thoả thuận, khối ngoại,
+  --     dòng tiền cá nhân/tổ chức/tự doanh, cờ sự kiện ...
+  raw           jsonb,        -- landing zone, giữ nguyên response
+  ingested_at   timestamptz DEFAULT now(),
+  PRIMARY KEY (organ_code, trading_date)
+);
+SELECT create_hypertable('price_daily', 'trading_date');
+```
+
+**Hệ số điều chỉnh là view suy ra, không phải bảng riêng:**
+
+```sql
+CREATE VIEW price_factor AS
+SELECT organ_code, trading_date,
+       close_adj / NULLIF(close_raw, 0) AS factor
+FROM price_daily;
+```
+
+Mỗi lần crawl lại `getPriceData`, `close_adj` đổi theo điều chỉnh mới của FiinTrade → hệ số tự đổi → **mọi nến quá khứ hiển thị đúng ngay, không phải viết lại một dòng nào**.
+
+### 5.3 Nến intraday — hypertable + continuous aggregate
+
+```sql
+CREATE TABLE bar_1m (
+  organ_code text NOT NULL,
+  ts         timestamptz NOT NULL,
+  o numeric, h numeric, l numeric, c numeric,   -- GIÁ THÔ
+  v bigint,
+  PRIMARY KEY (organ_code, ts)
+);
+SELECT create_hypertable('bar_1m', 'ts');
+SELECT add_compression_policy('bar_1m', INTERVAL '7 days');
+```
+
+> 🔴 **Lưu giá thô, không bao giờ sửa.** Giá thô là sự thật lịch sử bất biến — một mã khớp 62.300 lúc 13:45 thì vĩnh viễn là 62.300, không sự kiện quyền nào làm nó sai. Chỉ *cách hiển thị* mới cần điều chỉnh.
+
+Nến lớn hơn dựng phân cấp bằng continuous aggregate:
+
+```sql
+CREATE MATERIALIZED VIEW bar_5m WITH (timescaledb.continuous) AS
+SELECT organ_code,
+       time_bucket('5 minutes', ts) AS ts,
+       first(o, ts) AS o, max(h) AS h, min(l) AS l, last(c, ts) AS c,
+       sum(v) AS v
+FROM bar_1m GROUP BY 1, 2;
+-- tương tự bar_15m ← bar_5m, bar_60m ← bar_15m
+```
+
+**Đọc thì điều chỉnh:**
+
+```sql
+SELECT b.ts,
+       b.o * f.factor AS o, b.h * f.factor AS h,
+       b.l * f.factor AS l, b.c * f.factor AS c,
+       b.v
+FROM bar_5m b
+JOIN price_factor f
+  ON f.organ_code = b.organ_code
+ AND f.trading_date = b.ts::date;
+```
+
+Khối lượng: ~200k dòng/ngày · **~1 GB/năm** sau nén.
+
+### 5.4 Báo cáo tài chính — dạng dài
+
+```sql
+CREATE TABLE financial_statement (
+  organ_code     text NOT NULL,
+  year_report    smallint NOT NULL,
+  quarter_report smallint NOT NULL,   -- 1..4 = quý, 5 = cả năm
+  statement_type text NOT NULL,       -- BS | IS | CF
+  metric_code    text NOT NULL,       -- bsa1, isa22, cfa18 ...
+  value          numeric,
+  ingested_at    timestamptz DEFAULT now(),
+  PRIMARY KEY (organ_code, year_report, quarter_report, statement_type, metric_code)
+);
+```
+
+Chọn **dạng dài** vì bộ chỉ tiêu khác nhau theo loại hình doanh nghiệp (`bsa*` phi ngân hàng vs `bsb*` ngân hàng) — dạng cột rộng sẽ thưa hàng trăm cột `null`. Và hợp với việc mã chỉ tiêu chưa có bảng giải mã đầy đủ.
+
+```sql
+CREATE TABLE financial_report_file (
+  id          bigint PRIMARY KEY,
+  organ_code  text,
+  year_report smallint,
+  length_report smallint,
+  title       text,
+  source_url  text
+);
+```
+
+### 5.5 Snapshot theo ngày
+
+```sql
+CREATE TABLE snapshot_daily (
+  organ_code   text NOT NULL,
+  trading_date date NOT NULL,
+  kind         text NOT NULL,   -- snapshot | company_score | valuation
+                                -- | rate_indicator | ownership | dividend
+  payload      jsonb NOT NULL,
+  PRIMARY KEY (organ_code, trading_date, kind)
+);
+SELECT create_hypertable('snapshot_daily', 'trading_date');
+
+CREATE TABLE screener_daily (
+  organ_code   text NOT NULL,
+  trading_date date NOT NULL,
+  payload      jsonb NOT NULL,   -- 223 trường, 5 khối lồng
+  PRIMARY KEY (organ_code, trading_date)
+);
+SELECT create_hypertable('screener_daily', 'trading_date');
+```
+
+> Đây là chỗ **tự tạo ra lịch sử** cho những thứ API chỉ trả giá trị hiện tại: điểm VGM, định giá, cơ cấu sở hữu. Sau một năm bạn có chuỗi biến động điểm số mà FiinTrade không có API nào cung cấp.
+
+### 5.6 Sự kiện doanh nghiệp
+
+```sql
+CREATE TABLE corporate_event (
+  event_type   text NOT NULL,     -- AGM | CashDividend | StockDividend
+                                  -- | Earning | IPO | ShareIssuance
+  organ_code   text NOT NULL,
+  public_date  date,
+  exright_date date,
+  record_date  date,
+  payout_date  date,
+  payload      jsonb NOT NULL,
+  source_url   text,
+  PRIMARY KEY (event_type, organ_code, public_date, coalesce(exright_date, '1900-01-01'))
+);
+CREATE INDEX ON corporate_event (organ_code, exright_date);
+```
+
+### 5.7 Chính sách nén và lưu trữ
+
+| Bảng | Nén sau | Xoá |
+|---|---|---|
+| `bar_1m` và các aggregate | 7 ngày | **không xoá** |
+| `price_daily` | 30 ngày | **không xoá** |
+| `snapshot_daily`, `screener_daily` | 30 ngày | **không xoá** |
+| `financial_statement`, `corporate_event` | 90 ngày | **không xoá** |
+
+Kho là tài sản — không đặt retention drop. Nén cột của TimescaleDB đạt 10–20× với dữ liệu chuỗi thời gian.
+
+**Tổng dung lượng ước tính: dưới 10 GB cho toàn bộ lịch sử**, cộng ~1 GB/năm cho nến intraday.
+
+---
+
+## 6. Tầng ngữ nghĩa cho chatbot
+
+### 6.1 Từ điển chỉ tiêu
+
+```sql
+CREATE TABLE metric_dictionary (
+  code       text PRIMARY KEY,   -- chuẩn hoá chữ thường: rtq12
+  name_vi    text,
+  name_en    text,
+  unit       text,               -- VND | Percentage | ThousandUnit | Unit
+  value_min  numeric,            -- valueRange[0] toàn thị trường
+  value_max  numeric
+);
+```
+
+Nạp từ `Screener/GetScreenerParameters` — 83 tiêu chí, kèm tên tiếng Việt và đơn vị.
+
+⚠️ Endpoint trả mã viết hoa chữ đầu (`Rtq12`), dữ liệu trả về viết thường (`rtq12`). **Chuẩn hoá về chữ thường khi nạp.**
+
+⚠️ Từ điển này **không phủ** mã chỉ tiêu BCTC (`bsa*`, `isa*`, `isb*`, `cfa*`, `nob*`). Chúng có nguồn giải mã riêng — **729 mã, độ phủ 100% trên response thật**, lấy từ bundle JS của ứng dụng FiinTrade chứ không phải API. Xem [Phụ lục A §A.5](../10-nguon-du-lieu/thi-truong/phu-luc-A-ma-field.md).
+
+> **Hệ quả cho ETL:** nạp `metric_dictionary` từ **hai nguồn**, không phải một. `GetScreenerParameters` cấp 83 chỉ tiêu thị trường kèm `valueRange`; file [`tu-dien-ma-field.json`](../10-nguon-du-lieu/thi-truong/tu-dien-ma-field.json) cấp 729 chỉ tiêu (556 BCTC + 173 tỷ số) kèm **`don_vi_du_lieu`** cho 727 mã (99,7%), **392 mã đã xác thực** bằng đẳng thức kế toán và kiểm nhất quán thang. **Đưa cả bảy phép kiểm đó vào bộ giám sát hợp đồng** — chúng phát hiện được cả việc nguồn đổi thang đơn vị lẫn việc dữ liệu hỏng. File JSON là ảnh chụp tĩnh: bundle đổi hash mỗi lần FiinTrade deploy, nên đặt việc trích lại vào [bộ giám sát hợp đồng](#71-giám-sát-hợp-đồng-dữ-liệu) thay vì coi nó là bất biến.
+
+Các mã đã xác minh bằng đối chiếu số học: `rtd11` vốn hoá · `rtd14` EPS · `rtd7` BVPS · `rtd21` P/E · `rtd25` P/B · `rtq12` ROE · `rtq14` ROA · `bsa1` tổng tài sản. Xem [Phụ lục A](../10-nguon-du-lieu/thi-truong/phu-luc-A-ma-field.md).
+
+### 6.2 View đặt tên người đọc được
+
+Không bao giờ phơi mã thô cho LLM — `rtq12` không có nghĩa gì với mô hình ngôn ngữ.
+
+```sql
+CREATE VIEW v_financial_ratios AS
+SELECT o.ticker, fs.year_report, fs.quarter_report,
+       max(value) FILTER (WHERE metric_code='rtq12') AS roe,
+       max(value) FILTER (WHERE metric_code='rtq14') AS roa,
+       max(value) FILTER (WHERE metric_code='rtd21') AS pe,
+       max(value) FILTER (WHERE metric_code='rtd25') AS pb
+FROM financial_statement fs
+JOIN organization o USING (organ_code)
+GROUP BY 1,2,3;
+```
+
+Bộ view tối thiểu: `v_financial_ratios` · `v_price_adjusted` · `v_company_profile` · `v_corporate_calendar` · `v_money_flow`.
+
+### 6.3 Function calling thay vì SQL tự do
+
+Cho bot gọi tập function đã định nghĩa, không cho sinh SQL tuỳ ý:
+
+```
+screen_stocks(criteria, exchange, sector, limit)
+get_financials(ticker, statement_type, from_year, to_year)
+get_price_series(ticker, from_date, to_date, resolution)
+get_corporate_events(ticker, event_type, from_date)
+compare_peers(ticker, metrics)
+```
+
+Chính xác hơn, tránh truy vấn quét toàn bảng, và kiểm soát được chi phí.
+
+---
+
+## 7. Rủi ro vận hành
+
+| Rủi ro | Xử lý |
+|---|---|
+| **Ingester là điểm chết đơn** | Standby giữ kết nối ấm, leader election, tiếp quản < 2 s. Mất bao lâu là mất vĩnh viễn |
+| **Dữ liệu bị điều chỉnh hồi tố** | Re-crawl BCTC mỗi quý sau mùa báo cáo. Re-crawl giá của mã có sự kiện quyền, bắt tín hiệu từ `corporate_event.exright_date`. Giữ cột `ingested_at` |
+| **Schema đổi không báo trước** | Cột `raw jsonb` làm landing zone + **bộ giám sát hợp đồng hằng ngày** (mục 7.1) — phát hiện sớm, dựng lại không phải crawl lại |
+| **Nguồn mục ruỗng thầm lặng** | Giám sát tập trường, kiểu dữ liệu, độ phủ. Theo dõi hash bundle của nguồn để biết họ vừa deploy (mục 7.1) |
+| **Chạm rate limit** | Token bucket dùng chung giữa ETL và chatbot. Hỏi FiinGroup ngưỡng cụ thể |
+| **Sai `organCode`** | Ràng buộc khoá ngoại tới `organization`. Không cho phép truyền ticker vào tầng ETL |
+
+### 7.1 Giám sát hợp đồng dữ liệu
+
+Nguồn hiện tại **không có versioning, không changelog, không thông báo thay đổi**. Và Finext không phải khách hàng của API này — đây là API nội bộ chạy website bảng giá của BVSC, không ai cam kết bề mặt đó cho bên thứ ba.
+
+Hệ quả: **phòng vệ duy nhất là tự phát hiện.** Không thể chờ được báo.
+
+#### Vì sao đây không phải rủi ro lý thuyết
+
+Khảo sát dựng tài liệu này đã tìm thấy **tám bề mặt đã chết mà client vẫn gọi**:
+
+| Bề mặt | Trạng thái | Client |
+|---|---|---|
+| `/datafeed/indexs/getTime` | Luôn rỗng, kể cả trong phiên | Vẫn trong `PriceService` constants |
+| `/datafeed/prevTradingDate` · `/alltranslogs` | `404` | Vẫn khai báo |
+| `/datafeed/m-instruments` | `500` | Vẫn khai báo |
+| `/priceservice/derivative/*` · `/ptorder/*` · `/adorder/*` | `404` toàn bộ | Đủ hàm và hằng số |
+| Topic `idx:DER` | App vẫn subscribe lúc khởi động, server không đẩy | Còn nguyên |
+| Topic `o:` | Ack `200`, **không bao giờ có dữ liệu** | Còn dùng |
+| Topic `pth:` | Handler tồn tại, 0 frame qua ~6 phút đo | Còn nguyên |
+| `chartinday` khoá `X200` | Luôn mảng rỗng | Vẫn được yêu cầu |
+
+Phía FiinTrade: `Frequently=Weekly/Monthly` **trả nến ngày âm thầm**, tham số `Ticker=` bị bỏ qua không báo, lỗi runtime .NET lộ ra ngoài.
+
+Kiểu hỏng nguy hiểm nhất ở đây không phải endpoint chết — mà là **API vẫn trả `200`, dữ liệu vẫn có, nhưng sai**.
+
+#### Bộ kiểm thử hợp đồng chạy hằng ngày
+
+```sql
+contract_snapshot(
+  endpoint         text,
+  checked_at       timestamptz,
+  field_set_hash   text,      -- hash danh sách trường đã sắp xếp
+  field_types      jsonb,     -- tên trường → kiểu
+  record_count     int,
+  coverage_pct     numeric,   -- độ phủ trên bộ mã mẫu
+  p95_latency_ms   int,
+  sample_payload   jsonb,
+  PRIMARY KEY (endpoint, checked_at)
+);
+```
+
+Chạy trước phiên, trên **bộ mã mẫu cố định 51 mã** *(xem [Phụ lục B](../10-nguon-du-lieu/thi-truong/phu-luc-B-do-phu-du-lieu.md))*, đối chiếu với baseline:
+
+| Kiểm tra | Phát hiện |
+|---|---|
+| Tập trường đổi | Trường biến mất hoặc xuất hiện mới |
+| Kiểu dữ liệu đổi | Số thành chuỗi, hoặc ngược lại |
+| Số bản ghi lệch quá ngưỡng | Nguồn bắt đầu cắt dữ liệu |
+| Độ phủ tụt | Nhóm mã nào đó ngừng có dữ liệu |
+| Giá trị bất thường | Giá ≤ 0, tỷ lệ ngoài khoảng, ngày quá cũ |
+| Độ trễ p95 tăng | Nguồn đang xuống cấp |
+
+**Kiểm tra riêng cho các lỗi âm thầm đã biết:**
+
+- `o10:` còn đẩy frame không *(và `o:` vẫn im lặng — nếu `o:` bắt đầu chạy thì cũng là thay đổi cần biết)*
+- `Frequently=Weekly` còn trả nến ngày không *(nếu họ sửa, kết quả đổi)*
+- Kiểu của trường `status` theo từng nhóm endpoint — `0` hay `"Success"`
+- Số mã có `organCode ≠ ticker` — hiện 647/1.553. Lệch nhiều nghĩa là danh bạ đã đổi cấu trúc
+- Bộ 34 trường của `i:` và 18 trường của `idx:` trên luồng realtime
+
+#### Theo dõi bản build của nguồn — cảnh báo sớm
+
+Kỹ thuật rẻ nhất và báo trước sớm nhất: **giám sát hash bundle JavaScript của chính ứng dụng nguồn**.
+
+| Nguồn | Cách lấy | Hash tại thời điểm khảo sát |
+|---|---|---|
+| BVSC | `GET /priceboard/` → đọc `src` các thẻ script | `3241ea7a` *(dùng chung mọi chunk)* |
+| FiinTrade | `GET /screen/bvsc-analysis` → đọc chunk | `2.d5375412` · `main.876ed868` |
+
+Hash đổi nghĩa là **họ vừa deploy**. Khi đó tự động:
+1. Chạy full contract test ngay, không chờ lịch
+2. Tải lại bundle, grep lại registry endpoint — phát hiện endpoint mới thêm hoặc bị gỡ
+3. So bộ hằng số `PriceService`, `ServiceUrl`, danh sách topic với bản trước
+
+Cách này cho biết nguồn đã đổi **trước khi** dữ liệu của bạn bị ảnh hưởng, thay vì phát hiện sau khi khách hàng phàn nàn.
+
+#### Mức độ cảnh báo
+
+| Mức | Điều kiện | Hành động |
+|---|---|---|
+| **P1** | Endpoint trả `403`/`404`/`500` · topic realtime ngừng đẩy · Ingester mất kết nối > 60 s | Báo ngay, mất dữ liệu đang diễn ra |
+| **P2** | Tập trường đổi · kiểu dữ liệu đổi · giá trị bất thường | Báo trong giờ làm việc — nguy cơ **sai thầm lặng** |
+| **P3** | Độ phủ tụt · p95 tăng · **hash bundle đổi** | Xem trong ngày |
+
+#### Vòng lặp thích ứng
+
+Chiến lược là **thích ứng liên tục với nguồn hiện tại**, không phải chuẩn bị đổi nguồn. Ba thứ làm cho vòng lặp này chạy nhanh:
+
+1. **Cột `raw jsonb` là bắt buộc, không phải tuỳ chọn.** Khi schema đổi, bạn dựng lại bảng chuẩn hoá từ payload gốc đã lưu — không phải crawl lại 102.500 lời gọi.
+2. **Toàn bộ thay đổi hấp thụ ở tầng ánh xạ, không đụng lược đồ.** Bảng canonical giữ nguyên, chỉ sửa mapping vendor → canonical *(xem mục 9.3)*.
+3. **Giữ năng lực đọc bundle.** Kỹ thuật grep registry từ JS bundle là cách duy nhất biết nguồn có endpoint mới. Nên viết thành script chạy được, không phải việc làm tay một lần.
+
+### 7.2 Ba bẫy sẽ cắn ngay ngày đầu triển khai
+
+1. **`organCode ≠ ticker` ở 41% doanh nghiệp** — gọi bằng ticker trả `HTTP 200` với dữ liệu rỗng, không có lỗi
+2. **FiinTrade luôn trả `HTTP 200` kể cả khi lỗi** — phải đọc `status` và `errors` trong body
+3. **`status` có hai kiểu dữ liệu** — `0` (số) ở nhóm Snapshot, `"Success"` (chuỗi) ở nhóm Calendar
+
+Chín bẫy đầy đủ: [00-quy-uoc-chung.md](../10-nguon-du-lieu/thi-truong/00-quy-uoc-chung.md).
+
+---
+
+## 8. Thứ tự triển khai đề xuất
+
+| Giai đoạn | Nội dung | Điều kiện |
+|---|---|---|
+| **0** | Xác nhận ngưỡng rate limit với FiinGroup · dựng hạ tầng Postgres + Redis | — |
+| **1** | Bảng tham chiếu + ETL danh bạ/ngành/instrument | Sau GĐ 0 |
+| **2** | Ingester realtime + Redis + SSE — **bắt đầu tích luỹ `bar_1m` càng sớm càng tốt** | Song song GĐ 1 |
+| **3** | ETL hằng ngày: giá, snapshot, screener, lịch sự kiện | Sau GĐ 1 |
+| **3b** | **Bộ giám sát hợp đồng** + theo dõi hash bundle — dựng cùng ETL, dùng chung script | Cùng GĐ 3 |
+| **4** | Backfill lịch sử, rải 1–2 tuần | Sau GĐ 3 |
+| **5** | Tầng ngữ nghĩa + function calling cho chatbot | Sau GĐ 4 |
+
+> Giai đoạn 2 nên chạy sớm nhất có thể. Mọi dữ liệu khác crawl lại lúc nào cũng được, riêng nến intraday **không tồn tại ở bất kỳ nguồn nào** — mỗi ngày chưa thu là một ngày mất vĩnh viễn.
+
+---
+
+## 9. Định hướng nghiên cứu — thích ứng nguồn và khả năng thay thế
+
+> **Phần này chưa phải thiết kế chi tiết.**
+
+### 9.0 Chiến lược: thích ứng liên tục, không phải chuẩn bị đổi nguồn
+
+Chiến lược chính là **bám sát và thích ứng liên tục với nguồn BVSC/FiinTrade**, dựa trên bộ giám sát hợp đồng ở [mục 7.1](#71-giám-sát-hợp-đồng-dữ-liệu). Lý do:
+
+- Chi phí thích ứng một thay đổi schema là **vài giờ** — sửa tầng ánh xạ, dựng lại từ `raw jsonb`
+- Chi phí đổi nguồn là **hàng tuần**, và mất toàn bộ dữ liệu Tầng C *(mục 9.2)*
+- Nguồn hiện tại phủ rất sâu: 12,5 năm giá 99 trường, 21 năm BCTC, toàn bộ lịch sử sự kiện
+
+Đổi nguồn là **phương án dự phòng**, không phải kế hoạch. Vì vậy mục tiêu của phần này không phải xây khả năng thay thế, mà chỉ là **không tự khoá mình vào một nguồn** — để nếu buộc phải đổi thì không phải làm lại từ đầu.
+
+### 9.1 Kết luận ngắn
+
+Đổi nguồn **khả thi**, với **hai quyết định về lược đồ nên chốt ngay từ đầu**. Hai thứ đó rẻ nếu làm bây giờ, đắt nếu retrofit sau. Mọi thứ còn lại để đến khi thật sự cần.
+
+### 9.2 Phân tầng theo mức độ khoá nhà cung cấp
+
+| Tầng | Dữ liệu | Đổi nguồn |
+|---|---|---|
+| **A — Phổ quát** | OHLCV ngày và phút · khối lượng, giá trị · danh mục mã, sàn · chỉ số · sự kiện doanh nghiệp *(gốc từ VSD)* | ✅ Dễ. Nguồn nào cũng có, định nghĩa gần như đồng nhất |
+| **B — Có ở nhiều nguồn, định nghĩa khác nhau** | Báo cáo tài chính · phân ngành · dòng tiền theo nhóm NĐT · khối ngoại · thoả thuận | ⚠️ Được, nhưng **phải ánh xạ**. Mỗi nguồn có bộ mã chỉ tiêu và cách gộp khoản mục riêng |
+| **C — Độc quyền FiinGroup** | Điểm VGM · 32 chỉ tiêu `RateIndicator` · mô hình định giá (`estimatedEPS`, `forecastEPS`, `recommendMethod`) · `ZMFScore` · 223 trường screener | ❌ Mất là mất. Không nguồn nào khác có |
+
+Tầng A và B chiếm phần lớn giá trị sử dụng. Tầng C thì chấp nhận **đóng băng**: giữ nguyên lịch sử đã tích luỹ, các ngày sau để `NULL`. Đây chính là mô hình *"phần thiếu kệ nó, phần đủ cứ chạy"*.
+
+### 9.3 Hai điểm khoá nhà cung cấp trong lược đồ hiện tại
+
+#### Điểm 1 — `organ_code` đang là khoá chính
+
+Lược đồ ở mục 5 dùng `organ_code` làm `PRIMARY KEY` của `organization` và khoá ngoại của mọi bảng khác. **Đó là khoá nội bộ của FiinGroup**, không phải định danh phổ quát — 41% doanh nghiệp có `organ_code` khác `ticker`, và 72 mã dùng mã số thuế (`TAH → 3801140300`).
+
+Nguồn khác sẽ không biết `NHN` nghĩa là `VHM`. Đổi nguồn với lược đồ hiện tại nghĩa là viết lại khoá ngoại của toàn bộ kho.
+
+**Hướng nghiên cứu:** tách khoá nội bộ do Finext sở hữu ra khỏi mã của nhà cung cấp.
+
+```sql
+security(security_id BIGSERIAL PK, ticker, exchange, ...)         -- khoá của Finext
+security_external_id(security_id, source, external_code)          -- ánh xạ đa nguồn
+```
+
+`organ_code` trở thành một dòng trong `security_external_id` với `source = 'fiintrade'`. Thêm nguồn mới chỉ là thêm dòng.
+
+Chi phí làm ngay: một bảng phụ và một lần chuyển khoá. Chi phí retrofit: động vào mọi khoá ngoại trong kho.
+
+#### Điểm 2 — `metric_code` đang lưu mã FiinGroup thô
+
+`financial_statement.metric_code` chứa `bsa1`, `isa22`, `cfa18` — mã của FiinGroup. Nguồn khác dùng bộ mã hoàn toàn khác.
+
+**Hướng nghiên cứu:** giữ mã gốc của nguồn, đồng thời gắn thêm mã chuẩn hoá của Finext.
+
+```sql
+ALTER TABLE financial_statement ADD COLUMN canonical_code text;
+metric_mapping(source, vendor_code, canonical_code, name_vi, unit)
+```
+
+`canonical_code` có thể để trống lúc đầu và điền dần — không chặn tiến độ. Nhưng cột phải có sẵn, và ETL phải ghi `source` ngay từ ngày đầu.
+
+Việc này còn giải quyết luôn khoảng trống hiện tại: mã BCTC (`bsa*`, `isa*`, `cfa*`) chưa có bảng giải mã từ FiinGroup. Xây taxonomy riêng thì vừa gỡ khoá nhà cung cấp, vừa có tên chỉ tiêu cho chatbot.
+
+### 9.4 ETL độc lập theo miền
+
+Mô hình bạn mô tả — *phần thiếu kệ nó, phần đủ cứ chạy* — đúng và nên làm ngay vì rẻ:
+
+```sql
+data_domain_state(
+  domain          text,      -- reference | price_daily | intraday
+                             -- | fundamentals | events | scores
+  source          text,      -- fiintrade | bvsc | <nguồn mới>
+  status          text,      -- active | frozen | migrating
+  last_success_at timestamptz,
+  watermark       text
+);
+```
+
+Mỗi miền có **job riêng, watermark riêng, nguồn riêng**. Ba nguyên tắc:
+
+1. Miền mất nguồn thì chuyển `frozen` — các miền khác không bị ảnh hưởng
+2. Mọi bảng có cột `source` để biết dòng nào đến từ đâu
+3. **View đọc phải chịu được `NULL`, không được lỗi.** Đây là điều kiện để phần thiếu không làm sập phần đủ
+
+Điểm cộng của thiết kế hiện tại: quyết định **lưu giá thô, điều chỉnh lúc đọc** đã giúp phần giá gần như miễn nhiễm với việc đổi nguồn. Giá thô là sự thật bất biến; đổi nguồn chỉ cần tính lại `price_factor` từ chuỗi điều chỉnh của nguồn mới.
+
+### 9.5 Hướng tìm nguồn thay thế
+
+Chưa kiểm chứng nguồn nào trong số này — liệt kê để nghiên cứu sau:
+
+| Hướng | Ghi chú |
+|---|---|
+| **FiinGroup trực tiếp** | Bỏ qua BVSC, làm việc thẳng với chủ dữ liệu. Cùng schema, cùng mã chỉ tiêu → chi phí đổi gần bằng 0 |
+| **DNSE** — `datafeed.dnse.com.vn` | Đáng chú ý: chính bundle FiinTrade có sẵn cấu hình `REACT_APP_REAL_TIME_HOST: "datafeed.dnse.com.vn"` kèm `REACT_APP_REAL_TIME_CLIENTID` — tức FiinTrade đã từng hoặc đang tích hợp DNSE làm nguồn realtime |
+| **API các CTCK khác** | SSI, VNDirect, VPS, TCBS đều có API dữ liệu ở mức độ khác nhau |
+| **Sở GDCK trực tiếp** | HOSE/HNX — nguồn gốc, đắt nhất, nhưng độc lập hoàn toàn |
+| **Nguồn dữ liệu cơ bản** | Vietstock, Wichart, Simplize cho BCTC và chỉ số tài chính |
+
+Thứ tự ưu tiên nghiên cứu nên theo **tầng A trước** — có nguồn thay thế cho OHLCV và sự kiện doanh nghiệp là đã giữ được phần lớn giá trị kho.
+
+### 9.6 Việc nên làm và không nên làm
+
+| | |
+|---|---|
+| ✅ **Làm ngay** | Tách `security_id` khỏi `organ_code` · thêm cột `source` và `canonical_code` · bảng `data_domain_state` |
+| ⏳ **Làm khi cần** | Tầng adapter cho nguồn cụ thể · logic hoà giải khi hai nguồn chồng lấn · điền đầy `metric_mapping` |
+| ❌ **Không làm** | Đừng dựng khung plugin trừu tượng cho nguồn chưa biết. Trừu tượng hoá sớm dựa trên một nguồn duy nhất thường tạo ra đúng cái khung sai |
+
+Nguyên tắc: **không cần hệ thống có thể đổi nguồn ngay, chỉ cần hệ thống không tự khoá mình vào một nguồn.** Ba việc ở cột "làm ngay" đủ để đạt điều đó, tổng chi phí khoảng một ngày công.
