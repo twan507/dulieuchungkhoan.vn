@@ -2,6 +2,8 @@
 
 **Ngày:** 2026-08-14 · **Trạng thái:** ✅ đã chốt · **Trải từ quyết định chọn nguồn ngày 2026-08-14**
 
+**File sinh tự động** từ [`gen_field_selection.py`](gen_field_selection.py) — sửa qua script rồi chạy lại, không sửa tay. Bản [`market-field-selection.json`](market-field-selection.json) sinh cùng nguồn.
+
 Tài liệu này trả lời đúng một câu hỏi của người viết ETL: **trường này lấy hay bỏ, nguồn chuẩn là ai, vì sao.**
 Lý do ghi thẳng tại từng dòng — không phải tra chỗ khác, không phải diễn giải lại quyết định của ai.
 

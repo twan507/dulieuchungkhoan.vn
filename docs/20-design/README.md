@@ -11,6 +11,8 @@ Tầng này ghi **lựa chọn của Finext** — cái gì xây thế nào và v
 | [chatbot-semantic-layer.md](chatbot-semantic-layer.md) | Luật phân định bốn tầng · 8 function · ba quy tắc nối dữ liệu vào skill · điều chưa biết | 🟡 **đề xuất, chưa duyệt** |
 | [market-field-selection.md](market-field-selection.md) | Luật chọn nguồn · bảng lấy/bỏ từng mã trường của BVSC, Screener, Snapshot · bảng đối soát số đếm · danh sách cần kiểm API. Bản máy đọc: [market-field-selection.json](market-field-selection.json) | ✅ đã chốt (trải từ quyết định 2026-08-14) |
 
+⚠️ Hai file `market-field-selection.md` và `market-field-selection.json` **sinh tự động** từ [`gen_field_selection.py`](gen_field_selection.py) — sửa nội dung thì sửa trong script rồi chạy lại, **cấm sửa tay**.
+
 ---
 
 ## Ba nguyên tắc xuyên suốt ba tài liệu thiết kế hệ thống
