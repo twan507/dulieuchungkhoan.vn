@@ -20,7 +20,7 @@ Ba nguồn độc lập:
 
 Mọi thông tin đều được **kiểm chứng bằng lời gọi thật**. Không có nội dung nào suy đoán từ tên endpoint. Riêng WiChart còn kèm **bộ tự kiểm chứng chạy được** ([`verify_wichart.py`](macro/verify_wichart.py)) đối chiếu từng khẳng định với API sống.
 
-**Thiết kế hệ thống dựng trên ba nguồn này** nằm ở [`20-design/`](../20-design/): [kho dữ liệu thị trường](../20-design/market-data-store.md) và [pipeline tin tức](../20-design/news-pipeline.md).
+**Thiết kế hệ thống dựng trên ba nguồn này** nằm ở [`20-design/`](../20-design/): [kho dữ liệu thị trường](../20-design/market-data-store.md), [pipeline tin tức](../20-design/news-pipeline.md) và [chọn trường cho ETL](../20-design/market-field-selection.md).
 
 ## 2. Phạm vi
 

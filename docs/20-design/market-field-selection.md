@@ -568,6 +568,7 @@ Phép cộng khép kín: thiếu 23 trường ở nhóm giữ + thiếu 53 trư�
 | Bỏ — trùng Screener | 18 | 13 | thiếu 5 |
 | Bỏ — trùng BCTC đầy đủ | 15 | 15 | khớp |
 | Bỏ — trùng BVSC | 5 | 4 | thiếu 1 |
+| Ngoài nhóm — `cần kiểm API`, chưa xếp được vào nhóm nào | — | 4 | ngoài nhóm |
 | **Tổng** | **54** | **52** | **thiếu 2** |
 
 Phép cộng khép kín: thiếu 5 trường ở nhóm trùng Screener + thiếu 1 ở nhóm trùng BVSC

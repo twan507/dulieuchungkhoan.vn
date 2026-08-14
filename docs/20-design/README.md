@@ -13,7 +13,7 @@ Tầng này ghi **lựa chọn của Finext** — cái gì xây thế nào và v
 
 ---
 
-## Ba nguyên tắc xuyên suốt cả ba tài liệu
+## Ba nguyên tắc xuyên suốt ba tài liệu thiết kế hệ thống
 
 **1 · Cách ly hoàn toàn khỏi nguồn.** Finext không bao giờ gọi thẳng API nhà cung cấp khi phục vụ người dùng. Ba lý do đều đo được: độ trễ chênh ~1.000 lần so với đọc từ Postgres · API không có versioning và không thông báo thay đổi · chatbot hỏi hàng chục câu mỗi phút.
 
