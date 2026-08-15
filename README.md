@@ -2,7 +2,7 @@
 
 Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập dữ liệu thị trường và tin tức từ nhiều nguồn, lưu vào kho riêng, phân phối lại qua REST và SSE, và một chatbot AI trả lời bằng phương pháp phân tích đã được hệ thống hoá thành skill.
 
-**Trạng thái — 2026-08-14:** thiết kế hoàn chỉnh, **chưa viết dòng code sản phẩm nào**. Hai skill chứng khoán đã xong và đã test 6 vòng. Còn **hai** việc chặn, cả hai đều phụ thuộc bên ngoài.
+**Trạng thái — 2026-08-15:** thiết kế hoàn chỉnh, **chưa viết dòng code sản phẩm nào**. Hai skill chứng khoán đã xong và đã test 6 vòng. Chỉ còn **một** việc chặn, phụ thuộc bên ngoài — giấy phép WiFeed đã chốt 2026-08-15.
 
 | Khối | Trạng thái | Bằng chứng |
 |---|---|---|
@@ -51,12 +51,13 @@ L3  Ngữ nghĩa      view người-đọc-được · function calling
 L4  Tri thức       hai skill: tư duy (luôn có mặt) + kiến thức (tải khi cần)
 ```
 
-## Hai việc chặn nhiều thứ nhất
+## Một việc chặn còn lại
 
-Cả hai phụ thuộc bên ngoài, thời gian chờ không kiểm soát được — gửi đi trước, làm việc khác trong lúc chờ:
+Nó phụ thuộc bên ngoài, thời gian chờ không kiểm soát được — gửi đi trước, làm việc khác trong lúc chờ:
 
 1. **Xác nhận ngưỡng rate limit** với FiinGroup — chặn mọi ETL. Gửi kèm luôn danh sách 11 mã chỉ tiêu chưa giải mã được
-2. **Chốt giấy phép WiFeed** với WiGroup — 🔴 chưa có, chặn toàn bộ nhánh vĩ mô và hàng hoá, 87 endpoint
+
+> Việc chặn thứ hai trước đây — *chốt giấy phép WiFeed với WiGroup* — **đã chốt ngày 2026-08-15** (chủ dự án xác nhận). Toàn bộ nhánh vĩ mô và hàng hoá, 87 endpoint, không còn bị chặn về pháp lý. Xem [tình trạng pháp lý WiChart](docs/10-sources/macro/wichart.md).
 
 > Việc thứ ba trước đây — *xin bảng ánh xạ mã chỉ tiêu báo cáo tài chính từ FiinGroup* — **đã tự giải quyết ngày 2026-08-14**, không cần chờ họ nữa: 729 mã lấy từ bundle JS của ứng dụng FiinTrade, phủ 100% response thật, kèm tên Việt/Anh (98,5%) và đơn vị dữ liệu (99,7%). Xem [Phụ lục A §A.5](docs/10-sources/market/appendix-A-field-codes.md).
 

@@ -57,7 +57,7 @@ get_industry_tree(icb_level?, ticker?)
 
 get_macro_series(indicator, from_date, to_date)
     → nhánh WiChart: vĩ mô, tiền tệ, giá hàng hoá.
-      🔴 Chỉ bật sau khi chốt giấy phép WiFeed.
+      ✅ Giấy phép WiFeed đã chốt 2026-08-15 — không còn bị chặn pháp lý.
 ```
 
 **Vì sao không cho sinh SQL tự do:** chính xác hơn, tránh quét toàn bảng, kiểm soát được chi phí. Lý do này đã ghi ở §6.3 và giữ nguyên hiệu lực cho cả ba function mới.

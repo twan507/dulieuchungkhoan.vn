@@ -19,6 +19,7 @@ Ba khối vốn có ba danh sách việc riêng, mỗi danh sách tự cho mình
 | Tầng ngữ nghĩa nối dữ liệu ↔ skill | 🟡 Mới đề xuất, chưa duyệt | [chatbot-semantic-layer.md](../20-design/chatbot-semantic-layer.md) |
 | **Từ điển mã trường FiinGroup** | ✅ 729 mã · tên VI/EN 98,5% · đơn vị 99,7% | [field-dictionary.json](../10-sources/market/field-dictionary.json) |
 | **Chọn nguồn chuẩn cho từng chỉ tiêu** | ✅ Đã chốt | [chọn trường cho ETL thị trường](../20-design/market-field-selection.md) |
+| **Giấy phép WiFeed với WiGroup** | ✅ **Đã chốt 2026-08-15** — mở khoá 87 endpoint vĩ mô/hàng hoá | chủ dự án xác nhận |
 | **Repo vào git** | ✅ `git init` + commit đầu 2026-08-14 | toàn bộ docs + hai skill |
 | **Toàn bộ phần cài đặt** | ❌ Chưa bắt đầu | |
 
@@ -27,10 +28,10 @@ Ba khối vốn có ba danh sách việc riêng, mỗi danh sách tự cho mình
 | # | Việc | Chặn cái gì | Nguồn |
 |---|---|---|---|
 | **1** | **Xác nhận rate limit với FiinGroup** và dựng hạ tầng Postgres + Redis. *(Gửi kèm luôn danh sách 11 mã chỉ tiêu chưa giải mã được — xem [Phụ lục A §A.5](../10-sources/market/appendix-A-field-codes.md))* | Mọi ETL | kho dữ liệu §8 GĐ 0 |
-| **2** | **Chốt giấy phép WiFeed** với WiGroup | Toàn bộ nhánh vĩ mô/hàng hoá — 87 endpoint | README nguồn §7 |
+| ~~2~~ | ~~Chốt giấy phép WiFeed với WiGroup~~ | ✅ **Đã chốt 2026-08-15** — chủ dự án xác nhận. Mở khoá toàn bộ nhánh vĩ mô/hàng hoá, 87 endpoint. Còn một việc ngỏ về endpoint/spec chính thức — xem [§5](#5-việc-còn-thật-sự-để-ngỏ) | |
 | ~~3~~ | ~~Yêu cầu FiinGroup bảng ánh xạ mã chỉ tiêu BCTC~~ | ✅ **Đã tự giải quyết 2026-08-14** — 729 mã, độ phủ 100% trên response thật, lấy từ bundle JS ứng dụng FiinTrade. Kèm tên Việt/Anh (98,5%) và **đơn vị dữ liệu** (99,7%). Xem [Phụ lục A §A.5](../10-sources/market/appendix-A-field-codes.md). Còn 11 mã chưa giải mã — không chặn việc gì | |
 
-Ba việc này đều **phụ thuộc bên ngoài**, không tự làm được, và thời gian chờ không kiểm soát được. Gửi đi trước, làm việc khác trong lúc chờ.
+Ba việc này đều **phụ thuộc bên ngoài**, không tự làm được, và thời gian chờ không kiểm soát được. Hai việc đã xong; **chỉ còn việc 1 đang chờ** — gửi đi trước, làm việc khác trong lúc chờ.
 
 ## 2. Việc gấp vì mất dữ liệu theo thời gian
 
@@ -82,6 +83,7 @@ Bốn mục đang nằm trong danh sách **"Còn để ngỏ"** của pipeline t
 
 | Việc | Ghi chú | Chốt bằng cách nào |
 |---|---|---|
+| **Endpoint/spec chính thức của WiFeed** | Giấy phép đã chốt là cho sản phẩm **WiFeed**; toàn bộ số đo trong tài liệu hiện tại thực hiện trên endpoint nội bộ `api.wichart.vn`. Chưa xác nhận endpoint/spec chính thức của WiFeed có khác không | Hỏi WiGroup |
 | **Luật bỏ boilerplate cho từng nguồn** | Phải viết riêng cho mỗi trong 10 nguồn báo. Chưa khảo sát cấu trúc trang bài | Một vòng soi tương tự vòng soi feed đã làm |
 | **Chọn mô hình embedding** | Chốt **trước** khi nạp dữ liệu — embed lại toàn kho về sau rất tốn | Nhớ embed cả `summary` và `summary_ai`, giữ riêng |
 | **Ngưỡng `confidence`** phân loại | Dưới bao nhiêu thì vào hàng chờ rà tay | Sau vài tuần chạy thật |

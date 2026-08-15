@@ -14,8 +14,11 @@
 | Chủ dữ liệu | **CTCP WiGroup** |
 | Sản phẩm thương mại tương ứng | **WiFeed.vn** (bán API này kèm lịch sử đầy đủ) |
 | Nơi phát hiện | Trang `data.vietnambiz.vn` — bản white-label hiển thị dữ liệu WiGroup theo giấy phép |
+| Tình trạng pháp lý | ✅ **Giấy phép WiFeed đã chốt** — chủ dự án xác nhận 2026-08-15 |
 
-> 🔴 **Chưa có quyền sử dụng thương mại.** Khác với BVSC/FiinTrade (Finext được phép thu thập và phái sinh), dữ liệu WiChart thuộc bản quyền WiGroup và đang được truy cập qua endpoint nội bộ phục vụ trang đối tác. Phải chốt giấy phép WiFeed trước khi đưa vào sản phẩm thương mại. Xem [§10](#10-việc-cần-làm-với-wigroup).
+> ✅ **Đã có quyền sử dụng thương mại.** Giấy phép **WiFeed** với CTCP WiGroup đã chốt — chủ dự án xác nhận **2026-08-15**. Trước ngày đó dữ liệu chỉ truy cập được qua endpoint nội bộ phục vụ trang đối tác, và đó là hàng rào chặn cả nhánh vĩ mô/hàng hoá.
+>
+> Một điểm còn ngỏ: giấy phép cấp cho sản phẩm **WiFeed**, còn toàn bộ số đo trong tài liệu này thực hiện trên endpoint nội bộ `api.wichart.vn`. Chưa xác nhận endpoint/spec chính thức của WiFeed có khác không. Xem [§10](#10-việc-cần-làm-với-wigroup).
 
 Nguồn gốc cấp trên của dữ liệu (xác định qua đối chiếu):
 
@@ -728,7 +731,9 @@ SRCNOTE = {
 
 ## 10. Việc cần làm với WiGroup
 
-Audit cho thấy **WiGroup gần như không sai về số học** — mọi thứ đối chiếu được đều khớp nguồn gốc (nhiều series khớp 0,00%). Cái họ làm ẩu là **metadata**. Vì vậy khi đàm phán WiFeed, thứ cần nhất không phải "dữ liệu có đúng không" mà là **một từ điển định nghĩa**, nên đưa vào hợp đồng như phụ lục.
+> ✅ **Giấy phép WiFeed đã chốt — chủ dự án xác nhận 2026-08-15.** Danh sách dưới đây vì vậy không còn là điều kiện đàm phán mà là việc cần làm tiếp với WiGroup.
+
+Audit cho thấy **WiGroup gần như không sai về số học** — mọi thứ đối chiếu được đều khớp nguồn gốc (nhiều series khớp 0,00%). Cái họ làm ẩu là **metadata**. Vì vậy thứ cần nhất ở WiFeed không phải "dữ liệu có đúng không" mà là **một từ điển định nghĩa**, nên đưa vào hợp đồng như phụ lục.
 
 Yêu cầu cụ thể:
 
@@ -741,6 +746,7 @@ Yêu cầu cụ thể:
 7. **Thông báo trước khi đổi năm gốc / rebasing** — kèm hệ số nối chính thức.
 8. **Ngưỡng rate limit** — chưa đo, cần con số cam kết.
 9. **Sửa hoặc xác nhận các lỗi metadata** đã liệt kê: nhãn `td`, đơn vị `vdtnsnn`, `timeArray` của 16 key, `xi_mang_pcb` trả 500.
+10. **Xác nhận endpoint và spec chính thức của WiFeed** — toàn bộ số đo trong tài liệu này thực hiện trên endpoint nội bộ `api.wichart.vn`. Cần biết WiFeed phục vụ qua chính endpoint đó hay một endpoint/spec khác; nếu khác thì phải đo lại.
 
 ---
 

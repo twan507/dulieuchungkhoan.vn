@@ -143,5 +143,5 @@ Ký hiệu trong bảng tham số:
 
 - Toàn bộ endpoint mô tả ở đây là API nội bộ, **không phải public API có cam kết**. Không có versioning, không có thông báo thay đổi. Schema có thể đổi bất cứ lúc nào.
 - Số liệu hiệu năng đo trên một máy trạm tại Việt Nam, chỉ mang tính tham khảo.
-- 🔴 **Tình trạng pháp lý hai nguồn KHÁC NHAU.** Với BVSC/FiinTrade, Finext được phép thu thập, lưu trữ và phái sinh. Với **WiChart thì chưa** — dữ liệu thuộc bản quyền CTCP WiGroup và đang được truy cập qua endpoint nội bộ phục vụ trang đối tác. Phải chốt giấy phép **WiFeed** trước khi đưa vào sản phẩm thương mại. Xem [`wichart.md` §1](macro/wichart.md) và [§10](macro/wichart.md).
+- ✅ **Tình trạng pháp lý hai nguồn nay đều đã rõ.** Với BVSC/FiinTrade, Finext được phép thu thập, lưu trữ và phái sinh. Với **WiChart**, giấy phép **WiFeed** với CTCP WiGroup **đã chốt — chủ dự án xác nhận 2026-08-15**; trước đó dữ liệu chỉ truy cập được qua endpoint nội bộ phục vụ trang đối tác. **Còn ngỏ:** giấy phép cấp cho sản phẩm WiFeed, còn toàn bộ số đo trong kho tài liệu này thực hiện trên endpoint nội bộ `api.wichart.vn` — chưa xác nhận endpoint/spec chính thức của WiFeed có khác không. Xem [`wichart.md` §1](macro/wichart.md) và [§10](macro/wichart.md).
 - Ngưỡng rate limit của WiChart **chưa đo**. Không có header `X-RateLimit-*` hay `Retry-After`.
