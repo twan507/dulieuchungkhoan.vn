@@ -165,7 +165,7 @@ Giữ nguyên mô hình delta tới tận trình duyệt: đo được `V1` (kh�
 | BCTC 3 loại × 1.974 mã | 5.922 | ~25 phút |
 | Lịch sự kiện toàn bộ | ~500 | vài phút |
 
-⚠️ Giới hạn **2 request/giây**, chạy ngoài giờ giao dịch, **rải 1–2 tuần**. Quét ồ ạt 102.500 lời gọi là mức tải đáng kể lên hạ tầng FiinGroup.
+⚠️ Giới hạn **2 request/giây**, chạy ngoài giờ giao dịch, **rải 1–2 tuần**. Quét ồ ạt 102.648 lời gọi là mức tải đáng kể lên hạ tầng FiinGroup.
 
 ### 4.3 Rate limiter
 
@@ -535,7 +535,7 @@ Cách này cho biết nguồn đã đổi **trước khi** dữ liệu của b�
 
 Chiến lược là **thích ứng liên tục với nguồn hiện tại**, không phải chuẩn bị đổi nguồn. Ba thứ làm cho vòng lặp này chạy nhanh:
 
-1. **Cột `raw jsonb` là bắt buộc, không phải tuỳ chọn.** Khi schema đổi, bạn dựng lại bảng chuẩn hoá từ payload gốc đã lưu — không phải crawl lại 102.500 lời gọi.
+1. **Cột `raw jsonb` là bắt buộc, không phải tuỳ chọn.** Khi schema đổi, bạn dựng lại bảng chuẩn hoá từ payload gốc đã lưu — không phải crawl lại 102.648 lời gọi.
 2. **Toàn bộ thay đổi hấp thụ ở tầng ánh xạ, không đụng lược đồ.** Bảng canonical giữ nguyên, chỉ sửa mapping vendor → canonical *(xem mục 9.3)*.
 3. **Giữ năng lực đọc bundle.** Kỹ thuật grep registry từ JS bundle là cách duy nhất biết nguồn có endpoint mới. Nên viết thành script chạy được, không phải việc làm tay một lần.
 
