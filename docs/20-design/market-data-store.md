@@ -171,7 +171,7 @@ Giữ nguyên mô hình delta tới tận trình duyệt: đo được `V1` (kh�
 
 Token bucket riêng cho từng host FiinTrade. ETL và chatbot **dùng chung ngân sách** — nếu không, quét đêm sẽ làm chatbot ban ngày bị chặn.
 
-Cần hỏi FiinGroup ngưỡng cụ thể. Hiện chưa biết giới hạn thật.
+Đo 2026-08-15 bằng đúng tải kế hoạch: burst Screener 52 trang chạy tuần tự (~29 request/phút) **không gặp tín hiệu chặn nào**, và **không có header hạn mức** để dựa vào — xem [§10 quy ước chung](../10-sources/market/00-conventions.md). Ngưỡng trần thì vẫn chưa biết, và **cố tình không dò**. Vì vậy token bucket phải tự giữ nhịp, và **nhịp 8 luồng ở §4.1 chưa được kiểm** — đo lại ở đúng nhịp đó trước khi bật chạy thật.
 
 ---
 
@@ -444,7 +444,7 @@ Chính xác hơn, tránh truy vấn quét toàn bảng, và kiểm soát đượ
 | **Dữ liệu bị điều chỉnh hồi tố** | Re-crawl BCTC mỗi quý sau mùa báo cáo. Re-crawl giá của mã có sự kiện quyền, bắt tín hiệu từ `corporate_event.exright_date`. Giữ cột `ingested_at` |
 | **Schema đổi không báo trước** | Cột `raw jsonb` làm landing zone + **bộ giám sát hợp đồng hằng ngày** (mục 7.1) — phát hiện sớm, dựng lại không phải crawl lại |
 | **Nguồn mục ruỗng thầm lặng** | Giám sát tập trường, kiểu dữ liệu, độ phủ. Theo dõi hash bundle của nguồn để biết họ vừa deploy (mục 7.1) |
-| **Chạm rate limit** | Token bucket dùng chung giữa ETL và chatbot. Hỏi FiinGroup ngưỡng cụ thể |
+| **Chạm rate limit** | Token bucket dùng chung giữa ETL và chatbot. Nhịp tuần tự đã kiểm 2026-08-15; nhịp 8 luồng thì chưa — đo lại trước khi bật |
 | **Sai `organCode`** | Ràng buộc khoá ngoại tới `organization`. Không cho phép truyền ticker vào tầng ETL |
 
 ### 7.1 Giám sát hợp đồng dữ liệu
@@ -553,7 +553,7 @@ Chín bẫy đầy đủ: [00-conventions.md](../10-sources/market/00-convention
 
 | Giai đoạn | Nội dung | Điều kiện |
 |---|---|---|
-| **0** | Xác nhận ngưỡng rate limit với FiinGroup · dựng hạ tầng Postgres + Redis | — |
+| **0** | Dựng hạ tầng Postgres + Redis. *(Rate limit: nhịp tuần tự đã kiểm bằng tải kế hoạch 2026-08-15 — xem [§10 quy ước chung](../10-sources/market/00-conventions.md); nhịp 8 luồng thì phải đo lại trước khi bật)* | — |
 | **1** | Bảng tham chiếu + ETL danh bạ/ngành/instrument | Sau GĐ 0 |
 | **2** | Ingester realtime + Redis + SSE — **bắt đầu tích luỹ `bar_1m` càng sớm càng tốt** | Song song GĐ 1 |
 | **3** | ETL hằng ngày: giá, snapshot, screener, lịch sự kiện | Sau GĐ 1 |

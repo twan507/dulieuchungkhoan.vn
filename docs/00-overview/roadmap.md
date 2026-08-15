@@ -20,6 +20,7 @@ Ba khối vốn có ba danh sách việc riêng, mỗi danh sách tự cho mình
 | **Từ điển mã trường FiinGroup** | ✅ 729 mã · tên VI/EN 98,5% · đơn vị 99,7% | [field-dictionary.json](../10-sources/market/field-dictionary.json) |
 | **Chọn nguồn chuẩn cho từng chỉ tiêu** | ✅ Đã chốt | [chọn trường cho ETL thị trường](../20-design/market-field-selection.md) |
 | **Giấy phép WiFeed với WiGroup** | ✅ **Đã chốt 2026-08-15** — mở khoá 87 endpoint vĩ mô/hàng hoá | chủ dự án xác nhận |
+| **Rate limit FiinGroup** | ✅ **Đã kiểm bằng đúng tải ETL kế hoạch 2026-08-15** — 64 lời gọi tuần tự, không tín hiệu chặn | [quy ước chung §10](../10-sources/market/00-conventions.md) |
 | **Repo vào git** | ✅ `git init` + commit đầu 2026-08-14 | toàn bộ docs + hai skill |
 | **Toàn bộ phần cài đặt** | ❌ Chưa bắt đầu | |
 
@@ -27,11 +28,12 @@ Ba khối vốn có ba danh sách việc riêng, mỗi danh sách tự cho mình
 
 | # | Việc | Chặn cái gì | Nguồn |
 |---|---|---|---|
-| **1** | **Xác nhận rate limit với FiinGroup** và dựng hạ tầng Postgres + Redis. *(Gửi kèm luôn danh sách 11 mã chỉ tiêu chưa giải mã được — xem [Phụ lục A §A.5](../10-sources/market/appendix-A-field-codes.md))* | Mọi ETL | kho dữ liệu §8 GĐ 0 |
-| ~~2~~ | ~~Chốt giấy phép WiFeed với WiGroup~~ | ✅ **Đã chốt 2026-08-15** — chủ dự án xác nhận. Mở khoá toàn bộ nhánh vĩ mô/hàng hoá, 87 endpoint. Còn một việc ngỏ về endpoint/spec chính thức — xem [§5](#5-việc-còn-thật-sự-để-ngỏ) | |
-| ~~3~~ | ~~Yêu cầu FiinGroup bảng ánh xạ mã chỉ tiêu BCTC~~ | ✅ **Đã tự giải quyết 2026-08-14** — 729 mã, độ phủ 100% trên response thật, lấy từ bundle JS ứng dụng FiinTrade. Kèm tên Việt/Anh (98,5%) và **đơn vị dữ liệu** (99,7%). Xem [Phụ lục A §A.5](../10-sources/market/appendix-A-field-codes.md). Còn 11 mã chưa giải mã — không chặn việc gì | |
+| **1** | **Dựng hạ tầng Postgres + Redis** | Mọi ETL | kho dữ liệu §8 GĐ 0 |
+| ~~2~~ | ~~Xác nhận rate limit với FiinGroup~~ | ✅ **Đã kiểm bằng tải kế hoạch 2026-08-15** — burst Screener 52 trang chạy tuần tự (~29 request/phút, 1,8 phút) không gặp tín hiệu chặn nào, và không có header hạn mức nào. Xác nhận chính thức từ FiinGroup **không còn là điều kiện chặn**. Chủ đích không dò ngưỡng trần; nhịp 8 luồng thì chưa kiểm — xem [§10 quy ước chung](../10-sources/market/00-conventions.md). *(Danh sách 11 mã chỉ tiêu chưa giải mã vẫn gửi kèm khi có dịp trao đổi — xem [Phụ lục A §A.5](../10-sources/market/appendix-A-field-codes.md), không chặn việc gì)* | |
+| ~~3~~ | ~~Chốt giấy phép WiFeed với WiGroup~~ | ✅ **Đã chốt 2026-08-15** — chủ dự án xác nhận. Mở khoá toàn bộ nhánh vĩ mô/hàng hoá, 87 endpoint | |
+| ~~4~~ | ~~Yêu cầu FiinGroup bảng ánh xạ mã chỉ tiêu BCTC~~ | ✅ **Đã tự giải quyết 2026-08-14** — 729 mã, độ phủ 100% trên response thật, lấy từ bundle JS ứng dụng FiinTrade. Kèm tên Việt/Anh (98,5%) và **đơn vị dữ liệu** (99,7%). Xem [Phụ lục A §A.5](../10-sources/market/appendix-A-field-codes.md). Còn 11 mã chưa giải mã — không chặn việc gì | |
 
-Ba việc này đều **phụ thuộc bên ngoài**, không tự làm được, và thời gian chờ không kiểm soát được. Hai việc đã xong; **chỉ còn việc 1 đang chờ** — gửi đi trước, làm việc khác trong lúc chờ.
+Ba việc 2–4 đều **phụ thuộc bên ngoài**, không tự làm được, và thời gian chờ không kiểm soát được. **Cả ba nay đã xong.** Việc chặn duy nhất còn lại là dựng hạ tầng — việc tự làm được, không phải chờ ai.
 
 ## 2. Việc gấp vì mất dữ liệu theo thời gian
 

@@ -318,3 +318,94 @@ Chi tiết đầy đủ: [appendix-B-coverage.md](appendix-B-coverage.md).
 | `Master/GetListOrganization` | ~4,4 s | 355 KB |
 
 Các endpoint tham chiếu (`GetListOrganization`, `GetAllIcbIndustry`, `/quotes`, `/mapping`) nên được cache dài hạn — dữ liệu chỉ đổi khi có mã mới niêm yết.
+
+---
+
+## 10. Rate limit — đo bằng đúng tải ETL kế hoạch (2026-08-15)
+
+> 🔴 **Không dò ngưỡng trần — đây là chủ đích, không phải thiếu sót.** Phép đo này chạy đúng mức tải mà [lịch ETL đã thiết kế](../../20-design/market-data-store.md) sẽ tạo ra, rồi dừng. Nó trả lời câu *"tải kế hoạch có bị chặn không"*, **không** trả lời câu *"chặn ở mức nào"*. Mọi câu trả lời cho câu hỏi thứ hai đều đòi phải cố tình làm quá tải hạ tầng của FiinGroup, và dự án chọn không làm.
+
+### 10.1 Ngân sách lời gọi định kỳ — ước lượng trước khi đo
+
+Tính từ [lịch ETL §4.1–4.2](../../20-design/market-data-store.md), tách theo tần suất:
+
+| Họ endpoint | Host | Nhịp | Lời gọi mỗi lần chạy |
+|---|---|---|---|
+| Danh bạ · cây ngành · `/quotes` · `/mapping` | `FIIN_CORE`, `BVSC` | Trước phiên, hằng ngày | 4 |
+| `PriceData/GetPriceData` Page 1 | `FIIN_TECH` | Sau 15:00, hằng ngày | 1.974 |
+| `Snapshot/*` — hồ sơ, sở hữu | `FIIN_FUND` | Sau 15:00, hằng ngày | ~4.000 |
+| **`Screener/GetScreenerItems` — phân trang 52 trang** | `FIIN_TOOLS` | Sau 15:00, hằng ngày | **52** |
+| `Calendar/*` — lịch sự kiện | `FIIN_MARKET` | Hằng ngày | ~10 |
+| **Cộng thường nhật** | | **hằng ngày** | **≈ 6.040** |
+| BCTC 3 loại × 1.974 mã | `FIIN_FUND` | Theo quý, rải | 5.922 |
+| `getPriceData` 52 trang × 1.974 mã | `FIIN_TECH` | **Một lần**, rải 1–2 tuần | 102.648 |
+
+**Vì sao chọn burst Screener để kiểm.** Ba nhóm hằng ngày kia lớn hơn về số lượng nhưng là **nhiều lời gọi độc lập trên nhiều mã**, rải được tuỳ ý. Riêng 52 trang Screener là **một chuỗi phân trang dính liền trên đúng một endpoint của đúng một host** — không rải được, phải đi liền mạch mới lấy đủ 1.549 mã — và là lời gọi **nặng nhất mỗi lượt** trong cả lịch. Nếu chỗ nào bị chặn trước thì là chỗ này.
+
+**Quy ra nhịp:** 52 lời gọi tuần tự ở latency đo ngày 2026-08-15 ⇒ dự kiến ~5–6 phút, tức **9–10 request/phút**. Đây là con số cần kiểm.
+
+### 10.2 Đã chạy những gì
+
+| Bước | Lời gọi | Thời gian | Kết quả |
+|---|---|---|---|
+| `Screener/GetScreenerParameters` — lấy bộ tiêu chí | 1 | 2,8 s | `Success` |
+| **Burst thường nhật:** `Screener/GetScreenerItems` **52 trang liên tiếp, tuần tự** — `comGroupCode=ALL`, `icbCode=ALL`, 1 tiêu chí, `pageSize=30` | 52 | **1 phút 49 giây** | **52/52 `Success`** · 1.549 mã · 7,7 MB |
+| Mẫu họ khác: `Snapshot/GetSnapshotNoneBank` + `Snapshot/GetCompanyScore` trên 5 mã | 10 | 2,7 s | 10/10 `Success` |
+| Một lời gọi hỏng — Redis timeout của chính FiinTrade, xem §10.5 | 1 | 7,7 s | `status: "Failed"` |
+| **Tổng toàn phiên** | **64** | | trần tự đặt: 100 |
+
+Burst chạy **nhanh gấp ba dự kiến** — 1,8 phút thay vì 5–6 phút, vì latency hôm đo *(trung vị 2,07 s)* thấp hơn hẳn con số 6,44 s ghi ngày 2026-08-15 ở [`10-fiin-dictionary.md`](10-fiin-dictionary.md). Hệ quả: nhịp thật đạt **~29 request/phút**, cao hơn ước lượng ban đầu, và **vẫn không bị chặn**.
+
+Toàn bộ chạy **tuần tự, một luồng, không chèn khoảng nghỉ nhân tạo** — độ trễ thật của máy chủ chính là nhịp.
+
+### 10.3 Số đo
+
+| Chỉ tiêu | Giá trị |
+|---|---|
+| Nhịp burst Screener | **28,7 request/phút** *(52 lời gọi / 1,81 phút)* |
+| Latency `GetScreenerItems` | min 1.077 · **trung vị 2.074** · p90 2.684 · max 3.100 ms |
+| Latency `GetSnapshotNoneBank` / `GetCompanyScore` | min 32 · trung vị 229 · max 1.174 ms |
+| HTTP status | **200 trên cả 64 lời gọi** |
+| `status` trong body | `Success` trên 63/64 |
+
+**Không gặp bất kỳ tín hiệu chặn nào:** không `429`, không `403`, không `5xx`, không `Retry-After`, không đợt tăng latency đột biến. Latency ở trang 52 không cao hơn trang 1.
+
+### 10.4 Header — xác nhận lại là không có
+
+Hợp nhất header của cả 64 response:
+
+```
+access-control-allow-credentials · access-control-allow-origin · access-control-expose-headers
+content-encoding · content-type · date · server · transfer-encoding · vary
+x-miniprofiler-ids · x-powered-by
+```
+
+**Không có `X-RateLimit-*`, không có `Retry-After`, không có bất kỳ header họ hạn mức nào.** Điều tài liệu này nói trước đây được xác nhận bằng đo thật. Hệ quả: ETL **không thể** dựa vào header để biết mình còn bao nhiêu hạn mức — phải tự giữ nhịp bằng token bucket phía Finext.
+
+*(`server` trả về hai giá trị xen kẽ — `Microsoft-IIS/8.5` và `Microsoft-IIS/10.0`, mỗi loại 31 lần. Dấu hiệu có cân bằng tải trước ít nhất hai máy chủ khác đời.)*
+
+### 10.5 Một lời gọi hỏng — và vì sao nó không phải tín hiệu chặn
+
+Lời gọi `GetScreenerItems` **thứ hai của toàn phiên** trả `HTTP 200` kèm:
+
+```json
+{"status":"Failed","errors":["Timeout performing GET (5000ms) … serverEndpoint: 192.168.1.232:6379 …"]}
+```
+
+Đây là **Redis timeout nội bộ của chính FiinTrade** — cùng lỗi đã ghi ở [`10-fiin-dictionary.md`](10-fiin-dictionary.md) cho trường hợp gửi nhiều tiêu chí. Nó **không phải** rate limit, vì ba lý do đo được: xảy ra khi phiên mới có đúng 2 lời gọi *(không có tải nào để mà chặn)*, `HTTP 200` chứ không phải `429`, và không kèm header hạn mức nào. Burst 52 trang chạy ngay sau đó thông suốt.
+
+**Hệ quả cho ETL:** `status: "Failed"` kèm chuỗi `Timeout performing` là **lỗi tạm thời của nguồn**, phải xử lý bằng thử lại có kiểm soát (backoff, giới hạn số lần) chứ không được coi là dữ liệu rỗng — coi là rỗng sẽ ghi một trang trắng vào kho mà không ai biết.
+
+### 10.6 Kết luận và giới hạn của kết luận
+
+✅ **Mức tải đã kiểm là an toàn:** burst Screener thường nhật — 52 lời gọi phân trang tuần tự, ~29 request/phút, ~1,8 phút — chạy trọn vẹn không gặp tín hiệu chặn nào, kèm mẫu 10 lời gọi họ `Snapshot/*`.
+
+⚠️ **Những gì phép đo này KHÔNG nói:**
+
+| Chưa kiểm | Vì sao quan trọng |
+|---|---|
+| Nhịp **8 luồng** của ETL hằng ngày | Lịch thiết kế là ~6.000 lời gọi trong 20–30 phút ≈ **200–300 request/phút** — gấp 7–10 lần nhịp đã đo |
+| Trần **2 request/giây** đặt cho backfill 102.648 lời gọi | = 120 request/phút, vẫn gấp hơn 4 lần nhịp đã đo |
+| Hai nhóm lớn nhất của lịch ngày — `getPriceData` 1.974 và Snapshot ~4.000 lời gọi | Chỉ burst Screener được tái hiện |
+
+**Khuyến nghị vận hành:** nhịp tuần tự như thiết kế ETL mô tả là **mức đã kiểm** — dùng được ngay. Muốn nâng lên 8 luồng thì phải đo lại ở đúng nhịp đó trước khi bật chạy thật, và vẫn theo cùng nguyên tắc: chạy đúng tải kế hoạch rồi dừng, không dò trần.
