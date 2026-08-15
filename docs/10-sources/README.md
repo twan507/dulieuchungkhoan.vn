@@ -16,7 +16,7 @@ Ba nguồn độc lập:
 |---|---|---|---|
 | BVSC + FiinTrade | [`market/`](market/) — file `00`–`11`, phụ lục A/B | Cổ phiếu, chỉ số, BCTC, dòng tiền, realtime | 2026-08-10, mẫu 51 mã |
 | WiChart (WiGroup) | [`macro/wichart.md`](macro/wichart.md) | Vĩ mô, tiền tệ, giá hàng hoá | 2026-08-12, toàn bộ 87 key |
-| 8 báo điện tử | [`news/README.md`](news/README.md) | 47 feed RSS + 6 crawler HTML, encoding, khối lượng | 2026-08-13, 307 URL · 1.408 tiêu đề |
+| 8 báo điện tử | [`news/README.md`](news/README.md) + [`news/article-structure.md`](news/article-structure.md) | 47 feed RSS + 6 crawler HTML, encoding, khối lượng, cấu trúc trang bài | 2026-08-13, 307 URL · 1.408 tiêu đề · cấu trúc trang bài 2026-08-15, 33 bài |
 
 Mọi thông tin đều được **kiểm chứng bằng lời gọi thật**. Không có nội dung nào suy đoán từ tên endpoint. Riêng WiChart còn kèm **bộ tự kiểm chứng chạy được** ([`verify_wichart.py`](macro/verify_wichart.py)) đối chiếu từng khẳng định với API sống.
 
@@ -70,6 +70,7 @@ Chứng quyền · Lô lẻ · Phái sinh · Trái phiếu · ETF/Quỹ · Toàn
 | [11-bvsc-realtime.md](market/11-bvsc-realtime.md) | **Socket.IO** — bắt tay, đăng ký, 5 sự kiện, 86 trường, tần suất | 5 topic |
 | [appendix-A-field-codes.md](market/appendix-A-field-codes.md) | Bảng tra mã trường (`rtd11`, `rtq12`, `bsa1`…) | — |
 | [appendix-B-coverage.md](market/appendix-B-coverage.md) | Kết quả kiểm thử độ phủ trên 51 mã | — |
+| [`field-dictionary.json`](market/field-dictionary.json) | **Từ điển máy đọc 729 mã chỉ tiêu BCTC** — tên VI/EN 98,5%, đơn vị dữ liệu 99,7%, phủ 100% response thật của ba endpoint BCTC | — |
 
 ### 3.2 Nguồn vĩ mô và hàng hoá — `macro/`
 
@@ -83,6 +84,7 @@ Chứng quyền · Lô lẻ · Phái sinh · Trái phiếu · ETF/Quỹ · Toàn
 | File | Nội dung | Số nguồn |
 |---|---|---|
 | [news/README.md](news/README.md) | 47 feed RSS, 6 crawler HTML, quy tắc chuẩn hoá encoding và thời gian đăng, khối lượng đo được, nguồn đã loại | 8 báo |
+| [news/article-structure.md](news/article-structure.md) | **Cấu trúc trang bài** — selector container chính và luật bỏ boilerplate riêng từng nguồn, 61 selector kèm mức bằng chứng. Đo 2026-08-15 trên 33 bài; trang thô 94–527 KB | 8 báo |
 | [`news/feeds.json`](news/feeds.json) | Cùng nội dung ở dạng máy đọc — feed, taxonomy 20 sub, nhật ký loại bỏ | 47 feed |
 
 ### 3.4 Tài liệu thiết kế dựng trên các nguồn này
@@ -93,6 +95,7 @@ Không nằm trong tầng tra cứu, nhưng đọc kèm:
 |---|---|
 | [market-data-store.md](../20-design/market-data-store.md) | **Kiến trúc Finext** — thu thập, lưu trữ, phân phối lại. Sơ đồ, DDL, lịch ETL, SSE, chatbot, giám sát hợp đồng |
 | [news-pipeline.md](../20-design/news-pipeline.md) | Kiến trúc gom tin, taxonomy, quy tắc phân loại, gắn mã cổ phiếu, kho lưu trữ |
+| [market-field-selection.md](../20-design/market-field-selection.md) | **Chọn trường cho ETL** — lấy/bỏ từng mã trường, nguồn chuẩn, lý do tại chỗ. 213 dòng, kèm [bản JSON máy đọc](../20-design/market-field-selection.json), sinh tự động từ [`gen_field_selection.py`](../20-design/gen_field_selection.py) |
 
 ## 4. Quy ước trình bày
 

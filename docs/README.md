@@ -38,9 +38,9 @@ Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và m�
 |---|---|---|---|
 | [market/](10-sources/market/) | BVSC + FiinTrade | 44 REST + 5 topic realtime | 2026-08-10, mẫu 51 mã |
 | [macro/](10-sources/macro/) | WiChart (WiGroup) | 87 REST | 2026-08-12, toàn bộ 87 key |
-| [news/](10-sources/news/) | 8 báo điện tử | 47 RSS + 6 crawler | 2026-08-13, 307 URL · 1.408 tiêu đề |
+| [news/](10-sources/news/) | 8 báo điện tử | 47 RSS + 6 crawler | 2026-08-13, 307 URL · 1.408 tiêu đề · cấu trúc trang bài 2026-08-15, 33 bài |
 
-Mỗi nguồn tự chứa đủ đồ nghề: `macro/` có [`verify_wichart.py`](10-sources/macro/verify_wichart.py) — tự kiểm 509 khẳng định của tài liệu WiChart với API sống; `news/` có [`feeds.json`](10-sources/news/feeds.json) — 47 feed + taxonomy dạng máy đọc.
+Mỗi nguồn tự chứa đủ đồ nghề: `macro/` có [`verify_wichart.py`](10-sources/macro/verify_wichart.py) — tự kiểm 509 khẳng định của tài liệu WiChart với API sống; `news/` có [`feeds.json`](10-sources/news/feeds.json) — 47 feed + taxonomy dạng máy đọc — và [`article-structure.md`](10-sources/news/article-structure.md) — selector container chính cùng luật bỏ boilerplate riêng từng nguồn.
 
 Mục lục chi tiết từng file: [10-sources/README.md](10-sources/README.md).
 
@@ -51,7 +51,7 @@ Mục lục chi tiết từng file: [10-sources/README.md](10-sources/README.md)
 | [market-data-store.md](20-design/market-data-store.md) | Cách ly hoàn toàn · Ingester + SSE · lược đồ Timescale · ETL · giám sát hợp đồng | ✅ đã duyệt |
 | [news-pipeline.md](20-design/news-pipeline.md) | Lưới AI không đường tắt · taxonomy 20 sub · gắn mã 3 tầng · kho toàn văn | ✅ đã duyệt |
 | [chatbot-semantic-layer.md](20-design/chatbot-semantic-layer.md) | Luật phân định 4 tầng · 8 function · ba quy tắc nối dữ liệu vào skill | 🟡 **đề xuất, chưa duyệt** |
-| [market-field-selection.md](20-design/market-field-selection.md) | Bảng lấy/bỏ từng trường cho ETL thị trường — 213 dòng, lý do tại chỗ, kèm bản JSON máy đọc | ✅ đã chốt |
+| [market-field-selection.md](20-design/market-field-selection.md) | Bảng lấy/bỏ từng trường cho ETL thị trường — 213 dòng, lý do tại chỗ, kèm [bản JSON máy đọc](20-design/market-field-selection.json). Cả hai sinh tự động từ [`gen_field_selection.py`](20-design/gen_field_selection.py), cấm sửa tay | ✅ đã chốt |
 
 ### 30 · Tri thức chuyên môn
 

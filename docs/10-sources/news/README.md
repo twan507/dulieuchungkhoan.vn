@@ -1,6 +1,6 @@
 # Nguồn tin chứng khoán — danh mục và đặc tính kỹ thuật
 
-**Loại tài liệu:** tra cứu (reference) · **Đo ngày** 13/08/2026 · **Trạng thái** đã kiểm chứng, chưa cài đặt
+**Loại tài liệu:** tra cứu (reference) · **Đo ngày** 13/08/2026 · **cấu trúc trang bài** 15/08/2026 · **Trạng thái** đã kiểm chứng, chưa cài đặt
 
 Mọi con số ở đây đo bằng `curl` trên 307 URL ứng viên và 1.408 tiêu đề đã đọc thật. Không có số nào là ước lượng.
 
