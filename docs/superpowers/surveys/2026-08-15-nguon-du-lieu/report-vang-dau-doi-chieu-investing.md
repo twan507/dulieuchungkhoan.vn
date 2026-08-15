@@ -113,4 +113,4 @@ Với phân tích vĩ mô kiểu top-down của skill (dầu → lạm phát →
 - **Chưa dùng TradingView** — `scanner.tradingview.com` trả 404, chưa tìm endpoint đúng.
 - Chưa kiểm nguồn gốc thật của WiChart `vang_the_gioi` (mới suy luận từ trùng khít 10/10).
 - Chưa đo lại các mặt hàng khác của WiChart bằng chuẩn Investing.
-- Giả thuyết backwardation **chưa xác nhận trực tiếp** bằng cấu trúc kỳ hạn (cách kiểm: so hai kỳ hạn liền nhau của `CL=F`).
+- ~~Giả thuyết backwardation chưa xác nhận~~ → ✅ **ĐÃ XÁC NHẬN 2026-08-15**: cấu trúc kỳ hạn WTI giảm đơn điệu — Sep 82,40 · Oct 81,47 · Nov 80,10 · Dec 78,49, dốc ≈ −1,6%/tháng. Chi tiết ở [ra-soat-viec-chua-kiem.md §A1](ra-soat-viec-chua-kiem.md).

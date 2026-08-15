@@ -1,6 +1,6 @@
 # 13 — API WiChart: Vĩ mô, Tiền tệ, Hàng hoá
 
-**Phiên bản:** 1.0 · **Ngày audit:** 2026-08-12 · **Trạng thái:** 87 endpoint đã kiểm chứng sống, hiệu chuẩn đơn vị từng series
+**Phiên bản:** 1.1 · **Ngày audit:** 2026-08-12 *(rà lại vàng và dầu 2026-08-15)* · **Trạng thái:** 87 endpoint đã kiểm chứng sống, hiệu chuẩn đơn vị từng series
 
 > Tài liệu này bổ sung mảng **vĩ mô — tiền tệ — giá hàng hoá** mà bộ nguồn BVSC/FiinTrade (file `00`–`12`) không có. Mọi số liệu trong đây đến từ lời gọi thật ngày 2026-08-12, không suy đoán từ tên endpoint.
 
@@ -83,11 +83,25 @@ Nhận các giá trị trong `timeArray` của chính endpoint đó. Giá trị 
 
 **Mọi timestamp là 17:00 UTC = 00:00 giờ Việt Nam.** Bắt buộc parse bằng `Asia/Ho_Chi_Minh` (UTC+7). Parse bằng UTC sẽ làm mọi mốc lùi 1 ngày, và với chuỗi tháng sẽ tạo ảo giác lệch nhãn 1 tháng.
 
+Ví dụ cụ thể, một mốc thật của chuỗi hàng hoá:
+
+```
+epoch = 1786726800000
+  parse UTC  → 2026-08-14 17:00   ❌ chuỗi bị gán nhãn ngày 14/08
+  parse ICT  → 2026-08-15 00:00   ✅ đúng nhãn ngày 15/08
+```
+
 ```python
 from datetime import datetime, timedelta, timezone
 ICT = timezone(timedelta(hours=7))
 dt = datetime.fromtimestamp(epoch_ms / 1000, tz=ICT)
 ```
+
+> 🔴 **Lỗi này đã thật sự xảy ra, ngày 2026-08-15.** Một phép đối chiếu `dau_wti` với FRED parse bằng UTC làm **cả chuỗi WiChart lùi một ngày**, ghép nhầm phiên, và đẻ ra kết luận *"WiChart lệch giá dầu 3,35%, nên bỏ"*. Parse lại bằng ICT còn 2,85%; so với đúng chuẩn (giá tương lai) chỉ **0,50%** — kết luận **đảo ngược hoàn toàn**. Chi tiết ở §5.3, ghi chú dưới bảng **Năng lượng**.
+>
+> ⚠️ **Dấu hiệu nhận biết lệch nhãn ngày:** giá WiChart của ngày `d` **trùng khít** giá nguồn chuẩn của ngày `d±1`. Một chuỗi trùng khít nhưng lệch pha là bằng chứng **sai nhãn ngày**, không phải sai giá. Luôn chạy phép thử này trước khi kết luận một nguồn "lệch".
+
+Bẫy múi giờ này không riêng WiChart — bản chung ghi ở [`../market/00-conventions.md`](../market/00-conventions.md).
 
 Neo trong kỳ:
 
@@ -317,6 +331,20 @@ Quy ước cột: **scale** = hệ số nhân `raw` để về **đơn vị gố
 
 Tất cả tần suất **ngày**, cửa sổ trượt 2 năm (`WIN2Y`), gọi qua `?key=hang_hoa&name=`.
 
+#### ⚠️ Cách đọc cờ «lệch x%» ở các bảng dưới
+
+Cờ này nói **khoảng cách với một benchmark** — nên nó chỉ có nghĩa khi biết **so với chuẩn nào** và **so trên bao nhiêu điểm**.
+
+| | Trạng thái |
+|---|---|
+| Phần lớn cờ | Sinh trong audit 2026-08-12 bằng cách **chấm một điểm**, không phải so chuỗi |
+| Đã rà lại bằng cách so chuỗi | **Đúng 2 key:** `dau_wti` và `vang_the_gioi` *(đo 2026-08-15)* |
+| 59 key còn lại | **Chưa rà** — không rõ sinh theo cách nào và so với chuẩn nào. Ghi **"chưa kiểm"**, đừng suy diễn |
+
+🔴 **Hai lỗi làm hỏng một cờ lệch:** (1) **chấm một điểm** — không đo được độ lệch của cả chuỗi; (2) **so nhầm chuẩn** — giao ngay đem so với tương lai. Cờ cũ của `dau_wti` mắc cả hai.
+
+⚠️ **Nhưng đừng suy đoán đồng loạt là cả bộ cờ sai.** Rà lại hai key thì **một sai (`dau_wti`), một đúng (`vang_the_gioi`, kiểm trên 712 ngày)**. Hai mẫu không đủ cơ sở kết luận cho 59 key kia — theo cả hai chiều.
+
 #### Nông thuỷ sản & sợi dệt (13)
 
 | key | Chỉ tiêu | Điểm | Trễ | Đơn vị gốc | scale | Tier | Cờ |
@@ -341,7 +369,7 @@ Tất cả tần suất **ngày**, cửa sổ trượt 2 năm (`WIN2Y`), gọi q
 |---|---|---|---|---|---|---|---|
 | `quang_sat` | Quặng sắt TQ | 731 | 0d | CNY/tấn | 1 | A | khớp SunSirs 0,00% |
 | `vang` | Vàng miếng trong nước (mua/bán) | 522 | 0d | VND/lượng | **1e3** | A | `UK1000` — nhãn `VNĐ/lượng` **sai**, dữ liệu ở nghìn đồng. Sau khi ×1000 khớp SJC 0,00% |
-| `vang_the_gioi` | Vàng thế giới | 712 | 0d | USD/ounce | 1 | A | lệch 0,3% |
+| `vang_the_gioi` | Vàng thế giới | 712 | 0d | USD/ounce | 1 | A | khớp Investing XAU/USD **0,00%** *(đo 2026-08-15)*; lệch PAXG 0,369% trên 712 ngày — xem ghi chú dưới bảng |
 | `chi` | Chì TQ | 481 | 1d | CNY/tấn | 1 | **B** | |
 | `kem` | Kẽm TQ | 731 | 0d | CNY/tấn | 1 | **B** | khớp 0,00% |
 | `nhom` | Nhôm TQ | 731 | 0d | CNY/tấn | 1 | **B** | khớp 0,00% |
@@ -350,16 +378,49 @@ Tất cả tần suất **ngày**, cửa sổ trượt 2 năm (`WIN2Y`), gọi q
 | `bac` | Bạc | 711 | 0d | USD/ounce | 1 | **B** | lệch <1% |
 | `thiec` | Thiếc TQ | 136 | **523d** | CNY/tấn | 1 | **X** | `DEAD` từ 07/03/2025 — giá thực đã **+63,7%** kể từ đó |
 
+> 🔵 **`vang_the_gioi` khớp chuẩn tuyệt đối** *(đo 2026-08-15)*. Đối chiếu **10 phiên** với Investing XAU/USD (*"Giá Vàng Giao Ngay Đô la Mỹ"*): trùng **tới từng chữ số thập phân, 10/10 ngày, 0,00%**. Không phải "gần giống" mà là bằng nhau — nhiều khả năng WiChart dùng **cùng một nguồn giá** với XAU/USD của Investing. *(Suy luận từ 10 ngày; **chưa xác nhận** nguồn gốc thật.)*
+>
+> Một phép đo độc lập trên **712 ngày** so với PAXG (Binance) cho lệch **0,369%** — xác nhận cờ cũ *"lệch 0,3%"* của key này là **đúng**. Đây là key duy nhất có cờ lệch đã được kiểm bằng chuỗi dài.
+>
+> ⚠️ **WiChart giữ nguyên giá cuối tuần.** **36,8%** số điểm cuối tuần trùng khít điểm liền trước *(đo 2026-08-15)* — thứ Bảy/Chủ nhật chuỗi đứng yên chứ không có giá mới. **Đừng tính biến động cuối tuần từ chuỗi này**; cần vàng chạy 24/7 thì phải lấy nguồn khác.
+>
+> ⚠️ Không nhầm với `vang` (vàng miếng SJC trong nước, đơn vị sai 1000× — xem dòng trên).
+
 #### Năng lượng (6)
 
 | key | Chỉ tiêu | Điểm | Trễ | Đơn vị gốc | scale | Tier | Cờ |
 |---|---|---|---|---|---|---|---|
-| `dau_wti` | Dầu WTI | 637 | 0d | USD/thùng | 1 | A | lệch 1,3% |
+| `dau_wti` | Dầu WTI — **giá TƯƠNG LAI** | 637 | 0d | USD/thùng | 1 | A | `SRCNOTE` — lệch **0,50%** so với WTI tương lai, **2,85%** so với FRED giao ngay *(đo 2026-08-15)*; xem ghi chú dưới bảng |
 | `khi_thien_nhien` | Khí thiên nhiên | 638 | 0d | USD/MMBtu | 1 | A | lệch 0,7% |
 | `than_newcastle` | Than Newcastle | 653 | 1d | USD/tấn | 1 | A | khớp 0,00% |
 | `than_coc` | Than cốc TQ | 562 | 0d | CNY/tấn | 1 | A | lệch 0,27%; sẹo lịch sử: gap 85 ngày ~07/2025 |
 | `xang_dau` | Xăng dầu bán lẻ VN | 517 | 0d | VND/lít | **1e3** | A | `SUBDEAD` — **bỏ series [0] RON 95**, đóng băng từ 28/05/2026. E5/Diezen/Dầu hoả khớp 0,00% |
 | `khi_lpg_trung_quoc` | LPG TQ | 482 | 0d | CNY/tấn | 1 | A | `LVLOFF` — lệch 15–20% so với SunSirs, chỉ dùng xu hướng |
+
+> 🔴 **`dau_wti` là giá TƯƠNG LAI, không phải giao ngay**
+>
+> Nhãn của WiChart ghi *"Giá dầu WTI · USD/thùng"*, nên ai đọc cũng mặc định đây là **giá giao ngay**. Đo đối chiếu 2026-08-15 cho thấy **không phải**:
+>
+> | So với | Bản chất chuẩn | Mẫu | \|Lệch\| TB |
+> |---|---|---:|---:|
+> | Investing *"Hợp Đồng Tương Lai Dầu Thô WTI 9/26"* | **tương lai tháng gần** | 10 ngày | **0,50%** ✅ bám sát |
+> | FRED `DCOILWTICO` | **giao ngay Cushing (EIA)** | 125 ngày | 2,85% |
+>
+> **2,85% KHÔNG phải sai số — là chênh lệch cơ sở.** Chênh giữa FRED và giá tương lai cực kỳ ổn định quanh **+2%** (`+1,89 · +1,98 · +2,03 · +2,06 · +2,07 · +2,06 · +2,02` — đo 2026-08-15). Sai số ngẫu nhiên không ổn định như thế. Thị trường đang **backwardation**: giao ngay cao hơn tương lai. Hai nguồn **đo hai thứ khác nhau**, cả hai đều đúng.
+>
+> ⚠️ **Ai đọc `dau_wti` như giá giao ngay sẽ lệch ~2% một cách hệ thống.** WiChart **không có** giá giao ngay Cushing — cần giao ngay thì phải lấy nguồn khác; cần giá tương lai thì WiChart đã cho sẵn ở 0,50%.
+>
+> ✅ **Không cần thay `dau_wti`.** Với phân tích vĩ mô kiểu top-down (dầu → lạm phát → chính sách), giá tương lai tháng gần chính là con số thị trường và báo chí trích hằng ngày. *(Nhận định, không phải phép đo.)*
+>
+> **Vì sao cờ cũ của key này sai** — bài học phương pháp, không phải chuyện riêng của dầu:
+>
+> 1. **Chấm một điểm** thay vì so cả chuỗi.
+> 2. **So nhầm chuẩn** — lấy giao ngay làm mốc cho một chuỗi giá tương lai.
+> 3. Vòng đo lại đầu tiên còn **parse epoch bằng UTC** (§2.4) nên ra 3,35%, sai theo chiều ngược lại. Ba lỗi chồng nhau mới lộ ra được sự thật.
+>
+> **Backwardation đã xác nhận trực tiếp** *(đo 2026-08-15)* — cấu trúc kỳ hạn WTI giảm đơn điệu theo kỳ hạn: Sep 82,40 · Oct 81,47 · Nov 80,10 · Dec 78,49, dốc ≈ **−1,6%/tháng**. Đây là bằng chứng độc lập cho lời giải thích ở trên, không phải suy đoán.
+>
+> **Chưa kiểm:** mới đối chiếu Investing **10 ngày** (giới hạn bảng mặc định của trang) · chưa dùng TradingView · chưa xác nhận `dau_wti` bám kỳ hạn nào (tháng gần hay xa) — mới biết nó thuộc phe tương lai.
 
 #### Hoá chất & phân bón (5)
 
@@ -669,7 +730,7 @@ WICHART = {
 "bac":             dict(g="hang_hoa", tier="B", s=[("Giá bạc","USD/ounce",1,D,[])]),
 "thiec":           dict(g="hang_hoa", tier="X", s=[("Giá thiếc","CNY/tấn",1,None,["DEAD"])]),
 # Năng lượng
-"dau_wti":         dict(g="hang_hoa", tier="A", s=[("Giá dầu WTI","USD/thùng",1,D,[])]),
+"dau_wti":         dict(g="hang_hoa", tier="A", s=[("Giá dầu WTI","USD/thùng",1,D,["SRCNOTE"])]),  # giá TƯƠNG LAI, không phải giao ngay
 "khi_thien_nhien": dict(g="hang_hoa", tier="A", s=[("Giá khí thiên nhiên","USD/MMBtu",1,D,[])]),
 "than_newcastle":  dict(g="hang_hoa", tier="A", s=[("Giá than","USD/tấn",1,D,[])]),
 "than_coc":        dict(g="hang_hoa", tier="A", s=[("Giá than cốc","CNY/tấn",1,D,[])]),
@@ -720,6 +781,10 @@ SRCNOTE = {
                          "KHÔNG phải lãi suất online — chênh 1–2 điểm %",
   ("cao_su_nhat_ban",0): "TOCOM RSS3. Đơn vị API (Yên/kg) ĐÚNG; bảng web ghi Yên/tấn là sai",
   ("pmi", 0):            "S&P Global — dữ liệu độc quyền bên thứ ba, WiGroup cũng mua lại",
+  ("dau_wti", 0):        "Giá TƯƠNG LAI WTI tháng gần, KHÔNG phải giao ngay Cushing dù nhãn ghi "
+                         "'Giá dầu WTI'. Lệch 0,50% so với Investing WTI tương lai (10 ngày); "
+                         "2,85% so với FRED DCOILWTICO giao ngay (125 ngày) — chênh đó là "
+                         "backwardation, không phải sai số. Đo 2026-08-15",
 }
 ```
 
@@ -742,6 +807,7 @@ Yêu cầu cụ thể:
 7. **Thông báo trước khi đổi năm gốc / rebasing** — kèm hệ số nối chính thức.
 8. **Ngưỡng rate limit** — chưa đo, cần con số cam kết.
 9. **Sửa hoặc xác nhận các lỗi metadata** đã liệt kê: nhãn `td`, đơn vị `vdtnsnn`, `timeArray` của 16 key, `xi_mang_pcb` trả 500.
+10. **Xác nhận chuẩn của `dau_wti`** — hợp đồng tương lai tháng nào, sàn nào, lấy giá lúc nào. Đo 2026-08-15 cho thấy đây là **giá tương lai** chứ không phải giao ngay, trong khi nhãn chỉ ghi "Giá dầu WTI"; cần họ ghi rõ trong từ điển chỉ tiêu.
 
 ---
 
