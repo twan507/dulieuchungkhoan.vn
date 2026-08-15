@@ -44,7 +44,7 @@ finext-v2/
 ## Bốn tầng hệ thống
 
 ```
-L0  Nguồn ngoài    BVSC+FiinTrade · WiChart · 10 báo điện tử
+L0  Nguồn ngoài    BVSC+FiinTrade · WiChart · 8 báo điện tử
 L1  Thu thập       ETL + Ingester realtime  │  Gom tin + lưới AI
 L2  Kho            PostgreSQL + TimescaleDB + Redis
 L3  Ngữ nghĩa      view người-đọc-được · function calling

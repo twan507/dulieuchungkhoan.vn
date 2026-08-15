@@ -10,7 +10,7 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
 
 ```
 ┌─ L0 · NGUỒN NGOÀI ─────────────────────────────────────────────────┐
-│  BVSC + FiinTrade        WiChart (WiGroup)      10 báo điện tử     │
+│  BVSC + FiinTrade        WiChart (WiGroup)      8 báo điện tử      │
 │  44 REST + 5 topic RT    87 REST                47 RSS + 6 crawler │
 └───────┬────────────────────────┬─────────────────────┬─────────────┘
         │                        │                     │
@@ -133,6 +133,6 @@ Cách vá duy nhất: dán đoạn giới hạn phạm vi vào **system prompt c
 |---|---|---|
 | BVSC + FiinTrade | ✅ Có | |
 | WiChart (WiGroup) | ✅ Có | **Giấy phép WiFeed đã chốt — xác nhận 2026-08-15.** Trước đó chỉ truy cập được qua endpoint nội bộ phục vụ trang đối tác |
-| 10 báo điện tử | ⚠️ Có điều kiện | Xem mục bản quyền ở [pipeline tin §9.7](../20-design/news-pipeline.md) |
+| 8 báo điện tử | ⚠️ Có điều kiện | Xem mục bản quyền ở [pipeline tin §9.7](../20-design/news-pipeline.md) |
 
 Hệ quả thiết kế vẫn giữ nguyên: **ETL WiChart phải tách được khỏi hệ thống mà không kéo đổ thứ gì khác.** Giấy phép đã chốt nên đây không còn là hàng rào pháp lý, nhưng WiChart vẫn là nhánh duy nhất sống nhờ một hợp đồng riêng với bên thứ ba — nếu quan hệ đó đổi, mất 87 endpoint vĩ mô/hàng hoá mà phần cổ phiếu vẫn chạy. Nguyên tắc *ETL độc lập theo miền* ở [kho dữ liệu §9.4](../20-design/market-data-store.md) đã lo việc này — giữ nó như lớp phòng thủ thứ hai, đừng gộp cho gọn.

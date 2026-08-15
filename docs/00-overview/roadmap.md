@@ -87,7 +87,7 @@ Bốn mục đang nằm trong danh sách **"Còn để ngỏ"** của pipeline t
 
 | Việc | Ghi chú | Chốt bằng cách nào |
 |---|---|---|
-| **Luật bỏ boilerplate cho từng nguồn** | Phải viết riêng cho mỗi trong 10 nguồn báo. Chưa khảo sát cấu trúc trang bài | Một vòng soi tương tự vòng soi feed đã làm |
+| ~~**Luật bỏ boilerplate cho từng nguồn**~~ | ✅ **Đã khảo sát 2026-08-15** — luật riêng cho cả 8 nguồn báo nằm ở [cấu trúc trang bài](../10-sources/news/article-structure.md) (33 bài, chạy thật trên trang đã tải). Còn ngỏ: dạng bài longform/video/bài cũ chưa phủ | Đã làm — đúng bằng một vòng soi tương tự vòng soi feed |
 | **Chọn mô hình embedding** | Chốt **trước** khi nạp dữ liệu — embed lại toàn kho về sau rất tốn | Nhớ embed cả `summary` và `summary_ai`, giữ riêng |
 | **Ngưỡng `confidence`** phân loại | Dưới bao nhiêu thì vào hàng chờ rà tay | Sau vài tuần chạy thật |
 | **Trần 3.000 hay 4.000 ký tự** | | Đối chiếu `content_chars` với các ca phân loại sai |

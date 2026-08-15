@@ -13,7 +13,7 @@ Mọi luật dưới đây **đã được chạy thật** trên chính các tra
 | **Bỏ — đã quan sát** | Selector **có khớp node thật bên trong container chính**. Số trong ngoặc là tổng số node khớp trên toàn bộ mẫu của nguồn đó |
 | **Bỏ — phòng thủ** | Selector **không khớp node nào bên trong container chính** trên mẫu. Mỗi hàng nói rõ thêm nó thuộc loại nào trong hai loại: **tồn tại nhưng nằm ngoài container** (tầng 0 đã lo, giữ để đề phòng CMS đổi vị trí) hay **không xuất hiện ở đâu trên trang** (thuần suy đoán từ nguồn cùng CMS) |
 
-**21 trong 61 selector là loại phòng thủ.** Chúng được ghi riêng để người triển khai biết chỗ nào đo được và chỗ nào là suy luận — cần bộ luật tối giản thì dùng đúng phần *đã quan sát*. Mọi con số ở dòng *Đã kiểm* đều sinh ra từ bộ luật đầy đủ, nhưng vì phần phòng thủ không khớp node nào nên bỏ chúng đi kết quả **không đổi một ký tự**.
+**21 trong 61 selector là loại phòng thủ.** Chúng được ghi riêng để người triển khai biết chỗ nào đo được và chỗ nào là suy luận — cần bộ luật tối giản thì dùng đúng phần *đã quan sát*. Mọi con số ở dòng *Đã kiểm* đều sinh ra từ bộ luật đầy đủ, nhưng vì phần phòng thủ không khớp node nào trong container nên bỏ chúng đi kết quả **không đổi một ký tự**.
 
 ---
 
@@ -52,7 +52,7 @@ HTML thô được giữ ngoài repo (thư mục tạm), **không commit**.
 
 ### 1.3 Ba tầng làm sạch, không phải hai
 
-[Thiết kế](../../20-design/news-pipeline.md) mục 6.5 mô tả hai tầng (bỏ thẻ · bỏ khối phi nội dung). Đo thực tế cho thấy phải chèn thêm một tầng trước cả hai:
+[Thiết kế](../../20-design/news-pipeline.md) mục 6.5 vốn mô tả hai tầng (bỏ thẻ · bỏ khối phi nội dung). Đo thực tế cho thấy phải chèn thêm một tầng trước cả hai — mục 6.5 đã cập nhật theo:
 
 | Tầng | Việc | Vì sao |
 |---|---|---|
@@ -133,7 +133,7 @@ Trong dòng *Đã kiểm*, phần trăm là tỷ lệ ký tự mà tầng 2 lo�
 | **Bỏ — phòng thủ** | `table` — 0 node ở đâu trên trang |
 | **Tiêu đề** | `h1.vnbcb-title` — chú ý **`vnbcb`**, không phải `vnbcbc` như thân bài |
 | **Sapo** | `div.vnbcbc-sapo` (bài cũ dùng `div.sapo`) |
-| **Thời gian** | `span.vnbcba-time.time-detail` — `18:27 | 14/08/2026`, có ký tự `|` ở giữa |
+| **Thời gian** | `span.vnbcba-time.time-detail` — `18:27 \| 14/08/2026`, có ký tự `\|` ở giữa |
 | **Tác giả** | `p.author` — có bài kèm nguồn dịch: *"Khải Nguyên (Theo Bloomberg)"* |
 | **Bẫy riêng** | ① Bốn tiền tố class rất giống nhau và **dễ nhầm**: `vnbcb-` (khung bài) · `vnbcbc-` (nội dung bài) · `vnbcba-` (meta) · `vnbcbcbs-` (tag). Sai một chữ là chọn nhầm khối — bản đầu của chính tài liệu này ghi `div.vnbcbc-relate` trong khi class thật là **`div.vnbcbc-relate-box`** (3 node/trang ở 3/4 mẫu), và nó **nằm ngoài** `div.vnbcbc-body` nên không cần bỏ. Tag thật là `div.vnbcbcbs-tags` / `div.box-tag-detail`, cũng ngoài container. ② `div.vnbcb-author` chứa giờ + nút "Chia sẻ" chứ **không** chứa tên tác giả — tên nằm ở `p.author` |
 | **Đã kiểm** | 4/4 bài — bỏ 0,0% / 0,6% / 2,3% / 3,5%; sạch 2.024–3.999 ký tự. **Nguồn sạch nhất bộ**: thân bài gần như chỉ có `<p>` |
@@ -314,7 +314,7 @@ Nói thẳng những gì 4 bài/nguồn **không** đủ để khẳng định:
 | **TinnhanhCK 3 trang chuyên mục** | Mẫu lấy qua sitemap. Chưa kiểm bài đến từ `/ck-quoc-te/`, `/chung-khoan/`, `/dau-tu/` có khác template không |
 | **Tỷ lệ hai template của BNews** | Đã thấy cả ba hành vi trên 4 bài (mục 2.6) nhưng 4 bài **không** cho biết template nào phổ biến hơn, có tương quan với chuyên mục / tác giả / thời điểm hay không, và các nguồn khác có cùng bệnh không. Cần đếm trên vài trăm bài trước khi tin bất kỳ tỷ lệ nào |
 | **Tác giả VnEconomy khi bài không ghi tên** | `div.article-meta__author` ở `vneconomy_01` chỉ chứa `"18:53, 14/08/2026"` — **không có tên nào**, trong khi 3 bài kia là `"<chữ avatar> <tên> <giờ>"`. Không suy được từ 4 mẫu là bài không tên hiếm hay thường, nên luật tách tên phải chịu được cả hai và **không được** lấy nhầm giờ làm tên |
-| **Selector phòng thủ** | 21 selector chưa từng khớp node nào (mục 2). Không biết chúng là thừa hẳn hay chỉ chưa gặp dạng bài kích hoạt chúng |
+| **Selector phòng thủ** | 21 selector chưa từng khớp node nào trong container (mục 2); 7 trong số đó tồn tại ngoài container. Không biết chúng là thừa hẳn hay chỉ chưa gặp dạng bài kích hoạt chúng |
 | **Độ ổn định theo thời gian** | Đo một lần, một ngày. Class CMS đổi được bất cứ lúc nào — mục 5 nói cách phát hiện |
 
 Ngoài ra, **ba chỗ chưa bỏ được bằng selector** và đang phải chờ luật theo văn bản (chưa viết, chưa kiểm chứng):

@@ -203,7 +203,7 @@ Kho chỉ có link chết thì giá trị bằng không. Giá trị của nó ch
 
 Postgres tự nén cột `text` lớn qua TOAST nên con số thực tế còn thấp hơn.
 
-**Không lưu HTML thô.** Khoảng 50 KB/bài, gấp 10 lần, không mang thêm thông tin và làm tìm kiếm khó hơn.
+**Không lưu HTML thô.** Đo thật trên 33 trang bài của cả 8 nguồn (2026-08-15, [cấu trúc trang bài](../10-sources/news/article-structure.md) mục 3.5): HTML thô trung bình **95–435 KB/trang** tuỳ nguồn (trang nặng nhất bộ 527 KB), tức **gấp 23–184 lần** phần text sạch bóc ra từ chính nó. Con số *"khoảng 50 KB/bài, gấp 10 lần"* ghi ở bản trước là ước lượng thấp. Kết luận không đổi, chỉ chắc thêm: HTML thô không mang thêm thông tin và làm tìm kiếm khó hơn.
 
 > **CafeF CBTT gần như không dedupe được** — mỗi bản công bố thông tin là một doanh nghiệp khác nhau. Ở mức ~75 tin/ngày thì đó là phần sàn không nén được của kho.
 >
@@ -331,14 +331,14 @@ Lưu tiêu đề + link để tham chiếu là một chuyện, lưu toàn văn l
 
 | Việc | Ghi chú |
 |---|---|
-| **Đo tỷ lệ dedupe thật** | Khối lượng thô đã đo (~570/ngày, mục 13). Còn lại là tỷ lệ trùng giữa 10 nguồn — ước tính ~3,5 lần nhưng chưa kiểm chứng. Đây là số quyết định ngân sách phân loại |
+| **Đo tỷ lệ dedupe thật** | Khối lượng thô đã đo (~570/ngày, mục 13). Còn lại là tỷ lệ trùng giữa 8 nguồn — ước tính ~3,5 lần nhưng chưa kiểm chứng. Đây là số quyết định ngân sách phân loại |
 | **Danh sách mã niêm yết** | Cần nguồn cập nhật ~1.600 mã HOSE/HNX/UPCoM cho tầng 2 |
 | **Bảng tên thương mại → mã** | Cho tầng 3. Dùng `pg_trgm` để khớp gần đúng |
 | **Ngưỡng `confidence`** | Dưới bao nhiêu thì đưa vào hàng chờ rà tay |
 | **Chọn mô hình embedding** | Nên chốt trước khi chạy thật — embed lại toàn kho về sau rất tốn. Nhớ embed cả `summary` và `summary_ai`, giữ riêng |
 | **Tách từ tiếng Việt** | Chỉ làm khi có bằng chứng `simple` + `unaccent` không đủ chính xác |
-| **Luật bỏ boilerplate từng nguồn** | Mục 6.5 tầng 2 phải viết riêng cho mỗi trong 10 nguồn. Chưa khảo sát cấu trúc trang bài của từng site |
-| **Trần 3.000 hay 4.000 ký tự** | Chốt bằng cách đối chiếu `content_chars` với các ca phân loại sai sau vài tuần chạy |
+| **Luật bỏ boilerplate từng nguồn** | ✅ đã khảo sát 2026-08-15 — luật từng nguồn ở [article-structure.md](../10-sources/news/article-structure.md); còn ngỏ: dạng bài longform/video/bài cũ chưa phủ |
+| **Trần 3.000 hay 4.000 ký tự** | Chốt bằng cách đối chiếu `content_chars` với các ca phân loại sai sau vài tuần chạy. Đã có số nền: trên 33 bài mẫu, **17/33 dài ≥ 3.000 ký tự, 9/33 ≥ 4.000, trung vị 3.124** (đo 2026-08-15, [article-structure.md](../10-sources/news/article-structure.md) mục 3.5). Cả hai mức đều chạm trần đủ thường xuyên để `content_chars` đáng ghi lại, nhưng chưa có ca phân loại sai thật nên chưa chốt được mức nào |
 
 ---
 
@@ -348,7 +348,7 @@ Lưu tiêu đề + link để tham chiếu là một chuyện, lưu toàn văn l
 
 ### Đã chốt
 
-- 10 nguồn báo · 47 feed RSS · 6 nguồn crawl HTML
+- 8 nguồn báo · 47 feed RSS · 6 nguồn crawl HTML *(đếm lại theo host thật ngày 15/08/2026; bản 13/08 ghi nhầm 10 — số feed và số crawler không đổi)*
 - Taxonomy 3 nhóm / 20 sub / nhãn `x`
 - Mọi tin qua lưới AI, không có đường tắt
 - Nhóm từ feed là gợi ý, classifier được ghi đè, phải ghi log
@@ -372,7 +372,7 @@ Lưu tiêu đề + link để tham chiếu là một chuyện, lưu toàn văn l
 
 Theo thứ tự phụ thuộc:
 
-1. **Khảo sát cấu trúc trang bài của 10 nguồn** để viết luật bỏ boilerplate (mục 6.5 tầng 2). Đây là việc chặn nhiều thứ khác nhất, và là vòng soi tương tự vòng soi feed đã làm trong phiên này.
+1. ✅ **Đã khảo sát cấu trúc trang bài của cả 8 nguồn** (2026-08-15) — luật bỏ boilerplate từng nguồn (mục 6.5 tầng 2) nằm ở [cấu trúc trang bài](../10-sources/news/article-structure.md). Còn ngỏ: dạng bài longform/video/bài cũ chưa phủ.
 2. **Chốt nguồn danh sách mã niêm yết** và bảng tên thương mại → mã.
 3. **Chốt mô hình embedding** trước khi bắt đầu nạp dữ liệu.
 4. **Dựng khung thu thập + chuẩn hoá**, chạy không có AI trong 1 tuần để đo tỷ lệ dedupe thật.

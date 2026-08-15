@@ -16,7 +16,7 @@ Ba nguồn độc lập:
 |---|---|---|---|
 | BVSC + FiinTrade | [`market/`](market/) — file `00`–`11`, phụ lục A/B | Cổ phiếu, chỉ số, BCTC, dòng tiền, realtime | 2026-08-10, mẫu 51 mã |
 | WiChart (WiGroup) | [`macro/wichart.md`](macro/wichart.md) | Vĩ mô, tiền tệ, giá hàng hoá | 2026-08-12, toàn bộ 87 key |
-| 10 báo điện tử | [`news/README.md`](news/README.md) | 47 feed RSS + 6 crawler HTML, encoding, khối lượng | 2026-08-13, 307 URL · 1.408 tiêu đề |
+| 8 báo điện tử | [`news/README.md`](news/README.md) | 47 feed RSS + 6 crawler HTML, encoding, khối lượng | 2026-08-13, 307 URL · 1.408 tiêu đề |
 
 Mọi thông tin đều được **kiểm chứng bằng lời gọi thật**. Không có nội dung nào suy đoán từ tên endpoint. Riêng WiChart còn kèm **bộ tự kiểm chứng chạy được** ([`verify_wichart.py`](macro/verify_wichart.py)) đối chiếu từng khẳng định với API sống.
 
@@ -82,7 +82,7 @@ Chứng quyền · Lô lẻ · Phái sinh · Trái phiếu · ETF/Quỹ · Toàn
 
 | File | Nội dung | Số nguồn |
 |---|---|---|
-| [news/README.md](news/README.md) | 47 feed RSS, 6 crawler HTML, quy tắc chuẩn hoá encoding và thời gian đăng, khối lượng đo được, nguồn đã loại | 10 báo |
+| [news/README.md](news/README.md) | 47 feed RSS, 6 crawler HTML, quy tắc chuẩn hoá encoding và thời gian đăng, khối lượng đo được, nguồn đã loại | 8 báo |
 | [`news/feeds.json`](news/feeds.json) | Cùng nội dung ở dạng máy đọc — feed, taxonomy 20 sub, nhật ký loại bỏ | 47 feed |
 
 ### 3.4 Tài liệu thiết kế dựng trên các nguồn này
