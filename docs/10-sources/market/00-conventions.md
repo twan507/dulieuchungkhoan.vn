@@ -354,7 +354,7 @@ Tính từ [lịch ETL §4.1–4.2](../../20-design/market-data-store.md), tách
 | Một lời gọi hỏng — Redis timeout của chính FiinTrade, xem §10.5 | 1 | 7,7 s | `status: "Failed"` |
 | **Tổng toàn phiên** | **64** | | trần tự đặt: 100 |
 
-Burst chạy **nhanh gấp ba dự kiến** — 1,8 phút thay vì 5–6 phút, vì latency hôm đo *(trung vị 2,07 s)* thấp hơn hẳn con số 6,44 s ghi ngày 2026-08-15 ở [`10-fiin-dictionary.md`](10-fiin-dictionary.md). Hệ quả: nhịp thật đạt **~29 request/phút**, cao hơn ước lượng ban đầu, và **vẫn không bị chặn**.
+Burst chạy **nhanh gấp ba dự kiến** — 1,8 phút thay vì 5–6 phút, vì latency lúc đo *(trung vị 2,07 s trên 52 mẫu)* thấp hơn hẳn con số 6,44 s của **lần đo sớm hơn trong cùng ngày 2026-08-15**, ghi ở [`10-fiin-dictionary.md`](10-fiin-dictionary.md). Hệ quả: nhịp thật đạt **~29 request/phút**, cao hơn ước lượng ban đầu, và **vẫn không bị chặn**.
 
 Toàn bộ chạy **tuần tự, một luồng, không chèn khoảng nghỉ nhân tạo** — độ trễ thật của máy chủ chính là nhịp.
 
@@ -382,17 +382,21 @@ x-miniprofiler-ids · x-powered-by
 
 **Không có `X-RateLimit-*`, không có `Retry-After`, không có bất kỳ header họ hạn mức nào.** Điều tài liệu này nói trước đây được xác nhận bằng đo thật. Hệ quả: ETL **không thể** dựa vào header để biết mình còn bao nhiêu hạn mức — phải tự giữ nhịp bằng token bucket phía Finext.
 
-*(`server` trả về hai giá trị xen kẽ — `Microsoft-IIS/8.5` và `Microsoft-IIS/10.0`, mỗi loại 31 lần. Dấu hiệu có cân bằng tải trước ít nhất hai máy chủ khác đời.)*
+*(`server` trả về hai giá trị xen kẽ — `Microsoft-IIS/8.5` và `Microsoft-IIS/10.0`, **mỗi loại đúng 32 lần trên 64 response**. Dấu hiệu có cân bằng tải trước ít nhất hai máy chủ khác đời.)*
 
 ### 10.5 Một lời gọi hỏng — và vì sao nó không phải tín hiệu chặn
 
-Lời gọi `GetScreenerItems` **thứ hai của toàn phiên** trả `HTTP 200` kèm:
+**Lời gọi thứ hai của toàn phiên** *(`GetScreenerItems` trang 1)* trả `HTTP 200` kèm:
 
 ```json
 {"status":"Failed","errors":["Timeout performing GET (5000ms) … serverEndpoint: 192.168.1.232:6379 …"]}
 ```
 
-Đây là **Redis timeout nội bộ của chính FiinTrade** — cùng lỗi đã ghi ở [`10-fiin-dictionary.md`](10-fiin-dictionary.md) cho trường hợp gửi nhiều tiêu chí. Nó **không phải** rate limit, vì ba lý do đo được: xảy ra khi phiên mới có đúng 2 lời gọi *(không có tải nào để mà chặn)*, `HTTP 200` chứ không phải `429`, và không kèm header hạn mức nào. Burst 52 trang chạy ngay sau đó thông suốt.
+Đây là **Redis timeout nội bộ của chính FiinTrade** — cùng lỗi đã ghi ở [`10-fiin-dictionary.md`](10-fiin-dictionary.md) cho trường hợp gửi nhiều tiêu chí. Nó **không phải** rate limit, vì ba lý do đo được: xảy ra khi phiên mới có đúng 2 lời gọi *(không có tải nào để mà chặn)*, `HTTP 200` chứ không phải `429`, và không kèm header hạn mức nào.
+
+🔵 **Quyết định dừng-và-chạy-lại — ghi lại để người sau audit được.** Phép đo **đã dừng ngay tại đây theo luật dừng ở tín hiệu đầu tiên** *(08:04:47)*. Sau khi đánh giá đây **không phải tín hiệu chặn** — `HTTP 200` kèm lỗi Redis nội bộ đã có hồ sơ sẵn trong tài liệu, và mới ở request thứ 2 của phiên — phép đo được **chạy lại đúng một lần** *(08:06:44)*, không đổi tham số, không giảm nhịp. Lần chạy lại đi trọn 52 trang thông suốt. Cả 64 lời gọi của **cả hai lần** đều tính vào trần 100 ở §10.2.
+
+**Chính đánh giá này là chỗ cần soi lại nhất trong cả phép đo.** Nếu coi mọi `status: "Failed"` là tín hiệu chặn thì kết luận ở §10.6 không đứng được, và mục rate limit phải quay lại danh sách việc chặn.
 
 **Hệ quả cho ETL:** `status: "Failed"` kèm chuỗi `Timeout performing` là **lỗi tạm thời của nguồn**, phải xử lý bằng thử lại có kiểm soát (backoff, giới hạn số lần) chứ không được coi là dữ liệu rỗng — coi là rỗng sẽ ghi một trang trắng vào kho mà không ai biết.
 

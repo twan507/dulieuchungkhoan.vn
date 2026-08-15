@@ -95,11 +95,19 @@ Bảng đầy đủ `code → name → unit`: [Phụ lục A](appendix-A-field-c
 - Bảng này **không phủ** các mã chỉ tiêu báo cáo tài chính chi tiết (`bsa*`, `isa*`, `isb*`, `cfa*`, `nob*`). Chúng được giải mã bằng nguồn khác — xem [Phụ lục A §A.5](appendix-A-field-codes.md), 729 mã lấy từ bundle JS của ứng dụng FiinTrade, độ phủ 100%.
 
 ### Độ phủ & hiệu năng
-13 nhóm · 83 tiêu chí · 13,6 KB · **6,33 s** *(đo 2026-08-15, **1 lần chạy**)*. Cache dài hạn.
+13 nhóm · 83 tiêu chí · 13,6 KB. Cache dài hạn.
 
 *Đo lại 2026-08-15: đúng 13 nhóm / 83 tiêu chí, 13.597 byte, `status: "Success"` — phân bố theo nhóm không đổi một tiêu chí nào so với bản 2026-08-10.*
 
-⚠️ **Thời gian chậm hơn hẳn số cũ (~1,45 s đo 2026-08-10).** Một lần chạy là **một điểm dữ liệu**, chưa đủ để nói endpoint đã chậm đi thật hay chỉ gặp một lần tải cao. Đừng dùng con số này làm SLA; muốn ngân sách thời gian đáng tin thì phải đo nhiều lần.
+**Thời gian — hai lần đo cùng ngày 2026-08-15 lệch nhau hơn hai lần:**
+
+| Lần đo | Thời gian |
+|---|---|
+| Lần đo sớm hơn trong ngày | **6,33 s** |
+| Trong [phép đo rate limit](00-conventions.md), cùng ngày | **2,77 s** |
+| Bản 2026-08-10 | ~1,45 s |
+
+⚠️ Mỗi con số vẫn là **một lần chạy**. Nhưng đặt cạnh 52 mẫu của [`getScreenerItems`](#getscreeneritems) — cũng dao động rộng trong cùng ngày — thì cách đọc hợp lý là **tải máy chủ dao động theo thời điểm**, không phải endpoint đã chậm đi hẳn. Đây là endpoint cache dài hạn nên ngân sách thời gian của nó không quan trọng; đừng dùng bất kỳ con số nào ở đây làm SLA.
 
 ---
 
@@ -241,14 +249,17 @@ Kết quả: **237 mã**, 2,4 giây. Ví dụ `ABT` (HOSE) ROE 24,66% P/E 4,02 P
 
 | Truy vấn | Thời gian | Nguồn số |
 |---|---|---|
-| Toàn thị trường (`ALL`), 1 tiêu chí không lọc | **6,44 s** | đo 2026-08-15, **1 lần chạy** *(2026-08-10: ~682 ms)* |
+| Toàn thị trường (`ALL`), 1 tiêu chí không lọc | **trung vị 2,07 s** · min 1,08 · p90 2,68 · max 3,10 | **52 mẫu**, đo 2026-08-15 trong [phép đo rate limit](00-conventions.md) |
+| — *cùng truy vấn, lần đo sớm hơn trong ngày* | 6,44 s | đo 2026-08-15, **1 lần chạy** *(2026-08-10: ~682 ms)* |
 | `VN30`, 1 tiêu chí không lọc | **4,98 s** | đo 2026-08-15, **1 lần chạy** |
 | Toàn thị trường, 2 tiêu chí lọc thật | ~2,4 s | đo 2026-08-10, chưa đo lại |
 | Một ngành | < 500 ms | đo 2026-08-10, chưa đo lại |
 
-⚠️ **Hai dòng đo 2026-08-15 chậm hơn số cũ khoảng một bậc**, và cùng nhịp với `GetScreenerParameters` (1,45 s → 6,33 s) trong **cùng một lần chạy**. Một lần chạy là **một điểm dữ liệu** — chưa phân biệt được "endpoint đã chậm đi" với "gặp một lần tải cao". Phải đo nhiều lần trước khi dựng ngân sách thời gian trên nó.
+✅ **Câu hỏi "endpoint chậm đi thật hay chỉ gặp một lần tải cao" nay đã có đáp án: là tải cao nhất thời.** Con số 6,44 s là **một điểm dữ liệu của lần đo sớm hơn trong ngày**; 52 mẫu đo sau đó cùng ngày cho **trung vị 2,07 s**, dải min 1,08 – max 3,10 s, **không có xu hướng chậm dần** giữa trang 1 và trang 52. Dùng trung vị 2,07 s làm ngân sách thời gian, không dùng 6,44 s.
 
-Với `pageSize=30` cố định, lấy hết **1.549** mã cần **52 lời gọi** *(đo 2026-08-15)*. 🔴 Ngân sách thời gian cho 52 lời gọi đó **phụ thuộc hẳn vào con số chưa chắc ở trên**: ở ~682 ms là ~35 giây, ở 6,44 s là **~5,6 phút**. Chênh gần 10 lần — đo lại trước khi đặt lịch ETL.
+⚠️ Vẫn **chậm hơn hẳn ~682 ms đo 2026-08-10** — khoảng gấp ba. Đừng dựng SLA trên con số cũ đó nữa.
+
+Với `pageSize=30` cố định, lấy hết **1.549** mã cần **52 lời gọi** *(đo 2026-08-15)*. Ngân sách thời gian thật cho cả 52 lời gọi chạy tuần tự: **1 phút 49 giây**, đo trực tiếp chứ không suy ra từ latency đơn lẻ — chi tiết ở [`00-conventions.md` §10](00-conventions.md).
 
 ### Ghi chú
 `Screener/DownloadScreenerItems` dùng cùng body, trả file xuất — chưa kiểm thử.
