@@ -51,9 +51,9 @@ L3  Ngữ nghĩa      view người-đọc-được · function calling
 L4  Tri thức       hai skill: tư duy (luôn có mặt) + kiến thức (tải khi cần)
 ```
 
-## Không còn việc chặn bên ngoài
+## Không còn việc chặn bên ngoài — 2026-08-15
 
-Cả ba việc phải chờ bên thứ ba đều đã xong:
+Cả ba việc phải chờ bên thứ ba đều đã xong. **Việc kế tiếp là dựng hạ tầng DB (Postgres + Redis)** — việc tự làm được, không phải chờ ai.
 
 > *Xác nhận ngưỡng rate limit với FiinGroup* — **đã kiểm bằng đúng tải ETL kế hoạch ngày 2026-08-15**: burst Screener 52 trang chạy tuần tự (~29 request/phút, 1,8 phút) không gặp tín hiệu chặn nào, và nguồn không trả header hạn mức nào. Xác nhận chính thức từ FiinGroup không còn là điều kiện chặn. Chủ đích **không dò ngưỡng trần**, và nhịp 8 luồng của ETL hằng ngày thì **chưa kiểm** — xem [quy ước chung §10](docs/10-sources/market/00-conventions.md).
 
@@ -61,7 +61,7 @@ Cả ba việc phải chờ bên thứ ba đều đã xong:
 
 > Việc thứ ba trước đây — *xin bảng ánh xạ mã chỉ tiêu báo cáo tài chính từ FiinGroup* — **đã tự giải quyết ngày 2026-08-14**, không cần chờ họ nữa: 729 mã lấy từ bundle JS của ứng dụng FiinTrade, phủ 100% response thật, kèm tên Việt/Anh (98,5%) và đơn vị dữ liệu (99,7%). Xem [Phụ lục A §A.5](docs/10-sources/market/appendix-A-field-codes.md).
 
-Và một việc gấp không chặn ai nhưng **mỗi ngày trì hoãn là một ngày mất vĩnh viễn**: dựng Ingester để bắt đầu tích luỹ nến 1 phút. Nến intraday không tồn tại ở bất kỳ nguồn nào — không backfill lại được.
+Và một việc gấp không chặn ai nhưng **mỗi ngày trì hoãn là một ngày mất vĩnh viễn**: dựng Ingester để bắt đầu tích luỹ nến 1 phút. Nến intraday không tồn tại ở bất kỳ nguồn nào — không backfill lại được. **Ingester chờ dựng xong hạ tầng DB** (quyết định chủ dự án 2026-08-15); lý do gấp thì không mất đi, và chính nó là lý do hạ tầng DB phải làm ngay.
 
 ## Nguyên tắc chung
 

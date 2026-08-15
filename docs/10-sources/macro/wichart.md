@@ -14,11 +14,7 @@
 | Chủ dữ liệu | **CTCP WiGroup** |
 | Sản phẩm thương mại tương ứng | **WiFeed.vn** (bán API này kèm lịch sử đầy đủ) |
 | Nơi phát hiện | Trang `data.vietnambiz.vn` — bản white-label hiển thị dữ liệu WiGroup theo giấy phép |
-| Tình trạng pháp lý | ✅ **Giấy phép WiFeed đã chốt** — chủ dự án xác nhận 2026-08-15 |
-
-> ✅ **Đã có quyền sử dụng thương mại.** Giấy phép **WiFeed** với CTCP WiGroup đã chốt — chủ dự án xác nhận **2026-08-15**. Trước ngày đó dữ liệu chỉ truy cập được qua endpoint nội bộ phục vụ trang đối tác, và đó là hàng rào chặn cả nhánh vĩ mô/hàng hoá.
->
-> Một điểm còn ngỏ: giấy phép cấp cho sản phẩm **WiFeed**, còn toàn bộ số đo trong tài liệu này thực hiện trên endpoint nội bộ `api.wichart.vn`. Chưa xác nhận endpoint/spec chính thức của WiFeed có khác không. Xem [§10](#10-việc-cần-làm-với-wigroup).
+| Tình trạng pháp lý | ✅ **Giấy phép WiFeed đã chốt 2026-08-15** — chủ dự án xác nhận, phủ đúng endpoint `api.wichart.vn` đang dùng |
 
 Nguồn gốc cấp trên của dữ liệu (xác định qua đối chiếu):
 
@@ -746,7 +742,6 @@ Yêu cầu cụ thể:
 7. **Thông báo trước khi đổi năm gốc / rebasing** — kèm hệ số nối chính thức.
 8. **Ngưỡng rate limit** — chưa đo, cần con số cam kết.
 9. **Sửa hoặc xác nhận các lỗi metadata** đã liệt kê: nhãn `td`, đơn vị `vdtnsnn`, `timeArray` của 16 key, `xi_mang_pcb` trả 500.
-10. **Xác nhận endpoint và spec chính thức của WiFeed** — toàn bộ số đo trong tài liệu này thực hiện trên endpoint nội bộ `api.wichart.vn`. Cần biết WiFeed phục vụ qua chính endpoint đó hay một endpoint/spec khác; nếu khác thì phải đo lại.
 
 ---
 
