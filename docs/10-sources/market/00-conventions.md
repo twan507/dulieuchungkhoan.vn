@@ -165,7 +165,7 @@ BVSC trả HTTP status đúng nghĩa: `404` cho endpoint không tồn tại, `20
 
 ---
 
-## 7. Chín bẫy triển khai
+## 7. Mười ba bẫy triển khai
 
 ### Bẫy 1 — `organCode` khác `ticker` ở 41% doanh nghiệp
 
@@ -285,6 +285,91 @@ Hai nguồn dùng **hệ số điều chỉnh khác nhau**, lệch ~0,005%:
 ```
 
 Không phải lỗi, cũng không phải dữ liệu. Phải kiểm `value.organCode != "EndOfData"` trước khi dùng.
+
+> **Bẫy 10–13 phát hiện trong đợt khảo sát nguồn 2026-08-15.** Hai bẫy cuối vượt ra ngoài BVSC/FiinTrade — giữ ở đây vì chúng ảnh hưởng tới **mọi chuỗi thời gian** và **mọi phép đối chiếu giá** của hệ thống, không riêng một nguồn.
+
+### Bẫy 10 — `StockType` không nhất quán giữa hai endpoint BVSC
+
+Cùng một mã trái phiếu (`HDC425001`), hai endpoint báo hai giá trị khác nhau *(đo 2026-08-15)*:
+
+| Endpoint | `StockType` |
+|---|---|
+| `BVSC /quotes` | **12** |
+| `BVSC /datafeed/instruments` | **1** |
+
+**Không dùng `StockType` làm khoá phân loại chung.** Mọi bảng ánh xạ `StockType → loại chứng khoán` chỉ có nghĩa **trong phạm vi đúng một endpoint**, phải ghi rõ endpoint nào khi lưu vào kho.
+
+Hành vi này không báo lỗi: cả hai bản ghi đều hợp lệ, chỉ khác nghĩa. Nếu ETL hợp nhất hai endpoint rồi phân loại theo `StockType`, một phần danh mục sẽ **xếp sai nhóm mà không có tín hiệu nào**.
+
+Phân loại đáng tin hơn: `FloorCode` *(`03` = phái sinh)*, `FundType` cho quỹ, và trường `exchange` — nhưng cũng phải kiểm lại theo từng endpoint, chưa kiểm chéo toàn bộ.
+
+### Bẫy 11 — Hai endpoint BVSC lệch độ phủ, không endpoint nào là danh mục chuẩn
+
+| Endpoint | Số bản ghi *(đo 2026-08-15)* |
+|---|---:|
+| `BVSC /quotes?symbols=ALL` | **2.534** |
+| `BVSC /datafeed/instruments` | **2.001** *(HOSE 768 · UPCOM 823 · HNX 396 · phái sinh 14)* |
+
+Chênh lệch **không phải quan hệ bao hàm một chiều** — mỗi endpoint có mã mà endpoint kia không có:
+
+| Bằng chứng | Có ở | Không có ở |
+|---|---|---|
+| `VFMVF1` *(chứng chỉ quỹ)* | `/quotes` | `/datafeed/instruments` |
+| 14 hợp đồng phái sinh | `/datafeed/instruments` | `/quotes` — trả `{"s":"ok","d":[]}` |
+
+🔴 **Hệ quả thiết kế ETL:** không có endpoint nào dùng làm **danh mục chuẩn duy nhất**. Bước dựng danh mục mã phải **hợp nhất cả hai** rồi khử trùng theo mã, và ghi lại mã đến từ nguồn nào.
+
+⚠️ **Bài học phương pháp:** chính vì lấy `/quotes` làm danh mục chuẩn mà bản trước của tài liệu này kết luận sai rằng BVSC không có phái sinh — xem [`01-bvsc-rest.md`](01-bvsc-rest.md). **Vắng mặt ở một endpoint không phải bằng chứng vắng mặt ở nguồn.**
+
+### Bẫy 12 — Epoch của WiChart là nửa đêm GIỜ VIỆT NAM, không phải UTC
+
+**Mức độ: nghiêm trọng.** Đây là bẫy đã **thật sự làm hỏng một phép đo** trong đợt khảo sát 2026-08-15 và sinh ra một kết luận sai hoàn toàn về giá dầu.
+
+Mốc thời gian của mọi chuỗi WiChart là epoch mili giây của **nửa đêm giờ Việt Nam** — `00:00` theo `Asia/Ho_Chi_Minh` (UTC+7):
+
+```
+epoch = 1786726800000
+  → parse UTC     : 2026-08-14 17:00  ❌ gán nhãn ngày 14/08
+  → parse giờ VN  : 2026-08-15 00:00  ✅ đúng nhãn ngày 15/08
+```
+
+Parse theo UTC làm **lệch nhãn ngày của cả chuỗi lùi một ngày**. Hậu quả đo được khi đối chiếu `dau_wti` với FRED `DCOILWTICO` *(đo 2026-08-15)*:
+
+| Cách parse | n | Lệch TB có dấu | \|Lệch\| TB | sd | max |
+|---|---:|---:|---:|---:|---:|
+| **UTC** *(sai)* | 115 | −2,26% | **3,35%** | 3,97% | 16,40% |
+| **Giờ VN (+7h)** *(đúng)* | 125 | −1,97% | **2,85%** | 3,34% | 21,50% |
+
+**Cách nhận biết đã lệch nhãn ngày:** khi so hai nguồn, giá của ngày `d` ở nguồn này **trùng khít tới từng chữ số thập phân** với giá ngày `d+1` ở nguồn kia. Một chuỗi trùng khít lệch pha là bằng chứng **sai nhãn ngày**, không phải sai giá — sai giá thật thì lệch ngẫu nhiên, không trùng khít.
+
+**Quy tắc:** mọi epoch của WiChart phải quy đổi bằng `Asia/Ho_Chi_Minh`, không dùng `utcfromtimestamp`. Chi tiết riêng cho nguồn này ở [`wichart.md`](../macro/wichart.md).
+
+### Bẫy 13 — Giá giao ngay KHÔNG bằng giá tương lai: chênh ~2% là chênh lệch cơ sở, không phải sai số
+
+Khi đối chiếu giá hàng hoá giữa các nguồn, chênh lệch hệ thống **~2%** giữa FRED `DCOILWTICO` và WiChart/Yahoo/Binance **không phải lỗi của nguồn nào** — hai bên đo hai thứ khác nhau:
+
+| Nguồn | Đo cái gì |
+|---|---|
+| FRED `DCOILWTICO` | **Giao ngay** WTI Cushing *(EIA)* |
+| WiChart `dau_wti` · Yahoo `CL=F` · Binance | **Tương lai** kỳ hạn gần |
+
+Bằng chứng trực tiếp — cấu trúc kỳ hạn WTI *(đo 2026-08-15)*:
+
+| Hợp đồng | Kỳ hạn | Giá |
+|---|---|---:|
+| `CLU26.NYM` | Sep 26 *(gần nhất)* | **82,40** |
+| `CLV26.NYM` | Oct 26 | 81,47 |
+| `CLX26.NYM` | Nov 26 | 80,10 |
+| `CLZ26.NYM` | Dec 26 | **78,49** |
+
+**Giá giảm đơn điệu theo kỳ hạn ⇒ thị trường backwardation**, dốc ≈ **−1,6%/tháng**. Backwardation nghĩa là giao ngay **cao hơn** tương lai — đúng chiều và đúng độ lớn của chênh lệch quan sát được: FRED cao hơn tương lai **+2,02%** trung bình, và **cực kỳ ổn định** (`+1,89 … +2,07` trên 7 phiên). Sai số ngẫu nhiên không ổn định như vậy.
+
+🔴 **Quy tắc khi lưu và khi đối chiếu:**
+- Ghi rõ **loại giá** *(giao ngay / tương lai)* cho mọi chuỗi hàng hoá — nhãn "Giá dầu WTI" của nguồn **không đủ** để biết là loại nào.
+- **Không lấy chênh lệch hai loại giá làm chỉ báo chất lượng nguồn.** Chỉ so cùng loại với cùng loại.
+- Chênh lệch cơ sở **trôi theo thời gian** khi độ dốc kỳ hạn đổi — một ngưỡng cảnh báo cố định kiểu *"lệch quá 1% là hỏng"* sẽ báo động giả.
+
+⚠️ Bẫy anh em, cùng bản chất: **fixing ≠ giá đóng cửa.** LBMA là fixing 15:00 London, lệch **0,56%** so với XAU/USD giao ngay; tỷ giá ECB là fixing 14:15 CET *(đo 2026-08-15)*. Cũng là đặc tính, không phải sai số.
 
 ---
 
