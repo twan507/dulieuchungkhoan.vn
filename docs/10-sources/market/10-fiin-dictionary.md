@@ -95,9 +95,11 @@ Bảng đầy đủ `code → name → unit`: [Phụ lục A](appendix-A-field-c
 - Bảng này **không phủ** các mã chỉ tiêu báo cáo tài chính chi tiết (`bsa*`, `isa*`, `isb*`, `cfa*`, `nob*`). Chúng được giải mã bằng nguồn khác — xem [Phụ lục A §A.5](appendix-A-field-codes.md), 729 mã lấy từ bundle JS của ứng dụng FiinTrade, độ phủ 100%.
 
 ### Độ phủ & hiệu năng
-13 nhóm · 83 tiêu chí · 13,6 KB · ~1,45 s. Cache dài hạn.
+13 nhóm · 83 tiêu chí · 13,6 KB · **6,33 s** *(đo 2026-08-15, **1 lần chạy**)*. Cache dài hạn.
 
 *Đo lại 2026-08-15: đúng 13 nhóm / 83 tiêu chí, 13.597 byte, `status: "Success"` — phân bố theo nhóm không đổi một tiêu chí nào so với bản 2026-08-10.*
+
+⚠️ **Thời gian chậm hơn hẳn số cũ (~1,45 s đo 2026-08-10).** Một lần chạy là **một điểm dữ liệu**, chưa đủ để nói endpoint đã chậm đi thật hay chỉ gặp một lần tải cao. Đừng dùng con số này làm SLA; muốn ngân sách thời gian đáng tin thì phải đo nhiều lần.
 
 ---
 
@@ -237,13 +239,16 @@ Kết quả: **237 mã**, 2,4 giây. Ví dụ `ABT` (HOSE) ROE 24,66% P/E 4,02 P
 
 ### Hiệu năng
 
-| Truy vấn | Thời gian |
-|---|---|
-| Toàn thị trường, 1 tiêu chí không lọc | ~682 ms |
-| Toàn thị trường, 2 tiêu chí lọc thật | ~2,4 s |
-| Một ngành | < 500 ms |
+| Truy vấn | Thời gian | Nguồn số |
+|---|---|---|
+| Toàn thị trường (`ALL`), 1 tiêu chí không lọc | **6,44 s** | đo 2026-08-15, **1 lần chạy** *(2026-08-10: ~682 ms)* |
+| `VN30`, 1 tiêu chí không lọc | **4,98 s** | đo 2026-08-15, **1 lần chạy** |
+| Toàn thị trường, 2 tiêu chí lọc thật | ~2,4 s | đo 2026-08-10, chưa đo lại |
+| Một ngành | < 500 ms | đo 2026-08-10, chưa đo lại |
 
-Với `pageSize=30` cố định, lấy hết **1.549** mã cần **52 lời gọi** *(đo 2026-08-15)*.
+⚠️ **Hai dòng đo 2026-08-15 chậm hơn số cũ khoảng một bậc**, và cùng nhịp với `GetScreenerParameters` (1,45 s → 6,33 s) trong **cùng một lần chạy**. Một lần chạy là **một điểm dữ liệu** — chưa phân biệt được "endpoint đã chậm đi" với "gặp một lần tải cao". Phải đo nhiều lần trước khi dựng ngân sách thời gian trên nó.
+
+Với `pageSize=30` cố định, lấy hết **1.549** mã cần **52 lời gọi** *(đo 2026-08-15)*. 🔴 Ngân sách thời gian cho 52 lời gọi đó **phụ thuộc hẳn vào con số chưa chắc ở trên**: ở ~682 ms là ~35 giây, ở 6,44 s là **~5,6 phút**. Chênh gần 10 lần — đo lại trước khi đặt lịch ETL.
 
 ### Ghi chú
 `Screener/DownloadScreenerItems` dùng cùng body, trả file xuất — chưa kiểm thử.
@@ -256,7 +261,9 @@ Với `pageSize=30` cố định, lấy hết **1.549** mã cần **52 lời g�
 | FPT | 371.145.103 | 840.019.946 | 368.745.271 | 840.019.946 |
 | VNM | 1.053.172.430 | 2.089.955.445 | 1.052.456.494 | 2.089.955.445 |
 
-`foreignTotalRoom` khớp **tuyệt đối** với `foreignRoom` của BVSC ở cả 3/3 mã. `foreignerRoom` chỉ khớp *cỡ* `foreignRemain` — lệch 0,07%–0,65% vì hai bên chốt số ở hai thời điểm khác nhau trong phiên. Ánh xạ `foreignerRoom → foreignRoom` là sai **~2,4 lần** mà không có gì báo lỗi.
+`foreignTotalRoom` khớp **tuyệt đối** với `foreignRoom` của BVSC ở cả 3/3 mã. `foreignerRoom` chỉ khớp *cỡ* `foreignRemain` — lệch 0,07%–0,65% vì hai bên chốt số ở hai thời điểm khác nhau trong phiên. Ánh xạ `foreignerRoom → foreignRoom` là **sai 2–2,4 lần** mà không có gì báo lỗi *(tỷ lệ đo được: BID 2,409 · FPT 2,263 · VNM 1,984 — hệ số phụ thuộc room đã dùng của từng mã, không phải hằng số)*.
+
+Số đo không phải bằng chứng duy nhất: [`04-fiin-company-profile.md`](04-fiin-company-profile.md) mô tả `foreignerRoom` của `Snapshot.summary` đúng là **"Room còn lại"**, trong khi `GetScreenerParameters` gắn nhãn cùng cái tên đó là *"Room nước ngoài"*. Hai tài liệu nguồn của FiinGroup **tự mâu thuẫn với nhau về nhãn**, và số đo đứng về phía "room còn lại". Vì vậy [Phụ lục A](appendix-A-field-codes.md) và `field-dictionary.json` vẫn **chép đúng nhãn API** *("Room nước ngoài")* và để ngữ nghĩa thật ở ghi chú — không viết lại nhãn nguồn.
 
 ### Dùng bao nhiêu trong 193 trường
 

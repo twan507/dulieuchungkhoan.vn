@@ -73,7 +73,7 @@ Tổng tăng 4 mã trong 5 ngày (2 cổ phiếu + 2 trái phiếu) — bảng n
 - Giá trần/sàn/tham chiếu là của **phiên hiện tại**, cập nhật đầu ngày giao dịch.
 
 ### Độ phủ & hiệu năng
-**2.534 bản ghi** *(đo 2026-08-15; 2026-08-10 là 2.530)* · 51/51 mã mẫu có mặt · 590 KB · ~280 ms.
+**2.534 bản ghi** *(đo 2026-08-15; 2026-08-10 là 2.530)* · 51/51 mã mẫu có mặt · 590 KB · **~280 ms** *(đo 2026-08-15, **1 lần chạy**; 2026-08-10 là ~580 ms — một lần chạy là một điểm dữ liệu, đừng đọc thành "đã nhanh gấp đôi")*.
 Mỗi bản ghi đúng **8 trường**, không hơn: `symbol` `FullName` `exchange` `StockType` `ceiling` `floor` `reference` `tradelot`.
 Nên cache trong ngày, làm mới đầu phiên.
 

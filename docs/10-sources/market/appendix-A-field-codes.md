@@ -193,6 +193,8 @@ Bảng này lấy trực tiếp từ API, có thể gọi lại bất cứ lúc 
 | `ForeignerPercentage` | Sở hữu nước ngoài | Range | Percentage |
 | `ForeignerRoom` | Room nước ngoài | Range | ThousandUnit |
 
+⚠️ **`ForeignerRoom`: nhãn API là *"Room nước ngoài"* nhưng giá trị là room CÒN LẠI** — xem [ghi chú đo 2026-08-15](10-fiin-dictionary.md#ghi-chú-1). Bảng trên chép đúng nhãn nguồn tự khai; ngữ nghĩa thật đo được là `foreignRemain` của BVSC, không phải tổng room. Tổng room nằm ở khoá `foreignTotalRoom` của khối `priceInfo`.
+
 ### Cổ Tức — `Dividends`
 
 | Mã | Tên | Kiểu | Đơn vị |

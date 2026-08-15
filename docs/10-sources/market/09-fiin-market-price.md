@@ -269,7 +269,7 @@ Tham số **bắt buộc phải có** để endpoint trả dữ liệu, nhưng m
 
 **Tóm tắt:** Áp lực mua/bán chủ động của toàn thị trường.
 
-**Mô tả:** BVSC chỉ có chiều chủ động ở **cấp từng lệnh** (trường `LC` trong realtime `t:` và `lastColor` trong `translogsnaps`). Muốn có tổng hợp toàn thị trường bằng nguồn BVSC thì phải tự cộng dồn 1.972 mã. Endpoint này trả sẵn.
+**Mô tả:** BVSC chỉ có chiều chủ động ở **cấp từng lệnh** (trường `LC` trong realtime `t:` và `lastColor` trong `translogsnaps`). Muốn có tổng hợp toàn thị trường bằng nguồn BVSC thì phải tự cộng dồn 1.974 mã *(đếm `StockType=2` từ `getAllQuotes`, đo 2026-08-15)*. Endpoint này trả sẵn.
 
 ```
 GET FIIN_MARKET/MarketInDepth/GetComGroupBuSdChart?ComGroupCode={group}&language=vi

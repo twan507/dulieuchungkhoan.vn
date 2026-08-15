@@ -70,9 +70,9 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
 | Tầng 3 — tên doanh nghiệp → mã | `organName` (tên đầy đủ tiếng Việt), `organShortName` |
 | Lọc ngành khi hiển thị tin | `icbCode` — 100% bản ghi đều có |
 
-🔴 **Một bẫy phải xử lý:** danh sách này **gồm cả mã đã huỷ niêm yết**. Phải lọc chéo với `getAllQuotes` của BVSC (2.530 mã niêm yết, trong đó **1.972 cổ phiếu**) trước khi dùng làm từ điển gắn mã — nếu không, tin sẽ được gắn mã của doanh nghiệp đã rời sàn.
+🔴 **Một bẫy phải xử lý:** danh sách này **gồm cả mã đã huỷ niêm yết**. Phải lọc chéo với `getAllQuotes` của BVSC (**2.534** mã niêm yết, trong đó **1.974 cổ phiếu** — đo 2026-08-15) trước khi dùng làm từ điển gắn mã — nếu không, tin sẽ được gắn mã của doanh nghiệp đã rời sàn.
 
-⚠️ Con số *"~1.600 mã"* trong tài liệu pipeline là **ước lượng chưa kiểm chứng**; số đo thật là **1.972**. Dùng số 1.972.
+⚠️ Con số *"~1.600 mã"* trong tài liệu pipeline là **ước lượng chưa kiểm chứng**; số đo thật là **1.974** *(đếm `StockType=2` từ `getAllQuotes` của BVSC, đo 2026-08-15; ngày 2026-08-10 là 1.972)*. Dùng số 1.974 (đo 2026-08-15) — và lưu ý con số này **đổi theo tuần**, nên lọc động thay vì hardcode.
 
 Hệ quả vận hành: bảng `organization` của [kho dữ liệu thị trường §5.1](../20-design/market-data-store.md) trở thành **phụ thuộc cứng của pipeline tin**. Pipeline tin không được tự nạp danh sách riêng — hai bản sao sẽ lệch nhau.
 

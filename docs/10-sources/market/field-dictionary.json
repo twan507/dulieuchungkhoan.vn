@@ -6941,9 +6941,9 @@
       "don_vi_do_tin_cay": "cao"
     },
     "foreignerroom": {
-      "ten_vi": "Room nước ngoài còn lại",
-      "ten_en": "Foreign Room Remaining",
-      "ghi_chu_do_2026_08_15": "Khoa that trong response la foreignerRoom (khoi stockScreenerItem). Do tren BID/FPT/VNM: trung nghia voi foreignRemain cua BVSC (room CON LAI), KHONG phai foreignRoom (tong room) du ten gan giong het. Tong room nam o khoa khac: priceInfo.foreignTotalRoom, khop tuyet doi voi foreignRoom cua BVSC 3/3 ma. Anh xa nham hai khoa nay sai ~2,4 lan.",
+      "ten_vi": "Room nước ngoài",
+      "ten_en": "Foreign Room",
+      "ghi_chu_do_2026_08_15": "ten_vi/ten_en o tren la NHAN GOC cua API (GetScreenerParameters tra 'Room nước ngoài') — tang reference chep dung cai nguon tu khai, khong sua theo ngu nghia do duoc. NGU NGHIA THAT thi khac nhan: khoa that trong response la foreignerRoom (khoi stockScreenerItem); do tren BID/FPT/VNM ngay 2026-08-15 cho thay no trung nghia voi foreignRemain cua BVSC (room CON LAI), KHONG phai foreignRoom (tong room) du ten gan giong het. Tong room nam o khoa khac: priceInfo.foreignTotalRoom, khop tuyet doi voi foreignRoom cua BVSC 3/3 ma. Anh xa nham hai khoa nay sai 2-2,4 lan (ty le do duoc: BID 2,409 · FPT 2,263 · VNM 1,984).",
       "don_vi": "ThousandUnit",
       "nhom": "Ownership",
       "dai_gia_tri": [

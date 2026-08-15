@@ -258,7 +258,7 @@ Chỉ báo kỹ thuật **tự tính từ chuỗi giá này**, không lấy củ
 | `closePrice` | Giá | từ điển | bỏ | BVSC | trùng BVSC — `closePrice`/`reference`; giá lấy nguồn realtime khớp sàn | chốt |
 | `totalMatchVolume` | Khối lượng GD | từ điển | bỏ | BVSC | trùng BVSC — `totalTrading` | chốt |
 | `totalMatchValue` | Giá trị GD | từ điển | bỏ | BVSC | trùng BVSC — `totalTradingValue` | chốt |
-| `foreignerRoom` | Room nước ngoài còn lại | từ điển | bỏ | BVSC | trùng BVSC — `foreignRemain` (room CÒN LẠI), **không phải** `foreignRoom` (tổng room). Đo 2026-08-15: `foreignerRoom` của Screener khớp cỡ `foreignRemain` của BVSC chứ không khớp `foreignRoom` — BID 906.709.318 vs `foreignRemain` 906.101.718 vs `foreignRoom` 2.184.019.563; FPT 371.145.103 vs 368.745.271 vs 840.019.946. Tên hai bên đặt ngược nhau | chốt |
+| `foreignerRoom` | Room nước ngoài | từ điển | bỏ | BVSC | trùng BVSC — `foreignRemain` (room CÒN LẠI), **không phải** `foreignRoom` (tổng room). Đo 2026-08-15: `foreignerRoom` của Screener khớp cỡ `foreignRemain` của BVSC chứ không khớp `foreignRoom` — BID 906.709.318 vs `foreignRemain` 906.101.718 vs `foreignRoom` 2.184.019.563; FPT 371.145.103 vs 368.745.271 vs 840.019.946. Tên hai bên đặt ngược nhau | chốt |
 
 **Biến động giá** — 7 trường
 
@@ -385,7 +385,8 @@ khít Snapshot, nên **Screener giữ · Snapshot bỏ** — xem §4.1 và §5.2
 nghĩa với `foreignRemain` của BVSC — **không phải** `foreignRoom` (tổng room) dù tên gần giống hệt. Số đo:
 BID `foreignerRoom` = 906.709.318 · BVSC `foreignRemain` = 906.101.718 · BVSC `foreignRoom` = 2.184.019.563.
 Tổng room của Screener nằm ở khoá khác, trong khối `priceInfo`: `foreignTotalRoom` (BID 2.184.019.563, bằng
-đúng `foreignRoom` của BVSC). Ánh xạ nhầm hai khoá này là sai gấp ~2,4 lần mà không có gì báo.
+đúng `foreignRoom` của BVSC). Ánh xạ nhầm hai khoá này là **sai 2–2,4 lần** mà không có gì báo
+*(tỷ lệ đo được: BID 2,409 · FPT 2,263 · VNM 1,984 — không phải hằng số)*.
 
 ## 5 · Snapshot `GetSnapshot` / `GetSnapshotNoneBank`
 

@@ -20,7 +20,7 @@
 
 Ba lý do, đều đo được:
 
-1. **Độ trễ.** `GetCorporateEarning` 7,4 s · `getPriceData` 3,5 s · `GetScreenerItems` 2,4 s · `GetListOrganization` 4,4 s. Từ PostgreSQL là 1–10 ms — chênh khoảng 1.000 lần. Cache TTL không cứu được lần gọi đầu, mà với 1.972 mã thì đa số truy vấn là lần đầu.
+1. **Độ trễ.** `GetCorporateEarning` 7,4 s · `getPriceData` 3,5 s · `GetScreenerItems` 2,4 s · `GetListOrganization` 4,4 s. Từ PostgreSQL là 1–10 ms — chênh khoảng 1.000 lần. Cache TTL không cứu được lần gọi đầu, mà với 1.974 mã thì đa số truy vấn là lần đầu.
 2. **Không có cam kết.** API này không có versioning, không thông báo thay đổi, schema đổi bất cứ lúc nào (xem [00-conventions.md](../10-sources/market/00-conventions.md)). Phụ thuộc trực tiếp là đặt sản phẩm lên nền không kiểm soát được.
 3. **Chatbot.** Bot hỏi hàng chục câu mỗi phút. Mỗi câu đi ra FiinTrade sẽ vừa chậm vừa chạm rate limit.
 
@@ -148,9 +148,9 @@ Giữ nguyên mô hình delta tới tận trình duyệt: đo được `V1` (kh�
 | Nhóm | Nhịp | Số lời gọi |
 |---|---|---|
 | Danh bạ, ngành ICB, `/quotes`, `/mapping` | Trước phiên | 4 |
-| `getPriceData` Page 1 | Sau 15:00 | 1.972 |
+| `getPriceData` Page 1 | Sau 15:00 | 1.974 |
 | Snapshot ngày: **lưu 16/54 trường** — hồ sơ DN, sở hữu chi tiết | Sau 15:00 | ~4.000 |
-| `GetScreenerItems` — **lưu 80/193 trường** *(gửi 1 tiêu chí, nhiều hơn sẽ timeout)* | Sau 15:00 | 51 |
+| `GetScreenerItems` — **lưu 80/193 trường** *(gửi 1 tiêu chí, nhiều hơn sẽ timeout)* | Sau 15:00 | 52 |
 | Lịch sự kiện *(dùng `FromDate` lấy phần mới)* | Hằng ngày | ~10 |
 | BCTC + PDF | **Kích hoạt** theo `GetCorporateEarning` | ~100–300/quý |
 | Re-crawl giá một mã | **Kích hoạt** theo sự kiện quyền của mã đó | tuỳ |
@@ -161,8 +161,8 @@ Giữ nguyên mô hình delta tới tận trình duyệt: đo được `V1` (kh�
 
 | Việc | Lời gọi | Thời gian |
 |---|---|---|
-| `getPriceData` toàn bộ 52 trang × 1.972 mã | **102.500** | ~12 giờ ở 8 luồng |
-| BCTC 3 loại × 1.972 mã | 5.916 | ~25 phút |
+| `getPriceData` toàn bộ 52 trang × 1.974 mã | **102.648** | ~12 giờ ở 8 luồng |
+| BCTC 3 loại × 1.974 mã | 5.922 | ~25 phút |
 | Lịch sự kiện toàn bộ | ~500 | vài phút |
 
 ⚠️ Giới hạn **2 request/giây**, chạy ngoài giờ giao dịch, **rải 1–2 tuần**. Quét ồ ạt 102.500 lời gọi là mức tải đáng kể lên hạ tầng FiinGroup.

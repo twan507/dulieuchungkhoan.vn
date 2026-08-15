@@ -353,6 +353,13 @@ SCR_DROP_GROUPS = [
     ("OHLC hai phiên gần nhất", 8, "OHLC 2 phiên"),
     ("Thành phần chấm điểm VGM", 6, "Chấm điểm:VGM"),
     ("Trùng BCTC đầy đủ", 5, "Trùng BCTC"),
+    # So 4 la con so cua QUYET DINH GOC 2026-08-14, khong phai so do — giu nguyen de cot
+    # "Da chot" phan anh dung quyet dinh do. Cot "Liet ke duoc" tra 0 vi count_scr_drop("ATO/ATC")
+    # tra cung 0: khong co dong ROWS nao mang block nay.
+    # Do 2026-08-15 tren 193 khoa that: chi thay 2 khoa ATO (`atoPrice`, `atoVolume`, khoi
+    # `priceInfo`) va KHONG co khoa ATC nao. Tuc quyet dinh goc dem 4 truong ma response chi
+    # co 2. Chua doi phan loai (van la 0 dong liet ke duoc) vi chua biet quyet dinh dinh dem
+    # 4 truong NAO; ghi lai o §7.5 diem 2 de lan sau khoi do lai.
     ("ATO/ATC", 4, "ATO/ATC"),
     ("Khối lượng bình quân 5/10/20 phiên, 3 tháng", 4, "KL bình quân"),
     ("Sức mạnh tương đối", 2, "Sức mạnh tương đối"),
@@ -540,7 +547,8 @@ khít Snapshot, nên **Screener giữ · Snapshot bỏ** — xem §4.1 và §5.2
 nghĩa với `foreignRemain` của BVSC — **không phải** `foreignRoom` (tổng room) dù tên gần giống hệt. Số đo:
 BID `foreignerRoom` = 906.709.318 · BVSC `foreignRemain` = 906.101.718 · BVSC `foreignRoom` = 2.184.019.563.
 Tổng room của Screener nằm ở khoá khác, trong khối `priceInfo`: `foreignTotalRoom` (BID 2.184.019.563, bằng
-đúng `foreignRoom` của BVSC). Ánh xạ nhầm hai khoá này là sai gấp ~2,4 lần mà không có gì báo.
+đúng `foreignRoom` của BVSC). Ánh xạ nhầm hai khoá này là **sai 2–2,4 lần** mà không có gì báo
+*(tỷ lệ đo được: BID 2,409 · FPT 2,263 · VNM 1,984 — không phải hằng số)*.
 
 ## 5 · Snapshot `GetSnapshot` / `GetSnapshotNoneBank`
 
