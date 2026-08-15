@@ -69,7 +69,10 @@ GET BVSC/quotes?symbols=ALL
 Tổng tăng 4 mã trong 5 ngày (2 cổ phiếu + 2 trái phiếu) — bảng này **không tĩnh**, đừng hardcode con số.
 
 ### Ghi chú
-- Không chứa phái sinh. BVSC không cung cấp dữ liệu phái sinh qua bất kỳ endpoint public nào.
+- **`/quotes` không chứa phái sinh** — kiểm 2026-08-15: `/quotes?symbols=41I1G8000` trả `{"s":"ok","d":[]}`.
+  ⚠️ **Đừng suy từ đây ra "BVSC không có phái sinh"** — bản trước của tài liệu này đã mắc đúng lỗi đó: quan sát đúng *(một endpoint không có)*, suy luận sai *(toàn nguồn không có)*. Kết luận phủ định về cả một nguồn phải dò từ ứng dụng thật của nguồn, không được suy từ một endpoint.
+  Phái sinh đi đường [`/datafeed/instruments`](#phái-sinh--14-hợp-đồng) — **14 hợp đồng, 62 trường, có `openInterest`** *(đo 2026-08-15)*.
+- ⚠️ **`/quotes` và `/datafeed/instruments` lệch độ phủ**: 2.534 vs **2.001** bản ghi *(đo 2026-08-15)*. `VFMVF1` có ở `/quotes` nhưng **không có** ở `/datafeed/instruments`; ngược lại 14 hợp đồng phái sinh chỉ có ở `/datafeed/instruments`. **Không endpoint nào là danh mục chuẩn duy nhất** — ETL phải hợp nhất cả hai.
 - Giá trần/sàn/tham chiếu là của **phiên hiện tại**, cập nhật đầu ngày giao dịch.
 
 ### Độ phủ & hiệu năng
@@ -124,13 +127,18 @@ Không có.
 
 ```
 GET BVSC/datafeed/instruments?symbols={tickers}
+GET BVSC/datafeed/instruments                     # không tham số → TOÀN BỘ danh mục
 ```
 
 ### Tham số
 
 | Tên | Vị trí | Kiểu | Bắt buộc | Mô tả |
 |---|---|---|---|---|
-| `symbols` | query | string | **bắt buộc** | Một hoặc nhiều **ticker**, cách nhau bởi dấu phẩy |
+| `symbols` | query | string | không | Một hoặc nhiều **ticker**, cách nhau bởi dấu phẩy. **Bỏ hẳn tham số** thì trả toàn bộ danh mục |
+
+⚠️ **`symbols=ALL` KHÔNG dùng được ở endpoint này** — trả `{"s":"ok","d":[]}` *(đo 2026-08-15)*, khác hẳn `/quotes?symbols=ALL`. Muốn toàn bộ thì gọi **không tham số**.
+
+⚠️ **`floorCode` bị bỏ qua im lặng.** Mã nguồn app BVSC dựng URL `?floorCode:XHNF` *(dấu hai chấm)*. Cả `?floorCode:XHNF` lẫn `?floorCode=XHNF` đều trả **nguyên toàn bộ danh mục 3,29 MB**, không báo lỗi *(đo 2026-08-15)*. Muốn lọc phái sinh phải **tự lọc `FloorCode === "03"` phía client**.
 
 ### Response 200 — 62 trường
 
@@ -166,7 +174,7 @@ GET BVSC/datafeed/instruments?symbols={tickers}
 | `StockId` | string | ID nội bộ BVSC |
 | `FullName` | string | Tên tổ chức phát hành |
 | `exchange` | string | Sàn |
-| `FloorCode` | string | Mã sàn dạng số — `10` HOSE · `02` HNX · `04` UPCOM |
+| `FloorCode` | string | Mã sàn dạng số — `10` HOSE · `02` HNX · `04` UPCOM · **`03` phái sinh** *(đo 2026-08-15)* |
 | `StockType` | string | Xem bảng `StockType` |
 | `tradingdate` | string | Ngày giao dịch, `dd/MM/yyyy` |
 | `ts` | integer | Epoch ms tại thời điểm sinh snapshot |
@@ -226,8 +234,115 @@ GET BVSC/datafeed/instruments?symbols={tickers}
 Các trường sau chỉ có giá trị với loại chứng khoán tương ứng, còn lại là chuỗi rỗng:
 `ListedShare`, `TotalListingQtty`, `IssuerName`, `CoveredWarrantType`, `MaturityDate`, `ExercisePrice`, `ExerciseRatio`, `underlyingSymbol`, `FundType`, `openInterest`, `openInterestChange`, `firstTradingDate`, `lastTradingDate`.
 
+---
+
+### Phái sinh — 14 hợp đồng
+
+**Đây là đường duy nhất lấy được phái sinh của BVSC** *(đo 2026-08-15, dữ liệu phiên 14/08/2026)*. Lược đồ **bằng đúng lược đồ cổ phiếu — 62 trường**; khác biệt chỉ nằm ở **trường nào có giá trị**.
+
+Cách lấy: gọi `/datafeed/instruments` **không tham số**, rồi lọc `FloorCode === "03"` *(tương đương `exchange === "XHNF"`)*. Gọi theo mã cũng được: `?symbols=41I1G8000`.
+
+#### Danh mục 14 hợp đồng *(đo 2026-08-15, phiên 14/08/2026)*
+
+| Mã HĐ | Sản phẩm | Cơ sở | GD đầu | GD cuối | Đáo hạn | OI | KL phiên |
+|---|---|---|---|---|---|---:|---:|
+| `41I1G8000` | VN30 Index Futures 08/2026 | VN30 | 19/06/2026 | 20/08/2026 | 21/08/2026 | 33.220 | **276.881** |
+| `41I1G9000` | VN30 09/2026 | VN30 | 16/01/2026 | 17/09/2026 | 18/09/2026 | 3.343 | 1.794 |
+| `41I1GC000` | VN30 12/2026 | VN30 | 17/04/2026 | 17/12/2026 | 18/12/2026 | 836 | 103 |
+| `41I1H3000` | VN30 03/2027 | VN30 | 17/07/2026 | 18/03/2027 | 19/03/2027 | 219 | 40 |
+| `41I2G8000` | **VN100** Index Futures 08/2026 | VN100 | 23/06/2026 | 20/08/2026 | 21/08/2026 | 48 | 40 |
+| `41I2G9000` | VN100 09/2026 | VN100 | 20/01/2026 | 17/09/2026 | 18/09/2026 | 12 | 0 |
+| `41I2GC000` | VN100 12/2026 | VN100 | 23/04/2026 | 17/12/2026 | 18/12/2026 | 25 | 12 |
+| `41I2H3000` | VN100 03/2027 | VN100 | 17/07/2026 | 18/03/2027 | 19/03/2027 | 14 | 3 |
+| `41B5G9000` `41B5GC000` `41B5H3000` | TPCP **5 năm** 09/26 · 12/26 · 03/27 | VGB05 | *(rỗng)* | 15/09/26 · 15/12/26 · 15/03/27 | +3 ngày | 0 | 0 |
+| `41BAG9000` `41BAGC000` `41BAH3000` | TPCP **10 năm** 09/26 · 12/26 · 03/27 | VGB10 | *(rỗng)* | 25/09/26 · 25/12/26 · 25/03/27 | +5 ngày | 0 | 0 |
+
+- Thanh khoản tập trung gần như tuyệt đối vào **VN30F tháng gần nhất** — 276.881 hợp đồng, **99,3%** tổng KL phái sinh phiên đó.
+- **VN100 Index Futures** có niêm yết, gần như không có thanh khoản.
+- **Phái sinh TPCP: niêm yết nhưng chưa từng giao dịch** — OI 0, KL 0, `firstTradingDate` rỗng cả 6 mã. *(Suy luận từ **1 phiên**; chuỗi nhiều phiên **chưa kiểm**.)*
+
+**Cấu trúc mã hợp đồng** *(suy ra từ 14 mẫu, **chưa đối chiếu tài liệu HNX**)*:
+`41` + `I1`/`I2`/`B5`/`BA` *(VN30 · VN100 · TPCP5 · TPCP10)* + `G`/`H` *(2026 · 2027)* + `8`/`9`/`C`/`3` *(tháng, hex: `C`=12)* + `000`.
+
+#### Trường riêng của phái sinh
+
+| Nhóm | Trường |
+|---|---|
+| **Chỉ phái sinh mới có giá trị** | `openInterest` · `firstTradingDate` · `lastTradingDate` · `underlyingSymbol` · `MaturityDate` · `exchange: "XHNF"` |
+| **Luôn rỗng/0 với cả 14 hợp đồng** *(đừng chờ dữ liệu)* | `openInterestChange` · `foreignRemain` · `foreignRoom` · `PRIOR_PRICE` · `IssuerName` · `CoveredWarrantType` · `ExerciseRatio` · `ListedShare` · `FundType` · `TotalListingQtty` |
+
+#### 🔴 Bẫy nghiêm trọng nhất — `openInterest` của BVSC trễ MỘT PHIÊN
+
+Cùng ngày 14/08/2026, BVSC báo OI của `41I1G8000` = **33.220**, FiinTrade báo `VN30F1M` = **30.427** — lệch 9,2%. Đối chiếu chuỗi OI nhiều phiên của FiinTrade thì ra: **33.220 chính là OI của phiên 13/08**.
+
+Bản ghi BVSC ngày 14/08 chứa `closePrice` 1.878,8 ✅ *(14/08)* · `totalTrading` 276.881 ✅ *(14/08)* · `reference` 1.901,1 ✅ *(đóng cửa 13/08, đúng định nghĩa)* · nhưng `openInterest` **33.220 = OI của 13/08**.
+
+**Kiểm chứng trên cả 4 hợp đồng VN30 — khớp 4/4** *(đo 2026-08-15)*:
+
+| Chuỗi | Hợp đồng | BVSC báo | Fiin 14/08 | Fiin 13/08 | Kết luận |
+|---|---|---:|---:|---:|---|
+| VN30F1M | `41I1G8000` | 33.220 | 30.427 | **33.220** | trễ 1 phiên |
+| VN30F2M | `41I1G9000` | 3.343 | 3.972 | **3.343** | trễ 1 phiên |
+| VN30F1Q | `41I1GC000` | 836 | 843 | **836** | trễ 1 phiên |
+| VN30F2Q | `41I1H3000` | 219 | 223 | **219** | trễ 1 phiên |
+
+Không phải hai định nghĩa OI khác nhau, cũng không phải sai số — **BVSC trộn hai phiên trong cùng một bản ghi**. Sai lệch bằng 0 khi so với phiên trước, đúng 4/4.
+
+**Hệ quả vận hành:**
+- OI lấy từ BVSC phải **dịch nhãn ngày lùi 1 phiên**. Đây là loại lỗi **không có gì báo** — số vẫn hợp lý, chỉ gán sai ngày.
+- Giải thích luôn vì sao `openInterestChange` **luôn rỗng**: nguồn không tự tính được biến động khi chính nó chưa có OI phiên hiện tại.
+- **Nguồn chuẩn cho OI là FiinTrade `getPriceData`** — xem [`09-fiin-market-price.md`](09-fiin-market-price.md). BVSC chỉ dùng OI khi cần realtime trong phiên, và phải hiểu đó là OI phiên trước.
+
+⚠️ **Phạm vi phép kiểm:** 2 phiên liền kề × 4 hợp đồng, đo lúc thị trường đã đóng. **Chuỗi dài chưa kiểm. OI trong phiên chưa kiểm** — trong phiên hành vi có thể khác.
+
+#### 🔴 Bốn bẫy kiểu dữ liệu *(xác nhận trên dữ liệu thật 2026-08-15)*
+
+1. **`bidPrice1` / `offerPrice1` là CHUỖI, `bidPrice2/3` · `offerPrice2/3` là SỐ.** `"bidPrice1": "1878.0"` vs `"bidPrice2": 1877.3` — cùng thang giá, hai kiểu. Parser cứng kiểu **vỡ đúng ở mức giá tốt nhất**.
+2. **`openInterest` là chuỗi** (`"33220"`), không phải số.
+3. **`ExercisePrice` là chuỗi `"0.0"`** với cả 14 hợp đồng — có giá trị nhưng vô nghĩa, **đừng đọc thành giá thực hiện**.
+4. **`totalTradingValue` ĐÃ nhân hệ số hợp đồng.** `276.881 × 1.892,9 × 100.000 = 5,24×10¹³` khớp đúng `52.411.872.640.000`. Tức **hệ số nhân VN30F = 100.000 VND/điểm** đã nằm sẵn trong giá trị — **không nhân lại lần nữa**.
+
+#### Lịch phiên và các đường phụ
+
+⚠️ **Phiên phái sinh mở lúc 08:45**, sớm hơn cổ phiếu 15 phút — `TVC /symbols` khai `session: "0845-1500"` *(đo 2026-08-15)*. **Lịch ETL phải tính riêng cho phái sinh.**
+
+| Đường | Dùng được với phái sinh | Ghi chú |
+|---|---|---|
+| [`/datafeed/translogsnaps/{mã HĐ}`](#gettransactionlogsnapshot) | ✅ | 47.723 byte cho `41I1G8000` · ~105 ms · `nextIndex: 100` *(đo 2026-08-15)* |
+| [`TVC /symbols` + `/history`](02-bvsc-tvcharts.md) | ✅ nhưng **nông** | Trọn đời hợp đồng, trần ~239 nến; hợp đồng đã đáo hạn vẫn tra được |
+| [FiinTrade `getPriceData`](09-fiin-market-price.md) | ✅ và **sâu** | `VN30F1M`/`2M`/`1Q`/`2Q` → **2.233 phiên từ 31/08/2017**, 99 trường |
+| Realtime BVSC *(socket)* | **chưa kiểm** | Đo lúc thị trường đóng nên không kiểm được — phải đo trong phiên, khung 08:45–15:00 |
+| `/priceservice/derivative/*` | ❌ `404` | Xem [Endpoint đã loại khỏi phạm vi](#endpoint-đã-loại-khỏi-phạm-vi) |
+
+---
+
+### ETF và chứng chỉ quỹ — 31 mã
+
+**31 mã `StockType=3`** *(đo 2026-08-15)*. Ngoài giá, endpoint này là nơi duy nhất của BVSC có **số chứng chỉ lưu hành** và **room ngoại** cho quỹ.
+
+| Trường | Kiểu | Mô tả |
+|---|---|---|
+| `FundType` | string | `E` = ETF · `M` = loại khác. ⚠️ Nghĩa chính xác của `M` **chưa kiểm** — mã `FUCVREIT` là quỹ bất động sản |
+| `ListedShare` | string | Số chứng chỉ quỹ đã niêm yết |
+| `TotalListingQtty` | string | Tổng số chứng chỉ đang lưu hành |
+| `foreignRemain` / `foreignRoom` | integer | Room ngoại còn lại / tổng room |
+
+🔴 **BVSC KHÔNG có NAV.** Không endpoint BVSC nào trả giá trị tài sản ròng của quỹ. Muốn **chênh lệch giá–NAV** *(tín hiệu dòng tiền vào/ra chứng chỉ quỹ)* phải dùng `iNav` và `iIndex` của FiinTrade `getPriceData` — xem [`09-fiin-market-price.md`](09-fiin-market-price.md). Độ phủ `iNav` **chỉ là tập con của 31 mã**, ghi rõ ở đó.
+
+⚠️ **`VFMVF1` có trong `/quotes` nhưng không có trong `/datafeed/instruments`** *(đo 2026-08-15)* — danh sách 31 mã của hai endpoint **không trùng nhau hoàn toàn**.
+
+⚠️ **NAV quỹ mở** *(VESAF, DCDS, VCBF, SSISCA…)*: đã kiểm 2026-08-15, **không nguồn nào trong các nguồn dự án đang dùng có** — ngoài phạm vi, không phải thiếu sót.
+
+---
+
 ### Độ phủ & hiệu năng
-51/51 mã mẫu · ~1,8 KB/mã · ~140 ms.
+
+| Cách gọi | Bản ghi | Kích thước | Độ trễ |
+|---|---:|---|---|
+| `?symbols={mã}` | 51/51 mã mẫu | ~1,8 KB/mã | ~140 ms |
+| Không tham số *(toàn bộ)* | **2.001** — HOSE 768 · UPCOM 823 · HNX 396 · **phái sinh 14** | 3,29 MB *(3.447.763 byte)* | ~309 ms trình duyệt · ~509 ms server-side |
+
+*Số hàng thứ hai đo 2026-08-15, **1 lần chạy mỗi con số** — là một điểm dữ liệu, không phải phân phối. Độ ổn định **chưa kiểm**.*
 
 ---
 
@@ -413,13 +528,13 @@ GET BVSC/userdata/time
 
 Các đường dẫn sau tồn tại trong mã nguồn ứng dụng BVSC nhưng **không dùng được** trên host public:
 
-| Đường dẫn | Kết quả |
-|---|---|
-| `/datafeed/indexs/getTime` | `200` nhưng luôn rỗng: `{"nextIndex":-1,"marketInfor":[]}` — kể cả trong phiên |
-| `/datafeed/prevTradingDate` | `404` |
-| `/datafeed/alltranslogs` | `404` |
-| `/datafeed/m-instruments` | `500` |
-| `/priceservice/derivative/snapshot` · `/transactions` | `404` |
-| `/priceservice/ptorder/history` · `/adorder/history` | `404` |
-| `/priceservice/ceilingfloorcount/snapshot` | `404` |
-| `/datafeed/oddlotInstruments` · `/oltranslogsnaps` | Hoạt động nhưng lô lẻ ngoài phạm vi |
+| Đường dẫn | Kết quả | Ghi chú |
+|---|---|---|
+| `/datafeed/indexs/getTime` | `200` nhưng luôn rỗng: `{"nextIndex":-1,"marketInfor":[]}` — kể cả trong phiên | — |
+| `/datafeed/prevTradingDate` | `404` | — |
+| `/datafeed/alltranslogs` | `404` | — |
+| `/datafeed/m-instruments` | `500` | — |
+| `/priceservice/derivative/snapshot` · `/transactions` | `404` | 🔴 **404 đúng nhưng vô nghĩa — đừng đọc thành "BVSC không có phái sinh".** Đường dẫn thật trong mã nguồn app *(`ProtradeVersion 1.19.6`)* là `/priceservice/derivative/snapshot/q=` và `/priceservice/derivative/transactions/q=`, **cũng 404** *(kiểm 2026-08-15)*. Cả nhóm `/priceservice/` đã chết; dữ liệu phái sinh đi đường [`/datafeed/instruments`](#phái-sinh--14-hợp-đồng) |
+| `/priceservice/ptorder/history` · `/adorder/history` | `404` | Cùng nhóm `/priceservice/` đã chết |
+| `/priceservice/ceilingfloorcount/snapshot` | `404` | Cùng nhóm `/priceservice/` đã chết |
+| `/datafeed/oddlotInstruments` · `/oltranslogsnaps` | Hoạt động nhưng lô lẻ ngoài phạm vi | Loại **có chủ đích**, không phải không có dữ liệu |
