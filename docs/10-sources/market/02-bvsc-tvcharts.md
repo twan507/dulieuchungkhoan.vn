@@ -7,6 +7,8 @@ Header: không bắt buộc.
 
 4 endpoint. Định danh bằng **ticker**, không phải `organCode`.
 
+Datafeed này phục vụ **cả cổ phiếu, chỉ số và phái sinh** — xem mục [Phái sinh trên UDF](#phái-sinh-trên-udf).
+
 ---
 
 ## `getChartConfig`
@@ -114,6 +116,8 @@ GET TVC/symbols?symbol={ticker}
 
 ### Ghi chú
 `description` trả tên tiếng Anh. Muốn tên tiếng Việt phải lấy từ `getAllQuotes.FullName` hoặc `Master/GetListOrganization.organName`.
+
+⚠️ `session` **không cố định `0900-1500`** — mã phái sinh trả `0845-1500`. Đọc `session` từ chính response, đừng cứng hoá giờ phiên. Xem [Phái sinh trên UDF](#phái-sinh-trên-udf).
 
 ### Độ phủ & hiệu năng
 51/51 mã mẫu · ~371 byte · ~115 ms.
@@ -237,6 +241,74 @@ Khác với `BVSC/userdata/time` trả JSON và tính bằng **mili giây**.
 
 ### Hiệu năng
 12 byte.
+
+---
+
+## Phái sinh trên UDF
+
+**Tóm tắt:** Cùng bốn endpoint trên **nhận cả mã hợp đồng phái sinh**, không cần tham số hay header riêng *(đo 2026-08-15)*.
+
+Danh mục **14 hợp đồng** đang niêm yết — mã, cơ sở, ngày đáo hạn, OI, khối lượng — nằm ở endpoint `/datafeed/instruments` của [`01-bvsc-rest.md`](01-bvsc-rest.md). Không chép lại ở đây để tránh hai bản số liệu lệch nhau.
+
+### `getSymbolInfo` với mã phái sinh
+
+```
+GET TVC/symbols?symbol=41I1G8000
+```
+
+| Trường | Giá trị *(đo 2026-08-15)* | Ghi chú |
+|---|---|---|
+| `session` | **`0845-1500`** | 🔴 **Phiên phái sinh mở lúc 08:45**, sớm hơn cổ phiếu 15 phút. Lịch ETL trong phiên phải tính riêng |
+| `has_intraday` | `true` | Có nến 1 phút |
+| `pricescale` | `10` | Giống cổ phiếu |
+| `timezone` | `Asia/Bangkok` | Cùng UTC+7, giống cổ phiếu |
+| `exchange-traded` | `HNX` | Phái sinh niêm yết tại HNX |
+
+### 🔴 Ba giới hạn của UDF với phái sinh
+
+Cả ba đều **không báo lỗi** — đây là loại hỏng im lặng.
+
+| Giới hạn | Biểu hiện *(đo 2026-08-15)* | Hệ quả |
+|---|---|---|
+| `/search` chết dù `/config` khai có | `/config` trả `supports_search: true`, nhưng `/search` trả **`404`** | Không tra cứu được mã hợp đồng qua UDF. Phải tự dựng danh mục từ [`/datafeed/instruments`](01-bvsc-rest.md) và lọc `FloorCode == "03"` |
+| Chỉ **2 khung thời gian** | `/history` chạy với `resolution=1` và `D`. Với `5`, `15`, `60`, `W` trả **`HTTP 200` kèm body rỗng 0 byte** | Muốn nến 5/15/30/60 phút phải **tự gộp từ nến 1 phút** |
+| Body rỗng ≠ JSON | 0 byte không phải `{"s":"no_data"}` | ⚠️ **Parser bắt buộc kiểm độ dài body trước khi gọi `JSON.parse`.** Bỏ bước này thì lỗi hiện ra dưới dạng ngoại lệ parse, không phải lỗi dữ liệu — rất khó truy |
+
+*(Đây là cùng một bẫy đã ghi ở [`getHistoryBars`](#gethistorybars) cho cổ phiếu, không phải hành vi riêng của phái sinh.)*
+
+### Độ sâu lịch sử — nông, nhưng tra được hợp đồng đã đáo hạn
+
+`resolution=D`, đo 2026-08-15:
+
+| Mã | Nến ngày | Khoảng |
+|---|---:|---|
+| `41I1G8000` *(đang giao dịch)* | 41 | 19/06/2026 → 14/08/2026 — **trọn đời hợp đồng** |
+| `41I1G7000` *(đã đáo hạn)* | 40 | 22/05/2026 → 16/07/2026 |
+| `41I1G6000` *(đã đáo hạn)* | 165 | 17/10/2025 → 18/06/2026 |
+| `41I1F8000` *(hợp đồng 08/2025)* | 0 | `no_data` |
+
+✅ **Hợp đồng đã đáo hạn vẫn tra được** — cho phép dựng lại chuỗi quá khứ theo từng hợp đồng.
+⚠️ Trần **~239 nến** và việc `from` bị bỏ qua *(mục "Độ sâu bị chặn cứng ở ~239 nến" ở trên)* **vẫn áp dụng nguyên** cho phái sinh. Hợp đồng đời ngắn nên chưa chạm trần, nhưng chuỗi nối liên tục thì chạm.
+⚠️ `resolution=1`: xin cửa sổ 7 ngày chỉ trả **90 nến của một phiên** (14/08/2026, 10:11 → 13:10, trừ nghỉ trưa) — đúng luật "chỉ phiên gần nhất" của endpoint này.
+
+### Chuỗi nối liên tục — chỗ duy nhất có VN100
+
+Ngoài mã hợp đồng, UDF nhận cả **mã chuỗi nối theo vị thế** *(đo 2026-08-15, `resolution=D`)*:
+
+| Mã chuỗi | Nến ngày | Từ | Khớp hợp đồng |
+|---|---:|---|---|
+| `VN30F1M` | 238 | 03/09/2025 | `41I1G8000` — giá đóng cửa trùng khít |
+| `VN30F2M` | 238 | 03/09/2025 | `41I1G9000` — trùng khít |
+| `VN30F1Q` | 238 | 03/09/2025 | `41I1GC000` — trùng khít |
+| `VN30F2Q` | 238 | 03/09/2025 | `41I1H3000` — trùng khít |
+| `VN100F1M` | 211 | 10/10/2025 | VN100 tháng gần |
+| `GB05F1M` · `VN30F` | 0 | — | `no_data` — không tồn tại |
+
+Bốn mã `VN30F*` đối chiếu giá đóng cửa **trùng khít 4/4** với hợp đồng tương ứng → xác nhận đây là chuỗi nối tự động theo vị thế, không phải series độc lập.
+
+🔵 **`VN100F1M` chỉ có ở đây.** [`getPriceData`](09-fiin-market-price.md#phái-sinh--getpricedata-nhận-mã-vn30f) của FiinTrade từ chối mã này (`Code not valid`), nên UDF là đường duy nhất lấy được chuỗi VN100 — dù chỉ 211 nến.
+
+➜ Muốn lịch sử phái sinh sâu (**2.233 phiên từ 31/08/2017**) thì dùng [`getPriceData`](09-fiin-market-price.md#phái-sinh--getpricedata-nhận-mã-vn30f), không dùng UDF.
 
 ---
 

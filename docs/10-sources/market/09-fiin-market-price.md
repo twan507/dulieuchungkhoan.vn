@@ -144,7 +144,13 @@ Nhóm theo chức năng:
 | `haltResumeFlag` | flag | Ngừng / mở lại |
 
 #### Chuyên biệt theo loại chứng khoán
-`iNav` · `iIndex` *(ETF)* · `openInterest` *(phái sinh)*
+
+| Trường | Có ở | Chi tiết |
+|---|---|---|
+| `openInterest` | Phái sinh | [Phái sinh — `getPriceData` nhận mã `VN30F*`](#phái-sinh--getpricedata-nhận-mã-vn30f) |
+| `iNav` · `iIndex` | ETF / chứng chỉ quỹ niêm yết | [ETF — `iNav` và `iIndex`](#etf--inav-và-iindex) |
+
+⚠️ Hai nhóm này **chỉ có giá trị với đúng loại chứng khoán tương ứng** — với cổ phiếu thường chúng luôn rỗng.
 
 ### Ví dụ dữ liệu thật
 
@@ -200,6 +206,97 @@ Chuỗi giá là **giá đã điều chỉnh hồi tố** cho cổ tức và chi
 Phiên gần nhất thì trùng khớp tuyệt đối (07/08/2026: cả hai `open 37900 · close 39050`), vì tại đó điều chỉnh bằng thô.
 
 ⚠️ **Không trộn hai nguồn trong cùng một chuỗi.**
+
+### Phái sinh — `getPriceData` nhận mã `VN30F*`
+
+**Tóm tắt:** Endpoint này là **nguồn lịch sử phái sinh sâu nhất của toàn hệ thống** — ~9 năm, sâu hơn UDF của BVSC khoảng 9 lần.
+
+```
+GET FIIN_TECH/PriceData/GetPriceData?Code=VN30F1M&Frequently=Daily&Page=1&PageSize=60
+```
+
+⚠️ Ở đây `Code` nhận **mã chuỗi nối theo vị thế** (`VN30F1M` = tháng gần nhất), **không phải mã hợp đồng** (`41I1G8000`). Không cần tra bảng `organCode`.
+
+| `Code` | `totalCount` *(đo 2026-08-15)* | Khoảng | Trường |
+|---|---:|---|---:|
+| `VN30F1M` | **2.233** | 31/08/2017 → 14/08/2026 | 99 |
+| `VN30F2M` | 2.233 | *(như trên)* | 99 |
+| `VN30F1Q` | 2.233 | *(như trên)* | 99 |
+| `VN30F2Q` | 2.233 | *(như trên)* | 99 |
+| `VN100F1M` · `GB05F1M` · `GB10F1M` | — | `status: "Failed"` · `"Code not valid"` | — |
+
+2.233 phiên = **38 trang** với `PageSize=60`. Mốc bắt đầu 31/08/2017 đúng ngày HNX khai trương hợp đồng tương lai VN30.
+
+🔵 **VN100 và TPCP thì endpoint này từ chối.** Muốn chuỗi VN100 phải dùng [`VN100F1M` trên UDF của BVSC](02-bvsc-tvcharts.md#chuỗi-nối-liên-tục--chỗ-duy-nhất-có-vn100) — chỉ 211 nến. Danh mục **14 hợp đồng** đang niêm yết nằm ở [`01-bvsc-rest.md`](01-bvsc-rest.md).
+
+Dữ liệu phái sinh ở đây **giàu hơn BVSC**: có `openInterest`, `totalBuyTrade`/`totalSellTrade` *(số lệnh)*, tách `foreign*Matched` khỏi tổng, `totalDealVolume` *(thoả thuận)* riêng.
+
+#### 🔴 Đây là nguồn CHUẨN cho `openInterest`
+
+`openInterest` của BVSC **trễ đúng một phiên** — kiểm chứng 4/4 hợp đồng VN30, sai lệch bằng 0 khi so với phiên trước *(đo 2026-08-15 trên hai phiên liền kề 13–14/08/2026)*. Chi tiết bằng chứng ở [`01-bvsc-rest.md`](01-bvsc-rest.md).
+
+**Quy tắc:** OI lịch sử và OI cuối phiên lấy từ `getPriceData`. OI của BVSC chỉ dùng khi cần realtime trong phiên, và phải hiểu đó là **OI phiên trước**.
+
+Đây là loại lỗi không có gì báo — số vẫn hợp lý, chỉ gán sai ngày. OI là chỉ báo cốt lõi của phân tích phái sinh nên lệch một phiên làm hỏng kết luận, không phải sai số nhỏ.
+
+*(Phạm vi kiểm: 2 phiên liền kề × 4 hợp đồng, đo lúc thị trường đã đóng. **Chưa kiểm OI trong phiên** — hành vi có thể khác.)*
+
+#### ⚠️ `percentValueChange` mất độ chính xác
+
+Cùng phiên 14/08/2026, cùng mã: FiinTrade trả `percentValueChange = -0.01`, BVSC trả `changePercent = -1.1730051023091894`.
+
+FiinTrade trả **phân số làm tròn 2 chữ số** — `-0.01` cho mức giảm thật **−1,17%**. Với biên độ ngày thường của phái sinh, phần lớn phiên sẽ bị làm tròn về `0.00`, `-0.01` hoặc `0.01`.
+
+**Đừng dùng trường này.** Tự tính từ `valueChange / referenceValue`, hoặc lấy `changePercent` của BVSC.
+
+---
+
+### ETF — `iNav` và `iIndex`
+
+**Tóm tắt:** Cùng endpoint, truyền mã ETF thì hai trường `iNav` *(NAV nội suy)* và `iIndex` *(mức chỉ số cơ sở)* có giá trị. Cho phép tính **chênh lệch giá thị trường so với NAV** — thước đo áp lực mua/bán chứng chỉ quỹ.
+
+```
+GET FIIN_TECH/PriceData/GetPriceData?Code=E1VFVN30&Frequently=Daily&PageSize=30
+```
+
+Danh mục **31 mã** quỹ niêm yết (`StockType=3`) cùng `FundType`, `ListedShare` và room ngoại lấy từ [`01-bvsc-rest.md`](01-bvsc-rest.md) — **BVSC không có NAV**, chỉ FiinTrade có.
+
+#### 🔴 Độ phủ chỉ 6/31 mã
+
+Đã thử **đủ 31 mã** *(đo 2026-08-15, dữ liệu phiên 14/08/2026)*. **25 mã trả `status: "Failed"` · `"Code not valid"`.** Sáu mã nhận được:
+
+| Mã | Số phiên | Chênh giá–NAV | KL khớp |
+|---|---:|---:|---:|
+| `E1VFVN30` | 2.963 | +0,38% | **429.417** |
+| `FUEVFVND` | 1.566 | +0,46% | **152.251** |
+| `FUEVN100` | 1.516 | +2,07% | 37.352 |
+| `FUESSV30` | 1.496 | +2,10% | 23.040 |
+| `FUEMAV30` | 1.417 | +0,84% | 3.763 |
+| `E1SSHN30` | 2.866 | +2,82% | 2.683 |
+
+Chênh trung bình **+1,45%**, **6/6 đều premium** — nhưng đây là **một phiên**, chưa đủ nói xu hướng.
+
+#### 🔴 Chỉ 2 mã dùng được làm tín hiệu
+
+Chỉ `E1VFVN30` *(429.417 chứng chỉ)* và `FUEVFVND` *(152.251)* vừa có `iNav` vừa có **thanh khoản thật**. Bốn mã còn lại khớp **2.683–37.352** chứng chỉ mỗi phiên.
+
+**Chênh lệch giá–NAV của quỹ thanh khoản mỏng là nhiễu, không phải tín hiệu.** Một lệnh vài nghìn chứng chỉ đủ đẩy giá lệch NAV vài phần trăm mà không phản ánh dòng tiền nào.
+
+➜ Kế hoạch dùng ETF làm chỉ báo dòng tiền phải thu về **2 quỹ**, không phải 6 và càng không phải 31.
+
+#### ⚠️ Bẫy `PageSize` cắn lại đúng ở đây
+
+Đợt đo độ phủ 2026-08-15 gọi `PageSize=1` và nhận **31/31 lỗi** — suýt kết luận "FiinTrade không có `iNav` cho quỹ nào". Nguyên nhân là whitelist cứng `30`/`60` đã ghi ở mục "Hai bẫy tham số" ngay đầu endpoint này.
+
+**Luật rút ra:** khi kết quả là *"toàn bộ đều lỗi"*, nghi tham số của mình trước, đừng nghi nguồn.
+
+#### Chưa kiểm
+
+- `iNav` có bị **vá hồi tố** không — quyết định UPSERT hay INSERT-only cho bảng quỹ
+- Lịch cập nhật `iNav` trong ngày
+- Ý nghĩa chính xác của `FundType = M` ở BVSC *(mã `FUCVREIT` là quỹ bất động sản)*
+
+---
 
 ### Độ phủ & hiệu năng
 51/51 mã mẫu · 60 phiên/trang · ~201 KB · ~3,5 s mỗi trang.
