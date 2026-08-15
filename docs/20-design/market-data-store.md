@@ -545,7 +545,7 @@ Chiến lược là **thích ứng liên tục với nguồn hiện tại**, kh�
 2. **FiinTrade luôn trả `HTTP 200` kể cả khi lỗi** — phải đọc `status` và `errors` trong body
 3. **`status` có hai kiểu dữ liệu** — `0` (số) ở nhóm Snapshot, `"Success"` (chuỗi) ở nhóm Calendar
 
-Chín bẫy đầy đủ: [00-conventions.md](../10-sources/market/00-conventions.md).
+Mười ba bẫy đầy đủ: [00-conventions.md](../10-sources/market/00-conventions.md).
 
 ---
 

@@ -10,8 +10,10 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
 
 ```
 ┌─ L0 · NGUỒN NGOÀI ─────────────────────────────────────────────────┐
-│  BVSC + FiinTrade        WiChart (WiGroup)      8 báo điện tử      │
-│  44 REST + 5 topic RT    87 REST                47 RSS + 6 crawler │
+│  BVSC + FiinTrade        WiChart · SBV          8 báo điện tử      │
+│  44 REST + 5 topic RT    87 REST + 1 crawl      47 RSS + 6 crawler │
+│  phái sinh · ETF/quỹ     FRED · ECB · Yahoo                        │
+│                          LBMA · Binance                            │
 └───────┬────────────────────────┬─────────────────────┬─────────────┘
         │                        │                     │
 ┌───────▼────────────────────────▼─────────────────────▼─────────────┐
@@ -40,6 +42,20 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
         │
    Chatbot · SSE realtime · REST · giao diện web
 ```
+
+**L0 sau khảo sát 2026-08-15 — chín nguồn, không còn ba:**
+
+| Khối | Nguồn | Đi vào nhánh nào của L1 | Tài liệu |
+|---|---|---|---|
+| Thị trường Việt Nam | **BVSC + FiinTrade** — cổ phiếu, chỉ số, **phái sinh 14 hợp đồng**, **ETF/quỹ 31 mã**, BCTC, realtime | ETL + Ingester | [`market/`](../10-sources/market/) |
+| Vĩ mô Việt Nam | **WiChart** 87 key · **SBV** — OMO, crawl HTML *(mới 2026-08-15)* | ETL | [`macro/`](../10-sources/macro/) |
+| Bối cảnh quốc tế *(khối mới 2026-08-15)* | **FRED** 15 series vĩ mô Mỹ · **Frankfurter (ECB)** 6 cặp tiền + DXY dựng lại · **Yahoo** 36 chỉ số/21 nước · **LBMA** vàng-bạc từ 1968 · **Binance** PAXG + 10 đồng crypto | ETL | [`global/`](../10-sources/global/) |
+| Tin tức | **8 báo điện tử** — 47 RSS + 6 crawler | Gom tin · Lưới AI | [`news/`](../10-sources/news/) |
+
+🔴 **Hai nguồn có ràng buộc thời gian mà thiết kế phải chịu, không thể vá về sau:**
+
+1. **Nến 1 phút** — không tồn tại ở bất kỳ nguồn nào; không chạy Ingester ngày nào là mất ngày đó vĩnh viễn.
+2. **OMO của SBV** — nguồn **chỉ hiển thị đúng phiên mới nhất, không có kho lưu** *(đo 2026-08-15)*. Cùng loại rủi ro với nến 1 phút, và cũng không backfill được. Chi tiết: [`macro/sbv-omo.md`](../10-sources/macro/sbv-omo.md).
 
 **Đọc theo chiều dọc:** L0–L2 là *dữ kiện*, L3 là *cách hỏi dữ kiện*, L4 là *cách nghĩ về câu trả lời*. Một câu hỏi của người dùng đi ngược từ dưới lên: skill quyết định cần gì, function calling lấy dữ kiện, skill định hình câu trả lời.
 
@@ -133,6 +149,10 @@ Cách vá duy nhất: dán đoạn giới hạn phạm vi vào **system prompt c
 |---|---|---|
 | BVSC + FiinTrade | ✅ Có | |
 | WiChart (WiGroup) | ✅ Có | **Giấy phép WiFeed đã chốt — xác nhận 2026-08-15.** Trước đó chỉ truy cập được qua endpoint nội bộ phục vụ trang đối tác |
+| SBV | ✅ Có | Cơ quan nhà nước công bố công khai, không xác thực, không giới hạn gói *(đo 2026-08-15)* |
+| FRED | ✅ Có | **Chủ dự án đã làm việc với FRED và được đồng ý (2026-08-15)** |
+| Frankfurter (ECB) | ✅ Có | API mở, mã nguồn mở, **tự dựng lại được bằng Docker**. Điều khoản quan sát 2026-08-15: không hạn mức tháng/ngày |
+| Yahoo · LBMA · Binance | ⚠️ **Chưa quan sát trực tiếp** | Điều khoản của cả ba **chưa đọc** tính tới 2026-08-15. Riêng Yahoo là **API nội bộ không tài liệu, không cam kết, không phiên bản** — xem [`global/yahoo.md`](../10-sources/global/yahoo.md) |
 | 8 báo điện tử | ⚠️ Có điều kiện | Xem mục bản quyền ở [pipeline tin §9.7](../20-design/news-pipeline.md) |
 
 Hệ quả thiết kế vẫn giữ nguyên: **ETL WiChart phải tách được khỏi hệ thống mà không kéo đổ thứ gì khác.** Giấy phép đã chốt nên đây không còn là hàng rào pháp lý, nhưng WiChart vẫn là nhánh duy nhất sống nhờ một hợp đồng riêng với bên thứ ba — nếu quan hệ đó đổi, mất 87 endpoint vĩ mô/hàng hoá mà phần cổ phiếu vẫn chạy. Nguyên tắc *ETL độc lập theo miền* ở [kho dữ liệu §9.4](../20-design/market-data-store.md) đã lo việc này — giữ nó như lớp phòng thủ thứ hai, đừng gộp cho gọn.

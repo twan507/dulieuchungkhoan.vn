@@ -1,6 +1,6 @@
 # Lộ trình hợp nhất
 
-**Ngày:** 2026-08-14 · Gộp danh sách "việc tiếp theo" của ba khối tài liệu, xếp lại theo **phụ thuộc thật** thay vì theo thứ tự từng khối được viết ra.
+**Ngày:** 2026-08-14 · **Cập nhật 2026-08-15** theo đợt khảo sát nguồn *(9 nguồn, ~400 lời gọi thật)* · Gộp danh sách "việc tiếp theo" của ba khối tài liệu, xếp lại theo **phụ thuộc thật** thay vì theo thứ tự từng khối được viết ra.
 
 Ba khối vốn có ba danh sách việc riêng, mỗi danh sách tự cho mình là gốc. Xếp chung mới lộ ra: **một số việc chặn nhiều thứ hơn vẻ ngoài của nó, và một số việc tưởng chặn thì thực ra đã có đáp án.**
 
@@ -10,8 +10,10 @@ Ba khối vốn có ba danh sách việc riêng, mỗi danh sách tự cho mình
 
 | Khối | Trạng thái | Bằng chứng |
 |---|---|---|
-| Tài liệu nguồn thị trường | ✅ Hoàn chỉnh, kiểm chứng bằng lời gọi thật | 131 endpoint, mẫu 51 mã |
+| Tài liệu nguồn thị trường | ✅ Hoàn chỉnh, kiểm chứng bằng lời gọi thật · **phái sinh và ETF/quỹ bổ sung 2026-08-15** | 131 endpoint, mẫu 51 mã · 14 hợp đồng phái sinh · 31 mã ETF |
 | Tài liệu nguồn vĩ mô WiChart | ✅ Hoàn chỉnh + bộ tự kiểm chạy được | 87 key, 509 khẳng định |
+| **Tài liệu OMO (SBV)** | ✅ **Mới 2026-08-15** — tải và parse thật 1 phiên | [`macro/sbv-omo.md`](../10-sources/macro/sbv-omo.md) |
+| **Tài liệu 5 nguồn quốc tế** | ✅ **Mới 2026-08-15** — FRED · Frankfurter · Yahoo · LBMA · Binance | [`10-sources/global/`](../10-sources/global/) |
 | Tài liệu nguồn tin | ✅ Đo thật trên 307 URL, 1.408 tiêu đề | ~570 tin/ngày chưa dedupe |
 | Thiết kế kho dữ liệu thị trường | ✅ Đã duyệt | chưa viết dòng code nào |
 | Thiết kế pipeline tin | ✅ Đã duyệt | chưa viết dòng code nào |
@@ -21,8 +23,10 @@ Ba khối vốn có ba danh sách việc riêng, mỗi danh sách tự cho mình
 | **Chọn nguồn chuẩn cho từng chỉ tiêu** | ✅ Đã chốt | [chọn trường cho ETL thị trường](../20-design/market-field-selection.md) |
 | **Giấy phép WiFeed với WiGroup** | ✅ **Đã chốt 2026-08-15** — mở khoá 87 endpoint vĩ mô/hàng hoá | chủ dự án xác nhận |
 | **Rate limit FiinGroup** | ✅ **Đã kiểm bằng đúng tải ETL kế hoạch 2026-08-15** — 64 lời gọi tuần tự, không tín hiệu chặn | [quy ước chung §10](../10-sources/market/00-conventions.md) |
+| **Độ rộng nguồn** | ✅ **Khép 2026-08-15** — 9 nguồn, ~400 lời gọi thật. Danh sách *"Ngoài phạm vi"* đã phân rã hết, **không còn mục nào chưa có câu trả lời** | [`10-sources/README.md` §2](../10-sources/README.md) |
 | **Repo vào git** | ✅ `git init` + commit đầu 2026-08-14 | toàn bộ docs + hai skill |
 | **Toàn bộ phần cài đặt** | ❌ Chưa bắt đầu | |
+| **Realtime phái sinh** | 🔴 **Chưa đo được** — đo ngày thứ Bảy, thị trường đóng. Phải đo **trong phiên** | [§5](#5-việc-còn-thật-sự-để-ngỏ) |
 
 ## 1. Việc chặn nhiều thứ nhất — làm trước
 
@@ -95,7 +99,43 @@ Bốn mục đang nằm trong danh sách **"Còn để ngỏ"** của pipeline t
 | ~~**Câu treo cuối của dự án skill**~~ | ✅ **Đã quyết 2026-08-14: giữ nguyên tên "ngân hàng"** trong luận điểm *ngành báo hiệu* — là cơ chế, không phải danh sách ngành cứng. Bảng rà `CAN-SUA.md` hết việc và đã xoá | |
 | **Đoạn giới hạn phạm vi vào system prompt** | Skill không tự gác cổng được — xem [§4](architecture.md) | Làm khi dựng backend |
 
-## 6. Ba bẫy sẽ cắn ngay ngày đầu cài đặt
+### 5.1 🔴 Realtime phái sinh — chưa đo được, phải đo TRONG PHIÊN
+
+**Việc gấp nhất còn lại của khối nguồn.** Đợt khảo sát chạy ngày **thứ Bảy 2026-08-15**, thị trường đóng (`tradingSessionID: "CLOSED"`), nên **không phép kiểm nào ngoài giờ có giá trị**: server BVSC trả ack `statusCode: 200` cho **mọi** chuỗi topic rồi im lặng — đăng ký thành công không chứng minh topic hợp lệ *(đã ghi ở [`11-bvsc-realtime.md` §1.4](../10-sources/market/11-bvsc-realtime.md))*.
+
+**Đã biết chắc, rút từ mã nguồn bảng giá BVSC** *(đọc 2026-08-15)*:
+
+| Mục | Giá trị |
+|---|---|
+| Máy chủ | `https://wss.bvsc.com.vn`, đường dẫn `/market/socket.io`, thư viện **sails.io**, `transports: ["websocket"]` |
+| Bảng hằng số topic | 20 topic dùng chung toàn bảng giá — `i` · `i_ol` · `o10` · `o_ol10` · `o` · `o_ol` · `t` · `t_ol` · `tm` · `e` · `e_ol` · `im` · `e_im` · `om` · `idx` · `pth` · `ptm` · `p` · `u` · `d` |
+| Hạ tầng | Bảng phái sinh render từ `psStocks` và **ăn cùng module socket** với bảng cổ phiếu ⇒ **dùng chung hạ tầng realtime, không phải kênh riêng** |
+
+**Chưa biết:** topic nào mang tick phái sinh · định dạng frame · tần suất · có `openInterest` realtime không.
+
+**Quy trình đo — khung 08:45–15:00** *(⚠️ phái sinh mở sớm hơn cổ phiếu 15 phút; sớm nhất là phiên kế tiếp sau 2026-08-15)*:
+
+1. Nối `wss.bvsc.com.vn/market/socket.io`.
+2. Đăng ký **toàn bộ 20 topic** với 2–3 mã phái sinh — `41I1G8000` là **mã duy nhất có thanh khoản thật** *(đo 2026-08-15)*.
+3. Ghi frame trong ~5 phút, xem **topic nào thật sự đẩy dữ liệu** — đây là phép kiểm duy nhất có giá trị.
+4. Đối chiếu giá trong frame với `/datafeed/instruments` gọi cùng lúc.
+
+**Ảnh hưởng thiết kế:** cho tới khi đo xong, lược đồ và Ingester **không được giả định** là có tick phái sinh realtime.
+
+### 5.2 Việc treo khác phát sinh từ khảo sát 2026-08-15
+
+| Việc | Vì sao ảnh hưởng thiết kế | Chốt bằng cách nào |
+|---|---|---|
+| 🔴 **Lược đồ giá dầu phải có cột phân biệt loại giá** | Quyết định chủ dự án 2026-08-15: **lưu cả hai** — giao ngay *(FRED `DCOILWTICO`, trễ 4 ngày)* và tương lai *(WiChart `dau_wti`, T−1)*. Chênh cơ sở đo được **~+2,0% ổn định**. Trộn chung một cột "giá dầu" thì lịch sử có **bậc nhảy 2% tại điểm đổi nguồn** | Thêm cột loại giá vào lược đồ trước khi nạp dòng đầu tiên |
+| 🔴 **Crawl OMO phải chạy từ ngày đầu** | SBV **chỉ hiển thị phiên mới nhất, không có kho lưu** — mỗi ngày không crawl là mất vĩnh viễn. Và cột **đáo hạn/bơm ròng phải tự dựng** từ kỳ hạn, cần **~140 ngày tích luỹ** mới có con số ròng đầy đủ | Xếp cùng nhóm gấp với [4] ở §2 — [`macro/sbv-omo.md`](../10-sources/macro/sbv-omo.md) |
+| **Kho FRED phải UPSERT, không append-only** | FRED **vá hồi tố**: `PAYEMS` tháng 5/2026 có **3 giá trị** khác nhau. Append-only sẽ giữ số đã bị thay thế | Làm mới cửa sổ 24 tháng mỗi lần chạy — [`global/fred.md` §4](../10-sources/global/fred.md) |
+| **Khoá EIA miễn phí** *(việc chủ dự án)* | Lấy `RWTC` thẳng từ nguồn gốc thay vì qua FRED, bớt một mắt xích | Đăng ký; EIA trả `403 API_KEY_MISSING` khi không có khoá |
+| **`.gitignore` chưa bao giờ được commit** *(việc chủ dự án)* | Đang che `.env` ở máy hiện tại, nhưng **bảo vệ đó không đi theo repo** | Commit file |
+| **Rà lại các cờ `lệch x%` khác trong `wichart.md`** | Cờ `dau_wti` sai vì chấm một điểm và so nhầm chuẩn. Cờ `vang_the_gioi` đã kiểm trên 712 ngày và **đúng** ⇒ **không được suy đoán đồng loạt cả bộ cờ sai** | So chuỗi, không chấm điểm; nhớ parse `Asia/Ho_Chi_Minh` |
+| **Đồng, thép, than, bạc** | Chưa tìm được nguồn ngày miễn phí có mốc chuẩn để đối chiếu | Chưa chặn việc gì |
+| **TPCP phái sinh "chưa từng giao dịch"** | Kết luận mới dựa trên **1 phiên** | Đo thêm vài phiên trước khi đưa vào lược đồ |
+
+## 6. Sáu bẫy sẽ cắn ngay ngày đầu cài đặt
 
 Ghi lại ở đây vì chúng nằm rải trong ba file khác nhau và đều đã gặp thật:
 
@@ -108,7 +148,7 @@ Ghi lại ở đây vì chúng nằm rải trong ba file khác nhau và đều �
 
 > Bẫy 3 và 4 là **cùng một loại lỗi trên hai nhà cung cấp khác nhau** — nhãn đơn vị do nguồn tự khai không khớp dữ liệu nguồn tự trả. Nếu thêm nguồn thứ tư, kiểm đơn vị bằng dải giá trị thật trước khi tin nhãn.
 
-Danh sách đầy đủ: [9 bẫy triển khai](../10-sources/market/00-conventions.md) · [6 bẫy WiChart](../10-sources/macro/wichart.md) · [7 cạm bẫy nguồn tin](../10-sources/news/README.md).
+Danh sách đầy đủ: [13 bẫy triển khai](../10-sources/market/00-conventions.md) · [6 bẫy WiChart](../10-sources/macro/wichart.md) · [7 cạm bẫy nguồn tin](../10-sources/news/README.md) · [3 bẫy cấu trúc Yahoo](../10-sources/global/yahoo.md) · [8 bẫy FRED](../10-sources/global/fred.md) · [5 bẫy tỷ giá](../10-sources/global/fx.md) · [4 bẫy Binance](../10-sources/global/crypto.md).
 
 **Điểm chung của cả ba nhóm bẫy:** mọi thứ nguồn tự khai về chính nó đều phải kiểm lại bằng dữ liệu.
 
