@@ -2,7 +2,7 @@
 
 **Loại tài liệu:** tra cứu (reference) · **Ngày đo: 2026-08-15 · mẫu: 4 bài / nguồn** (riêng CafeF thêm 1 trang CBTT) · **Trạng thái** đã kiểm chứng trên mẫu, chưa cài đặt
 
-Tài liệu này trả lời việc còn để ngỏ ở [thiết kế pipeline tin tức](../../20-design/news-pipeline.md) mục 6.5 tầng 2 và mục 12: *"luật bỏ boilerplate phải viết riêng cho từng nguồn — chưa khảo sát cấu trúc trang bài"*. Đặc tính feed, encoding và khối lượng nằm ở [danh mục nguồn tin](README.md).
+Tài liệu này trả lời việc **từng** để ngỏ ở [thiết kế pipeline tin tức](../../20-design/news-pipeline.md) mục 12 và mục 6.5 tầng 2 của [danh mục nguồn tin](README.md) — nguyên văn khi đó: *"luật bỏ boilerplate phải viết riêng cho từng nguồn — chưa khảo sát cấu trúc trang bài"*. Cả hai chỗ nay đã đánh dấu ✅ và trỏ ngược về tài liệu này. Đặc tính feed, encoding và khối lượng cũng nằm ở [danh mục nguồn tin](README.md).
 
 Mọi luật dưới đây **đã được chạy thật** trên chính các trang đã tải về; dòng *Đã kiểm* của từng nguồn ghi phần trăm ký tự mà luật loại khỏi container chính, đo trên từng bài.
 
@@ -52,11 +52,11 @@ HTML thô được giữ ngoài repo (thư mục tạm), **không commit**.
 
 ### 1.3 Ba tầng làm sạch, không phải hai
 
-[Thiết kế](../../20-design/news-pipeline.md) mục 6.5 vốn mô tả hai tầng (bỏ thẻ · bỏ khối phi nội dung). Đo thực tế cho thấy phải chèn thêm một tầng trước cả hai — mục 6.5 đã cập nhật theo:
+[Danh mục nguồn tin](README.md) mục 6.5 vốn mô tả hai tầng (bỏ thẻ · bỏ khối phi nội dung) — [thiết kế](../../20-design/news-pipeline.md) chỉ tham chiếu tới đó chứ không chứa mục này. Đo thực tế cho thấy phải chèn thêm một tầng trước cả hai — mục 6.5 đã cập nhật theo:
 
 | Tầng | Việc | Vì sao |
 |---|---|---|
-| **0** | Cắt đúng **container chính** rồi mới xử lý | Không cắt thì "bỏ thẻ" sẽ nuốt cả header, footer, box tin liên quan của toàn trang. Trang thô nặng 95–527 KB, thân bài chỉ 155–6.671 ký tự |
+| **0** | Cắt đúng **container chính** rồi mới xử lý | Không cắt thì "bỏ thẻ" sẽ nuốt cả header, footer, box tin liên quan của toàn trang. Trang thô nặng 94–527 KB, thân bài chỉ 155–6.671 ký tự |
 | 1 | Decode entity → bỏ thẻ → **bỏ HTML comment** | Xem mục 3.1 |
 | 2 | Bỏ khối phi nội dung theo selector riêng từng nguồn | Bảng ở mục 2 |
 
@@ -274,16 +274,20 @@ Tỷ lệ nén HTML thô → text sạch dao động rất mạnh giữa các ng
 
 | Nguồn | HTML thô TB | Text sạch TB | Thô/sạch |
 |---|---:|---:|---:|
-| TinnhanhCK | 95 KB | 4.188 | 23× |
-| CafeF | 105 KB | 2.696 | 40× |
-| VietnamBiz | 121 KB | 2.768 | 45× |
-| BNews | 132 KB | 2.680 | 50× |
-| NguoiQuanSat | 138 KB | 3.404 | 42× |
-| VnEconomy | 278 KB | 4.158 | 68× |
-| BaoChinhPhu | 332 KB | 5.159 | 66× |
-| Vietstock | 435 KB | 2.414 | **184×** |
+| TinnhanhCK | 97 KB | 4.188 | 23× |
+| CafeF | 108 KB | 2.696 | 40× |
+| VietnamBiz | 124 KB | 2.768 | 45× |
+| BNews | 135 KB | 2.680 | 50× |
+| NguoiQuanSat | 142 KB | 3.404 | 42× |
+| VnEconomy | 284 KB | 4.158 | 68× |
+| BaoChinhPhu | 339 KB | 5.159 | 66× |
+| Vietstock | 446 KB | 2.414 | **184×** |
 
-Con số này củng cố quyết định **không lưu HTML thô** ([thiết kế](../../20-design/news-pipeline.md) mục 9.2) — mức "gấp 10 lần" ghi trong tài liệu đó là **ước lượng thấp**; đo thật là 23–184 lần.
+> **Đơn vị của hai cột số** — đọc kỹ trước khi trích:
+> - *HTML thô TB* là **KB thập phân** (byte ÷ 1.000), thống nhất với mọi con số KB khác trong tài liệu. Bản trước ghi cột này bằng byte ÷ 1.024 (tức KiB) nhưng dán nhãn KB — đã quy hết về KB thập phân ngày 15/08/2026, số byte đo được không đổi. Riêng CafeF là trung bình của **4 bài thường**; trang CBTT tính riêng ở mục 2.2.
+> - *Thô/sạch* chia **byte HTML cho ký tự text**, nên **không phải tỷ lệ byte thuần**. Text tiếng Việt ở mẫu này đo được 1,31 byte/ký tự, nên quy về cùng đơn vị byte thì tỷ lệ là **≈18–146×**.
+
+Con số này củng cố quyết định **không lưu HTML thô** ([thiết kế](../../20-design/news-pipeline.md) mục 9.2) — mức "gấp 10 lần" ghi trong tài liệu đó là **ước lượng thấp**; đo thật là 23–184 lần (≈18–146 lần nếu so byte với byte).
 
 ### 3.6 Hai CMS dùng chung
 

@@ -208,7 +208,7 @@ Luôn lấy ID từ trang index chính thức: `vietstock.vn/rss` (55 feed), `bn
 
 **Ba tầng, không phải hai.** [Khảo sát cấu trúc trang bài](article-structure.md) (đo 15/08/2026, 33 bài / 8 nguồn) cho thấy phải chèn một tầng **trước** hai tầng vốn có:
 
-0. **Cắt đúng container chính rồi mới xử lý.** Không cắt thì tầng 1 nuốt cả header, footer và box tin liên quan của toàn trang: trang thô nặng 95–527 KB trong khi thân bài chỉ 155–6.671 ký tự. Cắt đúng còn khiến phần lớn khối "bài liên quan" biến mất mà không cần luật nào — ví dụ khối cuộn vô hạn ~2,5 K ký tự của Vietstock vốn nằm **ngoài** container. **Selector container và luật bỏ boilerplate của từng nguồn nằm ở [article-structure.md](article-structure.md)** — đó là bảng tra sống, sửa ở đó chứ không chép lại vào đây.
+0. **Cắt đúng container chính rồi mới xử lý.** Không cắt thì tầng 1 nuốt cả header, footer và box tin liên quan của toàn trang: trang thô nặng 94–527 KB trong khi thân bài chỉ 155–6.671 ký tự. Cắt đúng còn khiến phần lớn khối "bài liên quan" biến mất mà không cần luật nào — ví dụ khối cuộn vô hạn ~2,5 K ký tự của Vietstock vốn nằm **ngoài** container. **Selector container và luật bỏ boilerplate của từng nguồn nằm ở [article-structure.md](article-structure.md)** — đó là bảng tra sống, sửa ở đó chứ không chép lại vào đây.
 1. **Bỏ thẻ HTML** — nhưng phải **decode entity trước rồi mới strip tag**. Làm ngược thứ tự sẽ hỏng với Vietstock (xem cảnh báo dưới).
 2. **Bỏ khối phi nội dung** — "Xem thêm", danh sách bài liên quan, tên tác giả, chú thích ảnh, ô quảng cáo. Đây mới là phần ngốn token nhiều nhất: chúng là text hợp lệ nên tầng 1 không đụng tới, mà có thể chiếm 20–40% độ dài. Phải viết luật riêng cho từng nguồn.
 

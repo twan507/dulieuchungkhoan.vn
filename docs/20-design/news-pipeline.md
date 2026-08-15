@@ -203,7 +203,7 @@ Kho chỉ có link chết thì giá trị bằng không. Giá trị của nó ch
 
 Postgres tự nén cột `text` lớn qua TOAST nên con số thực tế còn thấp hơn.
 
-**Không lưu HTML thô.** Đo thật trên 33 trang bài của cả 8 nguồn (2026-08-15, [cấu trúc trang bài](../10-sources/news/article-structure.md) mục 3.5): HTML thô trung bình **95–435 KB/trang** tuỳ nguồn (trang nặng nhất bộ 527 KB), tức **gấp 23–184 lần** phần text sạch bóc ra từ chính nó. Con số *"khoảng 50 KB/bài, gấp 10 lần"* ghi ở bản trước là ước lượng thấp. Kết luận không đổi, chỉ chắc thêm: HTML thô không mang thêm thông tin và làm tìm kiếm khó hơn.
+**Không lưu HTML thô.** Đo thật trên 33 trang bài của cả 8 nguồn (2026-08-15, [cấu trúc trang bài](../10-sources/news/article-structure.md) mục 3.5): HTML thô trung bình **97–446 KB/trang** tuỳ nguồn (KB thập phân; trang nặng nhất bộ 527 KB), tức **gấp 23–184 lần** phần text sạch bóc ra từ chính nó — tỷ lệ đó so byte HTML với ký tự text, quy về cùng đơn vị byte là **≈18–146 lần**. Con số *"khoảng 50 KB/bài, gấp 10 lần"* ghi ở bản trước là ước lượng thấp. Kết luận không đổi, chỉ chắc thêm: HTML thô không mang thêm thông tin và làm tìm kiếm khó hơn.
 
 > **CafeF CBTT gần như không dedupe được** — mỗi bản công bố thông tin là một doanh nghiệp khác nhau. Ở mức ~75 tin/ngày thì đó là phần sàn không nén được của kho.
 >
