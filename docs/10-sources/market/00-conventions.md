@@ -465,7 +465,7 @@ content-encoding · content-type · date · server · transfer-encoding · vary
 x-miniprofiler-ids · x-powered-by
 ```
 
-**Không có `X-RateLimit-*`, không có `Retry-After`, không có bất kỳ header họ hạn mức nào.** Điều tài liệu này nói trước đây được xác nhận bằng đo thật. Hệ quả: ETL **không thể** dựa vào header để biết mình còn bao nhiêu hạn mức — phải tự giữ nhịp bằng token bucket phía Finext.
+**Không có `X-RateLimit-*`, không có `Retry-After`, không có bất kỳ header họ hạn mức nào.** Điều tài liệu này nói trước đây được xác nhận bằng đo thật. Hệ quả: ETL **không thể** dựa vào header để biết mình còn bao nhiêu hạn mức — phải tự giữ nhịp bằng token bucket phía dulieuchungkhoan.vn.
 
 *(`server` trả về hai giá trị xen kẽ — `Microsoft-IIS/8.5` và `Microsoft-IIS/10.0`, **mỗi loại đúng 32 lần trên 64 response**. Dấu hiệu có cân bằng tải trước ít nhất hai máy chủ khác đời.)*
 

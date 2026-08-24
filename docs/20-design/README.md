@@ -1,6 +1,6 @@
 # Thiết kế hệ thống
 
-Tầng này ghi **lựa chọn của Finext** — cái gì xây thế nào và vì sao chọn thế. Khác với [`10-sources/`](../10-sources/) vốn chỉ ghi sự thật đo được về hệ thống của người khác.
+Tầng này ghi **lựa chọn của dulieuchungkhoan.vn** — cái gì xây thế nào và vì sao chọn thế. Khác với [`10-sources/`](../10-sources/) vốn chỉ ghi sự thật đo được về hệ thống của người khác.
 
 **Luật sửa:** sửa được, nhưng lý do phải viết thẳng vào chính tài liệu. Một thiết kế không có lý do là một thiết kế sẽ bị đảo ngược bởi người tiếp theo.
 
@@ -17,7 +17,7 @@ Tầng này ghi **lựa chọn của Finext** — cái gì xây thế nào và v
 
 ## Ba nguyên tắc xuyên suốt ba tài liệu kiến trúc — kho dữ liệu, pipeline tin, tầng ngữ nghĩa
 
-**1 · Cách ly hoàn toàn khỏi nguồn.** Finext không bao giờ gọi thẳng API nhà cung cấp khi phục vụ người dùng. Ba lý do đều đo được: độ trễ chênh ~1.000 lần so với đọc từ Postgres · API không có versioning và không thông báo thay đổi · chatbot hỏi hàng chục câu mỗi phút.
+**1 · Cách ly hoàn toàn khỏi nguồn.** dulieuchungkhoan.vn không bao giờ gọi thẳng API nhà cung cấp khi phục vụ người dùng. Ba lý do đều đo được: độ trễ chênh ~1.000 lần so với đọc từ Postgres · API không có versioning và không thông báo thay đổi · chatbot hỏi hàng chục câu mỗi phút.
 
 **2 · Không có đường tắt trong xử lý.** Mọi tin đều đi qua lưới AI kể cả tin từ feed thuần nhất. Phương án lai tiết kiệm ~40% lượt gọi đã bị loại: hai đường xử lý song song tạo ra **lỗi im lặng** khi feed đổi nội dung mà config không đổi theo.
 

@@ -8,7 +8,7 @@
 
 Toàn bộ `10-sources/` là **tài liệu tra cứu (reference)** theo phân loại Diátaxis: trung lập, đầy đủ, chính xác. Nó mô tả *nguồn bên ngoài có gì và cư xử thế nào*, không hướng dẫn *nên xây sản phẩm thế nào*.
 
-> **Ranh giới quan trọng nhất của kho tài liệu này:** những gì ở đây là **sự thật đo được về hệ thống của người khác** — sửa một con số ở đây mà không đo lại là nói dối. Những gì ở [`20-design/`](../20-design/) là **lựa chọn của Finext** — sửa được, nhưng phải ghi lý do.
+> **Ranh giới quan trọng nhất của kho tài liệu này:** những gì ở đây là **sự thật đo được về hệ thống của người khác** — sửa một con số ở đây mà không đo lại là nói dối. Những gì ở [`20-design/`](../20-design/) là **lựa chọn của dulieuchungkhoan.vn** — sửa được, nhưng phải ghi lý do.
 
 Chín nguồn độc lập:
 
@@ -149,7 +149,7 @@ Không nằm trong tầng tra cứu, nhưng đọc kèm:
 
 | File | Nội dung |
 |---|---|
-| [market-data-store.md](../20-design/market-data-store.md) | **Kiến trúc Finext** — thu thập, lưu trữ, phân phối lại. Sơ đồ, DDL, lịch ETL, SSE, chatbot, giám sát hợp đồng |
+| [market-data-store.md](../20-design/market-data-store.md) | **Kiến trúc dulieuchungkhoan.vn** — thu thập, lưu trữ, phân phối lại. Sơ đồ, DDL, lịch ETL, SSE, chatbot, giám sát hợp đồng |
 | [news-pipeline.md](../20-design/news-pipeline.md) | Kiến trúc gom tin, taxonomy, quy tắc phân loại, gắn mã cổ phiếu, kho lưu trữ |
 | [market-field-selection.md](../20-design/market-field-selection.md) | **Chọn trường cho ETL** — lấy/bỏ từng mã trường, nguồn chuẩn, lý do tại chỗ. 213 dòng, kèm [bản JSON máy đọc](../20-design/market-field-selection.json), sinh tự động từ [`gen_field_selection.py`](../20-design/gen_field_selection.py) |
 
@@ -191,20 +191,20 @@ Ký hiệu trong bảng tham số:
 | **4.3** | **2026-08-14** | **Chốt nguồn chuẩn cho từng chỉ tiêu.** Giá/kỹ thuật/khối ngoại/thoả thuận → BVSC. Screener giữ **80/193** trường, Snapshot cắt còn **16/54**, bỏ hẳn nhóm chấm điểm. Giữ MoneyFlow cho tự doanh và đóng góp chỉ số vì BVSC không có. Kèm 4 phát hiện: Screener timeout khi gửi nhiều tiêu chí · `isa20ttm` lệch tổng `isa20` tới 9,4% · `P/E = vốn hoá ÷ isa20ttm` khớp 9/10 · `revttm` không phải mẫu số P/S với ngân hàng. Xem [ADR 0002](../00-overview/decisions/0002-data-source-selection.md) |
 | **4.2** | **2026-08-14** | **Xác định đơn vị dữ liệu cho 727/729 mã** (99,7%), trong đó **392 mã xác thực bằng bằng chứng số học**. Phép kiểm bắt được 3 lỗi đơn vị của chính từ điển. Phát hiện 🔴 **nhãn `unit` của API không phải đơn vị của dữ liệu** — `Percentage` thực ra là thập phân, `BillionVND` thực ra là VND đầy đủ. Bổ sung tên tiếng Anh cho 26 mã, xác định 3 mã bằng đối chiếu số học |
 | **4.1** | **2026-08-14** | **Giải mã 729 mã chỉ tiêu** — toàn bộ họ `bs*`, `is*`, `cf*`, `nob*` cho cả bốn loại hình doanh nghiệp. Nguồn là bundle JS của ứng dụng FiinTrade, **không phải API**. Độ phủ đo trên 21 response thật của 5 mã: **100%**. Xem [Phụ lục A §A.5](market/appendix-A-field-codes.md) và [field-dictionary.json](market/field-dictionary.json) |
-| **4.0** | **2026-08-14** | **Tái cấu trúc kho tài liệu.** Tách tài liệu kiến trúc Finext (file `12`) ra khỏi tầng tra cứu; gộp nguồn tin tức (47 feed RSS + 6 crawler) vào cùng tầng như nguồn thứ ba; đổi `13` → `macro/wichart.md`. Nội dung kỹ thuật không đổi một chữ — xem [ADR 0001](../00-overview/decisions/0001-docs-structure.md) |
+| **4.0** | **2026-08-14** | **Tái cấu trúc kho tài liệu.** Tách tài liệu kiến trúc dulieuchungkhoan.vn (file `12`) ra khỏi tầng tra cứu; gộp nguồn tin tức (47 feed RSS + 6 crawler) vào cùng tầng như nguồn thứ ba; đổi `13` → `macro/wichart.md`. Nội dung kỹ thuật không đổi một chữ — xem [ADR 0001](../00-overview/decisions/0001-docs-structure.md) |
 | **3.0** | **2026-08-12** | **Thêm nguồn WiChart** (file `13`) — 87 endpoint vĩ mô/tiền tệ/hàng hoá, audit 4 vòng bằng 7 agent song song + đối chiếu chéo web. Kèm [`verify_wichart.py`](macro/verify_wichart.py) tự kiểm 509 khẳng định. Cập nhật phạm vi và điều kiện tiên quyết |
 | 1.0 | 2026-08-10 | Bản đầu — 43 endpoint REST, kiểm chứng trên 51 mã |
 | 1.1 | 2026-08-10 | Bổ sung phần Realtime — 5 topic, 86 trường, đo 3.266 frame phiên chiều |
 | 2.2 | 2026-08-10 | Thêm mục 7.1 — giám sát hợp đồng dữ liệu và theo dõi bản build của nguồn. Đặt lại chiến lược mục 9: thích ứng liên tục thay vì chuẩn bị đổi nguồn |
 | 2.1 | 2026-08-10 | Thêm mục 9 — định hướng nghiên cứu khả năng đổi nguồn dữ liệu |
-| 2.0 | 2026-08-10 | Thêm tài liệu kiến trúc triển khai Finext. Bổ sung Bẫy 8 (giá điều chỉnh) và Bẫy 4b (thang đơn vị Screener) |
+| 2.0 | 2026-08-10 | Thêm tài liệu kiến trúc triển khai dulieuchungkhoan.vn. Bổ sung Bẫy 8 (giá điều chỉnh) và Bẫy 4b (thang đơn vị Screener) |
 | 1.2 | 2026-08-10 | Thêm `getScreenerItems` (sàng lọc toàn TT). **Sửa lỗi:** giá lịch sử là giá ĐÃ điều chỉnh, không phải giá thô. Bổ sung độ sâu phân trang: `getPriceData` 12,5 năm, tvcharts chặn 239 nến |
 
 ## 7. Giới hạn của tài liệu
 
 - Toàn bộ endpoint mô tả ở đây là API nội bộ, **không phải public API có cam kết**. Không có versioning, không có thông báo thay đổi. Schema có thể đổi bất cứ lúc nào.
 - Số liệu hiệu năng đo trên một máy trạm tại Việt Nam, chỉ mang tính tham khảo.
-- ✅ **Tình trạng pháp lý hai nguồn nay đều đã rõ.** Với BVSC/FiinTrade, Finext được phép thu thập, lưu trữ và phái sinh. Với **WiChart**, giấy phép **WiFeed** đã chốt 2026-08-15, phủ đúng endpoint `api.wichart.vn` đang dùng — xem [`wichart.md` §1](macro/wichart.md).
+- ✅ **Tình trạng pháp lý hai nguồn nay đều đã rõ.** Với BVSC/FiinTrade, dulieuchungkhoan.vn được phép thu thập, lưu trữ và phái sinh. Với **WiChart**, giấy phép **WiFeed** đã chốt 2026-08-15, phủ đúng endpoint `api.wichart.vn` đang dùng — xem [`wichart.md` §1](macro/wichart.md).
 - Ngưỡng rate limit của WiChart **chưa đo**. Không có header `X-RateLimit-*` hay `Retry-After`.
 - Với **FiinTrade**, rate limit đã kiểm ngày 2026-08-15 **bằng đúng tải ETL kế hoạch, chủ đích không dò ngưỡng trần** — nhịp tuần tự ~29 request/phút chạy trọn không bị chặn, nguồn cũng không trả header hạn mức nào. **Ngưỡng thật vẫn không biết**, và nhịp 8 luồng chưa kiểm. Chi tiết: [`00-conventions.md` §10](market/00-conventions.md).
 - **Sáu nguồn mới lập 2026-08-15 chưa qua một chu kỳ vận hành nào.** Chúng được đo trong **một ngày, và ngày đó là thứ Bảy** — mọi số về độ tươi đều trộn hiệu ứng cuối tuần. Mỗi file có mục *"Chưa kiểm"* riêng; đọc mục đó trước khi dựng ETL trên nguồn tương ứng.

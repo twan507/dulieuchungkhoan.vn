@@ -1,4 +1,4 @@
-# Hướng dẫn làm việc trên repo Finext
+# Hướng dẫn làm việc trên repo dulieuchungkhoan.vn
 
 File này là **tri thức làm việc của dự án** — luật, quyết định đã chốt, và bài học đã trả giá. Đọc trước khi động vào bất cứ thứ gì.
 
@@ -53,7 +53,7 @@ Tên file và thư mục dùng tiếng Anh *(quyết định 0005)*. Nội dung 
 |---|---|
 | BVSC / FiinTrade | Vốn đã được phép |
 | WiFeed (WiGroup) | Chốt 2026-08-15, phủ đúng endpoint `api.wichart.vn` đang dùng |
-| FRED (St. Louis Fed) | Chốt 2026-08-15 — chủ dự án làm việc trực tiếp, họ đồng ý vì Finext cung cấp miễn phí |
+| FRED (St. Louis Fed) | Chốt 2026-08-15 — chủ dự án làm việc trực tiếp, họ đồng ý vì dulieuchungkhoan.vn cung cấp miễn phí |
 
 **Cách ghi trong tài liệu:** chuyện pháp lý chỉ ghi **trạng thái một dòng** (ai, ngày, đã xong). Không thêm câu hỏi mở, không phân tích phạm vi giấy phép, không đề xuất việc pháp lý vào lộ trình.
 

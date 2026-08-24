@@ -16,7 +16,7 @@
 | Xác thực | Khoá API, truyền bằng **query param** |
 | Tình trạng pháp lý | ✅ **Chủ dự án đã làm việc với FRED và được đồng ý (2026-08-15).** |
 
-Chuỗi phụ thuộc: **cơ quan gốc (Fed Board / BLS / BEA / EIA) → FRED → Finext**. FRED là tầng tổng hợp, không phải nơi sinh số — nên lịch công bố và bản vá đều theo nhịp của cơ quan gốc (§4, §5).
+Chuỗi phụ thuộc: **cơ quan gốc (Fed Board / BLS / BEA / EIA) → FRED → dulieuchungkhoan.vn**. FRED là tầng tổng hợp, không phải nơi sinh số — nên lịch công bố và bản vá đều theo nhịp của cơ quan gốc (§4, §5).
 
 ---
 
@@ -134,7 +134,7 @@ Response `series` (metadata) có: `observation_start` · `observation_end` · `f
 | 2026-07-02 | 2026-08-06 | **158.927** (−74) |
 | 2026-08-07 | 9999-12-31 | **158.861** (−66) |
 
-→ **Một điểm dữ liệu có 3 giá trị.** Lệch tích luỹ 140 nghìn việc làm. Kho lưu bản đầu rồi không cập nhật → biểu đồ Finext **vĩnh viễn khác** biểu đồ FRED, và không có cách nào phát hiện bằng timestamp.
+→ **Một điểm dữ liệu có 3 giá trị.** Lệch tích luỹ 140 nghìn việc làm. Kho lưu bản đầu rồi không cập nhật → biểu đồ dulieuchungkhoan.vn **vĩnh viễn khác** biểu đồ FRED, và không có cách nào phát hiện bằng timestamp.
 
 ### 4.2 Ba chế độ đọc — đều đã gọi thật
 

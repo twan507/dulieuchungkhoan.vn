@@ -27,7 +27,7 @@ Nguồn gốc cấp trên của dữ liệu (xác định qua đối chiếu):
 | Thép phế/thanh | Benchmark **CFR Thổ Nhĩ Kỳ** (không phải Anh, xem `SRCNOTE`) |
 | Cao su Nhật | TOCOM RSS3 |
 
-Chuỗi phụ thuộc của Finext sẽ là 3 tầng: **nguồn gốc → WiGroup → Finext**.
+Chuỗi phụ thuộc của dulieuchungkhoan.vn sẽ là 3 tầng: **nguồn gốc → WiGroup → dulieuchungkhoan.vn**.
 
 ---
 

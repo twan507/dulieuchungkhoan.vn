@@ -1,4 +1,4 @@
-# Finext v2
+# dulieuchungkhoan.vn
 
 Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập dữ liệu thị trường và tin tức từ nhiều nguồn, lưu vào kho riêng, phân phối lại qua REST và SSE, và một chatbot AI trả lời bằng phương pháp phân tích đã được hệ thống hoá thành skill.
 
@@ -51,11 +51,11 @@ Bảng đầy đủ kèm bằng chứng: [lộ trình §0](docs/00-overview/road
 ## Cấu trúc repo
 
 ```
-finext-v2/
+dulieuchungkhoan.vn/
 ├── docs/                Toàn bộ tài liệu — bản đồ ở docs/README.md
 │   ├── 00-overview/     kiến trúc · lộ trình · sổ quyết định (chỉ lịch sử)
 │   ├── 10-sources/      reference: market · macro · global · news — mỗi nguồn tự chứa đủ đồ nghề
-│   ├── 20-design/       lựa chọn kiến trúc của Finext
+│   ├── 20-design/       lựa chọn kiến trúc của dulieuchungkhoan.vn
 │   └── 30-skills/       tài liệu bảo trì + corpus của hai skill
 ├── .claude/skills/      vn-stock-advisor · vn-stock-knowledge — sản phẩm chạy được
 └── (chưa có)            chỗ cho frontend / backend — chốt khi bắt đầu code

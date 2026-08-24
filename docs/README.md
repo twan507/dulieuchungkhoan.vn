@@ -1,4 +1,4 @@
-# Bản đồ tài liệu Finext
+# Bản đồ tài liệu dulieuchungkhoan.vn
 
 Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và một luật sửa riêng. Dòng cuối bảng không phải một tầng — nó là kho lịch sử.
 
@@ -6,7 +6,7 @@ Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và m�
 |---|---|---|
 | [`00-overview/`](00-overview/) | Hợp nhất ba khối, lộ trình, sổ quyết định (chỉ lịch sử) | Cập nhật khi kiến trúc đổi |
 | [`10-sources/`](10-sources/) | **Reference** — sự thật đo được về hệ thống của người khác | Chỉ sửa khi **đo lại** |
-| [`20-design/`](20-design/) | **Explanation** — lựa chọn của Finext | Sửa được, lý do viết thẳng tại chỗ |
+| [`20-design/`](20-design/) | **Explanation** — lựa chọn của dulieuchungkhoan.vn | Sửa được, lý do viết thẳng tại chỗ |
 | [`30-skills/`](30-skills/) | Corpus và tài liệu bảo trì hai skill chứng khoán | Corpus bất biến; tài liệu bảo trì cập nhật theo trạng thái thật |
 | [`00-overview/decisions/`](00-overview/decisions/) | Sổ quyết định — bản ghi lịch sử | Chỉ ghi lịch sử quyết định. Tài liệu sống phải tường minh, không trỏ về đây; xoá cả thư mục này chỉ được phép mất lịch sử |
 

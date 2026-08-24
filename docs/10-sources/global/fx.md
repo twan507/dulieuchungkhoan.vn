@@ -17,7 +17,7 @@
 | Điều khoản quan sát trực tiếp trên `frankfurter.dev` *(2026-08-15)* | Không hạn mức tháng/ngày; chỉ rate-limit chống lạm dụng |
 | Mốc chốt giá | 🔴 **Fixing 14:15 CET** — **không phải giá đóng cửa**. Đây là nguồn gốc của toàn bộ sai lệch, xem §5 Bẫy 2 |
 
-Chuỗi phụ thuộc: **ECB → Frankfurter → Finext**. Vì Frankfurter mã nguồn mở và tự dựng lại được, rủi ro phụ thuộc tầng giữa thấp hơn hẳn các nguồn khác trong dự án.
+Chuỗi phụ thuộc: **ECB → Frankfurter → dulieuchungkhoan.vn**. Vì Frankfurter mã nguồn mở và tự dựng lại được, rủi ro phụ thuộc tầng giữa thấp hơn hẳn các nguồn khác trong dự án.
 
 ---
 

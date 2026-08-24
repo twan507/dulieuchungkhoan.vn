@@ -6,11 +6,11 @@ Base URL: `https://wlgw-market.fiintrade.vn` — ký hiệu `FIIN_MARKET`
 >
 > | Dữ liệu | BVSC | Ghi chú |
 > |---|---|---|
-> | Khối ngoại **theo mã** | ✅ `foreignBuy` `foreignSell` `foreignRemain` `foreignRoom` | Finext lấy từ BVSC vì realtime |
+> | Khối ngoại **theo mã** | ✅ `foreignBuy` `foreignSell` `foreignRemain` `foreignRoom` | dulieuchungkhoan.vn lấy từ BVSC vì realtime |
 > | Khối ngoại **toàn thị trường theo chuỗi** | ⚠️ Không trực tiếp | Muốn tổng phải cộng 2.534 mã — dùng `getForeign` (227 điểm intraday) |
 > | **Tự doanh** | ❌ Không có | Chỉ `getProprietaryV2` |
 > | **Đóng góp chỉ số** | ❌ Không có | Chỉ `getContribution` |
-> | Thoả thuận | ✅ `PT_*` theo mã, `PT_TOTAL_*` theo chỉ số | Finext lấy từ BVSC |
+> | Thoả thuận | ✅ `PT_*` theo mã, `PT_TOTAL_*` theo chỉ số | dulieuchungkhoan.vn lấy từ BVSC |
 >
 > Kiểm chứng chéo: `getContribution` trả VN-INDEX **1.729,08** và thay đổi **−36,55** — khớp chính xác bảng giá BVSC cùng thời điểm. Hai nguồn độc lập, cùng một số.
 >

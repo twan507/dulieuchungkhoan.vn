@@ -2,7 +2,7 @@
 
 **Loại tài liệu:** thiết kế (explanation) · **Phiên bản** v3 · **Chốt ngày** 13/08/2026 · **Trạng thái** đã duyệt, chưa cài đặt
 
-Tài liệu này ghi **lựa chọn của Finext**: kiến trúc xử lý, taxonomy 20 sub, quy tắc phân loại, cách gắn mã cổ phiếu, lược đồ kho. Phần *nguồn tin có gì và cư xử thế nào* — 47 feed, 6 crawler, encoding, khối lượng đo được — nằm ở [danh mục nguồn tin](../10-sources/news/README.md).
+Tài liệu này ghi **lựa chọn của dulieuchungkhoan.vn**: kiến trúc xử lý, taxonomy 20 sub, quy tắc phân loại, cách gắn mã cổ phiếu, lược đồ kho. Phần *nguồn tin có gì và cư xử thế nào* — 47 feed, 6 crawler, encoding, khối lượng đo được — nằm ở [danh mục nguồn tin](../10-sources/news/README.md).
 
 > **Đánh số mục kế thừa tài liệu gốc v3** và cố ý không đánh lại, vì hàng chục tham chiếu chéo dạng *"xem mục 6.5"* nằm rải trong cả hai file. Mục 4, 5, 6, 11.1–11.3 và 13 nằm ở [danh mục nguồn tin](../10-sources/news/README.md); các mục còn lại ở file này.
 
@@ -366,7 +366,7 @@ Lưu tiêu đề + link để tham chiếu là một chuyện, lưu toàn văn l
 | `docs/10-sources/news/README.md` | danh mục nguồn và đặc tính kỹ thuật |
 | `docs/10-sources/news/feeds.json` | 47 feed + taxonomy + nhật ký loại bỏ, dạng máy đọc |
 
-> Tài liệu gốc một file `THIET_KE_PIPELINE.md` v3 đã được tách làm hai theo ranh giới *dữ kiện về nguồn* / *lựa chọn của Finext*; `feeds_config_v3.json` đổi tên thành `docs/10-sources/news/feeds.json`. Nội dung không đổi một chữ nào.
+> Tài liệu gốc một file `THIET_KE_PIPELINE.md` v3 đã được tách làm hai theo ranh giới *dữ kiện về nguồn* / *lựa chọn của dulieuchungkhoan.vn*; `feeds_config_v3.json` đổi tên thành `docs/10-sources/news/feeds.json`. Nội dung không đổi một chữ nào.
 
 ### Việc tiếp theo khi quay lại
 

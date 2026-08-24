@@ -1,8 +1,8 @@
-# 12 — Kiến trúc triển khai Finext
+# 12 — Kiến trúc triển khai dulieuchungkhoan.vn
 
-**Phạm vi:** thiết kế hệ thống thu thập, lưu trữ và phân phối lại dữ liệu từ 44 endpoint REST và 5 topic realtime sang nền tảng Finext.
+**Phạm vi:** thiết kế hệ thống thu thập, lưu trữ và phân phối lại dữ liệu từ 44 endpoint REST và 5 topic realtime sang nền tảng dulieuchungkhoan.vn.
 
-**Bối cảnh:** Finext được phép thu thập, lưu trữ và phái sinh toàn bộ dữ liệu từ nguồn BVSC/FiinTrade, phục vụ khách hàng cuối và một chatbot AI truy vấn không giới hạn.
+**Bối cảnh:** dulieuchungkhoan.vn được phép thu thập, lưu trữ và phái sinh toàn bộ dữ liệu từ nguồn BVSC/FiinTrade, phục vụ khách hàng cuối và một chatbot AI truy vấn không giới hạn.
 
 ---
 
@@ -10,7 +10,7 @@
 
 | | |
 |---|---|
-| **Cách ly hoàn toàn** | Finext không bao giờ gọi thẳng BVSC/FiinTrade khi phục vụ người dùng. Mọi truy vấn đi qua kho riêng |
+| **Cách ly hoàn toàn** | dulieuchungkhoan.vn không bao giờ gọi thẳng BVSC/FiinTrade khi phục vụ người dùng. Mọi truy vấn đi qua kho riêng |
 | **Lưu đầy đủ** | Kho ~10 GB chứa toàn bộ lịch sử khả dụng. Độc lập nhà cung cấp, chatbot không giới hạn |
 | **Giá lưu thô, điều chỉnh lúc đọc** | Không bao giờ sửa quá khứ. Hệ số suy ngược từ chính dữ liệu FiinTrade |
 | **Một socket vào, SSE ra** | Ingester tập trung ghép delta, fan-out một chiều qua SSE |
@@ -43,11 +43,11 @@ BVSC / FiinTrade       │                                          │
                        │                    (kho đầy đủ)           │
                        └──────────────────┬───────────────────────┘
                                           │
-                              ┌───────────┴───────────┐
-                              │      Finext API       │
-                              ├─ SSE   → realtime     │
-                              ├─ REST  → lịch sử, BCTC│
-                              └─ Chatbot AI           │
+                              ┌───────────┴─────────────┐
+                              │ dulieuchungkhoan.vn API │
+                              ├─ SSE   → realtime       │
+                              ├─ REST  → lịch sử, BCTC  │
+                              └─ Chatbot AI             │
                                  (function calling)
 ```
 
@@ -449,7 +449,7 @@ Chính xác hơn, tránh truy vấn quét toàn bảng, và kiểm soát đượ
 
 ### 7.1 Giám sát hợp đồng dữ liệu
 
-Nguồn hiện tại **không có versioning, không changelog, không thông báo thay đổi**. Và Finext không phải khách hàng của API này — đây là API nội bộ chạy website bảng giá của BVSC, không ai cam kết bề mặt đó cho bên thứ ba.
+Nguồn hiện tại **không có versioning, không changelog, không thông báo thay đổi**. Và dulieuchungkhoan.vn không phải khách hàng của API này — đây là API nội bộ chạy website bảng giá của BVSC, không ai cam kết bề mặt đó cho bên thứ ba.
 
 Hệ quả: **phòng vệ duy nhất là tự phát hiện.** Không thể chờ được báo.
 
@@ -601,10 +601,10 @@ Lược đồ ở mục 5 dùng `organ_code` làm `PRIMARY KEY` của `organizat
 
 Nguồn khác sẽ không biết `NHN` nghĩa là `VHM`. Đổi nguồn với lược đồ hiện tại nghĩa là viết lại khoá ngoại của toàn bộ kho.
 
-**Hướng nghiên cứu:** tách khoá nội bộ do Finext sở hữu ra khỏi mã của nhà cung cấp.
+**Hướng nghiên cứu:** tách khoá nội bộ do dulieuchungkhoan.vn sở hữu ra khỏi mã của nhà cung cấp.
 
 ```sql
-security(security_id BIGSERIAL PK, ticker, exchange, ...)         -- khoá của Finext
+security(security_id BIGSERIAL PK, ticker, exchange, ...)         -- khoá của dulieuchungkhoan.vn
 security_external_id(security_id, source, external_code)          -- ánh xạ đa nguồn
 ```
 
@@ -616,7 +616,7 @@ Chi phí làm ngay: một bảng phụ và một lần chuyển khoá. Chi phí 
 
 `financial_statement.metric_code` chứa `bsa1`, `isa22`, `cfa18` — mã của FiinGroup. Nguồn khác dùng bộ mã hoàn toàn khác.
 
-**Hướng nghiên cứu:** giữ mã gốc của nguồn, đồng thời gắn thêm mã chuẩn hoá của Finext.
+**Hướng nghiên cứu:** giữ mã gốc của nguồn, đồng thời gắn thêm mã chuẩn hoá của dulieuchungkhoan.vn.
 
 ```sql
 ALTER TABLE financial_statement ADD COLUMN canonical_code text;

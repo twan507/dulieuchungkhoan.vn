@@ -4,7 +4,7 @@
 
 Mọi con số ở đây đo bằng `curl` trên 307 URL ứng viên và 1.408 tiêu đề đã đọc thật. Không có số nào là ước lượng.
 
-Tài liệu này mô tả **nguồn tin có gì và cư xử thế nào** — 47 feed RSS, 6 nguồn crawl HTML, encoding, định dạng thời gian, khối lượng đo được, và những nguồn đã loại. Phần *Finext quyết định xử lý ra sao* nằm ở [thiết kế pipeline tin tức](../../20-design/news-pipeline.md).
+Tài liệu này mô tả **nguồn tin có gì và cư xử thế nào** — 47 feed RSS, 6 nguồn crawl HTML, encoding, định dạng thời gian, khối lượng đo được, và những nguồn đã loại. Phần *dulieuchungkhoan.vn quyết định xử lý ra sao* nằm ở [thiết kế pipeline tin tức](../../20-design/news-pipeline.md).
 
 > **Đánh số mục kế thừa tài liệu gốc `THIET_KE_PIPELINE.md` v3** và cố ý không đánh lại, vì hàng chục tham chiếu chéo dạng *"xem mục 6.5"* nằm rải trong cả hai file. Mục nào ở file nào:
 >
