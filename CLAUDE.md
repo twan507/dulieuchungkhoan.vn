@@ -138,13 +138,21 @@ Muốn kết luận phủ định thì phải **dò từ ứng dụng thật c�
 
 ## 4. Quy trình làm việc
 
-### 4.1 Việc lớn cần spec và plan
+### 4.1 Quy trình feature chuẩn — không nhảy cóc
 
-Task lớn thì **viết spec, viết plan cho từng việc**, rồi **giao subagent thực thi và kiểm soát lại** — không tự làm một mạch.
+Task lớn đi đủ chuỗi, mỗi bước dùng skill superpowers có sẵn, không tự làm một mạch:
 
-- Spec và plan **lưu trong repo**: `docs/90-records/plans/YYYY-MM-DD-<tên>/`
-- Hồ sơ khảo sát lưu ở `docs/90-records/surveys/YYYY-MM-DD-<tên>/`
-- Subagent giao cho **Opus**
+1. **brainstorm** (skill `brainstorming`) — làm rõ yêu cầu, chốt phương án.
+2. **spec** → `docs/90-records/plans/YYYY-MM-DD-<tên>/spec.md` — **người dùng duyệt**.
+3. **plan** (skill `writing-plans`) → `plan.md` cùng thư mục — bẻ spec thành task có nội dung/lệnh/expected thật, **không placeholder**. Spec nói *cái gì*, plan nói *chính xác thế nào*.
+4. **thực thi** (skill `subagent-driven-development` / `executing-plans`) — **giao subagent Opus**, TDD trong từng task *(§4.5)*.
+5. **review** (skill `requesting-code-review`) — độc lập, hai trục **Chuẩn** (đúng repo + code smell) và **Spec** (thiếu/sai/scope-creep), báo riêng, không gộp hay xếp hạng chéo.
+6. **verify** (skill `verification-before-completion`) — chạy lệnh kiểm chứng, **dán output thật** rồi mới báo xong. Test fail thì báo fail nguyên trạng.
+7. **commit theo mốc** *(§4.7)*.
+
+**Ba gate cứng, không nhảy:** spec được duyệt · plan tồn tại trước khi giao subagent · **test đỏ trước khi viết implementation**.
+
+Hồ sơ khảo sát: `docs/90-records/surveys/YYYY-MM-DD-<tên>/`. Subagent giao **Opus**; đề bài phải **tự đủ** (spec rõ, đường dẫn file, tiêu chí kiểm chứng được) vì subagent không có ngữ cảnh hội thoại; kết quả phải **review trước khi chấp nhận** — kiến trúc sư chịu trách nhiệm cuối.
 
 ### 4.2 Song song thì phải cách ly
 
@@ -167,7 +175,34 @@ Kết luận chỉ được phép ở dạng *"mức tải X an toàn"* — khô
 1. **Nghĩ trước khi code.** Nêu giả định ra thành lời; có nhiều cách hiểu thì trình bày các cách, không tự chọn ngầm. Thấy cách đơn giản hơn thì nói — kể cả khi phải phản biện yêu cầu.
 2. **Tối giản trước tiên.** Không tính năng ngoài yêu cầu, không abstraction cho code dùng một lần, không "cấu hình linh hoạt" không ai xin, không xử lý lỗi cho kịch bản không thể xảy ra. Viết 200 dòng mà 50 dòng đủ thì viết lại.
 3. **Sửa như phẫu thuật.** Mỗi dòng thay đổi phải truy được về đúng yêu cầu. Không "tiện tay cải thiện" code lân cận, không refactor thứ không hỏng, theo style sẵn có kể cả khi mình sẽ làm khác. Dọn rác **do chính thay đổi của mình tạo ra** (import/biến mồ côi); rác có sẵn thì báo, không tự xoá.
-4. **Chạy theo tiêu chí nghiệm thu.** Biến task thành mục tiêu kiểm chứng được trước khi làm: *"sửa bug" → "viết test tái hiện bug rồi làm nó pass"*. Kế hoạch nhiều bước thì mỗi bước kèm cách kiểm — tiêu chí mạnh cho phép tự lặp đến xong, tiêu chí yếu ("làm cho chạy đi") sinh ra hỏi lại liên tục.
+4. **Chạy theo tiêu chí nghiệm thu.** Biến task thành mục tiêu kiểm chứng được trước khi làm: *"sửa bug" → "viết test tái hiện bug rồi làm nó pass"*. Kế hoạch nhiều bước thì mỗi bước kèm cách kiểm — tiêu chí mạnh cho phép tự lặp đến xong, tiêu chí yếu ("làm cho chạy đi") sinh ra hỏi lại liên tục. **Tiêu chí phải bất biến, không phải số thời điểm** — tự hỏi *"còn đúng sau 3 tháng, trên máy khác không?"*; và mỗi điều kiện kiểm phải soi ngược *"hệ thống chạy bình thường có tự vi phạm nó không?"* (vd "kiểm cổng 5432 bận thì dừng" tự chặn chính Postgres của dự án).
+
+### 4.5 Kỷ luật test — chống test giả
+
+Dùng skill `test-driven-development`. Bốn luật bổ sung *(hấp thụ từ [mattpocock/skills](docs/00-overview/reference-repos.md) 2026-08-24)*:
+
+1. **Đỏ trước xanh, lát dọc.** Một seam → một test đỏ (nêu rõ assertion nào đỏ, vì sao) → code tối thiểu cho xanh → lặp. Cấm viết hết test rồi code hết (lát ngang test "hình dạng tưởng tượng"). Refactor **không** ở trong vòng đỏ-xanh — nó thuộc bước review *(§4.1.5)*.
+2. **Test tại seam đã chốt.** Seam = ranh giới public mà caller thật đi qua. Liệt kê seam sẽ test **trong plan**, chốt cùng plan; không test ở seam chưa chốt, không test internals.
+3. **Cấm test tautological.** Expected **không được tính lại theo đúng cách code tính** (`assert add(a,b)==a+b`). Phải đến từ nguồn độc lập: literal đã biết đúng, giải tay, spec.
+4. **Mỗi test assert giá trị cụ thể** (không chỉ `status==200`/không-throw) và có ít nhất một case biên hoặc case sai.
+
+Chi tiết stack (công cụ, mock nguồn ngoài, DB test thật): [test-strategy.md](docs/20-design/test-strategy.md).
+
+### 4.6 Kỷ luật debug — vòng phản hồi trước, giả thuyết sau
+
+Dùng skill `systematic-debugging`. Cốt lõi:
+
+- **Chưa có "một lệnh đỏ" thì chưa được đặt giả thuyết.** Lệnh đó phải bắt **đúng triệu chứng người dùng mô tả** (không phải "chạy không lỗi"), deterministic, nhanh (giây), agent chạy được — và đã chạy thật ít nhất một lần. Bug chập chờn: nâng tỷ lệ tái hiện đến mức debug được.
+- **3–5 giả thuyết falsifiable xếp hạng** trước khi kiểm cái nào (*"nếu X là nguyên nhân thì đổi Y bug biến mất"*). Đưa người dùng xem (họ hay re-rank tức thì), không block nếu vắng.
+- **Log debug gắn prefix `[DEBUG-xxxx]`** — dọn cuối là một lệnh grep; trước khi báo xong: repro hết đỏ, regression test xanh, grep prefix ra 0.
+- **Redact secret** trong mọi output/artifact debug (`<REDACTED>`; hiện shape qua biến môi trường, không hiện giá trị).
+
+### 4.7 Kỷ luật git — nhánh khi đã có code
+
+- Giai đoạn docs-only: commit thẳng `main` được. **Khi repo đã có code sản phẩm chạy: làm trên nhánh riêng** (`feat/…`, `fix/…`), không commit thẳng `main`; báo người dùng tên nhánh.
+- **Conventional Commits** (`feat:`, `fix:`, `docs:`, `chore:`, `test:`…), commit nhỏ một mục đích, message tiếng Anh.
+- **Commit theo mốc:** mỗi mốc chốt xong (một quyết định, một việc trọn vẹn) = một commit riêng ngay lúc đó, để diff truy ngược từng quyết định — không dồn nhiều mốc.
+- Không `--no-verify`, không force push.
 
 ---
 

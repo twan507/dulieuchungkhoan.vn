@@ -1,5 +1,10 @@
+# Chuẩn hoá xuống dòng: mọi file text lưu LF trong git, checkout ra LF.
+# Dứt cảnh báo "LF will be replaced by CRLF" và diff rác CRLF trên Windows.
+* text=auto eol=lf
+
 # Hai file sinh bởi docs/20-design/gen_field_selection.py được ghi với newline="\n".
-# Khai LF để checkout không đổi sang CRLF — nếu đổi, lần chạy generator kế tiếp sẽ
-# ghi lại LF và git báo TOÀN BỘ file thay đổi dù nội dung không đổi một chữ.
+# Giữ dòng riêng cho tường minh (dù quy tắc * ở trên đã phủ): chúng bắt buộc LF —
+# nếu checkout ra CRLF thì lần chạy generator kế tiếp ghi lại LF và git báo TOÀN BỘ
+# file thay đổi dù nội dung không đổi một chữ.
 docs/20-design/market-field-selection.md    text eol=lf
 docs/20-design/market-field-selection.json  text eol=lf
