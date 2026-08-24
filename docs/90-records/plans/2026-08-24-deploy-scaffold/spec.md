@@ -128,14 +128,39 @@ Khác biệt hai chế độ nằm ở **stack.mjs**, không phải ở file com
 4. Cổng DB bind `127.0.0.1`; biến bí mật bắt buộc fail-fast.
 5. Ghi vào runbook (`docs/40-operations/` khi lập): **cấm bấm "Reset to factory defaults"** của Docker Desktop — xoá volume dữ liệu.
 
-## 8. Rủi ro / điều chưa chốt
+## 8. Kiểm thử, seam & quy trình thực thi
+
+Theo [CLAUDE.md §4.1/§4.5](../../../../CLAUDE.md) + [test-strategy.md](../../../20-design/test-strategy.md).
+
+### 8.1 Hai mức kiểm
+
+**a) Smoke đầu-cuối = chính §2.** AC1–AC8 chạy bằng lệnh thật là bằng chứng verify *(§4.1.6)*, không phải unit test. Walking skeleton tồn tại để các AC này chạy được.
+
+**b) Unit test tại seam — phần LOGIC dễ sai của `stack.mjs`** (bê từ tutor-agent, có bẫy parse thật). Hàm thuần, test bằng fixture chuỗi, **đỏ trước xanh**, expected từ **nguồn độc lập** (không tính lại theo cách code parse):
+
+| Seam (ranh giới public) | Vì sao phải test | Case tối thiểu |
+|---|---|---|
+| `listeningPids`/`portBusy` parse `netstat -ano` | Bẫy thật: dính false-positive TIME_WAIT nếu không lọc `LISTENING` | fixture có LISTENING + TIME_WAIT cùng cổng → chỉ trả PID LISTENING; cổng khác không dính (khớp hậu tố `:port`) |
+| Guard phiên bản Docker (`<23` bỏ prune) | Ngưỡng sai = xoá nhầm volume dữ liệu | "20.x" → bỏ · "24.x" → prune · không parse được → bỏ an toàn |
+| Kiểm bất biến volume (`die` nếu mất) | Chốt an toàn dữ liệu — sai là mất DB âm thầm | before có/after mất → `die`; before không có → cảnh báo, không `die` |
+
+**c) api `GET /api/healthz`** — test qua `httpx.TestClient`, assert **body cụ thể** (không chỉ `200`), không gọi nguồn ngoài *(test-strategy §1)*.
+
+Compose/Dockerfile/nginx là config → nghiệm thu bằng smoke (a), không unit test. **Danh sách seam (b)+(c) chốt cùng plan; plan không thêm/bớt seam ngoài đây mà không hỏi** *(§4.5)*.
+
+### 8.2 Thực thi
+
+- **Nhánh riêng `feat/deploy-scaffold`** — đây là **code sản phẩm đầu tiên**, áp [§4.7](../../../../CLAUDE.md): không commit thẳng `main`, conventional commits, commit theo mốc.
+- Giao **subagent Opus** theo plan; đề bài tự đủ; controller review trước khi nhận *(§4.1)*.
+
+## 9. Rủi ro / điều chưa chốt
 
 - **Migration DB**: Alembic vs SQL DDL thuần trong `database/` — **chưa chốt**, quyết ở plan lát cắt REST (không chặn khung này; walking skeleton chưa cần bảng).
 - **Slug tên** `dlck` (network/project/volume) — đề xuất, đổi được trước khi chạy lần đầu.
 - **Redis AOF**: bật `--appendonly yes` để giữ state qua restart — xác nhận khi dựng ingester (state realtime); walking skeleton chưa phụ thuộc.
 - **Node/pnpm ở gốc**: chấp nhận có chủ đích (FE là Next.js nên dù sao cũng cần) — đổi lấy orchestrator cross-platform.
 
-## 9. Việc kế tiếp (decompose)
+## 10. Việc kế tiếp (decompose)
 
 Khung này xong thì các plan sau dựng *bên trong* nó, theo trình tự REST-first đã chốt:
 1. `first-rest-slice` — ETL bảng tham chiếu + OMO crawl → Postgres (thêm migration, điền `core/` + `etl/`).
