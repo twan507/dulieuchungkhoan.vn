@@ -4,6 +4,8 @@ Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập d
 
 **Trạng thái — 2026-08-15:** thiết kế hoàn chỉnh, **chưa viết dòng code sản phẩm nào**. Hai skill chứng khoán đã xong và đã test 6 vòng. **Không còn việc chặn nào phụ thuộc bên ngoài** — giấy phép WiFeed đã chốt và rate limit FiinGroup đã kiểm, cùng ngày 2026-08-15. Cùng ngày, một **đợt khảo sát nguồn 9 nguồn / ~400 lời gọi thật** đã khép độ rộng dữ liệu: thêm **6 nguồn mới** và mở **5 khối dữ liệu** trước nay bỏ trống.
 
+**Stack chốt 2026-08-24:** Next.js · Python/FastAPI · Postgres + ClickHouse *(lưu tick thô — [ADR 0007](docs/00-overview/decisions/0007-monorepo-layout-and-stack.md))*.
+
 | Khối | Trạng thái | Bằng chứng |
 |---|---|---|
 | Tài liệu **9 nguồn** — thị trường · vĩ mô VN · quốc tế · tin | ✅ đo thật bằng lời gọi sống | 131 endpoint VN · 87 key · 307 URL · 6 nguồn mới đo 2026-08-15 |
@@ -54,11 +56,14 @@ Bảng đầy đủ kèm bằng chứng: [lộ trình §0](docs/00-overview/road
 dulieuchungkhoan.vn/
 ├── docs/                Toàn bộ tài liệu — bản đồ ở docs/README.md
 │   ├── 00-overview/     kiến trúc · lộ trình · sổ quyết định (chỉ lịch sử)
-│   ├── 10-sources/      reference: market · macro · global · news — mỗi nguồn tự chứa đủ đồ nghề
+│   ├── 10-sources/      reference: market · macro · global · news
 │   ├── 20-design/       lựa chọn kiến trúc của dulieuchungkhoan.vn
-│   └── 30-skills/       tài liệu bảo trì + corpus của hai skill
-├── .claude/skills/      vn-stock-advisor · vn-stock-knowledge — sản phẩm chạy được
-└── (chưa có)            chỗ cho frontend / backend — chốt khi bắt đầu code
+│   ├── 30-skills/       tài liệu bảo trì + corpus của hai skill
+│   └── 90-records/      hồ sơ làm việc: plans · surveys
+├── frontend/            Next.js — chưa bắt đầu
+├── backend/             Python (FastAPI) — api · etl · ingester
+│   └── agent/skills/    vn-stock-advisor · vn-stock-knowledge — sản phẩm chạy được
+└── database/            DDL Postgres + ClickHouse · migrations — chưa bắt đầu
 ```
 
 ## Bốn tầng hệ thống
@@ -66,14 +71,14 @@ dulieuchungkhoan.vn/
 ```
 L0  Nguồn ngoài    BVSC+FiinTrade · WiChart · SBV · FRED · ECB · Yahoo · LBMA · Binance · 8 báo
 L1  Thu thập       ETL + Ingester realtime  │  Gom tin + lưới AI
-L2  Kho            PostgreSQL + TimescaleDB + Redis
+L2  Kho            PostgreSQL + ClickHouse + Redis
 L3  Ngữ nghĩa      view người-đọc-được · function calling
 L4  Tri thức       hai skill: tư duy (luôn có mặt) + kiến thức (tải khi cần)
 ```
 
 ## Không còn việc chặn bên ngoài — 2026-08-15
 
-Cả ba việc phải chờ bên thứ ba đều đã xong. **Việc kế tiếp là dựng hạ tầng DB (Postgres + Redis)** — việc tự làm được, không phải chờ ai.
+Cả ba việc phải chờ bên thứ ba đều đã xong. **Việc kế tiếp là dựng hạ tầng DB (Postgres + ClickHouse)** — việc tự làm được, không phải chờ ai.
 
 > *Xác nhận ngưỡng rate limit với FiinGroup* — **đã kiểm bằng đúng tải ETL kế hoạch ngày 2026-08-15**: burst Screener 52 trang chạy tuần tự (~29 request/phút, 1,8 phút) không gặp tín hiệu chặn nào, và nguồn không trả header hạn mức nào. Xác nhận chính thức từ FiinGroup không còn là điều kiện chặn. Chủ đích **không dò ngưỡng trần**, và nhịp 8 luồng của ETL hằng ngày thì **chưa kiểm** — xem [quy ước chung §10](docs/10-sources/market/00-conventions.md).
 

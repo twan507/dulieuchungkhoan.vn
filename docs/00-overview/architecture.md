@@ -24,7 +24,7 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
         │                                             │
 ┌───────▼─────────────────────────────────────────────▼──────────────┐
 │  L2 · KHO                                                           │
-│  PostgreSQL + TimescaleDB + Redis                                   │
+│  PostgreSQL + ClickHouse + Redis                                    │
 │  giá · BCTC · sự kiện · vĩ mô  │  tin toàn văn + tsvector + pgvector│
 └───────┬─────────────────────────────────────────────┬──────────────┘
         │                                             │
