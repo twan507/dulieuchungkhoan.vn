@@ -4,6 +4,8 @@
 
 **Bối cảnh:** dulieuchungkhoan.vn được phép thu thập, lưu trữ và phái sinh toàn bộ dữ liệu từ nguồn BVSC/FiinTrade, phục vụ khách hàng cuối và một chatbot AI truy vấn không giới hạn.
 
+> ⚠️ **2026-08-24 — [ADR 0007](../00-overview/decisions/0007-monorepo-layout-and-stack.md):** kho realtime đã chốt đổi sang **ClickHouse** (lưu tick thô + sổ lệnh; Postgres giữ dữ liệu REST/BCTC/tin; Redis giữ pub/sub + leader lock). Tài liệu này **chưa cập nhật theo** — các phần lược đồ TimescaleDB, continuous aggregate, nén/retention sẽ thiết kế lại trong một phiên riêng, xem [lộ trình §5.2](../00-overview/roadmap.md).
+
 ---
 
 ## 1. Bốn nguyên tắc

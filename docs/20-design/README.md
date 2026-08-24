@@ -6,7 +6,7 @@ Tầng này ghi **lựa chọn của dulieuchungkhoan.vn** — cái gì xây th�
 
 | File | Nội dung | Trạng thái |
 |---|---|---|
-| [market-data-store.md](market-data-store.md) | Cách ly hoàn toàn khỏi nguồn · Ingester active+standby · SSE · lược đồ TimescaleDB · lịch ETL · giám sát hợp đồng dữ liệu · thứ tự triển khai | ✅ đã duyệt, chưa cài đặt |
+| [market-data-store.md](market-data-store.md) | Cách ly hoàn toàn khỏi nguồn · Ingester active+standby · SSE · lược đồ TimescaleDB · lịch ETL · giám sát hợp đồng dữ liệu · thứ tự triển khai | ✅ đã duyệt, chưa cài đặt · ⚠️ kho realtime sẽ đổi sang ClickHouse (ADR 0007) |
 | [news-pipeline.md](news-pipeline.md) | Mọi tin qua lưới AI không đường tắt · taxonomy 3 nhóm 20 sub · gắn mã cổ phiếu 3 tầng · kho toàn văn bất biến · tìm kiếm Postgres | ✅ đã duyệt, chưa cài đặt |
 | [chatbot-semantic-layer.md](chatbot-semantic-layer.md) | Luật phân định bốn tầng · 8 function · ba quy tắc nối dữ liệu vào skill · điều chưa biết | 🟡 **đề xuất, chưa duyệt** |
 | [market-field-selection.md](market-field-selection.md) | Luật chọn nguồn · bảng lấy/bỏ từng mã trường của BVSC, Screener, Snapshot · bảng đối soát số đếm · danh sách cần kiểm API. Bản máy đọc: [market-field-selection.json](market-field-selection.json) | ✅ đã chốt (trải từ quyết định 2026-08-14) |

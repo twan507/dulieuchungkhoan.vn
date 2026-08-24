@@ -51,7 +51,7 @@ Mục lục chi tiết từng file: [10-sources/README.md](10-sources/README.md)
 
 | File | Nội dung | Trạng thái |
 |---|---|---|
-| [market-data-store.md](20-design/market-data-store.md) | Cách ly hoàn toàn · Ingester + SSE · lược đồ Timescale · ETL · giám sát hợp đồng | ✅ đã duyệt |
+| [market-data-store.md](20-design/market-data-store.md) | Cách ly hoàn toàn · Ingester + SSE · lược đồ Timescale · ETL · giám sát hợp đồng | ✅ đã duyệt · ⚠️ chờ cập nhật ClickHouse (ADR 0007) |
 | [news-pipeline.md](20-design/news-pipeline.md) | Lưới AI không đường tắt · taxonomy 20 sub · gắn mã 3 tầng · kho toàn văn | ✅ đã duyệt |
 | [chatbot-semantic-layer.md](20-design/chatbot-semantic-layer.md) | Luật phân định 4 tầng · 8 function · ba quy tắc nối dữ liệu vào skill | 🟡 **đề xuất, chưa duyệt** |
 | [market-field-selection.md](20-design/market-field-selection.md) | Bảng lấy/bỏ từng trường cho ETL thị trường — 213 dòng, lý do tại chỗ, kèm [bản JSON máy đọc](20-design/market-field-selection.json). Cả hai sinh tự động từ [`gen_field_selection.py`](20-design/gen_field_selection.py), cấm sửa tay | ✅ đã chốt |
