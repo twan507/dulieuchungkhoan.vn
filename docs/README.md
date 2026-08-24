@@ -30,6 +30,7 @@ Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và m�
 |---|---|
 | [architecture.md](00-overview/architecture.md) | Bốn tầng L0–L4 · ranh giới tài liệu · ba mắt xích nối ba khối · lỗ hổng gác cổng phạm vi · rủi ro pháp lý theo nguồn |
 | [roadmap.md](00-overview/roadmap.md) | Trạng thái từng khối · việc chặn nhiều nhất · việc gấp vì mất dữ liệu · cây phụ thuộc · việc còn để ngỏ · ba bẫy ngày đầu |
+| [reference-repos.md](00-overview/reference-repos.md) | Sổ đăng ký repo GitHub tham chiếu — đã dùng · kho nguồn · đã loại kèm lý do |
 | [decisions/](00-overview/decisions/) | Kho lịch sử quyết định kiến trúc — 0001 cấu trúc kho · 0002 chọn nguồn dữ liệu · 0003 đóng dự án skill · 0004 bỏ nhật ký phiên · 0005 tái cấu trúc cây tiếng Anh · 0006 chốt nguồn sau khảo sát 2026-08-15 |
 
 ### 10 · Nguồn dữ liệu — *reference*

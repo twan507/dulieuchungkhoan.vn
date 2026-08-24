@@ -139,6 +139,15 @@ Khi kiểm rate limit: **ước lượng số request cần cho việc thật, c
 
 Kết luận chỉ được phép ở dạng *"mức tải X an toàn"* — không bao giờ *"ngưỡng là Y"*.
 
+### 4.4 Kỷ luật viết code
+
+*Chưng cất từ [karpathy-guidelines](https://github.com/multica-ai/andrej-karpathy-skills) (khảo sát 2026-08-24 — xem [danh mục repo tham chiếu](docs/00-overview/reference-repos.md)). Thiên về thận trọng hơn tốc độ; việc vặt thì tự cân nhắc.*
+
+1. **Nghĩ trước khi code.** Nêu giả định ra thành lời; có nhiều cách hiểu thì trình bày các cách, không tự chọn ngầm. Thấy cách đơn giản hơn thì nói — kể cả khi phải phản biện yêu cầu.
+2. **Tối giản trước tiên.** Không tính năng ngoài yêu cầu, không abstraction cho code dùng một lần, không "cấu hình linh hoạt" không ai xin, không xử lý lỗi cho kịch bản không thể xảy ra. Viết 200 dòng mà 50 dòng đủ thì viết lại.
+3. **Sửa như phẫu thuật.** Mỗi dòng thay đổi phải truy được về đúng yêu cầu. Không "tiện tay cải thiện" code lân cận, không refactor thứ không hỏng, theo style sẵn có kể cả khi mình sẽ làm khác. Dọn rác **do chính thay đổi của mình tạo ra** (import/biến mồ côi); rác có sẵn thì báo, không tự xoá.
+4. **Chạy theo tiêu chí nghiệm thu.** Biến task thành mục tiêu kiểm chứng được trước khi làm: *"sửa bug" → "viết test tái hiện bug rồi làm nó pass"*. Kế hoạch nhiều bước thì mỗi bước kèm cách kiểm — tiêu chí mạnh cho phép tự lặp đến xong, tiêu chí yếu ("làm cho chạy đi") sinh ra hỏi lại liên tục.
+
 ---
 
 ## 5. Môi trường
@@ -163,3 +172,4 @@ Kết luận chỉ được phép ở dạng *"mức tải X an toàn"* — khô
 | **Sắp gọi API bất kỳ** | `docs/10-sources/market/00-conventions.md` — **đọc trước tiên**, các bẫy triển khai nằm ở đó |
 | Sắp sửa skill | `docs/30-skills/maintenance.md` — **bắt buộc**, không phải tham khảo |
 | Bằng chứng đo của một con số | `docs/90-records/surveys/` |
+| Cân nhắc cài công cụ/skill ngoài | `docs/00-overview/reference-repos.md` — sổ đăng ký repo tham chiếu, **ghi mục mới cùng lượt với việc cài/loại** |
