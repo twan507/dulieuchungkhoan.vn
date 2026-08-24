@@ -121,8 +121,8 @@ Muốn kết luận phủ định thì phải **dò từ ứng dụng thật c�
 
 Task lớn thì **viết spec, viết plan cho từng việc**, rồi **giao subagent thực thi và kiểm soát lại** — không tự làm một mạch.
 
-- Spec và plan **lưu trong repo**: `docs/superpowers/plans/YYYY-MM-DD-<tên>/`
-- Hồ sơ khảo sát lưu ở `docs/superpowers/surveys/YYYY-MM-DD-<tên>/`
+- Spec và plan **lưu trong repo**: `docs/90-records/plans/YYYY-MM-DD-<tên>/`
+- Hồ sơ khảo sát lưu ở `docs/90-records/surveys/YYYY-MM-DD-<tên>/`
 - Subagent giao cho **Opus**
 
 ### 4.2 Song song thì phải cách ly
@@ -161,4 +161,4 @@ Kết luận chỉ được phép ở dạng *"mức tải X an toàn"* — khô
 | Tra một endpoint | `docs/README.md` → `docs/10-sources/` |
 | **Sắp gọi API bất kỳ** | `docs/10-sources/market/00-conventions.md` — **đọc trước tiên**, các bẫy triển khai nằm ở đó |
 | Sắp sửa skill | `docs/30-skills/maintenance.md` — **bắt buộc**, không phải tham khảo |
-| Bằng chứng đo của một con số | `docs/superpowers/surveys/` |
+| Bằng chứng đo của một con số | `docs/90-records/surveys/` |
