@@ -152,7 +152,17 @@ Task lớn đi đủ chuỗi, mỗi bước dùng skill superpowers có sẵn, k
 
 **Ba gate cứng, không nhảy:** spec được duyệt · plan tồn tại trước khi giao subagent · **test đỏ trước khi viết implementation**.
 
-Hồ sơ khảo sát: `docs/90-records/surveys/YYYY-MM-DD-<tên>/`. Subagent giao **Opus**; đề bài phải **tự đủ** (spec rõ, đường dẫn file, tiêu chí kiểm chứng được) vì subagent không có ngữ cảnh hội thoại; kết quả phải **review trước khi chấp nhận** — kiến trúc sư chịu trách nhiệm cuối.
+Hồ sơ khảo sát: `docs/90-records/surveys/YYYY-MM-DD-<tên>/`.
+
+**Giao hay tự làm — đánh giá TỪNG task theo effort + độ phức tạp trước khi bắt đầu:**
+
+| Loại task | Cách | Model |
+|---|---|---|
+| Nhỏ (sửa 1–2 file, tra cứu, chỉnh config), **hoặc** cần nhìn output rồi quyết ngay (vòng TDD đỏ→xanh của seam mới, dò lỗi, so ảnh render) | **Tự làm** — giao subagent chỉ thêm overhead | — |
+| Tay chân khối lượng lớn theo plan đã chi tiết (nhiều file, khảo sát rộng, lặp, chạy song song được) | **Giao subagent** | **Sonnet** (mặc định) |
+| Thật sự khó/mơ hồ còn sót (thiết kế mở, suy luận nặng, nhiều cách hiểu) | Giao subagent | **escalate Opus** |
+
+Mặc định subagent là **Sonnet**: plan chi tiết đã gỡ hết cái khó nên thực thi phần lớn là cơ học — chỉ nâng **Opus** khi đánh giá task còn suy luận nặng thật. Đề bài giao subagent phải **tự đủ** (spec rõ, đường dẫn file, tiêu chí kiểm chứng được) vì subagent không có ngữ cảnh hội thoại; kết quả phải **review trước khi chấp nhận** — kiến trúc sư chịu trách nhiệm cuối.
 
 ### 4.2 Song song thì phải cách ly
 
