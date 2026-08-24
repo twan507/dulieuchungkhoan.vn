@@ -8,7 +8,8 @@ Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và m�
 | [`10-sources/`](10-sources/) | **Reference** — sự thật đo được về hệ thống của người khác | Chỉ sửa khi **đo lại** |
 | [`20-design/`](20-design/) | **Explanation** — lựa chọn của dulieuchungkhoan.vn | Sửa được, lý do viết thẳng tại chỗ |
 | [`30-skills/`](30-skills/) | Corpus và tài liệu bảo trì hai skill chứng khoán | Corpus bất biến; tài liệu bảo trì cập nhật theo trạng thái thật |
-| [`00-overview/decisions/`](00-overview/decisions/) | Sổ quyết định — bản ghi lịch sử | Chỉ ghi lịch sử quyết định. Tài liệu sống phải tường minh, không trỏ về đây; xoá cả thư mục này chỉ được phép mất lịch sử |
+| [`90-records/`](90-records/) | **Hồ sơ làm việc** — spec/plan của task lớn và hồ sơ khảo sát | Bản ghi lịch sử — thêm mới, không viết lại quá khứ. Tri thức rút ra phải đi vào tài liệu sống |
+| [`00-overview/decisions/`](00-overview/decisions/) | [Sổ quyết định (ADR)](00-overview/decisions/) — bản ghi lịch sử | Chỉ ghi lịch sử quyết định. Tài liệu sống phải tường minh, không trỏ về đây; xoá cả thư mục này chỉ được phép mất lịch sử |
 
 ---
 
@@ -52,6 +53,7 @@ Mục lục chi tiết từng file: [10-sources/README.md](10-sources/README.md)
 
 | File | Nội dung | Trạng thái |
 |---|---|---|
+| [service-topology.md](20-design/service-topology.md) | Ranh giới process backend · ba tiến trình `ingester`/`etl`/`api` · ai ghi miền nào · rate limiter Redis · lát cắt writer trước | ✅ chốt trước khi viết code |
 | [market-data-store.md](20-design/market-data-store.md) | Cách ly hoàn toàn · Ingester + SSE · lược đồ Timescale · ETL · giám sát hợp đồng | ✅ đã duyệt · ⚠️ chờ cập nhật ClickHouse (ADR 0007) |
 | [news-pipeline.md](20-design/news-pipeline.md) | Lưới AI không đường tắt · taxonomy 20 sub · gắn mã 3 tầng · kho toàn văn | ✅ đã duyệt |
 | [chatbot-semantic-layer.md](20-design/chatbot-semantic-layer.md) | Luật phân định 4 tầng · 8 function · ba quy tắc nối dữ liệu vào skill | 🟡 **đề xuất, chưa duyệt** |

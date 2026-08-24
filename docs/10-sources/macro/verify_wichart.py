@@ -203,7 +203,7 @@ def main():
         chk(rr.status_code == 500, f"B3b key={k} → 500", f"got {rr.status_code}")
 
     # B4 CORS, ETag, gzip
-    h = requests.get(f"{BASE}?name=cpi", headers={"Origin": "https://finext.example"},
+    h = requests.get(f"{BASE}?name=cpi", headers={"Origin": "https://example.com"},
                      timeout=20)
     chk(h.headers.get("Access-Control-Allow-Origin") == "*", "B4a CORS *",
         h.headers.get("Access-Control-Allow-Origin"))

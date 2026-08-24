@@ -6,6 +6,7 @@ Tầng này ghi **lựa chọn của dulieuchungkhoan.vn** — cái gì xây th�
 
 | File | Nội dung | Trạng thái |
 |---|---|---|
+| [service-topology.md](service-topology.md) | Ranh giới **process** của backend · ba tiến trình `ingester`/`etl`/`api` tách theo vòng đời · ai ghi miền nào · rate limiter lên Redis · lát cắt writer trước · bố cục `backend/` | ✅ chốt trước khi viết code |
 | [market-data-store.md](market-data-store.md) | Cách ly hoàn toàn khỏi nguồn · Ingester active+standby · SSE · lược đồ TimescaleDB · lịch ETL · giám sát hợp đồng dữ liệu · thứ tự triển khai | ✅ đã duyệt, chưa cài đặt · ⚠️ kho realtime sẽ đổi sang ClickHouse (ADR 0007) |
 | [news-pipeline.md](news-pipeline.md) | Mọi tin qua lưới AI không đường tắt · taxonomy 3 nhóm 20 sub · gắn mã cổ phiếu 3 tầng · kho toàn văn bất biến · tìm kiếm Postgres | ✅ đã duyệt, chưa cài đặt |
 | [chatbot-semantic-layer.md](chatbot-semantic-layer.md) | Luật phân định bốn tầng · 8 function · ba quy tắc nối dữ liệu vào skill · điều chưa biết | 🟡 **đề xuất, chưa duyệt** |

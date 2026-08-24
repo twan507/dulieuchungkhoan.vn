@@ -61,6 +61,8 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
 
 **Đọc theo chiều ngang:** hai nhánh dữ liệu (thị trường và tin tức) độc lập tới tận L2, gặp nhau lần đầu ở L3 qua **mã cổ phiếu** — khoá nối duy nhất giữa hai nhánh.
 
+> **Ranh giới tiến trình của backend** — L1 và L3 chạy thành mấy tiến trình, `ingester`/`etl`/`api` tách nhau thế nào, ai ghi miền dữ liệu nào — do [service-topology.md](../20-design/service-topology.md) chốt. Đọc trước khi dựng L1/L3.
+
 ## 2. Ranh giới tài liệu — luật một dòng
 
 | Tầng thư mục | Chứa gì | Sửa được không |

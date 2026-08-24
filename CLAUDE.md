@@ -41,6 +41,27 @@ Ba loại trông giống nhau nếu chỉ liệt tên, nhưng **hàm ý hoàn to
 
 Tên file và thư mục dùng tiếng Anh *(quyết định 0005)*. Nội dung viết tiếng Việt.
 
+### 1.6 Index thư mục — đọc trước khi vào, cập nhật cùng lượt
+
+Mỗi thư mục **hub** (nơi phải đi vào để chọn một trong nhiều file khác loại) được index **đúng một lần** — hoặc bằng `README.md` của chính nó, hoặc bằng một index cha sở hữu rõ ràng. **Không hai index cùng liệt kê một file:** hai bản sao sẽ trôi lệch nhau, đúng bẫy "hai nguồn sự thật" đã cấm ở chỗ khác *(bảng `organization`, pipeline tin)*. Thư mục **lá/đồng nhất** (một loại file lặp lại — ví dụ `corpus/HP*`, `briefs/`) **không cần index riêng**, cha index là đủ.
+
+Hai luật cứng, áp mỗi lượt làm việc:
+
+1. **Đọc index của thư mục trước khi làm việc trong đó.** Index nói thư mục để làm gì và có gì — đọc trước đỡ mò và đỡ đặt file sai chỗ.
+2. **Đổi cây thì cập nhật index sở hữu NGAY trong cùng lượt.** Thêm · đổi tên · di chuyển · xoá một file hay thư mục con ⇒ sửa index đang sở hữu nó trong cùng thay đổi. Đây là phần "dọn rác do chính thay đổi tạo ra" *(§4.4.3)*. **Index lệch cây là nói dối** — cùng loại với "sửa số mà không đo".
+
+Bản đồ index gốc: [`docs/README.md`](docs/README.md).
+
+### 1.7 Sửa một chỗ, quét mọi chỗ — không để tài liệu đá nhau
+
+Một sự thật (số đo, quyết định, đường dẫn, tên) chỉ nên có **một chủ**. Trước khi ghi nó ở chỗ mới, kiểm xem đã có chủ chưa: có rồi thì trỏ tới, **đừng chép bản thứ hai** — hai bản sao rồi sẽ lệch nhau.
+
+Khi **đổi** một sự thật đã có: `git grep` chuỗi đó toàn repo rồi sửa (hoặc đối chiếu) **mọi chỗ trong cùng lượt**. Bỏ sót một chỗ là để tài liệu tự đá nhau — cùng loại lỗi tự đầu độc ở §3.2.
+
+**Ranh giới lịch sử — không viết lại quá khứ:** `00-overview/decisions/` và `90-records/` là bản ghi *tại-thời-điểm*. Nội dung **không sửa** kể cả khi tên/đường dẫn đã đổi về sau — chỉ được sửa **href** của link chết, giữ nguyên nhãn hiển thị làm dấu thời gian. Vì vậy tên cũ như *Finext* hay `superpowers/` còn nằm trong hai thư mục đó là **đúng**, không phải rác cần dọn. Còn `10-sources/` chỉ sửa khi **đo lại** (§1.2).
+
+Trước khi tuyên một tài liệu "đã đồng bộ", chạy phép kiểm: `git grep` tên/số/đường dẫn vừa đổi, xác nhận mọi hit còn lại **hoặc đã đúng, hoặc thuộc vùng lịch sử**. Không chạy phép kiểm thì không được nói đã đồng bộ.
+
 ---
 
 ## 2. Quyết định đã chốt — đừng mở lại
