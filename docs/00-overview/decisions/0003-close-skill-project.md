@@ -26,7 +26,7 @@ Hai skill xong, test 6 vòng, đã dừng tối ưu theo tiêu chí *"hai vòng 
 
 **2 · A9 — giữ nguyên tên "ngân hàng" trong luận điểm *ngành báo hiệu*.**
 
-Câu ở [`danh-muc-va-luan-chuyen.md`](../../../.claude/skills/vn-stock-knowledge/references/portfolio-and-rotation.md): *"Ngân hàng đứng đầu bảng xếp hạng an toàn nhưng lại hút tiền đầu tiên… nên nó là ngành báo hiệu"*.
+Câu ở [`danh-muc-va-luan-chuyen.md`](../../../backend/agent/skills/vn-stock-knowledge/references/portfolio-and-rotation.md): *"Ngân hàng đứng đầu bảng xếp hạng an toàn nhưng lại hút tiền đầu tiên… nên nó là ngành báo hiệu"*.
 
 Lý do giữ: đây là **cơ chế**, không phải danh sách ngành cứng, nên nó không vi phạm quyết định gỡ danh sách ngành ở phần A — và là luận điểm có giá trị riêng, mất đi thì không nguồn nào khác cấp lại. Ba lựa chọn từng cân nhắc: giữ nguyên · đổi thành "nhóm tài chính" · bỏ hẳn.
 

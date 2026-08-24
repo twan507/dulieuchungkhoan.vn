@@ -68,4 +68,4 @@ Mục lục chi tiết từng file: [10-sources/README.md](10-sources/README.md)
 
 | Đường dẫn | Nội dung |
 |---|---|
-| [`.claude/skills/`](../.claude/skills/) | Hai skill chứng khoán — sản phẩm chạy được, 3.046 dòng |
+| [`backend/agent/skills/`](../backend/agent/skills/) | Hai skill chứng khoán — sản phẩm chạy được, 3.046 dòng |

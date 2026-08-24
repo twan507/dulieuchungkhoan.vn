@@ -35,7 +35,7 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
 └───────┬─────────────────────────────────────────────────────────────┘
         │
 ┌───────▼─────────────────────────────────────────────────────────────┐
-│  L4 · TRI THỨC — .claude/skills/                                     │
+│  L4 · TRI THỨC — backend/agent/skills/                              │
 │  vn-stock-advisor    (tư duy, văn phong — luôn có mặt)              │
 │  vn-stock-knowledge  (công thức, quy trình — tải khi cần)           │
 └───────┬─────────────────────────────────────────────────────────────┘
@@ -68,7 +68,7 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
 | [`10-sources/`](../10-sources/) | Sự thật đo được về hệ thống của người khác | **Chỉ khi đo lại.** Sửa mà không đo là nói dối |
 | [`20-design/`](../20-design/) | Lựa chọn của dulieuchungkhoan.vn | Được, nhưng lý do phải viết thẳng tại chỗ |
 | [`30-skills/`](../30-skills/) | Corpus và tài liệu bảo trì hai skill chứng khoán | Corpus bất biến; tài liệu bảo trì cập nhật theo trạng thái thật |
-| [`.claude/skills/`](../../.claude/skills/) | Sản phẩm chạy được | Được, nhưng phải test lại — xem quy trình 6 vòng và bộ test hồi quy ở [`30-skills/maintenance.md`](../30-skills/maintenance.md) |
+| [`backend/agent/skills/`](../../backend/agent/skills/) | Sản phẩm chạy được | Được, nhưng phải test lại — xem quy trình 6 vòng và bộ test hồi quy ở [`30-skills/maintenance.md`](../30-skills/maintenance.md) |
 
 ## 3. Ba mắt xích nối ba khối
 
@@ -105,13 +105,13 @@ Hợp đồng giữa hai bên:
 | Hệ dữ liệu | Cây ICB + `icbCode` của từng mã | Không phán một ngành thuộc bậc dẫn dắt / lan toả / phòng thủ |
 | Skill | **Tiêu chí phân bậc** + phương pháp chấm 4 thành phần rủi ro | Không chốt cứng ngành nào ở bậc nào |
 
-Việc xếp một ngành cụ thể vào bậc nào là **kết quả chạy lúc trả lời**, không phải hằng số trong tài liệu: lấy ngành từ ICB, chấm bốn thành phần rủi ro theo phương pháp ở [`portfolio-and-rotation.md`](../../.claude/skills/vn-stock-knowledge/references/portfolio-and-rotation.md), chia dải làm ba.
+Việc xếp một ngành cụ thể vào bậc nào là **kết quả chạy lúc trả lời**, không phải hằng số trong tài liệu: lấy ngành từ ICB, chấm bốn thành phần rủi ro theo phương pháp ở [`portfolio-and-rotation.md`](../../backend/agent/skills/vn-stock-knowledge/references/portfolio-and-rotation.md), chia dải làm ba.
 
 Nhờ vậy khung ngành đổi thì câu trả lời đổi theo, không phải sửa skill.
 
 ### 3.3 Function calling ↔ tầng skill
 
-[Kho dữ liệu §6.3](../20-design/market-data-store.md) định nghĩa 5 function cho chatbot. [Skill L2](../../.claude/skills/vn-stock-knowledge/SKILL.md) viết: *"có công cụ tra dữ liệu thì gọi và dùng số hiện hành, không có thì nói rõ là cần tra"*.
+[Kho dữ liệu §6.3](../20-design/market-data-store.md) định nghĩa 5 function cho chatbot. [Skill L2](../../backend/agent/skills/vn-stock-knowledge/SKILL.md) viết: *"có công cụ tra dữ liệu thì gọi và dùng số hiện hành, không có thì nói rõ là cần tra"*.
 
 Hai câu này nói về **cùng một thứ, từ hai phía** — và chưa bên nào biết bên kia tồn tại. Chi tiết hợp đồng ở [tầng ngữ nghĩa cho chatbot](../20-design/chatbot-semantic-layer.md).
 

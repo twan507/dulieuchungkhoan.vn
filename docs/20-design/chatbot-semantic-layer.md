@@ -7,7 +7,7 @@ Hai đầu của hợp đồng này đã tồn tại và đều đã được te
 | Đầu | Đã có gì | Ở đâu |
 |---|---|---|
 | **Dữ liệu** | 5 function, từ điển chỉ tiêu, bộ view người-đọc-được | [kho dữ liệu §6](market-data-store.md) |
-| **Tri thức** | Kiến trúc phân tầng L1/L2, đã test 6 vòng | [`.claude/skills/`](../../.claude/skills/) |
+| **Tri thức** | Kiến trúc phân tầng L1/L2, đã test 6 vòng | [`backend/agent/skills/`](../../backend/agent/skills/) |
 
 Tài liệu này viết phần ở giữa. Nó **không lặp lại** §6 của kho dữ liệu — đọc file đó trước.
 

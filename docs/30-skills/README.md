@@ -1,10 +1,10 @@
 # Tri thức chuyên môn
 
-Tầng này chứa **nguyên liệu và tài liệu bảo trì** của hai skill chứng khoán. Bản thân hai skill là sản phẩm chạy được và nằm ở [`.claude/skills/`](../../.claude/skills/), không nằm đây.
+Tầng này chứa **nguyên liệu và tài liệu bảo trì** của hai skill chứng khoán. Bản thân hai skill là sản phẩm chạy được và nằm ở [`backend/agent/skills/`](../../backend/agent/skills/), không nằm đây.
 
 | Đường dẫn | Là gì | Đọc khi nào |
 |---|---|---|
-| [maintenance.md](maintenance.md) | Những thứ **sửa nhầm sẽ làm hỏng skill mà không có gì báo lỗi** | **Trước mọi thay đổi** trong `.claude/skills/` |
+| [maintenance.md](maintenance.md) | Những thứ **sửa nhầm sẽ làm hỏng skill mà không có gì báo lỗi** | **Trước mọi thay đổi** trong `backend/agent/skills/` |
 | [terminology.md](terminology.md) | Bảng tra **bắt buộc** — hai trục phân loại, chuyển đổi thuật ngữ nguồn | Cùng lúc với file trên |
 | [corpus/](corpus/) | 96 file tóm tắt bài giảng — nguyên liệu, không phải tài liệu | Khi truy nguyên một luận điểm về nguồn |
 
@@ -16,8 +16,8 @@ Tầng này chứa **nguyên liệu và tài liệu bảo trì** của hai skill
 
 | Tầng | Skill | Tải khi | Quy mô |
 |---|---|---|---|
-| **L1** | [`vn-stock-advisor`](../../.claude/skills/vn-stock-advisor/) | Mọi câu về chứng khoán Việt Nam — luôn có mặt | 774 dòng |
-| **L2** | [`vn-stock-knowledge`](../../.claude/skills/vn-stock-knowledge/) | Chỉ khi cần một con số, công thức, hay quy trình tính | 2.272 dòng |
+| **L1** | [`vn-stock-advisor`](../../backend/agent/skills/vn-stock-advisor/) | Mọi câu về chứng khoán Việt Nam — luôn có mặt | 774 dòng |
+| **L2** | [`vn-stock-knowledge`](../../backend/agent/skills/vn-stock-knowledge/) | Chỉ khi cần một con số, công thức, hay quy trình tính | 2.272 dòng |
 
 Ba luật phân định, áp cho cả skill 3, 4 sau này:
 

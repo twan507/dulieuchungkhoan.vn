@@ -2,7 +2,7 @@
 
 **Ngày:** 2026-08-14 · **Trạng thái:** dự án đã đóng — hai skill xong, test 6 vòng, không còn việc treo
 
-Đọc file này **trước khi sửa bất cứ gì** trong [`.claude/skills/`](../../.claude/skills/). Nó không kể quá trình dựng skill; nó ghi những thứ mà **sửa nhầm sẽ làm hỏng skill và không có gì báo lỗi**.
+Đọc file này **trước khi sửa bất cứ gì** trong [`backend/agent/skills/`](../../backend/agent/skills/). Nó không kể quá trình dựng skill; nó ghi những thứ mà **sửa nhầm sẽ làm hỏng skill và không có gì báo lỗi**.
 
 Bảng thuật ngữ đi kèm là [`terminology.md`](terminology.md) — bắt buộc, không phải tham khảo.
 
@@ -59,7 +59,7 @@ Quyết định *"không nhúng danh sách ngành"* tốn 9 chỗ sửa và mộ
 | Chọn PB hay PE theo mức thâm dụng vốn | Là **phương pháp định giá** |
 | Cơ chế hành vi khi lãi suất thấp | Là **tâm lý**, tên ngành chỉ là ví dụ |
 
-Và một chỗ đã cân nhắc riêng rồi quyết **giữ**: *"ngân hàng đứng đầu xếp hạng an toàn nhưng hút tiền đầu tiên → **ngành báo hiệu**"* ở [`portfolio-and-rotation.md`](../../.claude/skills/vn-stock-knowledge/references/portfolio-and-rotation.md). Đây là **cơ chế**, không phải danh sách.
+Và một chỗ đã cân nhắc riêng rồi quyết **giữ**: *"ngân hàng đứng đầu xếp hạng an toàn nhưng hút tiền đầu tiên → **ngành báo hiệu**"* ở [`portfolio-and-rotation.md`](../../backend/agent/skills/vn-stock-knowledge/references/portfolio-and-rotation.md). Đây là **cơ chế**, không phải danh sách.
 
 ## 4. Năm thứ trông như lỗi nhưng là cố ý
 
