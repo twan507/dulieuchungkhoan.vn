@@ -149,6 +149,7 @@ Kết luận chỉ được phép ở dạng *"mức tải X an toàn"* — khô
 | Python | 3.12 — **luôn đặt `PYTHONIOENCODING=utf-8`**, nếu không sẽ crash cp1252 khi in tiếng Việt |
 | Git | `core.longpaths true` *(đã bật — worktree từng lỗi "Filename too long")* |
 | Bí mật | `.env` ở gốc repo, đã được `.gitignore` che. **Không bao giờ in giá trị khoá ra output hay ghi vào file.** |
+| Email dự án | `dulieuchungkhoan.official@gmail.com` *(tạo 2026-08-24)* — dùng khi đăng ký dịch vụ, khai email liên hệ (User-Agent crawler, API key…). Không phải email cá nhân của chủ dự án |
 
 ---
 
