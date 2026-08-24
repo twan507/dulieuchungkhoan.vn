@@ -4,7 +4,7 @@
 
 ## Bối cảnh
 
-Đợt khảo sát nguồn ngày 2026-08-15 gọi thật khoảng 400 lời gọi trên 9 nguồn. Hồ sơ đo và toàn bộ bằng chứng nằm ở [`docs/superpowers/surveys/2026-08-15-nguon-du-lieu/`](../../superpowers/surveys/2026-08-15-nguon-du-lieu/README.md). ADR này chỉ ghi những gì phải **quyết**, không ghi những gì chỉ cần **chép**.
+Đợt khảo sát nguồn ngày 2026-08-15 gọi thật khoảng 400 lời gọi trên 9 nguồn. Hồ sơ đo và toàn bộ bằng chứng nằm ở [`docs/superpowers/surveys/2026-08-15-nguon-du-lieu/`](../../90-records/surveys/2026-08-15-nguon-du-lieu/README.md). ADR này chỉ ghi những gì phải **quyết**, không ghi những gì chỉ cần **chép**.
 
 Ba chỗ buộc phải ra quyết định:
 
@@ -62,7 +62,7 @@ Toàn bộ nhóm vĩ mô Mỹ của akshare đã chết gần một năm mà v�
 
 Giá trị còn lại là thật và chỉ một: phần **lịch sử dài mà nguồn chính vĩnh viễn không trả** (nguồn chính cắt cửa sổ). Chạy một lần rồi thôi thì né được đúng ba điểm yếu nặng nhất của nó: chậm, gãy vặt, phải chạy hằng ngày.
 
-➜ Vì thế **cố ý không lập file cho akshare trong `10-sources/`** — nó không phải nguồn vận hành. Ai cần chạy backfill đọc [`report-akshare.md`](../../superpowers/surveys/2026-08-15-nguon-du-lieu/report-akshare.md) trong hồ sơ khảo sát.
+➜ Vì thế **cố ý không lập file cho akshare trong `10-sources/`** — nó không phải nguồn vận hành. Ai cần chạy backfill đọc [`report-akshare.md`](../../90-records/surveys/2026-08-15-nguon-du-lieu/report-akshare.md) trong hồ sơ khảo sát.
 
 ### 7 · **Loại có chủ đích bốn khối:** chứng quyền · lô lẻ · trái phiếu · realtime FiinTrade
 
