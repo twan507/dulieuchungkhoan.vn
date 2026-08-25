@@ -13,10 +13,13 @@ CREATE TABLE staging.raw_payload (
   endpoint_key text NOT NULL,            -- định danh lời gọi: key/series/URL
   fetched_at   timestamptz NOT NULL DEFAULT now(),
   content_type text NOT NULL CHECK (content_type IN ('json','html','text')),
-  payload      jsonb,                    -- một trong hai cột, tuỳ content_type
+  payload      jsonb,                    -- json → payload; html/text → body
   body         text,
-  meta         jsonb,                    -- HTTP status, độ dài, hash… tuỳ adapter
-  CHECK (payload IS NOT NULL OR body IS NOT NULL)
+  meta         jsonb,                    -- HTTP status, độ dài…; khoá 'hash' giữ hash nội dung
+                                         -- cho chính sách "lưu khi đổi" (khoá đặt tên cố định)
+  CHECK ( (content_type = 'json' AND payload IS NOT NULL AND body IS NULL)
+       OR (content_type IN ('html','text') AND body IS NOT NULL AND payload IS NULL) )
+  -- Review vòng 2, M5: CHECK cũ (payload OR body) cho phép content_type='json' mà chỉ có body.
 );
 CREATE INDEX ON staging.raw_payload (source, endpoint_key, fetched_at);
 ```
@@ -43,6 +46,8 @@ Dung lượng WiChart mỗi payload **chưa đo** — ghi nhận khi chạy th�
 ```sql
 CREATE TABLE ops.data_domain_state (      -- CÔNG TẮC miền × nguồn: "phần thiếu kệ nó, phần đủ cứ chạy"
   domain          text NOT NULL,          -- 'market.reference' | 'market.price' | 'market.fundamentals'
+                                          -- | 'market.events' | 'market.scores' (snapshot/screener —
+                                          --   tầng C "mất là mất"; review vòng 2, M7)
                                           -- | 'macro.indicator' | 'macro.omo' | 'asset' | 'news'
   source          text NOT NULL,
   status          text NOT NULL CHECK (status IN ('active','frozen','migrating')),
@@ -79,6 +84,7 @@ CREATE INDEX ON ops.etl_run (job, started_at DESC);
 - **`data_domain_state`** thi hành mô hình đã chốt ở kiến trúc: mất WiChart → gạt `frozen` đúng các dòng `(*, 'wichart')`, mọi miền khác chạy tiếp; đổi nguồn một miền → `migrating` trong lúc chạy song song. View đọc phải chịu `NULL`/khoảng trống, không lỗi. Đây cũng là công tắc của cơ chế tháo lắp nguồn (README).
 - **`contract_snapshot`** là phòng vệ duy nhất trước nguồn không cam kết (không versioning, không changelog, kiểu hỏng nguy hiểm nhất là *HTTP 200 + dữ liệu sai*): chạy trước phiên mỗi ngày trên bộ mã mẫu, so với baseline — trường đổi, kiểu đổi, độ phủ tụt, giá trị bất thường. Kèm theo dõi hash bundle JS của nguồn (cảnh báo sớm "họ vừa deploy") — chi tiết bộ kiểm ở [kho dữ liệu §7.1](../../../20-design/market-data-store.md), gồm cả 7 phép kiểm đơn vị từ điển chỉ tiêu (bước 3).
 - **`etl_run`** trả lời hai câu hỏi vận hành hằng ngày: *job nào chưa chạy hôm nay* và *job nào đang đỏ* — nguyên liệu cho cảnh báo mức P1/P2/P3 đã thiết kế.
+- **Ngữ nghĩa ghi của cả ba bảng** *(review vòng 2, M8)*: `data_domain_state` UPSERT theo `(domain, source)`; `contract_snapshot` append-only (mỗi lần check một dòng — lịch sử baseline); `etl_run` chèn lúc bắt đầu, UPDATE đúng dòng đó lúc kết thúc.
 
 ## 3. Điểm cần duyệt ở bước này
 

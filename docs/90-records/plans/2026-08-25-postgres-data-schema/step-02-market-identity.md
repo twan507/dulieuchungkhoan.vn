@@ -42,6 +42,10 @@ CREATE TABLE market.industry_icb_map (    -- ICB (nguồn) → ngành riêng: g�
   icb_code    text PRIMARY KEY,           -- + tự gán mã mới niêm yết
   industry_id bigint NOT NULL REFERENCES market.industry
 );
+-- LUẬT PHÂN GIẢI (review vòng 2, I10): map đăng ký ở CẤP NHÁNH ICB, còn issuer mang mã LÁ
+-- (cấp 4) — hai cấp không join thẳng được. Thứ tự tra: khớp icb_code chính xác trước;
+-- không có thì leo icb_code_path ('8000/8300/8350') lấy TỔ TIÊN GẦN NHẤT có trong map.
+-- Mã ICB lạ chưa có trong cây → industry_id để NULL + cảnh báo, không chặn job.
 
 CREATE TABLE market.icb_industry (        -- cây ICB của nguồn — CHỈ THAM KHẢO
   icb_code        text PRIMARY KEY,
@@ -102,6 +106,7 @@ CREATE TABLE market.security_external_id (
 3. **Chứng quyền, lô lẻ, trái phiếu không nạp** — loại có chủ đích (CLAUDE.md §2.2), `security_type` không có giá trị cho chúng.
 4. **ETL tra `*_external_id` để gọi nguồn** — không bao giờ truyền ticker (bẫy `organCode ≠ ticker`: HTTP 200 kèm dữ liệu rỗng).
 5. **Lọc mã huỷ niêm yết bằng `status`** — danh bạ FiinTrade gồm cả mã đã rời sàn; đối chiếu `getAllQuotes` BVSC để đặt `status`, lọc động không hardcode con số. Tin (bước 6) và mọi phép phân tích mặc định chỉ nhìn `listed`.
+5b. **Hai bẫy danh mục phải xử ở ETL nạp danh bạ** *(review vòng 2, I12 — từ [00-conventions.md](../../../10-sources/market/00-conventions.md) bẫy 10–11)*: (a) `StockType` **không dùng làm khoá phân loại chung** — cùng một mã trả 12 ở `/quotes` nhưng 1 ở `/datafeed/instruments`; `security_type` quyết theo **một endpoint chốt trong plan**, ghi rõ. (b) **Không endpoint nào là danh mục chuẩn duy nhất** (`/quotes` 2.534 mã vs `/datafeed/instruments` 2.001) — danh bạ = **hợp nhất hai endpoint**; mã chỉ có ở một bên vẫn nạp, `exchange` lấy từ bên có nó.
 6. **Skill không cố định danh sách ngành** (hợp đồng architecture §3.2) — trước ghi "khung ngành = ICB", nay khung ngành do `market.industry` cung cấp. Hợp đồng không đổi bản chất: hệ dữ liệu cấp khung + mã ngành từng doanh nghiệp, skill cấp tiêu chí phân bậc. Cập nhật tài liệu sống khi spec chốt xong.
 
 ## 4. Kiểm chứng của bước này (seam)

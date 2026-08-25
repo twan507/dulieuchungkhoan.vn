@@ -11,17 +11,24 @@ CREATE TABLE news.article (               -- một TIN canonical (sau dedupe) �
   article_id     bigint generated always as identity PRIMARY KEY,
   canonical_url  text NOT NULL UNIQUE,
   primary_source text NOT NULL,           -- báo của bản canonical: 'cafef', 'vietstock'…
+  feed           text,                    -- feed đã bắt tin này (review vòng 2, I5)
   published_at   timestamptz NOT NULL,
   fetched_at     timestamptz NOT NULL,
   group_no       smallint,                -- nhóm taxonomy (1..3) — do lưới AI quyết
+  group_from_feed smallint,               -- nhóm GỢI Ý từ feed — cặp với group_no để tự phát hiện
+                                          -- feed xếp sai nhóm (news-pipeline §7.3; review vòng 2, I5)
   sub            text,                    -- sub-taxonomy ('3b'…) — 20 sub đã chốt
-  group_overridden boolean NOT NULL DEFAULT false,  -- AI ghi đè gợi ý từ feed → phải log
+  group_overridden boolean NOT NULL DEFAULT false,  -- bật khi group_no != group_from_feed → log
   confidence     numeric,
   classified_from text CHECK (classified_from IN ('content','title_only')),
   content_chars  int,                     -- số ký tự nạp classifier (đối chiếu chọn trần 3k/4k sau)
   ticker_step_ran boolean NOT NULL DEFAULT false,   -- phân biệt "không có mã" vs "chưa chạy gắn mã"
   labels         text[] NOT NULL DEFAULT '{}'       -- nhãn loại bỏ: 'x_pr', 'x_social'…
 );
+CREATE INDEX ON news.article (published_at);
+CREATE INDEX ON news.article (group_no, sub);
+-- Review vòng 2, I4: hai index của lớp "lọc cấu trúc" — bảng §3 khai mà DDL bản trước quên;
+-- news-pipeline §9.5: "phần lớn truy vấn dừng ở đây".
 
 CREATE TABLE news.article_revision (      -- NỘI DUNG theo phiên bản — báo sửa bài thì THÊM, không đè
   article_id   bigint  NOT NULL REFERENCES news.article,
@@ -42,9 +49,12 @@ CREATE INDEX ON news.article_revision USING gin (tsv);
 CREATE TABLE news.article_source (        -- dedupe GIỮ ĐỘ PHỦ: mọi báo đã đăng tin này
   article_id  bigint NOT NULL REFERENCES news.article,
   source_name text NOT NULL,
-  url         text NOT NULL,
+  url         text NOT NULL UNIQUE,       -- unique TOÀN CỤC — cùng một URL báo không được treo
+                                          -- dưới hai tin canonical (vỡ tín hiệu "mấy báo cùng
+                                          -- đăng"; review vòng 2, M13)
   PRIMARY KEY (article_id, url)
 );
+-- Ngữ nghĩa ghi (M8): append qua pipeline, idempotent theo URL — gặp URL đã có thì bỏ qua.
 ```
 
 - **Ngữ nghĩa ghi:** `article` chèn một lần khi tin vào kho; các cột **phân loại** (group/sub/confidence/labels) được job AI cập nhật — chúng là *nhận định của mình*, sửa được. Còn **nội dung** bất biến: bóc lại thấy báo đã sửa bài → thêm dòng `revision` version+1, bản cũ giữ nguyên (kho lịch sử phải phản ánh quá khứ, không phản ánh hiện tại).
@@ -56,17 +66,26 @@ CREATE TABLE news.article_source (        -- dedupe GIỮ ĐỘ PHỦ: mọi bá
 CREATE TABLE news.article_ticker (
   article_id  bigint NOT NULL REFERENCES news.article,
   security_id bigint NOT NULL REFERENCES market.security,  -- FK chéo schema, CÙNG instance — hợp lệ
-  via         text NOT NULL CHECK (via IN ('lookup','ai')),-- tầng 2 đối chiếu / tầng 3 AI
+  via         text NOT NULL CHECK (via IN ('url','lookup','ai')),
+              -- BA tầng gắn mã của pipeline (§8): 'url' = tách từ URL CafeF CBTT (~200 tin/ngày,
+              -- chắc chắn tuyệt đối) / 'lookup' = đối chiếu chuỗi / 'ai' = đọc hiểu.
+              -- Bản trước thiếu 'url' — review vòng 2, I6. Lưu tầng để đo độ chính xác từng tầng.
   PRIMARY KEY (article_id, security_id)
 );
 CREATE INDEX ON news.article_ticker (security_id);          -- "mọi tin về HPG" — truy vấn chủ lực
+-- Ngữ nghĩa ghi (M8): pipeline ghi idempotent theo PK; chạy lại tầng gắn mã được phép
+-- thêm dòng mới, không xoá dòng cũ khác 'via'.
 
 CREATE TABLE news.trade_name (            -- tên thương mại → mã, cho tầng 3 (khớp gần đúng)
   name        text NOT NULL,              -- 'Hòa Phát', 'Thế Giới Di Động'…
   security_id bigint NOT NULL REFERENCES market.security,
   PRIMARY KEY (name, security_id)
 );
-CREATE INDEX ON news.trade_name USING gin (name gin_trgm_ops);
+CREATE INDEX ON news.trade_name
+  USING gin (news.immutable_unaccent(name) gin_trgm_ops);
+-- Index trên BIỂU THỨC unaccent — khuôn truy vấn §3 so sánh qua unaccent, index trên cột thô
+-- sẽ không được dùng (review vòng 2, I4).
+-- Ngữ nghĩa ghi (M8): seed tay + bổ sung dần (UPSERT theo PK); không có đường ghi tự động từ AI.
 ```
 
 - Gắn mã chỉ nhận `market.security` đang `listed` (lọc ở pipeline) — danh bạ nguồn chứa cả mã huỷ niêm yết, gắn nhầm là tin đeo mã của doanh nghiệp đã rời sàn (bẫy architecture §3.1). Nhờ bước 2, đây là **một nguồn danh bạ duy nhất** — pipeline tin không nạp danh sách riêng.

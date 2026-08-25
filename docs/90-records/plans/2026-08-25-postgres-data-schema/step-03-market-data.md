@@ -15,10 +15,16 @@ CREATE TABLE market.price_daily (
   close_adj     numeric,        -- giá ĐÃ điều chỉnh (nguồn tự điều chỉnh khi có sự kiện quyền)
   close_raw     numeric,        -- giá THÔ khớp sàn — sự thật lịch sử, KHÔNG BAO GIỜ sửa
   open_value    numeric, highest_value numeric, lowest_value numeric,
+                                -- ⚠️ O/H/L theo nền ĐÃ điều chỉnh (cùng nền close_adj) —
+                                -- ghép O/H/L với close_raw là trộn hai nền giá (review vòng 2, M10)
   -- ~90 cột còn lại: khối lượng, giá trị, thoả thuận, khối ngoại, dòng tiền
   -- cá nhân/tổ chức/tự doanh, cờ sự kiện — danh sách chốt trong plan, sinh từ
   -- market-field-selection.json (không chép tay)
-  raw           jsonb NOT NULL, -- payload gốc: dựng lại được khi nguồn đổi schema
+  raw           jsonb NOT NULL DEFAULT '{}',
+                -- payload gốc KHOÁ THEO ADAPTER: {"fiintrade": {...}, "bvsc": {...}} —
+                -- dòng này do HAI nguồn ghi (close_adj ← getPriceData, close_raw ← datafeed EOD),
+                -- mỗi writer chỉ merge khoá của mình, không đè khoá của writer kia
+                -- (review vòng 2, C5 — bản cũ một payload NOT NULL sẽ bị writer sau đè)
   ingested_at   timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (security_id, trading_date)
 );
@@ -41,7 +47,7 @@ FROM market.price_daily;
   - **Khớp nhu cầu:** hệ số chỉ dùng để điều chỉnh **nến intraday** (ClickHouse) — nến intraday cũng chỉ tồn tại từ ngày Ingester chạy. Giai đoạn cần hệ số = giai đoạn có raw. Ngày không có raw, view trả NULL là hành vi đúng; chart dài hạn dùng thẳng `close_adj` (chuỗi tự nhất quán).
 - View `price_factor` cũng là điểm nối duy nhất sang ClickHouse (điều chỉnh nến intraday — cơ chế thuộc phiên ClickHouse).
 - Kích hoạt re-crawl: từ `corporate_event.exright_date` (§4).
-- **Chỉ số (VNINDEX…) cũng ghi vào bảng này** (`security_type='index'`), dòng chỉ số dùng tập cột con (không có thoả thuận/khối ngoại tuỳ nguồn). ⚠️ Đường nạp **EOD cho chỉ số chưa kiểm** nguồn nào phủ — đánh dấu theo luật §1.3, chốt ở plan ETL *(review 2026-08-25)*.
+- **Chỉ số (VNINDEX…) cũng ghi vào bảng này** (`security_type='index'`), dòng chỉ số dùng tập cột con. Nguồn EOD chỉ số **đã đo**: TVC `/history` phủ `VNINDEX`/`VN30`/`HNXIndex` + `getIndexSnapshots` 20 chỉ số — nhưng ⚠️ **TVC chặn cứng 239 nến, `from` bị bỏ qua** ([00-conventions.md](../../../10-sources/market/00-conventions.md) bẫy 7) ⇒ **lịch sử chỉ số không backfill sâu được, phải tự tích luỹ từ ngày vận hành** — cùng họ với snapshot/screener. *(Review vòng 2, I11 — bản trước ghi "chưa kiểm" là sai: nguồn đã kiểm, ràng buộc thật là độ sâu.)*
 
 ## 2. BCTC dạng dài — `financial_statement` + từ điển chỉ tiêu
 
@@ -57,6 +63,10 @@ CREATE TABLE market.financial_statement (
   ingested_at    timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (issuer_id, year_report, quarter_report, statement_type, metric_code)
 );
+CREATE INDEX ON market.financial_statement (metric_code, year_report, quarter_report);
+-- Review vòng 2, C4: bảng lớn nhất kho (~chục triệu dòng); mọi truy vấn ngữ nghĩa đã thiết kế
+-- (v_financial_ratios, compare_peers, screen_stocks — market-data-store §6) đều cắt ngang
+-- theo (metric_code, kỳ) — thiếu index này là seq-scan.
 
 CREATE TABLE market.metric_dictionary (   -- registry giải mã chỉ tiêu (2 từ điển)
   dictionary text NOT NULL CHECK (dictionary IN ('screener_params','field_dictionary')),
@@ -68,16 +78,20 @@ CREATE TABLE market.metric_dictionary (   -- registry giải mã chỉ tiêu (2 
 );
 
 CREATE TABLE market.metric_mapping (      -- registry: mã vendor → mã chuẩn (điền dần)
-  vendor_code    text PRIMARY KEY,
+  source         text NOT NULL,           -- registry ĐƯỢC PHÉP có source (ổ cắm — quyết định #4)
+  vendor_code    text NOT NULL,
   canonical_code text NOT NULL,
-  name_vi        text, unit text
+  name_vi        text, unit text,
+  PRIMARY KEY (source, vendor_code)
 );
+-- Review vòng 2, I9: khôi phục đúng thiết kế đã duyệt ở market-data-store §9.3
+-- (source, vendor_code) — PK chỉ vendor_code sẽ VỠ khi có nguồn BCTC thứ hai trùng chuỗi mã.
 ```
 
 - **Vì sao dạng dài:** bộ chỉ tiêu khác nhau theo loại doanh nghiệp (`bsa*` phi ngân hàng, `bsb*` ngân hàng) — dạng cột rộng sẽ thưa hàng trăm cột NULL. 556 mã BCTC + 173 tỷ số nằm gọn một khuôn.
 - **Ngữ nghĩa ghi: UPSERT** — BCTC bị **điều chỉnh hồi tố** (restate); re-crawl mỗi quý sau mùa báo cáo, giá trị mới đè giá trị cũ, `ingested_at` cho biết bản nào mới.
 - Từ điển nạp từ **hai nguồn**: 83 chỉ tiêu `GetScreenerParameters` (kèm `valueRange`) + 729 mã [field-dictionary.json](../../../10-sources/market/field-dictionary.json) (kèm `don_vi_du_lieu`, 392 mã đã xác thực bằng đẳng thức kế toán — bảy phép kiểm đó vào bộ giám sát hợp đồng, bước 7). **Luật ưu tiên khi trùng `code`** *(review 2026-08-25)*: `unit` lấy theo `field_dictionary` (phủ 99,7%, đã xác thực); `screener_params` chỉ là nguồn của `valueRange` và tên hiển thị.
-- ⚪ **Rủi ro chấp nhận** *(review 2026-08-25)*: `metric_code` không có namespace nguồn — nếu ngày nào dùng nguồn BCTC thứ hai có bộ mã trùng chuỗi ký tự, xử bằng prefix khi nạp; chưa làm trước (YAGNI, đã có `canonical_code` làm cầu).
+- ⚪ **Rủi ro chấp nhận** *(review 2026-08-25; thu hẹp ở vòng 2)*: `financial_statement.metric_code` không có namespace nguồn — nếu có nguồn BCTC thứ hai trùng chuỗi mã, xử bằng prefix khi nạp (bảng **dữ liệu** không có cột source theo quyết định #4). Riêng registry `metric_mapping` đã mang `source` trong PK nên không còn rủi ro vỡ khoá.
 - 🔴 **Không tự tính lại chỉ tiêu nguồn đã cấp** — `isa20ttm ≠ Σ4 quý isa20` (lệch tới 9,4%, khác định nghĩa lợi nhuận). Lưu số nguồn đưa.
 
 ## 3. Snapshot và screener theo ngày — tự tạo lịch sử
@@ -92,6 +106,7 @@ CREATE TABLE market.snapshot_daily (
   ingested_at  timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (issuer_id, trading_date, kind)
 );
+CREATE INDEX ON market.snapshot_daily (trading_date);  -- cắt ngang theo ngày (review vòng 2, M3)
 
 CREATE TABLE market.screener_daily (
   security_id  bigint NOT NULL REFERENCES market.security,
@@ -141,7 +156,8 @@ CREATE TABLE market.financial_report_file (
 );
 ```
 
-- **Ngữ nghĩa ghi `corporate_event`: UPSERT theo khoá tự nhiên** (unique index biểu thức — PK không chứa được `coalesce` nên dùng khoá nhân tạo + unique index). ETL lấy phần mới bằng `FromDate`.
+- **Ngữ nghĩa ghi `corporate_event`: UPSERT theo khoá tự nhiên** (unique index biểu thức — PK không chứa được `coalesce` nên dùng khoá nhân tạo + unique index). ETL lấy phần mới bằng `FromDate`. *Lưu ý triển khai (review vòng 2):* `INSERT … ON CONFLICT` phải lặp lại **nguyên văn cả hai biểu thức `coalesce`** thì Postgres mới suy ra được unique index này.
+- **Override tường minh so với thiết kế TimescaleDB cũ** *(review vòng 2, M2)*: các lệnh `create_hypertable` + lịch nén §5.2/§5.5/§5.7 của market-data-store **hết hiệu lực theo TimescaleDB** (ADR 0007 đổi kho realtime sang ClickHouse). Postgres thuần, **chưa partition** — khối lượng EOD/BCTC ở mức triệu-chục triệu dòng chưa cần; xét partition khi có bằng chứng chậm thật. "Không xoá gì" vẫn giữ nguyên.
 - `exright_date` là tín hiệu vận hành quan trọng nhất bảng này: có dòng mới với ngày này → re-crawl giá mã liên quan (§1).
 
 ## 5. Điểm cần duyệt ở bước này

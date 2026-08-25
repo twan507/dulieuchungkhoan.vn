@@ -1,6 +1,17 @@
 # Bước 4 — Vĩ mô: registry chỉ tiêu, chuỗi quan sát, cụm OMO
 
-**Trạng thái:** ✅ chốt 2026-08-25 (chủ dự án đồng ý 5 điểm duyệt; splice đổi sang view theo review cùng ngày — xem [review](review-2026-08-25.md) F2) · **Phụ thuộc:** bước 1–3 (✅) · **Phạm vi:** schema `macro` — chỉ tiêu vĩ mô Việt Nam (WiChart **26 key** vĩ mô — số đo từ [wichart.md](../../../10-sources/macro/wichart.md); mỗi key nhiều series, số series chốt khi seed registry) + Mỹ (FRED 15 series) + đấu thầu OMO của SBV. *Giá hàng hoá của WiChart không ở đây — nó là giá tài sản, thuộc bước 5.*
+**Trạng thái:** ✅ chốt 2026-08-25 (chủ dự án đồng ý 5 điểm duyệt; sửa theo review cùng ngày F2 + vòng 2 C1/C2/C3/I2/I8 — xem [review](review-2026-08-25.md)) · **Phụ thuộc:** bước 1–3 (✅) · **Phạm vi:** schema `macro` — chỉ tiêu vĩ mô Việt Nam (WiChart **26 key** vĩ mô — số đo từ [wichart.md](../../../10-sources/macro/wichart.md); mỗi key nhiều series, số series chốt khi seed registry) + Mỹ (FRED **11/15 series** — xem §0) + đấu thầu OMO của SBV. *Giá hàng hoá của WiChart không ở đây — nó là giá tài sản, thuộc bước 5.*
+
+## 0. Luật phân miền macro ↔ asset *(review vòng 2, I2 — trước đó DCOILWTICO có hai chủ)*
+
+**Cái gì là giá thị trường của một tài sản giao dịch được → `asset`; cái gì là chỉ tiêu thống kê/chính sách do cơ quan công bố → `macro`.** Phân bổ dứt điểm 15 series FRED:
+
+| Miền | Series |
+|---|---|
+| `macro` (11) | `DFF` · `FEDFUNDS` · `SOFR` · `DGS2` · `DGS10` · `T10Y2Y` · `T10YIE` · `CPIAUCSL` · `PCEPILFE` · `UNRATE` · `PAYEMS` |
+| `asset` (4) | `DCOILWTICO` (dầu WTI spot) · `DTWEXBGS` (chỉ số đô broad) · `VIXCLS` (chỉ số biến động) · `DEXCHUS` (tỷ giá CNY/USD) |
+
+Lãi suất/lợi suất xếp `macro` (nếu ngày nào dùng Yahoo `^TNX` làm dự phòng cho `DGS10` thì nó cắm vào `indicator_source` với `source='yahoo'` — đúng cơ chế tháo lắp, không mở miền mới).
 
 ---
 
@@ -15,8 +26,13 @@ CREATE TABLE macro.indicator (
   unit         text NOT NULL,            -- đơn vị GỐC sau chuẩn hoá: 'VND', 'USD', '%', 'nghin_nguoi'…
   freq         text NOT NULL CHECK (freq IN ('d','w','m','q','y')),
   region       text NOT NULL CHECK (region IN ('vn','us','global')),
+  role         text NOT NULL DEFAULT 'data' CHECK (role IN ('data','growth_ref')),
   notes        text
 );
+-- role='growth_ref' (review vòng 2, C3): 13 series "Tăng trưởng" của WiChart KHÔNG bị loại —
+-- chúng là nguyên liệu DUY NHẤT để tính factor nối đứt gãy (đoạn cũ/mới không chồng lấn,
+-- wichart.md §6.2) và để GIÁM SÁT phát hiện break mới. Vẫn nạp vào observation như thường,
+-- nhưng tầng đọc/API chỉ phơi role='data'.
 
 CREATE TABLE macro.indicator_source (     -- Ổ CẮM: tháo lắp nguồn tại đây
   indicator_id bigint NOT NULL REFERENCES macro.indicator,
@@ -26,7 +42,9 @@ CREATE TABLE macro.indicator_source (     -- Ổ CẮM: tháo lắp nguồn tạ
                                           -- (bẫy đã đo: tên series trùng nhau giữa 2 key)
   scale        numeric NOT NULL DEFAULT 1,-- hệ số đơn vị hardcode — nhãn nguồn sai 15 series,
                                           -- sai 1000 lần rải ngẫu nhiên, ETL nhân trước khi ghi
-  active       boolean NOT NULL DEFAULT true,  -- false = series loại (growth_ref, chết, đóng băng)
+  active       boolean NOT NULL DEFAULT true,  -- false = series chết/đóng băng ở nguồn
+                                               -- (growth_ref KHÔNG vào đây — nó là role
+                                               --  của indicator, vẫn nạp; review vòng 2, C3)
   meta         jsonb,                     -- tier, lag, freq khai vs freq thật, cờ đặc thù nguồn
   PRIMARY KEY (source, external_key, external_sub),
   UNIQUE (indicator_id, source)
@@ -85,33 +103,42 @@ Nghiệp vụ: SBV đấu thầu bơm/hút tiền qua kênh thị trường mở
 CREATE TABLE macro.omo_session (          -- mỗi phiên ĐÃ CRAWL một dòng
   session_date      date PRIMARY KEY,     -- lấy từ TIÊU ĐỀ bài của SBV, cấm lấy ngày hệ thống
   crawled_at        timestamptz NOT NULL,
-  has_reverse_repo  boolean NOT NULL,     -- có nhóm "Mua kỳ hạn" (bơm tiền)
-  has_outright_sale boolean NOT NULL,     -- có nhóm "Bán hẳn" (hút tiền, tín phiếu)
+  has_reverse_repo  boolean NOT NULL,     -- có nhóm "Mua kỳ hạn"  (bơm có kỳ hạn)
+  has_repo          boolean NOT NULL,     -- có nhóm "Bán kỳ hạn"  (hút có kỳ hạn) — review vòng 2, C1
+  has_outright_sale boolean NOT NULL,     -- có nhóm "Bán hẳn"     (hút, tín phiếu)
   note              text
 );
 -- Vắng nhóm là DỮ KIỆN: phiên không có "Bán hẳn" nghĩa là hôm đó SBV không phát hành
 -- tín phiếu — cờ false ghi nhận điều đó, khác hẳn "chưa crawl" (không có dòng).
+-- Cột "Loại hình giao dịch" của SBV có BA giá trị (sbv-omo.md §4) — bản đầu chỉ mô hình hoá
+-- hai nhóm từng quan sát được; thiếu 'Bán kỳ hạn' thì phiên đầu tiên có nó sẽ vỡ CHECK
+-- giữa job, đúng nguồn không backfill được (review vòng 2, C1).
 
 CREATE TABLE macro.omo_auction (          -- kết quả: một dòng = (phiên × loại hình × kỳ hạn)
   session_date  date NOT NULL REFERENCES macro.omo_session,
-  op_type       text NOT NULL CHECK (op_type IN ('reverse_repo','outright_sale')),
+  op_type       text NOT NULL CHECK (op_type IN ('reverse_repo','repo','outright_sale')),
   tenor_days    smallint NOT NULL,        -- 7|14|21|28|35|56|63|91|140
   participants  smallint,                 -- số thành viên tham gia
   winners       smallint,                 -- số trúng thầu
-  volume_bn_vnd numeric NOT NULL,         -- tỷ VND — parse số kiểu VN: '6.307,47' → 6307.47
+  volume_vnd    numeric NOT NULL,         -- VND ĐƠN VỊ GỐC — nguồn công bố tỷ VND, ETL nhân 1e9
+                                          -- tại cổng ('6.307,47' tỷ → 6.30747e12); giữ luật
+                                          -- "kho không có nghìn/tỷ" của bước 1 (review vòng 2, C2)
   rate_pct      numeric,                  -- %/năm
   ingested_at   timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (session_date, op_type, tenor_days)
 );
 
 CREATE TABLE macro.omo_flow (             -- TỰ DỰNG toàn phần từ omo_auction (luật bước 8)
-  flow_date          date PRIMARY KEY,
-  injection_bn_vnd   numeric NOT NULL,    -- bơm trong ngày
-  maturing_bn_vnd    numeric NOT NULL,    -- đáo hạn: phiên (D−k, kỳ hạn k) đến hạn tại D
-  net_bn_vnd         numeric NOT NULL,    -- ròng = bơm − đáo hạn (dương = bơm ròng)
-  outstanding_bn_vnd numeric,             -- đang lưu hành (cộng dồn)
-  complete           boolean NOT NULL DEFAULT false  -- true khi kho đã tích đủ ~140 ngày
+  flow_date       date PRIMARY KEY,
+  injection_vnd   numeric NOT NULL,       -- bơm trong ngày (VND)
+  maturing_vnd    numeric NOT NULL,       -- đáo hạn: phiên (D−k, kỳ hạn k) đến hạn tại D
+  net_vnd         numeric NOT NULL,       -- ròng = bơm − đáo hạn (dương = bơm ròng)
+  outstanding_vnd numeric,                -- đang lưu hành (cộng dồn)
+  complete        boolean NOT NULL DEFAULT false  -- true khi kho đã tích đủ ~140 ngày
 );                                        -- (kỳ hạn dài nhất) — trước đó số ròng còn thiếu vế
+-- Chiều dấu theo op_type khi dựng flow: reverse_repo phát hành = BƠM, đáo hạn = hút;
+-- repo và outright_sale phát hành = HÚT (đáo hạn của repo = bơm trả lại). Công thức tổng
+-- quát chốt trong plan; chiều của repo/outright_sale CHƯA KIỂM trên phiên thật.
 ```
 
 - **Ngữ nghĩa ghi:** `omo_session`/`omo_auction` append-only; ngày trong tiêu đề **trùng ngày đã có** → phiên cũ chưa cập nhật, bỏ qua không ghi đè. `omo_flow` rebuild toàn phần idempotent — đúng ba luật tầng tự tính (README).
@@ -123,7 +150,7 @@ CREATE TABLE macro.omo_flow (             -- TỰ DỰNG toàn phần từ omo_a
 - [ ] **Chỉ tiêu mang mã của mình** (`vn.cpi`, `us.fedfunds`…), nguồn chỉ nằm trong bảng ánh xạ kèm hệ số đơn vị — đồng ý?
 - [ ] **Một bảng `observation` chung** cho mọi chỉ tiêu (dạng dài như BCTC bước 3), ghi kiểu **UPSERT** vì nguồn vá số quá khứ — đồng ý?
 - [ ] **Ngày neo kỳ = ngày đầu kỳ**, một luật cho mọi chuỗi tháng/quý/năm — đồng ý?
-- [ ] **Đứt gãy chuỗi**: giữ cả bản đã nối (`value`) lẫn nguyên gốc (`value_unspliced`) + sổ đăng ký hệ số duyệt tay — đồng ý?
+- [ ] **Đứt gãy chuỗi**: bảng lưu số **như nguồn công bố**; hệ số nối đăng ký duyệt tay vào `series_break`; bản đã nối là **view** `observation_spliced` tính lúc đọc *(viết lại theo F2 — bản cũ của ô này mô tả thiết kế hai-cột đã bị thay; review vòng 2, I8)* — đồng ý?
 - [ ] **OMO ba bảng**: phiên đã crawl (vắng nhóm là dữ kiện) · kết quả thầu · dòng bơm-hút tự dựng có cờ `complete` — đồng ý?
 
 ## 5. Kiểm chứng của bước này (seam)
@@ -131,8 +158,9 @@ CREATE TABLE macro.omo_flow (             -- TỰ DỰNG toàn phần từ omo_a
 1. UPSERT observation: ghi lại `(indicator, obs_date)` đã có với giá trị mới (literal 159001 → 158927, mô phỏng FRED vá `PAYEMS`) → 1 dòng, giá trị mới.
 2. Neo kỳ: epoch WiChart của "Tháng 07/2026" (giải tay ra `2026-07-01` theo múi giờ VN) → `obs_date='2026-07-01'`; parse UTC sẽ ra `2026-06-30` — test bắt đúng bẫy này.
 3. Splice qua view: chuỗi 4 điểm + một break factor 1,6005 (literal từ ca GDP thật) → `observation_spliced` trả đoạn **trước** break = gốc × 1,6005, đoạn sau giữ nguyên; bảng `observation` không đổi một dòng nào khi thêm break.
-4. `omo_flow` giải tay: phiên D bơm 6.307,47 tỷ kỳ hạn 7 ngày; phiên D+7 bơm 5.000 → `maturing(D+7)=6307.47`, `net(D+7)=−1307.47`.
-5. Parse số VN: `'6.307,47'` → `6307.47` (literal); `float()` thẳng phải fail test này.
+4. `omo_flow` giải tay *(đơn vị VND gốc — C2)*: phiên D bơm 6.307,47 tỷ kỳ hạn 7 ngày; phiên D+7 bơm 5.000 tỷ → `maturing_vnd(D+7) = 6 307 470 000 000`, `net_vnd(D+7) = −1 307 470 000 000`.
+5. Parse số VN + nhân đơn vị: `'6.307,47'` (tỷ) → `6.30747e12` VND (literal); `float()` thẳng trên chuỗi phải fail test này.
+5b. `op_type='repo'` hợp lệ (nhóm "Bán kỳ hạn" — C1); `op_type` lạ → lỗi CHECK.
 6. `freq='x'` → lỗi CHECK; `omo_auction.op_type` lạ → lỗi CHECK; chèn auction cho phiên chưa có trong `omo_session` → lỗi FK.
 
 Chốt xong → bước 5 (asset: giá tài sản — hàng hoá, FX, chỉ số quốc tế, crypto).
