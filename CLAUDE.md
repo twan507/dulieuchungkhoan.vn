@@ -145,7 +145,7 @@ Task lớn đi đủ chuỗi, mỗi bước dùng skill superpowers có sẵn, k
 1. **brainstorm** (skill `brainstorming`) — làm rõ yêu cầu, chốt phương án.
 2. **spec** → `docs/90-records/plans/YYYY-MM-DD-<tên>/spec.md` — **người dùng duyệt**.
 3. **plan** (skill `writing-plans`) → `plan.md` cùng thư mục — bẻ spec thành task có nội dung/lệnh/expected thật, **không placeholder**. Spec nói *cái gì*, plan nói *chính xác thế nào*.
-4. **thực thi** (skill `subagent-driven-development` / `executing-plans`) — **giao subagent Opus**, TDD trong từng task *(§4.5)*.
+4. **thực thi** (skill `subagent-driven-development` / `executing-plans`) — **giao subagent** (model theo bảng dưới, cấm Fable), TDD trong từng task *(§4.5)*.
 5. **review** (skill `requesting-code-review`) — độc lập, hai trục **Chuẩn** (đúng repo + code smell) và **Spec** (thiếu/sai/scope-creep), báo riêng, không gộp hay xếp hạng chéo.
 6. **verify** (skill `verification-before-completion`) — chạy lệnh kiểm chứng, **dán output thật** rồi mới báo xong. Test fail thì báo fail nguyên trạng.
 7. **commit theo mốc** *(§4.7)*.
@@ -163,6 +163,8 @@ Hồ sơ khảo sát: `docs/90-records/surveys/YYYY-MM-DD-<tên>/`. **Sổ ghi t
 | Thật sự khó/mơ hồ còn sót (thiết kế mở, suy luận nặng, nhiều cách hiểu) | Giao subagent | **escalate Opus** |
 
 Mặc định subagent là **Sonnet**: plan chi tiết đã gỡ hết cái khó nên thực thi phần lớn là cơ học — chỉ nâng **Opus** khi đánh giá task còn suy luận nặng thật. Đề bài giao subagent phải **tự đủ** (spec rõ, đường dẫn file, tiêu chí kiểm chứng được) vì subagent không có ngữ cảnh hội thoại; kết quả phải **review trước khi chấp nhận** — kiến trúc sư chịu trách nhiệm cuối.
+
+🔴 **Quy tắc cứng: tuyệt đối cấm subagent chạy model Fable.** Mọi lời gọi subagent phải **chỉ định model tường minh** (`sonnet` mặc định · `opus` khi escalate) — bỏ trống là harness kế thừa model của phiên chính (Fable), tức vi phạm ngầm không có gì báo. Áp cho mọi loại agent, kể cả agent đọc-tìm (Explore). *(Sự cố 2026-08-25: một agent khảo sát 8 file được giao không chỉ định model, chạy nhầm Fable.)*
 
 ### 4.2 Song song thì phải cách ly
 
