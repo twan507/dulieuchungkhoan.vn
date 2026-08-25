@@ -82,7 +82,7 @@ Nếu ai đó nhúng danh sách ngành vào skill "cho nhanh", họ đang đảo
 
 Nhánh thị trường và nhánh tin gặp nhau ở `ticker`. Ba hệ quả:
 
-- Bảng `organization` là **nguồn sự thật duy nhất** cho danh sách mã. Pipeline tin không tự nạp bản riêng.
+- **`market.issuer` + `market.security`** (spec schema 2026-08-25 — trước là bảng `organization`) là nguồn sự thật duy nhất cho danh bạ. Pipeline tin không tự nạp bản riêng.
 - Tin có thể mang **nhiều mã**, và **mã rỗng là kết quả hợp lệ**. Câu trả lời của bot phải chịu được cả hai — ép phải có mã sẽ khiến AI bịa.
 - Mã đã **huỷ niêm yết** vẫn nằm trong `getListOrganization`. Lọc chéo với `getAllQuotes` trước khi dùng.
 

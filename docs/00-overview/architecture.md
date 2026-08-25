@@ -92,22 +92,22 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
 
 ⚠️ Con số *"~1.600 mã"* trong tài liệu pipeline là **ước lượng chưa kiểm chứng**; số đo thật là **1.974** *(đếm `StockType=2` từ `getAllQuotes` của BVSC, đo 2026-08-15; ngày 2026-08-10 là 1.972)*. Dùng số 1.974 (đo 2026-08-15) — và lưu ý con số này **đổi theo tuần**, nên lọc động thay vì hardcode.
 
-Hệ quả vận hành: bảng `organization` của [kho dữ liệu thị trường §5.1](../20-design/market-data-store.md) trở thành **phụ thuộc cứng của pipeline tin**. Pipeline tin không được tự nạp danh sách riêng — hai bản sao sẽ lệch nhau.
+Hệ quả vận hành: bảng danh bạ — nay là **`market.issuer` + `market.security`** (spec schema 2026-08-25 tách đôi khái niệm `organization` cũ: doanh nghiệp phát hành vs mã giao dịch — xem [spec bước 2](../90-records/plans/2026-08-25-postgres-data-schema/step-02-market-identity.md)) — trở thành **phụ thuộc cứng của pipeline tin**. Pipeline tin không được tự nạp danh sách riêng — hai bản sao sẽ lệch nhau. Gắn mã chỉ nhận `security` có `status='listed'`.
 
-### 3.2 Cây ngành ICB → khung ngành cho skill
+### 3.2 Bộ ngành riêng → khung ngành cho skill (ICB chỉ còn tham khảo)
 
 Hai skill **cố ý bỏ trống danh sách ngành**. Đây không phải thiếu sót mà là quyết định đã ghi rõ: *"không được cố định danh sách ngành, vì khung ngành chuẩn sẽ do hệ thống dữ liệu cung cấp sau"* — đã gỡ ở 9 chỗ. ⚠️ Có bốn chỗ nêu tên ngành **không được gỡ nhầm** (kế toán, định giá, hành vi) — liệt kê ở [`30-skills/README.md`](../30-skills/README.md).
 
-Khung ngành đó chính là [`getAllIcbIndustry`](../10-sources/market/03-fiin-reference.md) — cây ICB **4 cấp**, có `icbCodePath` và `icbNamePath` nên lấy ngành cha ở cấp bất kỳ không cần duyệt cây.
+Khung ngành đó nay là **bộ ngành riêng 6 nhóm × 24 ngành** của dự án — nội dung ở [industry-tree.md](../20-design/industry-tree.md), chứa trong `market.industry` *(chốt 2026-08-25, thay quyết định cũ "khung = ICB")*. Cây ICB [`getAllIcbIndustry`](../10-sources/market/03-fiin-reference.md) hạ vai trò xuống **tham khảo**: gán hàng loạt qua `industry_icb_map`, tự gán mã mới niêm yết, đối chiếu khi nghi gán sai.
 
-Hợp đồng giữa hai bên:
+Hợp đồng giữa hai bên (bản chất không đổi):
 
 | Bên | Cấp gì | Không được làm gì |
 |---|---|---|
-| Hệ dữ liệu | Cây ICB + `icbCode` của từng mã | Không phán một ngành thuộc bậc dẫn dắt / lan toả / phòng thủ |
+| Hệ dữ liệu | Khung ngành riêng (`market.industry`) + `industry_id` của từng doanh nghiệp | Không phán một ngành thuộc bậc dẫn dắt / lan toả / phòng thủ |
 | Skill | **Tiêu chí phân bậc** + phương pháp chấm 4 thành phần rủi ro | Không chốt cứng ngành nào ở bậc nào |
 
-Việc xếp một ngành cụ thể vào bậc nào là **kết quả chạy lúc trả lời**, không phải hằng số trong tài liệu: lấy ngành từ ICB, chấm bốn thành phần rủi ro theo phương pháp ở [`portfolio-and-rotation.md`](../../backend/agent/skills/vn-stock-knowledge/references/portfolio-and-rotation.md), chia dải làm ba.
+Việc xếp một ngành cụ thể vào bậc nào là **kết quả chạy lúc trả lời**, không phải hằng số trong tài liệu: lấy ngành từ `market.industry`, chấm bốn thành phần rủi ro theo phương pháp ở [`portfolio-and-rotation.md`](../../backend/agent/skills/vn-stock-knowledge/references/portfolio-and-rotation.md), chia dải làm ba.
 
 Nhờ vậy khung ngành đổi thì câu trả lời đổi theo, không phải sửa skill.
 
