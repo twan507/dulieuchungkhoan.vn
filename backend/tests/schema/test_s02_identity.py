@@ -2,6 +2,13 @@ import sqlalchemy as sa
 
 from conftest import expect_violation
 
+L1 = {"TAICHINH","BATDONGSAN","SANXUAT","XUATKHAU","TIEUDUNG","NANGLUONG"}
+L2 = {"NGANHANG","CHUNGKHOAN","BAOHIEM","BDS","KCN","XAYDUNG","VLXD",
+      "KIMLOAI","TAINGUYEN","HOACHAT","NHUA","THIETBI",
+      "NONGNGHIEP","THUYSAN","DETMAY","CAOSU",
+      "BANLE","THUCPHAM","DULICH","YTEGD",
+      "DIENNUOC","DAUKHI","VANTAI","CONGNGHE"}   # literal từ industry-tree.md §2
+
 
 def _mk_security(db, ticker, exchange, status="listed", stype="stock"):
     return db.execute(sa.text(
@@ -47,3 +54,14 @@ def test_industry_level_checks(db):                      # seam 3
 def test_icb_map_fk(db):                                 # seam 4 (dùng seed Task 3? KHÔNG —
     assert expect_violation(db,                          #  test tự tạo ngành, độc lập thứ tự task)
         "INSERT INTO market.industry_icb_map (icb_code, industry_id) VALUES ('9999', 999999)")
+
+
+def test_industry_seed_matches_tree(db):
+    l1 = {r[0] for r in db.execute(sa.text("SELECT code FROM market.industry WHERE level=1"))}
+    l2 = {r[0] for r in db.execute(sa.text("SELECT code FROM market.industry WHERE level=2"))}
+    assert l1 == L1 and l2 == L2
+    fanout = db.execute(sa.text(
+        "SELECT p.code, count(*) FROM market.industry c JOIN market.industry p ON p.industry_id=c.parent_id "
+        "GROUP BY p.code ORDER BY p.code")).all()
+    assert dict(fanout) == {"BATDONGSAN":4,"NANGLUONG":4,"SANXUAT":5,
+                            "TAICHINH":3,"TIEUDUNG":4,"XUATKHAU":4}   # phân bố 3·4·5·4·4·4
