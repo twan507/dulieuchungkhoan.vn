@@ -1,0 +1,11 @@
+{
+  "name": "dulieuchungkhoan-vn",
+  "private": true,
+  "scripts": {
+    "dev-start": "node scripts/stack.mjs dev-start",
+    "dev-stop": "node scripts/stack.mjs dev-stop",
+    "docker-up": "node scripts/stack.mjs docker-up",
+    "docker-down": "node scripts/stack.mjs docker-down",
+    "docker-clean": "node scripts/stack.mjs docker-clean"
+  }
+}
