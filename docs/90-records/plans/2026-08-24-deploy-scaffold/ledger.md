@@ -41,3 +41,5 @@ Fix round 1/1: **TCP6 ADDRESSED** — commit `1b748c9` (test đỏ `actual []` v
 ## Chuẩn hoá vị trí ledger *(2026-08-25)*
 
 Ban đầu ledger nằm ở `.superpowers/sdd/...` (mặc định của skill SDD) — **sai**, vì `superpowers` là tên đã nghỉ theo [ADR 0007](../../../00-overview/decisions/0007-monorepo-layout-and-stack.md). Đã chuyển ledger về đây (thư mục plan, commit — đúng tiền lệ plan 2026-08-15), xoá `.superpowers/`, gỡ khỏi `.gitignore`, và ghi luật vào [CLAUDE.md §4.1](../../../../CLAUDE.md).
+
+Rename 76d0af4: backend/app -> backend/api để khớp tên service `api` (song song etl/ingester); convention FastAPI chỉ ép tên đối tượng ASGI (app), không ép tên package. Sửa Dockerfile CMD, stack.mjs dev-start, test import; pytest 2 pass, stack 5 pass. Spec/plan giữ nguyên chữ app/ (bản ghi lịch sử).
