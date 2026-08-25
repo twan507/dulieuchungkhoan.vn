@@ -6,8 +6,8 @@
 
 | Bước | File | Nội dung | Trạng thái |
 |---|---|---|---|
-| 1 | [step-01-foundations.md](step-01-foundations.md) | Nguyên tắc nền · bố cục 6 schema · quy ước DDL · migration Alembic | 🟡 chờ duyệt |
-| 2 | step-02-market-identity.md | Định danh: issuer · security · ánh xạ nguồn · **bộ ngành riêng** (thay ICB) | ⬜ chưa viết |
+| 1 | [step-01-foundations.md](step-01-foundations.md) | Nguyên tắc nền · bố cục 6 schema · quy ước DDL · migration Alembic | ✅ chốt 2026-08-25 |
+| 2 | [step-02-market-identity.md](step-02-market-identity.md) | Định danh: issuer · security · ánh xạ nguồn · **bộ ngành riêng** (thay ICB) | 🟡 chờ duyệt |
 | 3 | step-03-market-data.md | Giá EOD + view hệ số · BCTC · từ điển chỉ tiêu · snapshot/screener · sự kiện | ⬜ chưa viết |
 | 4 | step-04-macro.md | Registry chỉ tiêu + observation (UPSERT) · cụm OMO | ⬜ chưa viết |
 | 5 | step-05-asset.md | Registry tài sản · price/ohlc/fx · luật dầu-vàng-DXY | ⬜ chưa viết |

@@ -1,6 +1,6 @@
 # Bước 1 — Nền móng: nguyên tắc, bố cục schema, quy ước DDL, migration
 
-**Trạng thái:** 🟡 chờ duyệt · **Phạm vi bước này:** chỉ khung — chưa có bảng dữ liệu nào. Bảng cụ thể nằm ở bước 2–7.
+**Trạng thái:** ✅ chốt 2026-08-25 (chủ dự án duyệt sau đối chiếu chuẩn ngành) · **Phạm vi bước này:** chỉ khung — chưa có bảng dữ liệu nào. Bảng cụ thể nằm ở bước 2–7.
 
 ---
 
