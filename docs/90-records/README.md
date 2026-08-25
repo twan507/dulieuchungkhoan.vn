@@ -21,7 +21,7 @@ Mỗi thư mục là một task, đặt tên `YYYY-MM-DD-<tên>`. File bên tron
 | [`2026-08-15-cap-nhat-tai-lieu-nguon/`](plans/2026-08-15-cap-nhat-tai-lieu-nguon/) | Cập nhật tài liệu nguồn theo khảo sát 2026-08-15 — `spec.md` · `plan.md` · `ledger.md` | Đã áp dụng → tài liệu 9 nguồn |
 | [`2026-08-24-monorepo-restructure/`](plans/2026-08-24-monorepo-restructure/) | Chuẩn hoá cây monorepo + chốt stack — `spec.md` · `plan.md` | Đã áp dụng → [ADR 0007](../00-overview/decisions/0007-monorepo-layout-and-stack.md) |
 | [`2026-08-24-deploy-scaffold/`](plans/2026-08-24-deploy-scaffold/) | Khung đóng gói một-nút (docker compose infra/app · `stack.mjs` · dev native + deploy docker) — học tinh hoa từ tutor-agent — `spec.md` · `plan.md` · `ledger.md` | ✅ thực thi xong trên `feat/deploy-scaffold` (AC1–AC8 nghiệm thu live); chờ merge |
-| [`2026-08-25-postgres-data-schema/`](plans/2026-08-25-postgres-data-schema/) | Lược đồ PostgreSQL `postgres-data` — 6 schema theo miền tiêu thụ, canonical id + ánh xạ external, Alembic — `spec.md` | 🟡 spec chờ duyệt |
+| [`2026-08-25-postgres-data-schema/`](plans/2026-08-25-postgres-data-schema/) | Lược đồ PostgreSQL `postgres-data` — 6 schema theo miền tiêu thụ, canonical id + ánh xạ external, Alembic — spec tách 7 bước duyệt tuần tự, mục lục ở README của plan | 🟡 đang duyệt từng bước |
 
 ## `surveys/` — hồ sơ khảo sát
 
