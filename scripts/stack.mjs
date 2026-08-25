@@ -98,7 +98,7 @@ function devStart() {
   const env = { ...process.env, POSTGRES_HOST: "127.0.0.1", REDIS_HOST: "127.0.0.1", APP_ENV: "dev" };
   const be = path.join(ROOT, "backend");
   log("bật api :8000 (uvicorn --reload) và etl — Ctrl+C để tắt cả hai (Postgres+Redis vẫn chạy)");
-  spawnLabeled("api", "uv", ["run", "uvicorn", "app.main:app", "--reload", "--port", "8000"], be, env);
+  spawnLabeled("api", "uv", ["run", "uvicorn", "api.main:app", "--reload", "--port", "8000"], be, env);
   spawnLabeled("etl", "uv", ["run", "python", "-m", "etl"], be, env);
   let closing = false;
   process.on("SIGINT", () => {
