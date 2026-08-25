@@ -13,7 +13,7 @@ Redis đi kèm cho pub/sub SSE và leader lock của Ingester — nó là kênh 
 
 ## Trạng thái
 
-Schema `postgres-data` đã dựng: **9 migration** Alembic (`0001` schemas/extensions … `0009` roles/grants), **35 test** seam chạy trên Postgres thật (`backend/tests/schema/`, mỗi migration một file `test_sNN_*.py`).
+Schema `postgres-data` đã dựng: **9 migration** Alembic (`0001` schemas/extensions … `0009` roles/grants), **35 test** seam chạy trên Postgres thật (`backend/tests/schema/test_sNN_*.py` — 8 file, không 1-1 với 9 migration: test seed `0003` gộp vào `test_s02_identity.py`, `test_s03_market_data.py` test migration `0004`; từ `test_s05_macro.py` trở đi NN khớp đúng số migration).
 
 Spec: [`docs/90-records/plans/2026-08-25-postgres-data-schema/`](../docs/90-records/plans/2026-08-25-postgres-data-schema/) — `README.md` (mục tiêu G1–G5, quyết định xuyên suốt), `step-01`…`step-07` (thiết kế từng miền), `plan.md` (11 task TDD), `ledger.md` (nhật ký thực thi).
 
