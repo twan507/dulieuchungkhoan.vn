@@ -22,7 +22,7 @@
 | 4 | [step-04-macro.md](step-04-macro.md) | Registry chỉ tiêu + observation (UPSERT) · cụm OMO | ✅ chốt 2026-08-25 |
 | 5 | [step-05-asset.md](step-05-asset.md) | Registry tài sản · price/ohlc/fx · luật dầu-vàng-DXY | ✅ chốt 2026-08-25 |
 | 6 | [step-06-news.md](step-06-news.md) | Article/revision không ghi đè · gắn mã · tìm kiếm 4 lớp | ✅ chốt 2026-08-25 |
-| 7 | [step-07-staging-ops.md](step-07-staging-ops.md) | Landing zone · data_domain_state · giám sát hợp đồng · etl_run | 🟡 chờ duyệt |
+| 7 | [step-07-staging-ops.md](step-07-staging-ops.md) | Landing zone · data_domain_state · giám sát hợp đồng · series_health · source_build · etl_run | ✅ chốt 2026-08-25 (chủ dự án chốt sau 3 vòng review, kèm điều kiện chạy vòng review 4 toàn cục) |
 | 8 | step-08-derived.md | **Tầng tự tính**: chỉ số ngành từ cây riêng · chỉ báo kỹ thuật · bảng dẫn xuất khác | ⬜ chưa viết — nguyên tắc đã chốt (xem dưới), danh sách bảng cụ thể chốt sau 3–7, công thức chốt khi có dữ liệu thật |
 
 Sau khi cả 7 bước chốt: viết `plan.md` (bẻ task thực thi) theo quy trình §4.1.

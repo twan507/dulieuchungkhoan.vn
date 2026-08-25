@@ -1,6 +1,6 @@
 # Bước 7 — Hậu trường: landing zone và vận hành
 
-**Trạng thái:** 🟡 chờ duyệt · **Phụ thuộc:** bước 1–6 (✅) · **Phạm vi:** hai schema không phục vụ người dùng cuối — `staging` (kho đồ thô) và `ops` (trạng thái hệ thống). Role của `api` **không thấy** hai schema này (phân quyền bước 1).
+**Trạng thái:** ✅ chốt 2026-08-25 (chủ dự án chốt sau khi bước này qua mục soi riêng của review vòng 3; kèm điều kiện: chạy vòng review 4 toàn cục trước khi sang plan) · **Phụ thuộc:** bước 1–6 (✅) · **Phạm vi:** hai schema không phục vụ người dùng cuối — `staging` (kho đồ thô) và `ops` (trạng thái hệ thống). Role của `api` **không thấy** hai schema này (phân quyền bước 1).
 
 ---
 
