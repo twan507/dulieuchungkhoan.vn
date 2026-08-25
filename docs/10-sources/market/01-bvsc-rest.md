@@ -419,7 +419,7 @@ GET BVSC/datafeed/indexsnaps
 ### Tham số
 Không có.
 
-### Response 200 — 33 trường, 20 chỉ số
+### Response 200 — 33 trường, 20 bản ghi = 18 chỉ số thật + 2 bản ghi rác *(đo lại 2026-08-25)*
 
 | Trường | Kiểu | Đơn vị | Mô tả |
 |---|---|---|---|
@@ -444,10 +444,16 @@ Không có.
 
 ⚠️ **Toàn bộ giá trị số trả về dưới dạng chuỗi.** Phải ép kiểu.
 
-**20 chỉ số:** `HOSE` (VN-Index) · `30` (VN30) · `100` (VN100) · `MID` (VNMID) · `SML` (VNSML) · `XALL` (VNXALL) · `X50` (VNX50) · `SI` (VNSI) · `ALL` · `DIAMOND` · `FINLEAD` · `FINSELECT` · `HNX` · `HNX30` · `HNXFin` · `HNXMSCap` · `HNXMan` · `UPCOM`.
+**18 chỉ số** *(đo 2026-08-25 — khớp đúng danh sách này)*: `HOSE` (VN-Index) · `30` (VN30) · `100` (VN100) · `MID` (VNMID) · `SML` (VNSML) · `XALL` (VNXALL) · `X50` (VNX50) · `SI` (VNSI) · `ALL` · `DIAMOND` · `FINLEAD` · `FINSELECT` · `HNX` · `HNX30` · `HNXFin` · `HNXMSCap` · `HNXMan` · `UPCOM`.
+
+⚠️ **Hai bản ghi rác lẫn trong response, ETL phải lọc** *(đo 2026-08-25 — giải thích mâu thuẫn "20 chỉ số" vs danh sách 18 của bản tài liệu trước)*:
+- `marketCode='indexCode'`, `marketId='indexId'` — dòng **header-echo** (tên trường đổ vào giá trị), mọi trường còn lại rỗng;
+- `marketCode='0'` — dòng **placeholder toàn số 0** nhưng vẫn mang `tradingdate` của ngày hiện tại.
+
+Luật lọc: bỏ bản ghi có `marketCode` không nằm trong danh mục chỉ số đã biết (hoặc `marketIndex='0'` kèm `marketStatus` rỗng). Đây là cùng họ bẫy "HTTP 200 kèm dữ liệu sai" của bộ giám sát hợp đồng.
 
 ### Độ phủ & hiệu năng
-20 bản ghi · 20 KB · ~123 ms.
+20 bản ghi (18 chỉ số thật) · 20 KB *(đo lại 2026-08-25: 20.614 byte)* · ~123 ms *(đo 2026-08-10)*.
 
 ---
 
