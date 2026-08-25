@@ -2,6 +2,16 @@
 
 **Cách làm việc (chốt 2026-08-25, yêu cầu chủ dự án):** spec tách thành **các bước nhỏ, mỗi bước một file, duyệt tuần tự** — chốt xong file nào coi như file đó xong, không mở lại trừ khi bước sau phát hiện mâu thuẫn (khi đó quay lại sửa file cũ tường minh, ghi lý do). Bản nháp spec một-cục ban đầu đã bỏ, nội dung phân rã vào các bước.
 
+## Mục tiêu thiết kế — thước đo của mọi bước
+
+| # | Mục tiêu |
+|---|---|
+| G1 | **Không mất dữ liệu không tái tạo được** — OMO, snapshot/screener tự tạo lịch sử, tin đã gỡ |
+| G2 | **Tra cứu nhanh cho web/API/chatbot** — theo mã × thời gian và cắt ngang toàn thị trường theo ngày |
+| G3 | **Nguồn tháo lắp module** — đổi nguồn không đụng dữ liệu, không đụng schema |
+| G4 | **Nền sạch cho tầng tự tính** — số tự tính không trộn vào bảng sự thật, rebuild được toàn phần |
+| G5 | **Vận hành vừa sức một người** — quy ước lặp lại, idempotent, con số trong tài liệu phải trung thực |
+
 ## Trạng thái các bước
 
 | Bước | File | Nội dung | Trạng thái |
@@ -54,5 +64,6 @@ Giữ nguyên ràng buộc đã chốt ở [market-data-store §9.6](../../../20
 
 ## Hồ sơ kèm theo
 
+- **[Review toàn cục 2026-08-25](review-2026-08-25.md)** — 6 lỗi đã sửa (F1–F6), 6 điểm làm rõ, 3 điểm ghi nhận có chủ đích; đối chiếu theo mục tiêu G1–G5
 - Sơ đồ quan hệ để duyệt (artifact, cập nhật theo từng bước): https://claude.ai/code/artifact/f37d1b8f-505e-4915-8009-35b1ee203b01
 - Khảo sát hình dạng dữ liệu nguồn phục vụ thiết kế: rút từ [`10-sources/macro/`](../../../10-sources/macro/) và [`10-sources/global/`](../../../10-sources/global/) (đợt đọc 2026-08-25, không đo mới)

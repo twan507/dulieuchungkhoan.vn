@@ -73,7 +73,9 @@ CREATE TABLE market.issuer_external_id (
 CREATE TABLE market.security (
   security_id   bigint generated always as identity PRIMARY KEY,
   ticker        text NOT NULL,            -- thuộc tính hiển thị, KHÔNG phải khoá
-  exchange      text,                     -- HOSE|HNX|UPCOM
+  exchange      text NOT NULL,            -- HOSE|HNX|UPCOM — NOT NULL vì unique một phần
+                                          -- (ticker, exchange) sẽ thủng với NULL (NULLS DISTINCT;
+                                          --  review 2026-08-25)
   security_type text NOT NULL CHECK (security_type IN ('stock','etf','index','fund_cert')),
   issuer_id     bigint REFERENCES market.issuer,    -- NULL với index
   status        text NOT NULL DEFAULT 'listed' CHECK (status IN ('listed','delisted')),
@@ -106,7 +108,7 @@ CREATE TABLE market.security_external_id (
 
 1. Unique một phần: hai dòng cùng `(ticker, exchange)` cùng `listed` → lỗi; một dòng `delisted` → hợp lệ.
 2. `security_external_id`: trùng `(source, external_code)` → lỗi; cùng `external_code` khác `source` → hợp lệ.
-3. Cây ngành: chèn level 1 có `parent_id` → lỗi CHECK; level 2 không có `parent_id` → lỗi CHECK; level 3 → lỗi CHECK.
+3. Cây ngành: chèn level 1 có `parent_id` → lỗi CHECK; level 2 không có `parent_id` → lỗi CHECK; level 3 → lỗi CHECK. Ràng buộc "`issuer.industry_id`/`industry_icb_map.industry_id` phải trỏ level 2" thi hành bằng **seam test + guard trong ETL, không dùng trigger** (review 2026-08-25 — ghi tường minh).
 4. Seed đối chiếu `industry-tree.md`: sau seed, bảng có đúng 6 dòng level 1 + 24 dòng level 2; so khớp **danh sách code literal** (TAICHINH…NANGLUONG; NGANHANG…CONGNGHE) lấy thẳng từ file — expected độc lập với code seed.
 5. `industry_icb_map`: một `icb_code` chỉ map một ngành (PK); map tới `industry_id` không tồn tại → lỗi FK.
 

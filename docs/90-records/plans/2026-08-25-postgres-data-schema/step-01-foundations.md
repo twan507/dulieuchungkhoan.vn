@@ -30,7 +30,7 @@ postgres-data                     (người ghi duy nhất: etl · api chỉ đ�
 - **Ranh giới ClickHouse:** tick, sổ lệnh, nến intraday ở ClickHouse (phiên thiết kế riêng). Postgres giữ mọi thứ EOD/REST/BCTC/vĩ mô/tài sản/tin. Điểm nối duy nhất: ClickHouse cần view hệ số điều chỉnh giá từ `market` (cơ chế thuộc phiên ClickHouse).
 - `postgres-app` (tài khoản, watchlist…): instance riêng, env migration riêng, dựng khi làm `api` auth — ngoài phạm vi spec này.
 - **Khoá schema `public`** (thu quyền CREATE, không đặt object nào vào đó) — khuyến nghị chuẩn Postgres, tránh object lạc trôi ngoài 6 schema.
-- **Phân quyền theo schema**: role của `etl` có quyền ghi; role của `api` chỉ `SELECT` trên 5 schema dữ liệu (không thấy `staging`) — thi hành luật "một người ghi" bằng chính DB, không chỉ bằng kỷ luật code.
+- **Phân quyền theo schema**: role của `etl` có quyền ghi; role của `api` chỉ `SELECT` trên **4 schema miền** (`market`/`macro`/`asset`/`news`), **không thấy `staging` và `ops`** — thi hành luật "một người ghi" bằng chính DB, không chỉ bằng kỷ luật code. *(Review 2026-08-25: câu cũ ghi "5 schema" đá nhau với bước 7 — thống nhất về 4.)*
 
 *Đối chiếu chuẩn ngành (tra cứu 2026-08-25):* bố cục này khớp 4 pattern chuẩn — schema-per-domain của Postgres; staging thô → canonical (medallion Bronze/Silver, gốc Kimball); security master + bảng symbology cross-reference (Intrinio/GS Marquee/OpenFIGI); và cách FRED/ALFRED tách giá trị hiện hành khỏi kho vintage.
 

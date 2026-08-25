@@ -24,8 +24,12 @@ CREATE TABLE asset.asset_external_id (   -- Ổ CẮM nguồn
   asset_id      bigint NOT NULL REFERENCES asset.asset,
   source        text NOT NULL,           -- 'wichart' | 'fred' | 'yahoo' | 'lbma' | 'binance'
   external_code text NOT NULL,           -- 'dau_wti' | 'DCOILWTICO' | '^GSPC' | 'PAXGUSDT'…
+  external_sub  text NOT NULL DEFAULT '',-- series trong document đa chuỗi — WiChart một key chứa
+                                         -- nhiều series ('xang_dau' 4 loại xăng, 'vang' giá mua/bán),
+                                         -- trỏ theo VỊ TRÍ như macro.indicator_source
+                                         -- (review 2026-08-25 — trước đó thiếu, ổ cắm không đủ chân)
   meta          jsonb,                   -- múi giờ sàn, firstTradeDate, quoteType, mốc chốt fixing…
-  PRIMARY KEY (source, external_code),
+  PRIMARY KEY (source, external_code, external_sub),
   UNIQUE (asset_id, source)
 );
 ```
@@ -69,7 +73,8 @@ CREATE TABLE asset.fx_rate (             -- tỷ giá: chuẩn = fixing ECB 14:1
 ## 3. Luật nghiệp vụ — chống trộn chuỗi (các bẫy đã đo tiền thật)
 
 1. **Dầu WTI — một mã, hai `price_type`, cấm trộn:** `('wti', ngày, 'spot')` từ FRED (trễ 4 ngày) và `('wti', ngày, 'futures')` từ WiChart (T−1). Chênh ~2% giữa hai loại là **backwardation** (cấu trúc kỳ hạn thật), không phải sai số — trộn chung một chuỗi tạo bậc nhảy 2% tại điểm đổi nguồn. `price_type` nằm trong khoá chính nên hai chuỗi **không thể** đè nhau.
-2. **Vàng — bốn mã tách hẳn** (khác bản chất, không phải khác nguồn): `gold.intl` (giao ngay thế giới) · `gold.lbma` (fixing London 15:00 — lệch spot ~0,5% có hệ thống) · `paxg` (token 24/7, quote **USDT**) · `gold.sjc` (vàng miếng trong nước, VND/lượng). Bốn chuỗi phục vụ bốn câu hỏi khác nhau; hiển thị cạnh nhau được, nối thành một thì không.
+2. **Vàng — các mã tách hẳn** (khác bản chất, không phải khác nguồn): `gold.intl` (giao ngay thế giới) · `gold.lbma` (fixing London 15:00 — lệch spot ~0,5% có hệ thống) · `paxg` (token 24/7, quote **USDT**) · vàng miếng trong nước **hai mã** `gold.sjc_buy` / `gold.sjc_sell` (WiChart trả hai series mua/bán trong cùng key `vang`, VND/lượng). Các chuỗi phục vụ các câu hỏi khác nhau; hiển thị cạnh nhau được, nối thành một thì không.
+2b. **Một chuỗi giá trị của nguồn = một asset** *(luật tổng quát, review 2026-08-25)*: key đa series của nguồn (xăng dầu 4 loại, vàng mua/bán…) tách thành từng asset, mỗi asset trỏ về `(source, external_code, external_sub)` riêng — không nhét nhiều chuỗi vào một asset.
 3. **Crypto giữ nhãn USDT** — không viết tắt thành USD ở bất kỳ tầng nào (chênh neo nhỏ nhưng có thật); chuỗi 24/7 khi ghép với chuỗi phiên phải xử lý ngày cuối tuần ở tầng đọc (không lưu cờ — tính được từ ngày).
 4. **DXY tự dựng KHÔNG ở bước này.** Bước này chỉ lưu sự thật: `dxy.ice` (chỉ số DXY thật từ Yahoo `DX-Y.NYB`, lịch sử từ 1971) và 6 cặp tỷ giá ECB. Chuỗi "DXY dựng lại từ ECB" là **số tự tính** → thuộc tầng tự tính bước 8 (đúng luật "không trộn dẫn xuất vào bảng sự thật"), kèm bảng trọng số khi đó.
 5. **Bẫy tầng ETL** (ghi để plan kiểm): Yahoo — bỏ nến cuối chưa đóng, validate `dataGranularity` khớp interval xin (bẫy hạ ngầm về nến tháng), `period1` phải âm mới lấy được lịch sử trước 1970; Binance — giá là **chuỗi ký tự**, ép `Decimal`, đọc mảng theo vị trí; LBMA — **cấu trúc JSON chưa kiểm** (tài liệu ghi rõ), phải mở một response thật trước khi viết adapter; nếu trả nhiều tiền tệ thì mỗi tiền tệ cân nhắc thành asset riêng, quyết khi thấy dữ liệu thật.
@@ -79,7 +84,7 @@ CREATE TABLE asset.fx_rate (             -- tỷ giá: chuẩn = fixing ECB 14:1
 - [ ] **Registry + ánh xạ nguồn** cho tài sản — cùng pattern đã duyệt ở cổ phiếu (bước 2) và chỉ tiêu vĩ mô (bước 4) — đồng ý?
 - [ ] **Ba bảng theo hình dạng giá trị** (giá đơn / nến OHLC / tỷ giá) thay vì bảng theo nguồn — đồng ý?
 - [ ] **`price_type` nằm trong khoá chính** của bảng giá đơn — dầu spot và futures vĩnh viễn là hai chuỗi — đồng ý?
-- [ ] **Vàng 4 mã tách** + crypto giữ nhãn USDT — đồng ý?
+- [ ] **Vàng tách mã theo bản chất** (intl / lbma / paxg / sjc mua / sjc bán) + luật "một chuỗi nguồn = một asset" + crypto giữ nhãn USDT — đồng ý?
 - [ ] **DXY dựng lại dời sang bước 8** (tầng tự tính); bước này chỉ lưu DXY thật của ICE — đồng ý?
 
 ## 5. Kiểm chứng của bước này (seam)

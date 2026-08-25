@@ -23,6 +23,11 @@ CREATE TABLE market.price_daily (
   PRIMARY KEY (security_id, trading_date)
 );
 
+CREATE INDEX ON market.price_daily (trading_date);
+-- Review 2026-08-25: PK chỉ phục vụ "một mã theo thời gian"; index này phục vụ chiều
+-- cắt ngang "toàn thị trường ngày D" — screener, market overview, và rebuild chỉ số
+-- ngành (bước 8) đều quét theo ngày.
+
 CREATE VIEW market.price_factor AS
 SELECT security_id, trading_date,
        close_adj / NULLIF(close_raw, 0) AS factor
@@ -36,6 +41,7 @@ FROM market.price_daily;
   - **Khớp nhu cầu:** hệ số chỉ dùng để điều chỉnh **nến intraday** (ClickHouse) — nến intraday cũng chỉ tồn tại từ ngày Ingester chạy. Giai đoạn cần hệ số = giai đoạn có raw. Ngày không có raw, view trả NULL là hành vi đúng; chart dài hạn dùng thẳng `close_adj` (chuỗi tự nhất quán).
 - View `price_factor` cũng là điểm nối duy nhất sang ClickHouse (điều chỉnh nến intraday — cơ chế thuộc phiên ClickHouse).
 - Kích hoạt re-crawl: từ `corporate_event.exright_date` (§4).
+- **Chỉ số (VNINDEX…) cũng ghi vào bảng này** (`security_type='index'`), dòng chỉ số dùng tập cột con (không có thoả thuận/khối ngoại tuỳ nguồn). ⚠️ Đường nạp **EOD cho chỉ số chưa kiểm** nguồn nào phủ — đánh dấu theo luật §1.3, chốt ở plan ETL *(review 2026-08-25)*.
 
 ## 2. BCTC dạng dài — `financial_statement` + từ điển chỉ tiêu
 
@@ -70,7 +76,8 @@ CREATE TABLE market.metric_mapping (      -- registry: mã vendor → mã chuẩ
 
 - **Vì sao dạng dài:** bộ chỉ tiêu khác nhau theo loại doanh nghiệp (`bsa*` phi ngân hàng, `bsb*` ngân hàng) — dạng cột rộng sẽ thưa hàng trăm cột NULL. 556 mã BCTC + 173 tỷ số nằm gọn một khuôn.
 - **Ngữ nghĩa ghi: UPSERT** — BCTC bị **điều chỉnh hồi tố** (restate); re-crawl mỗi quý sau mùa báo cáo, giá trị mới đè giá trị cũ, `ingested_at` cho biết bản nào mới.
-- Từ điển nạp từ **hai nguồn**: 83 chỉ tiêu `GetScreenerParameters` (kèm `valueRange`) + 729 mã [field-dictionary.json](../../../10-sources/market/field-dictionary.json) (kèm `don_vi_du_lieu`, 392 mã đã xác thực bằng đẳng thức kế toán — bảy phép kiểm đó vào bộ giám sát hợp đồng, bước 7).
+- Từ điển nạp từ **hai nguồn**: 83 chỉ tiêu `GetScreenerParameters` (kèm `valueRange`) + 729 mã [field-dictionary.json](../../../10-sources/market/field-dictionary.json) (kèm `don_vi_du_lieu`, 392 mã đã xác thực bằng đẳng thức kế toán — bảy phép kiểm đó vào bộ giám sát hợp đồng, bước 7). **Luật ưu tiên khi trùng `code`** *(review 2026-08-25)*: `unit` lấy theo `field_dictionary` (phủ 99,7%, đã xác thực); `screener_params` chỉ là nguồn của `valueRange` và tên hiển thị.
+- ⚪ **Rủi ro chấp nhận** *(review 2026-08-25)*: `metric_code` không có namespace nguồn — nếu ngày nào dùng nguồn BCTC thứ hai có bộ mã trùng chuỗi ký tự, xử bằng prefix khi nạp; chưa làm trước (YAGNI, đã có `canonical_code` làm cầu).
 - 🔴 **Không tự tính lại chỉ tiêu nguồn đã cấp** — `isa20ttm ≠ Σ4 quý isa20` (lệch tới 9,4%, khác định nghĩa lợi nhuận). Lưu số nguồn đưa.
 
 ## 3. Snapshot và screener theo ngày — tự tạo lịch sử
@@ -93,6 +100,7 @@ CREATE TABLE market.screener_daily (
   ingested_at  timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (security_id, trading_date)
 );
+CREATE INDEX ON market.screener_daily (trading_date);  -- cắt ngang theo ngày (review 2026-08-25)
 ```
 
 - **Ngữ nghĩa ghi: UPSERT theo PK** — chạy lại trong ngày đè bản của chính ngày đó; ngày khác nhau là dòng khác nhau.
@@ -115,7 +123,11 @@ CREATE TABLE market.corporate_event (
   ingested_at  timestamptz NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX corporate_event_natural_key ON market.corporate_event
-  (event_type, issuer_id, public_date, coalesce(exright_date, '1900-01-01'));
+  (event_type, issuer_id,
+   coalesce(public_date,  '1900-01-01'),
+   coalesce(exright_date, '1900-01-01'));
+-- Review 2026-08-25: public_date cũng phải coalesce — Postgres mặc định NULLS DISTINCT,
+-- để public_date trần thì hai dòng trùng nhau với public_date NULL đều chèn được (dedupe thủng).
 CREATE INDEX ON market.corporate_event (issuer_id, exright_date);
 
 CREATE TABLE market.financial_report_file (
@@ -145,7 +157,7 @@ CREATE TABLE market.financial_report_file (
 1. `price_factor`: `close_adj=50, close_raw=100` → `factor=0.5` (giải tay); `close_raw=0` → NULL, không lỗi chia 0.
 2. UPSERT giá: ghi lại `(security_id, trading_date)` đã có với `close_adj` mới → 1 dòng, giá trị mới, `close_raw` giữ nguyên.
 3. UPSERT BCTC restate: ghi lại cùng khoá với `value` mới → 1 dòng, giá trị mới (mô phỏng restate quý).
-4. `corporate_event`: hai dòng cùng `(event_type, issuer_id, public_date)` cùng `exright_date NULL` → dòng hai bị unique index chặn (case biên `coalesce`).
+4. `corporate_event`: hai dòng trùng khoá tự nhiên với `exright_date NULL` → dòng hai bị chặn; **cả hai ngày cùng NULL** → vẫn bị chặn (case biên NULLS DISTINCT — đúng lỗi review 2026-08-25 đã vá).
 5. `quarter_report=6` → lỗi CHECK; `kind` lạ ở snapshot → lỗi CHECK.
 6. `metric_dictionary`: cùng `code` ở hai `dictionary` khác nhau → hợp lệ (hai từ điển tách khoá).
 

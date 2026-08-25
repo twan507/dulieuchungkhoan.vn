@@ -1,6 +1,6 @@
 # Bước 4 — Vĩ mô: registry chỉ tiêu, chuỗi quan sát, cụm OMO
 
-**Trạng thái:** ✅ chốt 2026-08-25 (chủ dự án đồng ý 5 điểm duyệt) · **Phụ thuộc:** bước 1–3 (✅) · **Phạm vi:** schema `macro` — chỉ tiêu vĩ mô Việt Nam (WiChart ~70 chỉ tiêu sau lọc) + Mỹ (FRED 15 series) + đấu thầu OMO của SBV. *Giá hàng hoá của WiChart không ở đây — nó là giá tài sản, thuộc bước 5.*
+**Trạng thái:** ✅ chốt 2026-08-25 (chủ dự án đồng ý 5 điểm duyệt; splice đổi sang view theo review cùng ngày — xem [review](review-2026-08-25.md) F2) · **Phụ thuộc:** bước 1–3 (✅) · **Phạm vi:** schema `macro` — chỉ tiêu vĩ mô Việt Nam (WiChart **26 key** vĩ mô — số đo từ [wichart.md](../../../10-sources/macro/wichart.md); mỗi key nhiều series, số series chốt khi seed registry) + Mỹ (FRED 15 series) + đấu thầu OMO của SBV. *Giá hàng hoá của WiChart không ở đây — nó là giá tài sản, thuộc bước 5.*
 
 ---
 
@@ -39,13 +39,14 @@ Người dùng và API chỉ thấy `vn.cpi`; việc nó đang lấy từ WiChar
 
 ```sql
 CREATE TABLE macro.observation (
-  indicator_id    bigint NOT NULL REFERENCES macro.indicator,
-  obs_date        date   NOT NULL,        -- NGÀY ĐẦU KỲ (quy ước §2.1)
-  value           numeric,                -- giá trị chuẩn đọc (đã nối nếu chuỗi có đứt gãy)
-  value_unspliced numeric,                -- nguyên gốc nền cũ — chỉ khác NULL quanh điểm đứt gãy
-  ingested_at     timestamptz NOT NULL DEFAULT now(),
+  indicator_id bigint NOT NULL REFERENCES macro.indicator,
+  obs_date     date   NOT NULL,           -- NGÀY ĐẦU KỲ (quy ước §2.1)
+  value        numeric NOT NULL,          -- NHƯ NGUỒN CÔNG BỐ (sau chuẩn hoá đơn vị) — KHÔNG splice
+  ingested_at  timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (indicator_id, obs_date)
 );
+-- Giá trị thiếu = KHÔNG CÓ DÒNG (FRED trả "." thì bỏ qua), không chèn NULL —
+-- thống nhất policy với asset (review 2026-08-25).
 
 CREATE TABLE macro.series_break (         -- sổ đăng ký đứt gãy cấu trúc (vd đổi năm gốc GDP)
   indicator_id bigint NOT NULL REFERENCES macro.indicator,
@@ -55,16 +56,26 @@ CREATE TABLE macro.series_break (         -- sổ đăng ký đứt gãy cấu t
   verified_by  text, verified_at timestamptz,
   PRIMARY KEY (indicator_id, break_date)
 );
+
+CREATE VIEW macro.observation_spliced AS  -- chuỗi ĐÃ NỐI — tính lúc đọc, không lưu
+SELECT o.indicator_id, o.obs_date,
+       o.value * <tích factor của mọi break có break_date > o.obs_date>  AS value_spliced,
+       o.value                                                           AS value_as_published
+FROM macro.observation o;
+-- SQL cụ thể của phép "tích factor" chốt trong plan (Postgres không có aggregate PRODUCT
+-- dựng sẵn — dùng exp(sum(ln(factor))) hoặc LATERAL, chọn khi viết migration).
 ```
 
 - 🔴 **Ngữ nghĩa ghi: UPSERT theo `(indicator_id, obs_date)` — bắt buộc, không append-only.** FRED **vá số quá khứ**: cùng một tháng 5/2026 của chuỗi việc làm `PAYEMS` từng mang 3 giá trị khác nhau qua 3 lần công bố. ETL FRED làm mới cửa sổ 24 tháng gần nhất mỗi lần chạy; `ingested_at` cho biết bản hiện tại nạp lúc nào.
-- **Đứt gãy chuỗi**: khi nguồn đổi nền tính (đổi năm gốc giá so sánh GDP), chuỗi gãy một bậc không phải do kinh tế. Xử lý: đăng ký điểm gãy + hệ số vào `series_break` (duyệt tay, có `verified_by`), ETL nhân đoạn cũ để ra `value` liền mạch, đồng thời giữ `value_unspliced` nguyên gốc quanh đoạn ảnh hưởng — ai cần số "như nguồn công bố" vẫn có.
+- **Đứt gãy chuỗi — nối bằng VIEW, không nối trong bảng** *(đổi theo review 2026-08-25, F2)*: khi nguồn đổi nền tính (đổi năm gốc giá so sánh GDP), chuỗi gãy một bậc không phải do kinh tế. Bảng chỉ lưu số **như nguồn công bố**; điểm gãy + hệ số đăng ký vào `series_break` (duyệt tay, có `verified_by`); view `observation_spliced` nhân hệ số cho đoạn cũ **lúc đọc**. Ba lý do đổi: (a) số đã nối là **số mình tự tính** — luật tầng tự tính cấm trộn vào bảng sự thật; (b) cùng pattern với `price_factor` đã duyệt — một kiểu tư duy cho cả kho; (c) phát hiện break mới = **thêm một dòng registry, không rewrite dữ liệu** (cách cũ phải UPDATE toàn bộ đoạn cũ). Lưu ý phạm vi: hệ số áp cho **toàn bộ đoạn trước điểm gãy**, không phải "quanh điểm gãy" (mô tả cũ sai).
 - **Bẫy parse ở tầng ETL** (ghi để plan kiểm, không ảnh hưởng DDL): epoch WiChart phải parse múi giờ `Asia/Ho_Chi_Minh` (lệch UTC = lệch cả chuỗi 1 ngày/1 tháng); FRED giá trị thiếu là chuỗi `"."` chứ không phải null.
 - **Hoãn có chủ đích:** bảng vintage FRED (lưu mọi phiên bản của một con số, phục vụ backtest "biết gì tại thời điểm nào") — chỉ làm khi thật sự backtest, đã ghi ở bước 11 spec cũ, giữ nguyên quyết định.
 
 ### 2.1 Quy ước ngày neo kỳ — một luật duy nhất
 
 Chuỗi tháng/quý/năm cần một ngày đại diện cho kỳ. Chuẩn của mình: **`obs_date` = ngày đầu kỳ** — tháng 7/2026 → `2026-07-01`; quý 2/2026 → `2026-04-01`; năm 2026 → `2026-01-01`. Trùng quy ước FRED; còn WiChart neo kiểu khác (quý neo tháng cuối, năm thì bất nhất giữa các chuỗi) — ETL quy đổi hết về luật này tại cổng. Một luật, không ngoại lệ, để JOIN hai chuỗi bất kỳ theo `obs_date` luôn đúng kỳ.
+
+*Chuỗi tuần (`freq='w'`): CHECK để sẵn nhưng 15 series FRED và 26 key WiChart hiện tại **không có chuỗi tuần nào** — quy ước neo tuần quyết khi có chuỗi tuần thật đầu tiên, không bịa trước (review 2026-08-25).*
 
 ## 3. Cụm OMO — ba bảng: phiên, kết quả, dòng bơm-hút
 
@@ -119,7 +130,7 @@ CREATE TABLE macro.omo_flow (             -- TỰ DỰNG toàn phần từ omo_a
 
 1. UPSERT observation: ghi lại `(indicator, obs_date)` đã có với giá trị mới (literal 159001 → 158927, mô phỏng FRED vá `PAYEMS`) → 1 dòng, giá trị mới.
 2. Neo kỳ: epoch WiChart của "Tháng 07/2026" (giải tay ra `2026-07-01` theo múi giờ VN) → `obs_date='2026-07-01'`; parse UTC sẽ ra `2026-06-30` — test bắt đúng bẫy này.
-3. Splice: chuỗi 4 điểm với một điểm gãy factor 1,6005 (literal từ ca GDP thật) → `value` đoạn cũ = gốc × 1,6005; `value_unspliced` giữ số gốc.
+3. Splice qua view: chuỗi 4 điểm + một break factor 1,6005 (literal từ ca GDP thật) → `observation_spliced` trả đoạn **trước** break = gốc × 1,6005, đoạn sau giữ nguyên; bảng `observation` không đổi một dòng nào khi thêm break.
 4. `omo_flow` giải tay: phiên D bơm 6.307,47 tỷ kỳ hạn 7 ngày; phiên D+7 bơm 5.000 → `maturing(D+7)=6307.47`, `net(D+7)=−1307.47`.
 5. Parse số VN: `'6.307,47'` → `6307.47` (literal); `float()` thẳng phải fail test này.
 6. `freq='x'` → lỗi CHECK; `omo_auction.op_type` lạ → lỗi CHECK; chèn auction cho phiên chưa có trong `omo_session` → lỗi FK.

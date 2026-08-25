@@ -27,7 +27,16 @@ Vai trò — "Bronze layer" theo chuẩn kho dữ liệu, ba việc:
 2. **Cứu dữ liệu không tải lại được:** OMO chỉ hiện phiên mới nhất (HTML ~414 KB/phiên — markup viết tay, đổi là mất); WiChart cửa sổ trượt 2 năm. Với hai nguồn này, lưu thô là **bắt buộc**, không phải tuỳ chọn.
 3. **Trọng tài khi nghi ngờ:** số trong bảng chuẩn lệch → mở đồ thô cùng ngày xem lỗi ở nguồn hay ở adapter.
 
-Ngữ nghĩa ghi: **append-only tuyệt đối** — mỗi lần crawl một dòng mới, không sửa không xoá. Không retention drop (kho là tài sản); dung lượng ước tính lớn nhất là OMO ~150 MB/năm — không đáng kể, theo dõi qua `ops`.
+Ngữ nghĩa ghi: **append-only tuyệt đối** — mỗi lần crawl một dòng mới, không sửa không xoá. Không retention drop (kho là tài sản).
+
+**Chính sách lưu — hai lớp theo khả năng tải lại** *(review 2026-08-25 — bản trước ước lượng "lớn nhất OMO ~150 MB/năm" là sai: bỏ sót nguồn trả full-history mỗi lời gọi, riêng LBMA đã 0,9 MB/lời gọi — đo 2026-08-15)*:
+
+| Lớp | Nguồn | Luật lưu |
+|---|---|---|
+| **Không tải lại được** | OMO (chỉ hiện phiên mới nhất) · WiChart (cửa sổ trượt 2 năm) | Lưu **mọi lần crawl**, vô điều kiện |
+| **Tải lại được** | FRED · LBMA · Yahoo · Binance · Frankfurter | Lưu khi **hash nội dung đổi** so lần trước (nguồn trả full-history mỗi lời gọi thì đa số ngày giống hệt hôm qua — lưu lặp là rác); cột `meta` giữ hash để so |
+
+Dung lượng WiChart mỗi payload **chưa đo** — ghi nhận khi chạy thật qua `ops`, xét nén (`pg_column_compression` mặc định đã nén jsonb) hay gộp khi có số thật, không đoán trước.
 
 ## 2. `ops` — ba bảng trạng thái
 
