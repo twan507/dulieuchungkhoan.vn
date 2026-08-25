@@ -1,0 +1,31 @@
+services:
+  api:
+    build:
+      context: ../../backend
+      dockerfile: ../deploy/backend.Dockerfile
+    restart: unless-stopped
+    env_file: ../../.env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+    ports:
+      - "8000:8000"
+    networks:
+      - dlck-net
+
+  etl:
+    build:
+      context: ../../backend
+      dockerfile: ../deploy/backend.Dockerfile
+    restart: unless-stopped
+    command: ["python", "-m", "etl"]
+    env_file: ../../.env
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+    networks:
+      - dlck-net
+
+networks:
+  dlck-net:
+    external: true
