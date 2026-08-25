@@ -13,12 +13,13 @@
 | # | Quyết định | Lý do |
 |---|---|---|
 | 1 | **Lưu cả 5 topic** (`t` · `o10` · `i` · `idx` · `ptm`), mỗi loại sự kiện một bảng chuẩn hoá đã ép kiểu | Đủ dựng lại mọi thứ, truy vấn được ngay; `idx` bắt buộc phải hứng vì nến chỉ số chỉ dựng được từ nó |
-| 2 | **Frame thô giữ cửa sổ trượt 3 tháng** (TTL DELETE), không giữ ròng năm này qua năm khác | Vi cấu trúc chỉ phân tích theo cửa sổ; 3 tháng đủ hồi cứu một mùa BCTC và đủ thời gian phát hiện lỗi gom nến. Dung lượng ổn định ~6–12 GB |
+| 2 | **Frame thô giữ cửa sổ trượt 3 tháng** (TTL DELETE), không giữ ròng năm này qua năm khác | Vi cấu trúc chỉ phân tích theo cửa sổ; 3 tháng đủ hồi cứu một mùa BCTC và đủ thời gian phát hiện lỗi gom nến. Dung lượng ổn định ước **10–60 GB** (dải rộng vì chưa đo toàn thị trường — §10); chạm đầu cao thì rút TTL bằng một lệnh ALTER |
 | 3 | **Nến 1 phút giữ vĩnh viễn, đắp thêm mãi** — gồm `bar_1m` (cổ phiếu, kèm `v_bu`/`v_sd` và `val` = giá trị giao dịch) và `index_bar_1m` (chỉ số) | Nguyên tắc "chưng cất trước khi quên": thứ cần dài hạn phải gom về dạng nhỏ trước khi frame thô trôi khỏi cửa sổ. `v_bu`/`v_sd` giữ chuỗi dòng tiền chủ động, `val` giữ VWAP/turnover theo phút — đều chi phí ~0. *(`val` bổ sung theo review 2026-08-25 lượt 1: thiếu nó thì VWAP mất vĩnh viễn sau TTL mà chưa từng được quyết tường minh)* |
 | 4 | **Hệ số điều chỉnh giá: `api` tự ghép** — đọc factor từ Postgres, nến từ ClickHouse, nhân khi trả kết quả | ClickHouse giữ giá thô thuần tuý, không phụ thuộc runtime nào sang Postgres. Factor ít, cache được, đổi ~vài mã/ngày |
 | 5 | **Migration ClickHouse: file SQL đánh số + runner Python nhỏ tự viết**, ghi bảng `rt.schema_migrations` | Alembic không hỗ trợ ClickHouse tử tế; cùng triết lý "SQL thô, kiểm soát từng dòng" đã chọn cho Postgres |
-| 6 | Buffer ghi batch **trong tiến trình Ingester**, flush mỗi 1 giây hoặc đủ N dòng | Giữ nguyên "batch writer ngoài hot path" của thiết kế cũ. Chấp nhận có ý thức: ingester chết mất tối đa ~1 s frame chưa flush — cùng bậc với failover < 2 s đã chấp nhận |
+| 6 | Buffer ghi batch **trong tiến trình Ingester**, chu kỳ flush **cố định 1 giây** — N dòng chỉ là **trần kích thước block** (chạm N thì cắt block chờ nhịp sau + cảnh báo), **không** rút ngắn chu kỳ | Giữ "batch writer ngoài hot path" của thiết kế cũ, và giữ trần 1 part/giây/bảng của §10. Chấp nhận có ý thức: ingester chết mất tối đa ~1 s frame chưa flush — cùng bậc với failover < 2 s đã chấp nhận |
 | 7 | **Chưa có gì cho phái sinh** — bảng bám cổ phiếu/chỉ số | Chưa đo được realtime phái sinh trong phiên ([roadmap §5.1](../../../00-overview/roadmap.md)); cấm giả định |
+| 8 | **Phạm vi đăng ký: toàn bộ mã cổ phiếu + ETF đang giao dịch** (từ `/datafeed/instruments`, `StockType` 2/3) × 3 topic `i`/`o10`/`t` + **15 mã chỉ số** `idx` + **3 sàn** `ptm` | Mục tiêu là nến 1' **toàn thị trường** ([roadmap §2 việc 4](../../../00-overview/roadmap.md)) — đăng ký rổ con là tự tạo lỗ hổng dữ liệu vĩnh viễn. Chứng quyền/lô lẻ/trái phiếu **loại có chủ đích** theo [CLAUDE.md §2.2](../../../../CLAUDE.md). Tải kéo theo: xem §10 |
 
 **Đã cân nhắc và loại (loại có chủ đích):**
 
@@ -27,10 +28,9 @@
 | Bảng frame thô JSON làm landing zone (kiểu `staging.raw_payload`) | Tốn ~2× dung lượng và một đường ghi nữa; bảng sự kiện đã ép kiểu + cột `extra` hứng trường lạ là đủ phòng schema đổi |
 | Bảng chưng cất khối ngoại intraday (`FB`/`FS` cuối mỗi phút) | Chủ dự án chốt chỉ nến 1' là vĩnh viễn. Khối ngoại EOD đã có từ REST; intraday hồi cứu được trong cửa sổ 3 tháng. Nếu sau này cần chuỗi dài hạn: thêm một MV là xong, nhưng dữ liệu trước thời điểm thêm không dựng lại được |
 | Chưng cất độ rộng thị trường (breadth) dài hạn | Cùng lý do trên — trong cửa sổ 3 tháng đọc từ `index_delta`; ngoài cửa sổ chấp nhận không có |
-| Nến 5m/15m/60m vật chất hoá (chuỗi aggregate phân cấp kiểu Timescale cũ) | ClickHouse quét `bar_1m` cỡ này trong ms — tính lúc đọc. Thêm MV sau nếu đo thấy chậm |
+| Nến 5m/15m/60m vật chất hoá (chuỗi aggregate phân cấp kiểu Timescale cũ) | Tính lúc đọc từ `bar_1m_v` — **dự kiến** đủ nhanh ở quy mô này, đo lại khi có một tháng dữ liệu thật; chậm mới thêm MV |
 | `async_insert` server-side · Buffer table engine | Kém kiểm soát hơn buffer trong tiến trình, thêm điểm mù khi mất dữ liệu |
 | ClickHouse dictionary trỏ sang Postgres lấy factor · ETL đẩy factor sang ClickHouse | Tạo phụ thuộc runtime chéo kho / vi phạm "một người ghi mỗi miền" — quyết định #4 đã thay |
-| Topic `pth` | **Chưa kết luận được** — 0 frame qua ~6 phút đo (10/08/2026), nguồn ghi hai khả năng: kênh ngừng phát hoặc không có lệnh chào trong khoảng đo. Ngoài phạm vi cho tới khi có bằng chứng ngược |
 
 ## 2. Bố cục: database `rt` — 8 bảng · 2 materialized view · 2 view đọc
 
@@ -58,7 +58,7 @@ Quy ước chung mọi bảng:
 | Ép kiểu | Nguồn trả **số dạng chuỗi** ở `o`/`t`/`idx` — ingester ép tại cổng. Giá `Decimal64(2)` · khối lượng `UInt64` · giá trị tiền `Decimal64(2)` (precision 18, trần ~10¹⁶ VND — giá trị khớp toàn sàn cỡ 10¹³/ngày *(ước lượng, chưa đo)*, dư ~300×; không dùng `Decimal128` cho cột frame vì tốn gấp đôi byte trên hàng triệu dòng/ngày). Riêng cột tổng `val` của `bar_1m` dùng `Decimal128(2)` vì là tích `price × volume` cộng dồn |
 | Mã | `symbol LowCardinality(String)` — luồng realtime dùng **ticker**, không phải organ_code (khác REST FiinTrade) |
 | Trường phân loại của nguồn | `LowCardinality(String)`, **không dùng Enum** — danh sách giá trị của nguồn chưa chắc đóng (bài học `i` tăng 22→34 trường) |
-| Trường lạ / không map | `snapshot_delta`, `index_delta`, `pt_match` có cột `extra String` chứa JSON **mọi trường không map vào cột** — gồm cả trường lạ chưa từng thấy ("xử lý trường lạ an toàn", [11-bvsc-realtime §11.9](../../../10-sources/market/11-bvsc-realtime.md)) lẫn trường đã biết nhưng cố ý không lên cột (`MKI`/`IAC` của `ptm`). `trade`/`quote` **không có `extra`**: bộ trường của `t`/`o` cố định 10/11 trường, nguồn chỉ cảnh báo danh sách chưa đóng cho `i` |
+| Trường lạ / không map | `snapshot_delta`, `index_delta`, `pt_match` có cột `extra String` chứa JSON **mọi trường không map vào cột** — gồm cả trường lạ chưa từng thấy ("xử lý trường lạ an toàn", [11-bvsc-realtime §11.9](../../../10-sources/market/11-bvsc-realtime.md)) lẫn trường đã biết nhưng cố ý không lên cột (`MKI`/`IAC` của `ptm`). `trade`/`quote` **không có `extra`** — chấp nhận có ý thức, **chưa đo tính đóng** của bộ trường `t`/`o` (nguồn quan sát 10/11 trường ổn định nhưng mẫu nhỏ); bù bằng ingester log khoá lạ, xem §5.6 |
 | Mẫu truy vấn tối ưu | `ORDER BY (symbol, ts, …)` chọn có ý thức cho mẫu chủ đạo "**một mã theo thời gian**". Cắt ngang toàn thị trường tại một thời điểm phải quét partition tháng — chấp nhận (cỡ vài GB/partition); nếu sau này đo thấy chậm mới thêm skip index minmax theo `ts` |
 | Truy vết | Mọi bảng frame có `received_at DateTime64(3)` — lúc ingester nhận, để đo độ trễ và truy sự cố |
 | TTL | `TTL toDate(ts) + INTERVAL 3 MONTH DELETE` trên 5 bảng frame, kèm `SETTINGS ttl_only_drop_parts = 1` — partition tháng hết hạn thì **drop nguyên part** thay vì merge viết lại từng dòng, gần như miễn phí. Hệ quả phải biết: thời gian giữ thật dao động **3–4 tháng** (cả partition đợi dòng trẻ nhất hết hạn), không phải đúng 3. `bar_1m`/`index_bar_1m` **không TTL** |
@@ -142,8 +142,8 @@ CREATE TABLE rt.snapshot_delta (
   change_pct  Nullable(Decimal64(2)),                   -- CHP
   avg_price   Nullable(Decimal64(2)),                   -- AP
   high        Nullable(Decimal64(2)),                   -- HI
-  last_vol    Nullable(UInt64),                         -- CV
-  last_vol2   Nullable(UInt64),                         -- P1
+  last_vol    Nullable(UInt64),                         -- CV  (CV và P1 cùng nghĩa "KL lệnh khớp gần nhất",
+  last_vol2   Nullable(UInt64),                         -- P1   quan sát trùng giá trị (đo 10/08/2026) — giữ cả hai vì là delta, frame có thể chỉ mang một)
   last_price  Nullable(Decimal64(2)),                   -- P2
   total_vol   Nullable(UInt64),                         -- TT
   total_value Nullable(Decimal64(2)),                   -- TV
@@ -176,7 +176,7 @@ CREATE TABLE rt.index_delta (
   change      Nullable(Decimal64(2)),                   -- ICH
   change_pct  Nullable(Decimal64(2)),                   -- IPC
   total_vol   Nullable(UInt64),                         -- TV
-  total_value Nullable(Decimal128(2)),                  -- TVA
+  total_value Nullable(Decimal64(2)),                   -- TVA (đo được 5,7×10¹² — trần Decimal64(2) ≈ 10¹⁶, dư hàng nghìn lần; PHẢI khớp kiểu với state cum_value ở §4.2)
   advances    Nullable(UInt16),                         -- ADV
   declines    Nullable(UInt16),                         -- DE
   unchanged   Nullable(UInt16),                         -- NC
@@ -285,9 +285,13 @@ GROUP BY symbol, ts;
 
 Ba luật nghiệp vụ của nến:
 
-1. **Thoả thuận không vào nến** — nến chỉ tính khớp lệnh (luồng `t`); `ptm` đứng ngoài. Đúng quy ước nến của mọi bảng giá.
+1. **Thoả thuận không vào nến** — nến chỉ tính khớp lệnh (luồng `t`); `ptm` đứng ngoài. Đúng quy ước nến của mọi bảng giá. *(Giả định đi kèm — `t` chỉ chứa khớp lệnh, không lẫn thoả thuận: chưa đo trực tiếp; phép đối chứng AVO/AVA ở §5.7 kiểm nó liên tục trên dữ liệu thật.)*
 2. **Nến lớn (5m/15m/60m/ngày) tính lúc đọc** từ `bar_1m_v` bằng `toStartOfInterval` — dự kiến đủ nhanh ở quy mô ~540k dòng nến/ngày; **đo lại khi có một tháng dữ liệu thật**, chậm mới thêm MV (đúng mục "đã cân nhắc và loại" §1).
 3. **Điều chỉnh lúc đọc, ở `api`**: giá trả cho người dùng = giá thô × factor, factor đọc từ view hệ số bên Postgres (`market`), cache trong `api`. ClickHouse không biết Postgres tồn tại. **Chuỗi khoá ghép phải đi ba chặng**: `symbol` của ClickHouse là **ticker** → tra `market.security` ra `security_id` → lấy factor — không phải quan hệ trực tiếp (bẫy `organCode ≠ ticker` 41% nằm đúng đây). **Ngày chưa có factor** (nến trong phiên — `getPriceData` crawl sau 15:00): dùng **factor = 1**, vì sự kiện quyền có hiệu lực từ đầu ngày giao dịch không hưởng quyền — giá thô hôm nay đã ở thang sau điều chỉnh, các hệ số lịch sử mới là thứ co giá quá khứ về thang hiện tại.
+
+**Giả định chưa đo — thứ tự `seq` trong cùng giây:** `o`/`c` của nến dựa vào `argMin`/`argMax` theo khoá `(ts, seq)`, tức tin rằng `SM` phản ánh đúng thứ tự khớp của sở trong cùng một giây — cùng giả định mà §3.1 đã từ chối dựa vào khi chọn engine. Phạm vi sai nếu giả định đổ: **chỉ `o`/`c` của các giây nhiều lệnh** (nặng nhất là phút ATO/ATC — khớp định kỳ dồn vào một giây); `h`/`l`/`v`/`val`/`v_bu`/`v_sd` miễn nhiễm vì không phụ thuộc thứ tự. **Phiên đo SM** (đơn điệu theo mã? duy nhất? bộ đếm toàn sở?) phải chạy **trong phiên giao dịch, trước khi bật ghi thật** — ghép cùng phiên đo phái sinh của [roadmap §5.1](../../../00-overview/roadmap.md), không đợi tới plan ingester.
+
+**Thủ tục sửa nến (khi phát hiện MV sai):** `AggregatingMergeTree` cộng dồn state — chạy lại `INSERT INTO bar_1m SELECT … FROM trade` để "vá" sẽ **đếm đôi**, không sửa. Thủ tục chuẩn: `ALTER TABLE rt.bar_1m DROP PARTITION <YYYYMM>` → `INSERT INTO rt.bar_1m SELECT <đúng biểu thức MV> FROM rt.trade WHERE toYYYYMM(toDate(ts)) = <YYYYMM>`. Ràng buộc cứng: **chỉ vá được phần `trade` còn trong cửa sổ TTL (3–4 tháng)** — đây chính là lý do "3 tháng đủ thời gian phát hiện lỗi gom nến" ở quyết định #2, và là lý do test MV phải chặt ngay từ đầu.
 
 ### 4.2 `rt.index_bar_1m` — nến chỉ số
 
@@ -322,27 +326,36 @@ SELECT
   maxState(total_vol)                                       AS cum_vol,
   maxState(total_value)                                     AS cum_value
 FROM (SELECT symbol, ts AS event_ts, index_value, total_vol, total_value
-      FROM rt.index_delta WHERE index_value IS NOT NULL)
+      FROM rt.index_delta WHERE index_value IS NOT NULL AND index_value > 0)
 GROUP BY symbol, ts;
 ```
+
+*(Guard `index_value > 0`: chặn nến rác nếu nguồn đẩy `MI = 0` quanh mở phiên — **giờ đẩy `idx` ngoài 13:08–13:12 chưa được đo** (mẫu đo nằm giữa phiên chiều); bảng vĩnh viễn nên thà chặn thừa. Tuần đầu chạy thật phải ghi nhận phút sớm nhất/muộn nhất có frame `idx` và `t` — xem §10.)*
 
 **Ngữ nghĩa NULL của hai cột luỹ kế — quyết định spec, không phải chi tiết plan** (vì bảng vĩnh viễn, sai là không dựng lại được): `idx` là delta nên **cả phút có thể không frame nào mang `TV`/`TVA`**. Nếu ép `assumeNotNull` như hai cột giá, phút đó thành `cum_vol = 0` → người đọc suy khối lượng-theo-phút bằng hiệu sẽ được **một cặp hiệu âm/dương khổng lồ**. Chốt: state khai `Nullable`, `maxState` **bỏ qua NULL và trả NULL khi cả phút NULL** *(đã kiểm hành vi trên ClickHouse thật — §12)* — NULL nghĩa trung thực là "phút này nguồn không cập nhật luỹ kế", người đọc carry-forward bằng window function. `assumeNotNull` chỉ dùng cho `index_value` vì subquery đã `WHERE index_value IS NOT NULL`.
 
 Kèm view đọc `rt.index_bar_1m_v` tương tự `bar_1m_v` (`maxMerge(cum_vol)`, `maxMerge(cum_value)`).
+
+**Hợp đồng đọc luỹ kế — ba luật, vì `TV`/`TVA` là luỹ kế TRONG NGÀY:**
+
+1. Carry-forward NULL và tính hiệu đều phải **`PARTITION BY symbol, toDate(ts)`** — không bao giờ xuyên ngày (hiệu giữa nến cuối ngày d và nến đầu ngày d+1 là số âm khổng lồ, cùng họ lỗi với bậc nhảy 0 đã chặn ở trên).
+2. Phút đầu tiên trong ngày có `cum_vol` khác NULL: khối-lượng-theo-phút của nó = **chính `cum_vol`** (đã gồm trọn ATO), không phải hiệu với phút trước.
+3. Hiệu âm trong cùng ngày = dấu hiệu lỗi (nguồn nhảy lùi) — tầng đọc phải chặn/cảnh báo, không được trả ra cho người dùng.
 
 ## 5. Ingester ghi thế nào — hợp đồng writer
 
 Chi tiết code thuộc plan dựng ingester; spec chốt **hợp đồng**:
 
 1. **Hot path không đụng ClickHouse** (giữ nguyên [market-data-store §3.2](../../../20-design/market-data-store.md)): frame → ghép delta → Redis HASH + PUBLISH. Ghi ClickHouse qua hàng đợi trong tiến trình.
-2. **Batch flush:** mỗi bảng một buffer, flush khi **1 giây trôi qua hoặc đủ N dòng** (N chốt ở plan, cỡ vài nghìn) bằng INSERT native qua `clickhouse-connect`. ClickHouse ghét insert lắt nhắt — đây là lý do buffer tồn tại.
+2. **Batch flush:** mỗi bảng một buffer, **chu kỳ flush cố định 1 giây** bằng INSERT native qua `clickhouse-connect`. N dòng là **trần kích thước block** (chạm N giữa chu kỳ thì cắt block chờ nhịp flush kế + đánh cảnh báo — tải cao bất thường), **không phải** điều kiện flush sớm: flush nhanh hơn 1 s là vượt trần part/giây của §10. N chốt ở plan, cỡ vài nghìn.
 3. **Ép kiểu tại cổng:** chuỗi → số trước khi vào buffer; parse `TD`+`FT`/`TD`+`TI` theo `Asia/Ho_Chi_Minh`; `LS` là epoch **giây**.
 4. **Chống trùng hai lưới, đặt đúng hai tầng khác nhau** — vì MV gom **lúc insert**: bản sao lọt vào `trade` là `v`/`val`/`v_bu`/`v_sd` đếm đôi **vĩnh viễn** trong nến, không cơ chế nào sau đó chữa được:
    - **Lưới frame (tại ingester):** bỏ frame đã thấy khi nguồn đẩy lại sau nối lại + đăng ký lại. Cấu trúc cụ thể (tập khoá trong cửa sổ trượt — **không phải** chỉ nhớ một khoá cuối, vì reconnect đẩy lại cả loạt) chốt ở plan ingester. ⚠️ **Giả định chưa đo:** dedup theo `SM` giả định SM đơn điệu/duy nhất theo mã — tài liệu nguồn chưa đo tính chất này; plan ingester phải kèm một phiên đo SM trước khi chốt luật, trước đó dùng tập-khoá-đã-thấy, không dùng so sánh thứ tự.
-   - **Lưới block (tại ClickHouse):** bắt kịch bản lưới frame **không thể** bắt: flush thành công nhưng ack rớt (timeout, CH restart) → writer retry **nguyên block** → block trùng bị server nuốt im lặng. Đo trên CH thật *(§12, T4)* cho thấy cần **đủ bộ ba**, thiếu một là nến vẫn đếm đôi dù bảng gốc dedup thành công: (1) `non_replicated_deduplication_window` trên `rt.trade`; (2) **cả trên `rt.bar_1m`** — dedup của bảng gốc KHÔNG tự lan xuống bảng đích MV; (3) writer INSERT với setting `deduplicate_blocks_in_dependent_materialized_views = 1`. Hệ quả cho writer: **retry một INSERT phải gửi lại đúng block cũ nguyên vẹn** (không gộp thêm dòng mới vào block retry — đổi nội dung là đổi hash, mất tác dụng dedup).
+   - **Lưới block (tại ClickHouse):** bắt kịch bản lưới frame **không thể** bắt: flush thành công nhưng ack rớt (timeout, CH restart) → writer retry **nguyên block** → block trùng bị server nuốt im lặng. Đo trên CH thật *(§12, T4/T9/T10)* cho thấy cần **đủ bộ ba**, thiếu một là nến vẫn đếm đôi dù bảng gốc dedup thành công: (1) `non_replicated_deduplication_window` trên `rt.trade`; (2) **cả trên `rt.bar_1m`** — dedup của bảng gốc KHÔNG tự lan xuống bảng đích MV; (3) `deduplicate_blocks_in_dependent_materialized_views = 1` — **đặt server-side bằng SETTINGS PROFILE gắn vào role `dlck_ingester` trong migration** *(đo T10: profile ăn cả khi client không truyền setting)*, để lưới không phụ thuộc kỷ luật code writer; client truyền thêm cũng được, là lớp nhắc. Cửa sổ dedup **sống qua restart server** *(đo T9)* nên kịch bản "CH restart giữa chừng" được phủ thật. Hệ quả cho writer: **retry một INSERT phải gửi lại đúng block cũ nguyên vẹn** (không gộp thêm dòng mới vào block retry — đổi nội dung là đổi hash, mất tác dụng dedup).
    - **Bất biến phải giữ:** `snapshot_delta`/`index_delta` không cần hai lưới này vì mọi aggregate của MV chỉ số là `max`/`argMin`/`argMax` — **idempotent với bản sao**. Ràng buộc đi kèm: **cấm thêm aggregate cộng dồn (`sum`/`count`) lên `index_delta`/`snapshot_delta`** mà không bổ sung dedup tương đương `trade`.
-5. **Mất mát chấp nhận có ý thức:** ingester chết → mất tối đa ~1 s buffer chưa flush + thời gian standby tiếp quản (< 2 s). Không có cơ chế replay từ nguồn — đã biết từ khảo sát. Retry INSERT lỗi được phép (an toàn nhờ lưới block), nhưng **giới hạn số lần rồi bỏ** — không giữ block cũ mãi làm phình bộ nhớ.
-6. **Trường lạ không rơi rụng:** trường ngoài danh sách đã biết của `i`/`idx` → JSON vào `extra`; bộ giám sát hợp đồng theo dõi tỷ lệ `extra != ''` để biết nguồn vừa thêm trường.
+5. **Mất mát chấp nhận có ý thức:** ingester chết → mất tối đa ~1 s buffer chưa flush + thời gian standby tiếp quản (< 2 s). Không có cơ chế replay từ nguồn — đã biết từ khảo sát. Retry INSERT lỗi được phép (an toàn nhờ lưới block), nhưng **ngân sách retry phải nhỏ hơn tuổi thọ cửa sổ dedup**: window 100 block ở nhịp 1 block/giây ≈ 100 giây — backoff tổng của một block phải xong dưới ngưỡng đó, quá thì bỏ block (mất mát, đếm vào metric) chứ không ghi liều.
+6. **Trường lạ:** frame `i`/`idx`/`ptm` — trường không map vào cột → JSON vào `extra`, không rơi rụng; bộ giám sát hợp đồng theo dõi tỷ lệ `extra != ''` để biết nguồn vừa thêm trường. Frame `t`/`o` **không có lưới `extra`** — đây là **chấp nhận có ý thức chưa đo** (nguồn không cảnh báo danh sách mở cho `t`/`o`, nhưng cũng chưa ai đo tính đóng; mẫu chỉ 356 frame `t`/933 frame `o`): bù bằng ingester **đếm và log khoá lạ** gặp trong `t`/`o` (không lưu), khoá lạ xuất hiện là tín hiệu P2 để nâng cột bằng migration.
+7. **Đối chứng nội tại cuối phiên (bất biến vận hành):** với mỗi (mã, ngày): `max(trade.cum_volume)` phải bằng `Σ bar_1m_v.v` (và tương tự `cum_value` vs `Σ val`). Job cuối phiên của bộ giám sát hợp đồng đối chiếu, lệch là cảnh báo **P2**. Phép kiểm này miễn phí (cột `AVO`/`AVA` đã lưu), bắt được **cả đếm đôi lẫn mất frame**, và kiểm luôn giả định "`t` không lẫn thoả thuận" (§4.1 luật 1) trên dữ liệu thật mỗi ngày.
 
 ## 6. Quyền truy cập — thi hành "một người ghi" bằng chính DB
 
@@ -350,12 +363,12 @@ Soi gương **đúng mô hình** role Postgres ([database/README.md](../../../..
 
 | Đối tượng | Quyền | Tạo ở đâu | Dùng bởi |
 |---|---|---|---|
-| ROLE `dlck_ingester` | INSERT + SELECT trên `rt.*` | migration | — |
-| ROLE `dlck_api` | **chỉ SELECT** trên `rt.*` (không DDL, không thấy database khác) | migration | — |
+| ROLE `dlck_ingester` + SETTINGS PROFILE `deduplicate_blocks_in_dependent_materialized_views=1` gắn role (lưới block §5.4, đo T10) | INSERT + SELECT trên `rt.*` | migration | — |
+| ROLE `dlck_api` | **chỉ SELECT** trên `rt.*` — không DDL; `SHOW DATABASES` chỉ hiện `rt` *(đo 2026-08-25 trên CH 26.3)* | migration | — |
 | user login (vd `ingester_worker`, `api_reader`) | `GRANT <role> TO <user>` | script per-môi-trường, ngoài migration | `ingester` / `api` |
 | user quản trị mặc định của image | DDL — chỉ runner migration dùng | env của container | migration |
 
-Điều kiện tiên quyết: image ClickHouse mặc định **tắt** SQL access management cho user default — container phải bật qua env (`CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1` — kiểm trên CH thật ở §12) thì `CREATE ROLE` trong migration mới chạy được.
+Điều kiện tiên quyết: container phải bật SQL access management qua env `CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1` thì `CREATE ROLE` trong migration mới chạy được *(đo T6: có env này thì tạo được role/user; mặc-định-không-bật là theo tài liệu image, chưa đo mặt phủ định)*.
 
 `etl` **không có user ClickHouse** — nó không có việc gì ở kho realtime ([service-topology §4](../../../20-design/service-topology.md)).
 
@@ -363,14 +376,15 @@ Soi gương **đúng mô hình** role Postgres ([database/README.md](../../../..
 
 Đúng chỗ [spec deploy-scaffold §3](../2026-08-24-deploy-scaffold/spec.md) để dành:
 
-- Service `clickhouse` trong `deploy/infra/docker-compose.yml`, **profile `realtime`** — mặc định không chạy, `dev-start`/`docker-up` hiện tại không đổi hành vi.
-- Image pin phiên bản LTS cụ thể (chốt số ở plan, kiểm bản LTS mới nhất lúc thực thi — không dùng tag `latest`).
+- Service `clickhouse` trong `deploy/infra/docker-compose.yml`, **profile `realtime`** — mặc định không chạy.
+- ⚠️ **Không đặt `${VAR:?}` bắt buộc cho biến ClickHouse trong compose** — Compose nội suy biến khi **nạp file**, bất kể profile có bật hay không ⇒ `.env` hiện hành thiếu khoá ClickHouse sẽ làm `dev-start`/`docker-up` chết ngay, phá AC1/AC6 của [deploy-scaffold](../2026-08-24-deploy-scaffold/spec.md). Chốt: biến ClickHouse dùng default rỗng trong compose; **fail-fast chuyển vào `scripts/stack.mjs`** — chỉ kiểm khi profile `realtime` được yêu cầu. `.env.example` thêm khối ClickHouse **cùng lượt** (checklist §13).
+- Image **pin `clickhouse/clickhouse-server:26.3.22.7` (LTS)** — đúng bản đã chạy toàn bộ phép kiểm §12. Luật: **đổi bản ⇒ chạy lại nguyên bộ §12** trước khi merge (T7 đã cho thấy hành vi phụ thuộc analyzer từng bản).
 - Cổng bind `127.0.0.1`: `8123` (HTTP — `clickhouse-connect` dùng) và `9000` (native TCP).
-- Named volume `chdata` + healthcheck + các chốt an toàn volume như Postgres/Redis (kiểm sống sau `docker-down`, cấm bind-mount data dir).
-- `.env` thêm khối ClickHouse (`CLICKHOUSE_USER`/`CLICKHOUSE_PASSWORD` bắt buộc, fail-fast; mật khẩu các user ứng dụng cấp qua env riêng cho script per-môi-trường). Không in giá trị ra log.
+- Named volume `chdata` + healthcheck + các chốt an toàn volume như Postgres/Redis (kiểm sống sau `docker-down` — **thêm `chdata` vào danh sách volume bất biến của `stack.mjs`**, cấm bind-mount data dir).
+- `CLICKHOUSE_USER`/`CLICKHOUSE_PASSWORD`, mật khẩu user ứng dụng: qua env, không in giá trị ra log.
 - Env `CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1` — bắt buộc để migration tạo được ROLE (§6).
-- `ulimits: nofile 262144` cho service — image ClickHouse cần trần file descriptor cao; mặc định Docker Desktop thấp hơn, triệu chứng khi thiếu là "Too many open files" lúc số part tăng.
-- Cấu hình mem thấp cho máy đơn (giới hạn `max_server_memory_usage_to_ram_ratio`) — con số chốt ở plan.
+- `ulimits: nofile 262144` cho service *(khuyến nghị của ClickHouse cho image chính thức — chưa kiểm ngưỡng thấp hơn trên máy này)*.
+- Cấu hình mem thấp cho máy đơn (`max_server_memory_usage_to_ram_ratio` — khuyến nghị, con số chốt ở plan).
 
 ## 8. Migration — `database/clickhouse/` + runner
 
@@ -382,8 +396,9 @@ backend/…                              runner: python -m <module> upgrade
 ```
 
 - Runner Python nhỏ trong backend (dùng env `CLICKHOUSE_URL`): **tự bootstrap** `CREATE DATABASE IF NOT EXISTS rt` + `CREATE TABLE IF NOT EXISTS rt.schema_migrations (version String, applied_at DateTime('Asia/Ho_Chi_Minh')) ENGINE = MergeTree ORDER BY version` trước khi đọc `versions/` (giải bài con gà quả trứng — sổ migration nằm trong chính database mà migration tạo). Sau đó: file nào chưa có trong sổ thì thực thi rồi ghi dòng.
-- **Idempotent ở mức statement, không chỉ mức file** — vì ClickHouse **không có transaction cho DDL**: file chết ở statement thứ k thì các object 1..k−1 đã tồn tại mà sổ chưa ghi; lần chạy lại phải đi qua được. Luật cứng: **mọi statement DDL trong `versions/` phải viết `IF NOT EXISTS` / `IF EXISTS`**.
+- **Idempotent ở mức statement, không chỉ mức file** — vì ClickHouse **không có transaction cho DDL**: file chết ở statement thứ k thì các object 1..k−1 đã tồn tại mà sổ chưa ghi; lần chạy lại phải đi qua được. Luật cứng: **mọi statement trong `versions/` phải idempotent** — `CREATE … IF NOT EXISTS` / `DROP … IF EXISTS` cho DDL tạo/xoá; `GRANT`/`REVOKE` vốn idempotent; `ALTER … MODIFY SETTING` idempotent theo bản chất; statement không đưa được về idempotent (INSERT seed…) thì tự bọc điều kiện tồn tại. Mặt trái phải kiểm: `IF NOT EXISTS` **che drift** (bảng tồn tại với định nghĩa cũ thì bỏ qua im lặng) — seam §9 đối chiếu `system.tables.create_table_query` với bản kỳ vọng, bắt drift chứ không chỉ bắt thiếu.
 - **Không có downgrade** (khác Alembic): sửa sai = viết migration tiếp theo. Cùng luật "không sửa file migration đã chạy" của Postgres.
+- **Thời điểm chạy migration:** **ngoài giờ giao dịch.** Sửa MV = `DROP` + `CREATE` — khoảng giữa hai statement, INSERT vào bảng nguồn **không sinh nến**, và nguồn không có replay. Buộc phải chạy trong phiên thì dừng ingester trước, chạy xong gom bù phần thiếu từ `trade` theo thủ tục sửa nến §4.1.
 - Một file SQL có thể chứa nhiều statement, tách bằng `;` — quy ước parse chốt ở plan.
 - Vị trí chính xác của module runner (trong `backend/core/` hay script riêng) chốt ở plan cùng cấu trúc test.
 
@@ -393,28 +408,34 @@ Chạy trên **ClickHouse thật** (container test, giống cách test schema Po
 
 | Seam | Kiểm gì | Case biên tối thiểu |
 |---|---|---|
-| Runner migration | DB rỗng → `upgrade` → đủ bảng/MV/view; chạy lại lần 2 không đổi gì (idempotent mức file) | file mới thêm được chạy tiếp đúng thứ tự · **file chết giữa chừng rồi chạy lại phải đi qua được** (idempotent mức statement — DDL không transaction) |
+| Runner migration | DB rỗng → `upgrade` → đủ bảng/MV/view; chạy lại lần 2 không đổi gì (idempotent mức file) | file mới thêm được chạy tiếp đúng thứ tự · **file chết giữa chừng rồi chạy lại phải đi qua được** (idempotent mức statement — DDL không transaction) · sau `upgrade`, `create_table_query` của từng bảng khớp bản kỳ vọng (bắt drift bị `IF NOT EXISTS` che) |
 | MV nến cổ phiếu | Insert bộ tick literal giải tay → `bar_1m_v` trả đúng o/h/l/c/v/**val**/v_bu/v_sd đã tính tay | hai tick cùng giây khác `seq` (o/c theo thứ tự sở, không theo thứ tự insert) · tick rải hai block insert cùng một phút (state gộp đúng) · phút không tick không có dòng · `side` lạ không vào `v_bu`/`v_sd` nhưng vẫn vào `v` |
-| MV nến chỉ số | Chuỗi `index_delta` literal → `index_bar_1m_v` đúng o/h/l/c giải tay | **phút không frame nào mang `TV` → `cum_vol` là NULL, không phải 0** (ngữ nghĩa §4.2) |
-| Dedup block | INSERT lại nguyên block đã ghi → số dòng `trade` không tăng **và** `bar_1m_v` không đếm đôi (dedup lan xuống MV) | block *khác nội dung* nhưng trùng khoá vẫn được ghi (dedup theo hash block, không theo khoá) |
+| MV nến chỉ số | Chuỗi `index_delta` literal → `index_bar_1m_v` đúng o/h/l/c giải tay | **phút không frame nào mang `TV` → `cum_vol` là NULL, không phải 0** (ngữ nghĩa §4.2) · frame `MI = 0` không sinh nến (guard) |
+| Hợp đồng đọc luỹ kế (tầng đọc `api` — ghi trước cho plan api) | Chuỗi hai ngày liên tiếp → khối-lượng-theo-phút không bao giờ âm; phút đầu ngày = chính `cum_vol` | ngày chỉ có NULL không phá carry-forward |
+| Dedup block | INSERT lại nguyên block đã ghi **không truyền setting phía client** (chỉ dựa PROFILE của role) → số dòng `trade` không tăng **và** `bar_1m_v` không đếm đôi | block *khác nội dung* nhưng trùng khoá vẫn được ghi (dedup theo hash block, không theo khoá) · dedup còn tác dụng sau restart server |
+| Sửa nến (thủ tục §4.1) | `DROP PARTITION` + gom lại từ `trade` → `bar_1m_v` khớp giải tay, không đếm đôi | partition khác không bị đụng |
 | TTL — hành vi thật | Chèn dòng `ts` lùi 5 tháng + dòng lùi 1 tháng → `ALTER TABLE … MATERIALIZE TTL` (mutations_sync) → dòng cũ biến mất, dòng mới còn | bảng nến: chèn dòng 2 năm trước, `OPTIMIZE FINAL` → **vẫn còn** (không TTL) |
-| Trường lạ | Frame `i` có trường ngoài danh sách → dòng ghi vào `snapshot_delta` với `extra` chứa đúng trường đó (JSON) | frame không trường lạ → `extra = ''` |
-| Quyền | `dlck_api` INSERT bị từ chối, SELECT được; `dlck_ingester` INSERT được | `dlck_api` không `DROP`/`ALTER` được, không thấy database ngoài `rt` |
+| Trường lạ (tầng ánh xạ ingester — ghi trước cho plan ingester) | Frame `i` có trường ngoài danh sách → dòng ghi vào `snapshot_delta` với `extra` chứa đúng trường đó (JSON) | frame không trường lạ → `extra = ''` · khoá lạ trong frame `t`/`o` được đếm/log (không lưu) |
+| Quyền | `dlck_api` INSERT bị từ chối, SELECT được; `dlck_ingester` INSERT được | `dlck_api` không `DROP`/`ALTER` được; `SHOW DATABASES` của nó không hiện database nghiệp vụ nào ngoài `rt` |
 | Ép kiểu + timezone (thuộc plan ingester, ghi trước) | `"42100.0"` → Decimal đúng; `"215271860.0"` → UInt64 = 215271860 (khối lượng nguồn **lúc có lúc không** đuôi `.0`); `TD`+`FT` giờ VN không lệch ngày, assert `TD == toDate(ts)` | epoch `LS` giây vs `t` ms · giá trị Decimal truyền qua `clickhouse-connect` bằng `decimal.Decimal`/chuỗi, **không** bằng `float` (tránh làm tròn nhị phân) |
 
 ## 10. Ước lượng tải và dung lượng
 
-Suy từ mẫu 12 mã / 239 s (đo 10/08/2026 — [11-bvsc-realtime §10](../../../10-sources/market/11-bvsc-realtime.md)), **chưa đo toàn thị trường**:
+Suy từ mẫu 12 mã / 239 s (đo 10/08/2026 — [11-bvsc-realtime §10](../../../10-sources/market/11-bvsc-realtime.md)), cho phạm vi đăng ký **toàn thị trường** (quyết định #8, ~2.000 mã). **Mẫu đo thiên về mã thanh khoản cao nên KHÔNG suy tuyến tính được** — hai mốc chặn:
 
 | Đại lượng | Ước lượng |
 |---|---|
-| Frame toàn thị trường giờ cao điểm | vài trăm frame/s (12 mã ≈ 13,7 frame/s) |
-| Dòng ghi mỗi ngày (5 bảng frame) | ~3–6 triệu |
-| Dung lượng frame thô | ~100–200 MB/ngày sau nén ⇒ **cửa sổ 3 tháng ổn định ~6–12 GB** |
-| `bar_1m` + `index_bar_1m` | ~200–540k dòng/ngày ⇒ **~1 GB/năm**, tích luỹ vĩnh viễn |
+| Chặn dưới (đuôi dài ít giao dịch, hoạt động dồn vào ~200 mã đầu) | ~5–15 triệu dòng/ngày |
+| Chặn trên (suy tuyến tính thô 1,14 frame/s/mã × 2.000 mã — chắc chắn cao hơn thực tế) | ~35 triệu dòng/ngày |
+| Dung lượng frame thô | ~150 MB–1 GB/ngày sau nén ⇒ **cửa sổ 3 tháng cỡ 10–60 GB** — dải rộng vì chưa đo; con số thật đo trong **tuần đầu chạy** và ghi lại vào đây. Nếu chạm đầu cao của dải: TTL rút còn 1–2 tháng là **một lệnh ALTER**, không phải thiết kế lại |
+| `bar_1m` + `index_bar_1m` | ~200–540k dòng/ngày ⇒ **~1 GB/năm** *(ước lượng kế thừa từ thiết kế Timescale cũ — CHƯA tính chi phí AggregateFunction state, đặc biệt `argMin`/`argMax` mang khoá tuple; đo kích thước thật sau một tháng)* |
 | Nhịp insert từ ingester | **1 part/giây/bảng** (5 bảng × flush 1 s) — đúng **trần** khuyến nghị của ClickHouse (≤1 insert/giây mỗi bảng), không phải mức thoải mái: **flush không được nhanh hơn 1 s**. Lưu ý MV làm `bar_1m`/`index_bar_1m` nhận part cùng nhịp với bảng nguồn — tổng 7 bảng nhận part, merge nền phải theo kịp (dự kiến ổn ở quy mô này; theo dõi `system.parts` tuần đầu) |
 
-Đo lại bằng số thật trong tuần đầu Ingester chạy; nếu lệch bậc thì cập nhật tài liệu sống kèm ngày đo.
+**Danh sách đo tuần đầu Ingester chạy** (cập nhật lại mục này kèm ngày đo; lệch bậc thì cân nhắc lại TTL/nhịp flush):
+1. Dòng/ngày và MB/ngày thật của từng bảng frame; kích thước `bar_1m` sau một tháng.
+2. Phút sớm nhất/muộn nhất có frame `idx` và `t` (phạm vi giờ đẩy — hiện chỉ đo 13:08–13:12).
+3. `system.parts`: số part active giờ cao điểm — merge có theo kịp nhịp 1 part/giây/bảng không.
+4. Tính chất `SM` (phiên đo trong giờ, trước khi bật ghi thật — §4.1).
 
 ## 11. Ngoài phạm vi spec này
 
@@ -435,13 +456,16 @@ Chạy trên **ClickHouse 26.3.22.7 (LTS)**, container Docker chính thức, sau
 | DDL | Toàn bộ DDL §2–§4 (8 bảng, 2 MV subquery, 2 view, TTL + settings) | ✅ chạy sạch, `system.tables` đủ 12 object đúng engine |
 | T1 | MV nến: 3 tick giải tay (2 block insert, cùng phút) | ✅ `o=100 h=101 l=99 c=99 v=350 val=35150 v_bu=150 v_sd=200` — khớp giải tay tuyệt đối |
 | T2 | `side` lạ (`'X'`) | ✅ vào `v`, không vào `v_bu`/`v_sd` |
-| T3 | Phút không frame nào mang `TV` | ✅ `cum_vol`/`cum_value` = **NULL** (không phải 0) — ngữ nghĩa §4.2 đứng vững |
+| T3 | Phút không frame nào mang `TV` — và phút có `TVA` thật | ✅ `cum_vol`/`cum_value` = **NULL** (không phải 0) — ngữ nghĩa §4.2 đứng vững; phút sau có `TVA = 12.000.000,00` đọc ra đúng số qua state `Nullable(Decimal64(2))` (đường ghi không-NULL cũng được phủ; DDL đem kiểm dùng `Decimal64` nhất quán ở cả `index_delta.total_value` lẫn state — đúng bản spec sau sửa lượt 2) |
 | T4 | Retry nguyên block (dedup) | ⚠️ Phát hiện quan trọng: dedup window chỉ đặt ở `trade` thì bảng gốc không nhận block trùng **nhưng nến vẫn đếm đôi** (`v=450` thay vì 350). Đủ bộ ba §5.4 (window ở cả `trade` + `bar_1m`, INSERT với `deduplicate_blocks_in_dependent_materialized_views=1`) → ✅ `trade` 1 dòng, `v=100` — nuốt trọn retry |
 | T5 | TTL hành vi thật: dòng 5 tháng + dòng 1 tháng, `MATERIALIZE TTL` | ✅ dòng cũ biến mất, dòng mới còn; dòng `bar_1m` của phút cũ **vẫn còn** (không TTL) |
 | T6 | `CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1` + `CREATE ROLE`/`GRANT`/`CREATE USER` | ✅ tạo được role/user từ SQL; user gắn `dlck_api`: SELECT được, INSERT và DROP đều bị `ACCESS_DENIED` |
 | T7 | Bản MV **gốc** (alias `toStartOfMinute(ts) AS ts` che cột) | Trên 26.3: phân giải về **alias**, ghi đúng 1 dòng/phút — không lỗi. Vẫn giữ dạng subquery vì hành vi này phụ thuộc analyzer, không cam kết đa phiên bản |
+| T9 | Dedup qua **restart server**: insert → `docker restart` → retry nguyên block | ✅ `trade` 1 dòng, nến không đếm đôi — cửa sổ hash sống qua restart, kịch bản "CH restart" của §5.4 được phủ thật |
+| T10 | SETTINGS PROFILE `deduplicate_blocks_in_dependent_materialized_views=1` gắn role `dlck_ingester`; INSERT bằng user đó **không truyền setting phía client** | ✅ retry bị nuốt trọn (`trade` 1 dòng, `v` không đôi) — lưới thứ ba đặt được server-side, không phụ thuộc kỷ luật code writer |
+| T11 | `SHOW DATABASES` của user gắn `dlck_api` (tồn tại database nghiệp vụ khác) | ✅ chỉ hiện `rt` |
 
-Giới hạn của phép kiểm: chạy trên dữ liệu literal vài dòng — **chưa đo tải thật** (tần suất part, merge, RAM); mục §10 vẫn là ước lượng. Kịch bản kiểm lưu ở scratchpad phiên làm việc, sẽ tái lập thành test seam chính thức ở bước plan (§9).
+Giới hạn của phép kiểm: chạy trên dữ liệu literal vài dòng — **chưa đo tải thật** (tần suất part, merge, RAM); mục §10 vẫn là ước lượng. Guard `index_value > 0` (§4.2) thêm **sau** đợt đo theo review lượt 2 — chỉ là thêm một vị từ WHERE, ngữ nghĩa NULL/không-NULL đã kiểm không đổi; bộ seam §9 sẽ phủ nó chính thức. Kịch bản kiểm lưu ở scratchpad phiên làm việc, sẽ tái lập thành test seam chính thức ở bước plan (§9).
 
 ## 13. Checklist quét tài liệu sống khi spec chốt (luật §1.7)
 
@@ -451,4 +475,6 @@ Giới hạn của phép kiểm: chạy trên dữ liệu literal vài dòng —
 - [ ] Điểm nối factor đã đổi hướng so với `step-01 §2` ("ClickHouse cần view hệ số từ market" → nay là **`api` cần**, ClickHouse không phụ thuộc Postgres): ghi câu chốt mới ở tài liệu sống (`market-data-store`/`service-topology`), **không sửa** `step-01` (vùng lịch sử 90-records); nếu cần, một dòng ghi chú ở `database/README.md`
 - [ ] `roadmap.md` §5.2 — đánh dấu dòng "Cập nhật market-data-store theo ClickHouse" đã xong, trỏ hồ sơ này
 - [ ] `deploy-scaffold` spec/ledger — **không sửa** (vùng lịch sử 90-records); profile `realtime` ghi ở compose thật khi thực thi
+- [ ] `.env.example` — thêm khối ClickHouse cùng lượt thực thi (biến default rỗng trong compose, fail-fast ở `stack.mjs` khi bật profile — §7)
+- [ ] `scripts/stack.mjs` — thêm `chdata` vào danh sách volume bất biến (không thêm là AC4 không bảo vệ volume mới)
 - [ ] `git grep` "TimescaleDB\|bar_1m\|hypertable" toàn repo — xác nhận mọi hit còn lại hoặc đã đúng, hoặc thuộc vùng lịch sử
