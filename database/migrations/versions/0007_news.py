@@ -45,7 +45,11 @@ def upgrade() -> None:
                                                   -- sách 20 mã từ news-pipeline, liệt kê trong migration
           group_from_feed smallint,               -- nhóm GỢI Ý từ feed — cặp với group_no để tự phát hiện
                                                   -- feed xếp sai nhóm (news-pipeline §7.3; review vòng 2, I5)
-          sub            text,                    -- sub-taxonomy ('3b'…) — 20 sub đã chốt
+          sub            text CHECK (sub IN (
+                           '1a','1b','1c','1d','1e','1f',
+                           '2a','2b','2c','2d','2e',
+                           '3a','3b','3c','3d','3e','3f','3g','3h','3i')),
+                                                  -- 20 sub đã chốt (news-pipeline taxonomy; CHECK theo review M-3)
           group_overridden boolean NOT NULL DEFAULT false,
                            -- bật khi group_no KHÁC group_from_feed — ETL phải so bằng IS DISTINCT FROM
                            -- (vòng 4, F14: tin nhãn 'x' có group_no NULL, phép != trả NULL và cờ không

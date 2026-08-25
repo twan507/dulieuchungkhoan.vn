@@ -68,3 +68,10 @@ def test_url_unique_and_labels(db):                                 # seam 5 + M
     assert expect_violation(db, f"INSERT INTO news.article_source (article_id,source_name,url) "
                                 f"VALUES ({b},'vietstock','https://cafef.vn/z1')")
     assert expect_violation(db, f"UPDATE news.article SET group_no = 9 WHERE article_id = {a}")
+
+def test_sub_taxonomy_check(db):                                    # fix round 1 — CHECK 20 sub (M-3)
+    a = _article(db, url="https://x.vn/a8")
+    assert expect_violation(db, f"UPDATE news.article SET sub = '9z' WHERE article_id = {a}")
+    db.execute(sa.text("UPDATE news.article SET sub = '3b' WHERE article_id = :a"), {"a": a})
+    sub = db.execute(sa.text("SELECT sub FROM news.article WHERE article_id = :a"), {"a": a}).scalar()
+    assert sub == "3b"
