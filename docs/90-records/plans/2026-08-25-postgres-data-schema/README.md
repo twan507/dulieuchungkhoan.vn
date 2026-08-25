@@ -7,12 +7,13 @@
 | Bước | File | Nội dung | Trạng thái |
 |---|---|---|---|
 | 1 | [step-01-foundations.md](step-01-foundations.md) | Nguyên tắc nền · bố cục 6 schema · quy ước DDL · migration Alembic | ✅ chốt 2026-08-25 |
-| 2 | [step-02-market-identity.md](step-02-market-identity.md) | Định danh: issuer · security · ánh xạ nguồn · **bộ ngành riêng** (thay ICB) | 🟡 **chờ duyệt DDL** — cây ngành đã chốt 2026-08-25, nội dung ở [industry-tree.md](../../../20-design/industry-tree.md) |
+| 2 | [step-02-market-identity.md](step-02-market-identity.md) | Định danh: issuer · security · ánh xạ nguồn · **bộ ngành riêng** (thay ICB) | ✅ chốt 2026-08-25 — cây ngành ở [industry-tree.md](../../../20-design/industry-tree.md) |
 | 3 | step-03-market-data.md | Giá EOD + view hệ số · BCTC · từ điển chỉ tiêu · snapshot/screener · sự kiện | ⬜ chưa viết |
 | 4 | step-04-macro.md | Registry chỉ tiêu + observation (UPSERT) · cụm OMO | ⬜ chưa viết |
 | 5 | step-05-asset.md | Registry tài sản · price/ohlc/fx · luật dầu-vàng-DXY | ⬜ chưa viết |
 | 6 | step-06-news.md | Article/revision không ghi đè · gắn mã · tìm kiếm | ⬜ chưa viết |
 | 7 | step-07-staging-ops.md | Landing zone · data_domain_state · giám sát hợp đồng · etl_run | ⬜ chưa viết |
+| 8 | step-08-derived.md | **Tầng tự tính**: chỉ số ngành từ cây riêng · chỉ báo kỹ thuật · bảng dẫn xuất khác | ⬜ chưa viết — nguyên tắc đã chốt (xem dưới), danh sách bảng cụ thể chốt sau 3–7, công thức chốt khi có dữ liệu thật |
 
 Sau khi cả 7 bước chốt: viết `plan.md` (bẻ task thực thi) theo quy trình §4.1.
 
@@ -26,6 +27,16 @@ Sau khi cả 7 bước chốt: viết `plan.md` (bẻ task thực thi) theo quy 
 | 4 | **Không cột `source` ở bảng dữ liệu** — nguồn có thể đổi, xuất xứ nằm ở bảng ánh xạ registry + `staging`/`ops`. Chỉ tin tức ghi nguồn (báo nào đăng). *Override có ý thức* mục "thêm cột source" ở [market-data-store §9.6](../../../20-design/market-data-store.md) — cập nhật tài liệu sống khi spec chốt xong | 2026-08-25 |
 | 5 | **Phân ngành dùng bộ riêng của chủ dự án**, không dùng cây ICB làm chuẩn — chi tiết chốt ở bước 2 | 2026-08-25 |
 | 6 | Hai instance `postgres-data`/`postgres-app`, hai connection string, cấm JOIN chéo instance (chốt D — service-topology §4) | 2026-08-25 |
+
+## Tầng dữ liệu tự tính (derived) — nguyên tắc mở rộng, chốt 2026-08-25
+
+Chủ dự án sẽ tự tính thêm từ số đã có (chỉ số ngành theo cây riêng, chỉ báo kỹ thuật từng mã…). Ba luật để thêm bảng mới không phá kiến trúc:
+
+1. **Nằm cùng schema miền tiêu thụ** — chỉ số ngành ngân hàng vẫn là câu hỏi miền market ⇒ `market.industry_index_daily`; không lập schema `derived` riêng (người dùng hỏi theo miền, không hỏi theo cách số được tạo ra).
+2. **Rebuild được toàn phần, idempotent** — bảng dẫn xuất tính lại 100% từ bảng sự thật; xoá đi tính lại không mất gì. Hệ quả: không cần backup riêng, sai công thức thì sửa rồi tính lại, và **không bảng dẫn xuất nào được là nguồn sự thật duy nhất của bất kỳ con số nào**. (Tiền lệ đã có: `macro.omo_flow`, view `market.price_factor`.)
+3. **Không trộn cột dẫn xuất vào bảng sự thật** — không thêm cột RSI vào `price_daily`; dẫn xuất ở bảng/view riêng. Chọn dạng: tính rẻ lúc đọc → **view**; cần quét toàn thị trường/screener theo giá trị đã tính → **bảng vật chất hoá** do job `etl` dựng.
+
+Điểm tinh tế ghi trước: doanh nghiệp **đổi ngành** (gán tay) thì rebuild chỉ số ngành sẽ viết lại lịch sử theo gán mới — chấp nhận (triết lý rebuild); nếu ngày nào cần "lịch sử ngành tại thời điểm", mới thêm bảng membership theo thời gian, chưa làm bây giờ.
 
 ## Hợp đồng tháo lắp nguồn — ranh giới spec này ↔ code ETL
 

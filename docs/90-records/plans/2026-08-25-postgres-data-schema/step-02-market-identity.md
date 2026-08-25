@@ -1,6 +1,6 @@
 # Bước 2 — Định danh: doanh nghiệp, mã chứng khoán, bộ ngành riêng
 
-**Trạng thái:** 🟡 chờ duyệt · **Phụ thuộc:** bước 1 (✅) · **Phạm vi:** các bảng "ai là ai" của schema `market` — nền cho mọi bảng dữ liệu ở bước 3 và cho tin gắn mã ở bước 6.
+**Trạng thái:** ✅ chốt 2026-08-25 (chủ dự án đồng ý cả 4 điểm duyệt) · **Phụ thuộc:** bước 1 (✅) · **Phạm vi:** các bảng "ai là ai" của schema `market` — nền cho mọi bảng dữ liệu ở bước 3 và cho tin gắn mã ở bước 6.
 
 ---
 
