@@ -1,6 +1,6 @@
 # Bước 3 — Bảng dữ liệu cổ phiếu: giá EOD, BCTC, snapshot, sự kiện
 
-**Trạng thái:** 🟡 chờ duyệt · **Phụ thuộc:** bước 1–2 (✅) · **Phạm vi:** các bảng *sự thật* của schema `market`. Nến intraday/tick **không ở đây** (ClickHouse — phiên riêng). Bảng tự tính (chỉ số ngành, chỉ báo) ở bước 8.
+**Trạng thái:** ✅ chốt 2026-08-25 (chủ dự án đồng ý 5 điểm duyệt, sau làm rõ nguồn gốc `close_raw`) · **Phụ thuộc:** bước 1–2 (✅) · **Phạm vi:** các bảng *sự thật* của schema `market`. Nến intraday/tick **không ở đây** (ClickHouse — phiên riêng). Bảng tự tính (chỉ số ngành, chỉ báo) ở bước 8.
 
 Mỗi bảng ghi rõ **ngữ nghĩa ghi** — đây là "mặt bích" mọi adapter ETL phải tôn trọng (hợp đồng tháo lắp nguồn, README).
 
