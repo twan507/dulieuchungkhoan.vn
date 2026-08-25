@@ -1,6 +1,6 @@
 # Bước 4 — Vĩ mô: registry chỉ tiêu, chuỗi quan sát, cụm OMO
 
-**Trạng thái:** 🟡 chờ duyệt · **Phụ thuộc:** bước 1–3 (✅) · **Phạm vi:** schema `macro` — chỉ tiêu vĩ mô Việt Nam (WiChart ~70 chỉ tiêu sau lọc) + Mỹ (FRED 15 series) + đấu thầu OMO của SBV. *Giá hàng hoá của WiChart không ở đây — nó là giá tài sản, thuộc bước 5.*
+**Trạng thái:** ✅ chốt 2026-08-25 (chủ dự án đồng ý 5 điểm duyệt) · **Phụ thuộc:** bước 1–3 (✅) · **Phạm vi:** schema `macro` — chỉ tiêu vĩ mô Việt Nam (WiChart ~70 chỉ tiêu sau lọc) + Mỹ (FRED 15 series) + đấu thầu OMO của SBV. *Giá hàng hoá của WiChart không ở đây — nó là giá tài sản, thuộc bước 5.*
 
 ---
 
