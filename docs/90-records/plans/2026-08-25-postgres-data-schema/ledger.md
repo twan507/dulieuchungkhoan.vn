@@ -21,3 +21,4 @@ Ruling: Ledger + brief/report đặt ngoài `.superpowers/` theo luật repo (ti
 ## Task log
 Task 1: complete (commit 1f0a70f, controller tự làm theo plan; 3 test pass; downgrade/upgrade dev DB OK). Ghi chú: PG16 mặc định đã khoá CREATE public — REVOKE trong 0001 giữ làm tường minh/idempotent.
 Task 2: complete (commits 1f0a70f..3b0c77e, review clean — SPEC ✅, Quality Approved). Minor (deferred): thứ tự DROP trong downgrade 0002 không phải đảo ngược chính xác thứ tự tạo (an toàn FK, icb_industry không có FK vào/ra).
+Task 3: complete (commits 27b3339..d4ff21e, review clean — seed 6+24 khớp literal từng ký tự với industry-tree.md, kiểm bằng script độc lập của reviewer). Minor (deferred): downgrade 0003 thêm `DELETE industry_icb_map` ngoài brief. Ruling: GIỮ — phòng FK khi map có dữ liệu rồi downgrade; lệch literal brief nhưng đúng kỹ thuật. — Sai thì: không (bảng đang rỗng).
