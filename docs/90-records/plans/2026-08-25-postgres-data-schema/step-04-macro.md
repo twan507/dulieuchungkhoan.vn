@@ -1,17 +1,21 @@
 # Bước 4 — Vĩ mô: registry chỉ tiêu, chuỗi quan sát, cụm OMO
 
-**Trạng thái:** ✅ chốt 2026-08-25 (chủ dự án đồng ý 5 điểm duyệt; sửa theo review cùng ngày F2 + vòng 2 C1/C2/C3/I2/I8 — xem [review](review-2026-08-25.md)) · **Phụ thuộc:** bước 1–3 (✅) · **Phạm vi:** schema `macro` — chỉ tiêu vĩ mô Việt Nam (WiChart **26 key** vĩ mô — số đo từ [wichart.md](../../../10-sources/macro/wichart.md); mỗi key nhiều series, số series chốt khi seed registry) + Mỹ (FRED **11/15 series** — xem §0) + đấu thầu OMO của SBV. *Giá hàng hoá của WiChart không ở đây — nó là giá tài sản, thuộc bước 5.*
+**Trạng thái:** ✅ chốt 2026-08-25 (chủ dự án đồng ý 5 điểm duyệt; sửa theo review cùng ngày F2 + vòng 2 C1/C2/C3/I2/I8 — xem [review](review-2026-08-25.md)) · **Phụ thuộc:** bước 1–3 (✅) · **Phạm vi:** schema `macro` — chỉ tiêu vĩ mô Việt Nam (WiChart **25 key** vĩ mô — 26 key đo từ [wichart.md](../../../10-sources/macro/wichart.md) trừ `dhtg` chuyển sang asset theo luật §0; mỗi key nhiều series, số series chốt khi seed registry) + Mỹ (FRED **11/15 series** — xem §0) + đấu thầu OMO của SBV. *Giá hàng hoá của WiChart không ở đây — nó là giá tài sản, thuộc bước 5.*
 
 ## 0. Luật phân miền macro ↔ asset *(review vòng 2, I2 — trước đó DCOILWTICO có hai chủ)*
 
-**Cái gì là giá thị trường của một tài sản giao dịch được → `asset`; cái gì là chỉ tiêu thống kê/chính sách do cơ quan công bố → `macro`.** Phân bổ dứt điểm 15 series FRED:
+**Luật** *(viết lại ở vòng 3, I-4 — bản cũ "do cơ quan công bố → macro" không sinh ra được chính phân bổ nó biện minh: fixing ECB cũng do NHTW công bố mà vẫn thuộc asset)*:
+
+> **Chuỗi là MỨC GIÁ của một thứ định giá được trên thị trường — có mốc chốt/loại giá cần phân biệt (spot/futures/fixing/close) → `asset`. Chuỗi là chỉ tiêu thống kê hay lãi suất theo kỳ → `macro`.** Tỷ giá là mức giá ⇒ luôn `asset`, kể cả bản fixing/điều hành do NHTW công bố (fixing chính là một mốc chốt).
+
+Phân bổ dứt điểm 15 series FRED:
 
 | Miền | Series |
 |---|---|
 | `macro` (11) | `DFF` · `FEDFUNDS` · `SOFR` · `DGS2` · `DGS10` · `T10Y2Y` · `T10YIE` · `CPIAUCSL` · `PCEPILFE` · `UNRATE` · `PAYEMS` |
 | `asset` (4) | `DCOILWTICO` (dầu WTI spot) · `DTWEXBGS` (chỉ số đô broad) · `VIXCLS` (chỉ số biến động) · `DEXCHUS` (tỷ giá CNY/USD) |
 
-Lãi suất/lợi suất xếp `macro` (nếu ngày nào dùng Yahoo `^TNX` làm dự phòng cho `DGS10` thì nó cắm vào `indicator_source` với `source='yahoo'` — đúng cơ chế tháo lắp, không mở miền mới).
+Cùng luật đó cho WiChart: key `dhtg` — **5 series tỷ giá USD/VND** (trung tâm · trần · sàn · NHTM bán · tự do bán) — **rời `macro` sang `asset`** thành 5 mã `fx.usd_vnd.central/.ceiling/.floor/.bank_sell/.free_sell`; Yahoo `VND=X` khi cần làm đối chứng cắm vào registry asset. Vậy `macro` còn **25 key WiChart**. Lãi suất/lợi suất vẫn `macro` (Yahoo `^TNX` làm dự phòng cho `DGS10` thì cắm vào `indicator_source` với `source='yahoo'` — đúng cơ chế tháo lắp, không mở miền mới).
 
 ---
 
@@ -82,11 +86,13 @@ SELECT o.indicator_id, o.obs_date,
 FROM macro.observation o;
 -- SQL cụ thể của phép "tích factor" chốt trong plan (Postgres không có aggregate PRODUCT
 -- dựng sẵn — dùng exp(sum(ln(factor))) hoặc LATERAL, chọn khi viết migration).
+-- 🔴 BẮT BUỘC coalesce(…, 1) quanh tích: chuỗi KHÔNG có break nào (đại đa số) cho tập rỗng
+-- → sum() = NULL → exp(NULL) = NULL → cả kho trả NULL. (Review vòng 3, I-6.)
 ```
 
 - 🔴 **Ngữ nghĩa ghi: UPSERT theo `(indicator_id, obs_date)` — bắt buộc, không append-only.** FRED **vá số quá khứ**: cùng một tháng 5/2026 của chuỗi việc làm `PAYEMS` từng mang 3 giá trị khác nhau qua 3 lần công bố. ETL FRED làm mới cửa sổ 24 tháng gần nhất mỗi lần chạy; `ingested_at` cho biết bản hiện tại nạp lúc nào.
 - **Đứt gãy chuỗi — nối bằng VIEW, không nối trong bảng** *(đổi theo review 2026-08-25, F2)*: khi nguồn đổi nền tính (đổi năm gốc giá so sánh GDP), chuỗi gãy một bậc không phải do kinh tế. Bảng chỉ lưu số **như nguồn công bố**; điểm gãy + hệ số đăng ký vào `series_break` (duyệt tay, có `verified_by`); view `observation_spliced` nhân hệ số cho đoạn cũ **lúc đọc**. Ba lý do đổi: (a) số đã nối là **số mình tự tính** — luật tầng tự tính cấm trộn vào bảng sự thật; (b) cùng pattern với `price_factor` đã duyệt — một kiểu tư duy cho cả kho; (c) phát hiện break mới = **thêm một dòng registry, không rewrite dữ liệu** (cách cũ phải UPDATE toàn bộ đoạn cũ). Lưu ý phạm vi: hệ số áp cho **toàn bộ đoạn trước điểm gãy**, không phải "quanh điểm gãy" (mô tả cũ sai).
-- **Bẫy parse ở tầng ETL** (ghi để plan kiểm, không ảnh hưởng DDL): epoch WiChart phải parse múi giờ `Asia/Ho_Chi_Minh` (lệch UTC = lệch cả chuỗi 1 ngày/1 tháng); FRED giá trị thiếu là chuỗi `"."` chứ không phải null.
+- **Bẫy parse ở tầng ETL** (ghi để plan kiểm, không ảnh hưởng DDL): epoch WiChart phải parse múi giờ `Asia/Ho_Chi_Minh` (lệch UTC = lệch cả chuỗi 1 ngày/1 tháng); FRED giá trị thiếu là chuỗi `"."` chứ không phải null; 🔴 **cổng chống WAF của SBV** *(vòng 3, B7-7)* — WAF chặn trả **HTTP 200 kèm body 246 byte** "Request Rejected": trước khi parse/ghi bất cứ đâu phải kiểm **độ dài body** (trang thật ~414 KB, dưới 10 KB là bị chặn) **và** chuỗi mốc `KẾT QUẢ ĐẤU THẦU THỊ TRƯỜNG MỞ`; thiếu một trong hai → báo động, **không ghi kho, không ghi staging**.
 - **Hoãn có chủ đích:** bảng vintage FRED (lưu mọi phiên bản của một con số, phục vụ backtest "biết gì tại thời điểm nào") — chỉ làm khi thật sự backtest, đã ghi ở bước 11 spec cũ, giữ nguyên quyết định.
 
 ### 2.1 Quy ước ngày neo kỳ — một luật duy nhất
@@ -134,8 +140,14 @@ CREATE TABLE macro.omo_flow (             -- TỰ DỰNG toàn phần từ omo_a
   maturing_vnd    numeric NOT NULL,       -- đáo hạn: phiên (D−k, kỳ hạn k) đến hạn tại D
   net_vnd         numeric NOT NULL,       -- ròng = bơm − đáo hạn (dương = bơm ròng)
   outstanding_vnd numeric,                -- đang lưu hành (cộng dồn)
-  complete        boolean NOT NULL DEFAULT false  -- true khi kho đã tích đủ ~140 ngày
-);                                        -- (kỳ hạn dài nhất) — trước đó số ròng còn thiếu vế
+  complete        boolean NOT NULL DEFAULT false
+);
+-- complete(D) — HAI điều kiện, thiếu một là false (định nghĩa lại ở vòng 3, B7-6):
+-- (1) kho đã có ≥140 ngày lịch sử trước D (kỳ hạn dài nhất);
+-- (2) KHÔNG THIẾU PHIÊN NÀO trong cửa sổ [D−140, D] — đối chiếu omo_session với lịch ngày
+--     làm việc để phân biệt "không crawl" (hỏng cửa sổ) với "SBV không đấu thầu" (bình thường).
+-- Bỏ lỡ một phiên là hỏng cả cửa sổ 140 ngày sau đó, không vá được (sbv-omo.md §8) — chỉ mã
+-- hoá điều kiện (1) sẽ cho net_vnd thiếu vế đáo hạn mà vẫn complete=true: sai có hệ thống.
 -- Chiều dấu theo op_type khi dựng flow: reverse_repo phát hành = BƠM, đáo hạn = hút;
 -- repo và outright_sale phát hành = HÚT (đáo hạn của repo = bơm trả lại). Công thức tổng
 -- quát chốt trong plan; chiều của repo/outright_sale CHƯA KIỂM trên phiên thật.
@@ -158,6 +170,7 @@ CREATE TABLE macro.omo_flow (             -- TỰ DỰNG toàn phần từ omo_a
 1. UPSERT observation: ghi lại `(indicator, obs_date)` đã có với giá trị mới (literal 159001 → 158927, mô phỏng FRED vá `PAYEMS`) → 1 dòng, giá trị mới.
 2. Neo kỳ: epoch WiChart của "Tháng 07/2026" (giải tay ra `2026-07-01` theo múi giờ VN) → `obs_date='2026-07-01'`; parse UTC sẽ ra `2026-06-30` — test bắt đúng bẫy này.
 3. Splice qua view: chuỗi 4 điểm + một break factor 1,6005 (literal từ ca GDP thật) → `observation_spliced` trả đoạn **trước** break = gốc × 1,6005, đoạn sau giữ nguyên; bảng `observation` không đổi một dòng nào khi thêm break.
+3b. **Case biên bắt buộc** *(vòng 3, I-6)*: chỉ tiêu **không có** dòng `series_break` nào → `value_spliced = value_as_published` (không NULL) — đây là đường đi của đại đa số chỉ tiêu.
 4. `omo_flow` giải tay *(đơn vị VND gốc — C2)*: phiên D bơm 6.307,47 tỷ kỳ hạn 7 ngày; phiên D+7 bơm 5.000 tỷ → `maturing_vnd(D+7) = 6 307 470 000 000`, `net_vnd(D+7) = −1 307 470 000 000`.
 5. Parse số VN + nhân đơn vị: `'6.307,47'` (tỷ) → `6.30747e12` VND (literal); `float()` thẳng trên chuỗi phải fail test này.
 5b. `op_type='repo'` hợp lệ (nhóm "Bán kỳ hạn" — C1); `op_type` lạ → lỗi CHECK.

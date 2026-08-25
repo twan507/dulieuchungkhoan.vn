@@ -123,7 +123,7 @@ Hai trường hợp rơi vào đường này, phải phân biệt được:
 
 | Trường hợp | Bản chất | Theo dõi |
 |---|---|---|
-| **CafeF CBTT** (~200 tin/ngày) | **Hợp lệ, không phải lỗi.** Trang công bố thông tin là bảng hoặc file đính kèm, bóc ra gần rỗng. Nhưng tiêu đề đã mang gần hết thông tin (*"HBH: Ngày đăng ký cuối cùng trả cổ tức bằng tiền mặt"*), mã lấy từ URL chắc chắn 100%, sub gần như luôn là `3a` | Coi là bình thường, đừng cố sửa |
+| **CafeF CBTT** (~75 tin/ngày — đo lại 2026-08-15, số ~200 cũ suy sai từ cụm dồn buổi sáng, xem [danh mục nguồn tin](../10-sources/news/README.md); sửa 2026-08-25 khi review spec schema phát hiện hai tài liệu lệch nhau) | **Hợp lệ, không phải lỗi.** Trang công bố thông tin là bảng hoặc file đính kèm, bóc ra gần rỗng. Nhưng tiêu đề đã mang gần hết thông tin (*"HBH: Ngày đăng ký cuối cùng trả cổ tức bằng tiền mặt"*), mã lấy từ URL chắc chắn 100%, sub gần như luôn là `3a` | Coi là bình thường, đừng cố sửa |
 | Nguồn khác | Lỗi thật — fetch hỏng hoặc bộ bóc xuống cấp | Thống kê tỷ lệ theo nguồn, tăng đột biến là báo động |
 
 Đây là nguồn đơn lẻ lớn nhất trong ngày, nên nếu không ghi rõ thì sau này sẽ có người tưởng bộ bóc đang hỏng.

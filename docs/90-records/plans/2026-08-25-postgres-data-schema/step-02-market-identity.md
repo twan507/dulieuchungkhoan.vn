@@ -62,7 +62,10 @@ CREATE TABLE market.issuer (
   com_type_code text,                     -- NH|CT|CK|BH|QU — quyết định endpoint snapshot
   industry_id   bigint REFERENCES market.industry,  -- MỖI DOANH NGHIỆP 1 NGÀNH, luôn là LEVEL 2
                                                     -- (nhóm suy từ cha — không gán nhóm trực tiếp)
-  icb_code      text REFERENCES market.icb_industry,-- tham khảo, không phải chuẩn
+  icb_code      text,                               -- tham khảo THUẦN, KHÔNG FK — review vòng 3 C-2:
+                                                    -- FK sẽ chặn job danh bạ khi nguồn trả icbCode
+                                                    -- chưa có trong cây (2 endpoint khác nhịp),
+                                                    -- trái luật "mã ICB lạ không chặn job" ở trên
   updated_at    timestamptz NOT NULL DEFAULT now()
 );
 
@@ -94,8 +97,12 @@ CREATE TABLE market.security_external_id (
   security_id   bigint NOT NULL REFERENCES market.security,
   source        text NOT NULL,            -- 'fiintrade'|'bvsc'|'yahoo'…
   external_code text NOT NULL,
+  external_sub  text NOT NULL DEFAULT '', -- ngữ cảnh mã trong CÙNG nguồn — review vòng 3 I-3:
+                                          -- BVSC dùng HAI bộ mã chỉ số song song (TVC 'VNINDEX'
+                                          -- vs getIndexSnapshots 'HOSE'); VN-Index cần cả hai
+                                          -- dòng, đối xứng với macro/asset registry
   PRIMARY KEY (source, external_code),
-  UNIQUE (security_id, source)
+  UNIQUE (security_id, source, external_sub)
 );
 ```
 
@@ -104,6 +111,7 @@ CREATE TABLE market.security_external_id (
 1. **Ngành gán ở doanh nghiệp, mã thừa hưởng** — trùng chuẩn quốc tế (GICS/ICB: một doanh nghiệp một ngành theo hoạt động chính) và trùng thói quen phân tích của chủ dự án. ETF/chỉ số không có ngành.
 2. **Bộ ngành riêng là chuẩn duy nhất khi hiển thị/phân tích.** ICB chỉ dùng để: (a) nạp nhanh — anh map mỗi nhánh ICB về ngành của anh một lần trong `industry_icb_map` thay vì gán tay ~2.000 mã; (b) tự gán mã mới niêm yết; (c) đối chiếu khi nghi gán sai. `issuer.industry_id` gán tay được và **tay thắng máy** (ETL không ghi đè giá trị đã gán tay — cơ chế chốt trong plan thực thi). `industry_icb_map.industry_id` và `issuer.industry_id` luôn trỏ ngành **level 2**; holding đa ngành xếp theo mảng đóng góp lợi nhuận chính (industry-tree §4). Bốn ca gán lệch đã ghi nhận (TRC/DRI, nhóm gỗ, IPA, VEF — industry-tree §5) xử lý bằng gán tay khi nạp dữ liệu thật, không đổi cấu trúc.
 3. **Chứng quyền, lô lẻ, trái phiếu không nạp** — loại có chủ đích (CLAUDE.md §2.2), `security_type` không có giá trị cho chúng.
+3b. **Phái sinh — hoãn có chủ đích** *(review vòng 3, I-5 — trước đó vắng mặt không lý do, trái luật §1.4)*: 14 hợp đồng có dữ liệu tham chiếu/EOD ở nguồn, nhưng giá trị chính nằm ở tick realtime — thứ **chưa đo được trong phiên** (roadmap §5.1 cấm giả định). Nhận phái sinh khi đã đo: thêm `'derivative'` vào CHECK + bảng thuộc tính hợp đồng riêng (underlying, đáo hạn, openInterest). Điều kiện mở lại: đo socket phái sinh BVSC trong phiên.
 4. **ETL tra `*_external_id` để gọi nguồn** — không bao giờ truyền ticker (bẫy `organCode ≠ ticker`: HTTP 200 kèm dữ liệu rỗng).
 5. **Lọc mã huỷ niêm yết bằng `status`** — danh bạ FiinTrade gồm cả mã đã rời sàn; đối chiếu `getAllQuotes` BVSC để đặt `status`, lọc động không hardcode con số. Tin (bước 6) và mọi phép phân tích mặc định chỉ nhìn `listed`.
 5b. **Hai bẫy danh mục phải xử ở ETL nạp danh bạ** *(review vòng 2, I12 — từ [00-conventions.md](../../../10-sources/market/00-conventions.md) bẫy 10–11)*: (a) `StockType` **không dùng làm khoá phân loại chung** — cùng một mã trả 12 ở `/quotes` nhưng 1 ở `/datafeed/instruments`; `security_type` quyết theo **một endpoint chốt trong plan**, ghi rõ. (b) **Không endpoint nào là danh mục chuẩn duy nhất** (`/quotes` 2.534 mã vs `/datafeed/instruments` 2.001) — danh bạ = **hợp nhất hai endpoint**; mã chỉ có ở một bên vẫn nạp, `exchange` lấy từ bên có nó.
@@ -113,7 +121,7 @@ CREATE TABLE market.security_external_id (
 
 1. Unique một phần: hai dòng cùng `(ticker, exchange)` cùng `listed` → lỗi; một dòng `delisted` → hợp lệ.
 2. `security_external_id`: trùng `(source, external_code)` → lỗi; cùng `external_code` khác `source` → hợp lệ.
-3. Cây ngành: chèn level 1 có `parent_id` → lỗi CHECK; level 2 không có `parent_id` → lỗi CHECK; level 3 → lỗi CHECK. Ràng buộc "`issuer.industry_id`/`industry_icb_map.industry_id` phải trỏ level 2" thi hành bằng **seam test + guard trong ETL, không dùng trigger** (review 2026-08-25 — ghi tường minh).
+3. Cây ngành: chèn level 1 có `parent_id` → lỗi CHECK; level 2 không có `parent_id` → lỗi CHECK; level 3 → lỗi CHECK. Ràng buộc "`issuer.industry_id`/`industry_icb_map.industry_id` phải trỏ level 2" thi hành bằng **seam test + guard trong ETL, không dùng trigger** (review 2026-08-25 — ghi tường minh). Tương tự, CHECK hiện có **không** ràng buộc "cha phải là level 1" — hàng rào là seed test đối chiếu literal với industry-tree.md, đủ vì bảng chỉ được ghi bởi migration seed, không có đường ghi runtime *(review vòng 3, M-9)*.
 4. Seed đối chiếu `industry-tree.md`: sau seed, bảng có đúng 6 dòng level 1 + 24 dòng level 2; so khớp **danh sách code literal** (TAICHINH…NANGLUONG; NGANHANG…CONGNGHE) lấy thẳng từ file — expected độc lập với code seed.
 5. `industry_icb_map`: một `icb_code` chỉ map một ngành (PK); map tới `industry_id` không tồn tại → lỗi FK.
 

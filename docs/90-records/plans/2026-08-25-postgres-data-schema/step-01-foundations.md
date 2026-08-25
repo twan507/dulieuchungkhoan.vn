@@ -40,11 +40,11 @@ postgres-data                     (người ghi duy nhất: etl · api chỉ đ�
 |---|---|
 | Tên bảng/cột | tiếng Anh, `snake_case`, tránh từ khoá SQL phải quote |
 | Khoá nhân tạo | `bigint generated always as identity` |
-| Thời điểm nạp | mọi bảng do ETL ghi có ít nhất một timestamp nạp — tên chuẩn `ingested_at timestamptz not null default now()`; bảng có timestamp nghiệp vụ đặc thù thay thế (`crawled_at` phiên OMO, `content_fetched_at` bản text tin) thì ghi rõ tại chỗ; bảng registry duyệt tay (`series_break`) dùng `verified_at` *(luật miễn trừ — review vòng 2, M4)* |
+| Thời điểm nạp | mọi bảng do ETL ghi có ít nhất một timestamp nạp — tên chuẩn `ingested_at timestamptz not null default now()`; bảng có timestamp nghiệp vụ đặc thù thay thế (`crawled_at` phiên OMO, `content_fetched_at` bản text tin) thì ghi rõ tại chỗ; bảng registry duyệt tay (`series_break`) dùng `verified_at` *(luật miễn trừ — review vòng 2, M4)*. Registry do ETL nạp (`icb_industry`, `*_external_id`, `metric_dictionary`, `indicator_source`…) **cũng mang `ingested_at`** — DDL nháp trong các bước lược cột này cho gọn, plan bổ sung đồng loạt *(review vòng 3, M-2)* |
 | Số | `numeric` không ép precision |
 | Ngày quan sát | `date` (quy ước neo kỳ của chuỗi tháng/quý ghi ở bước 4) |
 | Enum nghiệp vụ | `check` constraint, không dùng kiểu `ENUM` của Postgres (sửa giá trị đỡ đau) |
-| Extension | `unaccent` · `pg_trgm` · `vector` · `fuzzystrmatch` — bật từ migration đầu. *(`fuzzystrmatch` bổ sung 2026-08-25 khi duyệt bước 6: chủ dự án yêu cầu tìm kiếm chịu lỗi gõ theo khoảng cách Levenshtein — sửa ngược về đây theo luật "bước sau phát hiện thiếu")* |
+| Extension | `unaccent` · `pg_trgm` · `vector` · `fuzzystrmatch` — bật từ migration đầu, **cài vào schema riêng `extensions`** (khoá `public` mà không chốt chỗ cài extension là tự đá nhau — review vòng 3, I-7). Hệ quả plan phải giữ: hàm bọc `news.immutable_unaccent` cố định `search_path`/qualify đầy đủ, opclass ghi `extensions.gin_trgm_ops`. *(`fuzzystrmatch` bổ sung 2026-08-25 khi duyệt bước 6 — luật "bước sau phát hiện thiếu")* |
 
 ## 4. Migration — Alembic
 
@@ -62,7 +62,7 @@ postgres-data                     (người ghi duy nhất: etl · api chỉ đ�
 
 - [ ] Sáu schema và ranh giới như §2 — đồng ý?
 - [ ] Nguyên tắc "không cột source ở bảng dữ liệu, xuất xứ nằm ở registry/staging/ops" như §1.2 — đúng ý anh?
-- [ ] Hai cột meta `price_type`/`is_derived` được giữ (chúng là nghiệp vụ, không phải nguồn) — đồng ý?
+- [ ] ~~Hai cột meta `price_type`/`is_derived` được giữ~~ → còn **một cột `price_type`** (nghiệp vụ, không phải nguồn) — `is_derived` đã gạch ở §1.4 *(ô duyệt sửa theo review vòng 3 — bản cũ đá nhau với thân file)* — đồng ý?
 - [ ] Quy ước DDL §3 và cách chạy migration §4 — đồng ý?
 
 Chốt bước này xong → viết bước 2 (định danh + bộ ngành riêng).

@@ -12,9 +12,20 @@ CREATE TABLE news.article (               -- một TIN canonical (sau dedupe) �
   canonical_url  text NOT NULL UNIQUE,
   primary_source text NOT NULL,           -- báo của bản canonical: 'cafef', 'vietstock'…
   feed           text,                    -- feed đã bắt tin này (review vòng 2, I5)
-  published_at   timestamptz NOT NULL,
+  published_at   timestamptz,             -- NULLABLE có chủ đích (vòng 3, I-2): VietnamBiz để
+                                          -- pubDate TRỐNG — NOT NULL sẽ ép ETL bịa timestamp,
+                                          -- đúng bẫy "feed chết vẫn báo tươi" nguồn đã ghi
+  published_at_src text NOT NULL DEFAULT 'feed'
+                   CHECK (published_at_src IN ('feed','url','unknown')),
+                                          -- 'url' = suy từ timestamp trong URL (luật VietnamBiz);
+                                          -- 'unknown' ⇔ published_at NULL; sắp xếp tầng đọc dùng
+                                          -- coalesce(published_at, fetched_at)
   fetched_at     timestamptz NOT NULL,
-  group_no       smallint,                -- nhóm taxonomy (1..3) — do lưới AI quyết
+  group_no       smallint CHECK (group_no BETWEEN 1 AND 3),
+                                          -- nhóm taxonomy — do lưới AI quyết; nhóm 'x' (loại bỏ)
+                                          -- biểu diễn bằng group_no NULL + nhãn trong labels
+                                          -- (ghi tường minh — vòng 3, M-3); CHECK cho sub: danh
+                                          -- sách 20 mã từ news-pipeline, liệt kê trong migration
   group_from_feed smallint,               -- nhóm GỢI Ý từ feed — cặp với group_no để tự phát hiện
                                           -- feed xếp sai nhóm (news-pipeline §7.3; review vòng 2, I5)
   sub            text,                    -- sub-taxonomy ('3b'…) — 20 sub đã chốt
@@ -67,14 +78,16 @@ CREATE TABLE news.article_ticker (
   article_id  bigint NOT NULL REFERENCES news.article,
   security_id bigint NOT NULL REFERENCES market.security,  -- FK chéo schema, CÙNG instance — hợp lệ
   via         text NOT NULL CHECK (via IN ('url','lookup','ai')),
-              -- BA tầng gắn mã của pipeline (§8): 'url' = tách từ URL CafeF CBTT (~200 tin/ngày,
-              -- chắc chắn tuyệt đối) / 'lookup' = đối chiếu chuỗi / 'ai' = đọc hiểu.
-              -- Bản trước thiếu 'url' — review vòng 2, I6. Lưu tầng để đo độ chính xác từng tầng.
-  PRIMARY KEY (article_id, security_id)
+              -- BA tầng gắn mã của pipeline (§8): 'url' = tách từ URL CafeF CBTT (~75 tin/ngày —
+              -- đo 2026-08-15; số ~200 cũ là suy sai, nguồn đã đính chính — vòng 3, I-8)
+              -- / 'lookup' = đối chiếu chuỗi / 'ai' = đọc hiểu. Lưu tầng để đo độ chính xác.
+  PRIMARY KEY (article_id, security_id, via)
+              -- 'via' TRONG PK (vòng 3, I-1): cùng (bài, mã) do hai tầng cùng tìm ra là HAI dòng —
+              -- chính là phép giám sát "đối chiếu mã tầng 2 vs tầng 3 trên cùng một tin"
+              -- (news-pipeline §10); PK cũ không chứa via làm phép này bất khả thi.
 );
 CREATE INDEX ON news.article_ticker (security_id);          -- "mọi tin về HPG" — truy vấn chủ lực
--- Ngữ nghĩa ghi (M8): pipeline ghi idempotent theo PK; chạy lại tầng gắn mã được phép
--- thêm dòng mới, không xoá dòng cũ khác 'via'.
+-- Ngữ nghĩa ghi (M8, sửa vòng 3): idempotent theo PK; tầng đọc dedupe theo (article, security).
 
 CREATE TABLE news.trade_name (            -- tên thương mại → mã, cho tầng 3 (khớp gần đúng)
   name        text NOT NULL,              -- 'Hòa Phát', 'Thế Giới Di Động'…

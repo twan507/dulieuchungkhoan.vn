@@ -21,10 +21,11 @@ CREATE TABLE market.price_daily (
   -- cá nhân/tổ chức/tự doanh, cờ sự kiện — danh sách chốt trong plan, sinh từ
   -- market-field-selection.json (không chép tay)
   raw           jsonb NOT NULL DEFAULT '{}',
-                -- payload gốc KHOÁ THEO ADAPTER: {"fiintrade": {...}, "bvsc": {...}} —
+                -- payload gốc KHOÁ THEO ADAPTER: {"fiintrade": {"fetched_at":…, "payload":…}, …} —
                 -- dòng này do HAI nguồn ghi (close_adj ← getPriceData, close_raw ← datafeed EOD),
                 -- mỗi writer chỉ merge khoá của mình, không đè khoá của writer kia
-                -- (review vòng 2, C5 — bản cũ một payload NOT NULL sẽ bị writer sau đè)
+                -- (review vòng 2, C5). Mỗi khoá mang fetched_at riêng — ingested_at của dòng chỉ
+                -- là lần chạm gần nhất, không trả lời được "close_adj nạp lúc nào" (vòng 3, M-1)
   ingested_at   timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (security_id, trading_date)
 );
@@ -122,6 +123,34 @@ CREATE INDEX ON market.screener_daily (trading_date);  -- cắt ngang theo ngày
 - Đây là chỗ **tự tạo lịch sử** cho dữ liệu nguồn chỉ trả giá trị hiện tại (điểm VGM, định giá, cơ cấu sở hữu): sau một năm có chuỗi biến động mà chính nguồn cũng không có API nào cung cấp. Mất là mất — vì vậy hai bảng này thuộc nhóm chạy sớm.
 - Chọn `jsonb` thay vì cột hoá 80–223 trường: khối tri thức này chưa cần lọc SQL từng trường (đọc theo mã + ngày); trường nào về sau cần lọc/xếp hạng thì thăng cấp thành cột hoặc bảng tự tính (luật bước 8), không phải sửa dữ liệu cũ.
 
+## 3b. Dữ liệu cấp chỉ số/thị trường — MoneyFlow và thống kê phiên *(bổ sung review vòng 3, C-1)*
+
+Kiến trúc §3.4 chốt **MoneyFlow là nguồn chuẩn** cho ba họ dữ liệu **cấp thị trường** mà BVSC không có (tự doanh · đóng góp chỉ số · chuỗi mua/bán chủ động toàn thị trường — nhận `ComGroupCode`, không nhận mã); và `getIndexSnapshots` cấp 33 trường thống kê phiên theo chỉ số (advances/declines…). Bản spec trước không có bảng nào chứa chúng — hai bảng bổ sung, khoá vào dòng chỉ số của `security`:
+
+```sql
+CREATE TABLE market.index_stat_daily (    -- thống kê + dòng tiền CẤP CHỈ SỐ theo ngày
+  security_id  bigint NOT NULL REFERENCES market.security,  -- dòng security_type='index'
+  trading_date date   NOT NULL,
+  payload      jsonb  NOT NULL DEFAULT '{}',
+               -- khoá theo adapter (như raw của price_daily): {"moneyflow": …, "index_snapshot": …}
+               -- trường cần lọc/vẽ chart thăng cấp cột hoặc bảng tự tính sau (luật bước 8)
+  ingested_at  timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (security_id, trading_date)
+);
+CREATE INDEX ON market.index_stat_daily (trading_date);
+
+CREATE TABLE market.index_contribution_daily (  -- đóng góp của TỪNG MÃ vào chỉ số — khoá 3 chiều
+  index_security_id bigint NOT NULL REFERENCES market.security,
+  security_id       bigint NOT NULL REFERENCES market.security,
+  trading_date      date   NOT NULL,
+  payload           jsonb  NOT NULL,
+  ingested_at       timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (index_security_id, security_id, trading_date)
+);
+```
+
+Ngữ nghĩa ghi: UPSERT theo PK, cùng họ "tự tạo lịch sử" §3 — nhóm chạy sớm.
+
 ## 4. Sự kiện quyền và file BCTC
 
 ```sql
@@ -133,16 +162,23 @@ CREATE TABLE market.corporate_event (
   public_date  date,
   exright_date date,               -- kích hoạt re-crawl giá của mã thuộc issuer này
   record_date  date, payout_date date,
+  year_report   smallint,          -- CHỈ Earning: kỳ báo cáo — phần khoá tự nhiên (vòng 3, C-3)
+  length_report smallint,          -- 1..4 quý · 5 cả năm
   payload      jsonb NOT NULL,
   source_url   text,
   ingested_at  timestamptz NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX corporate_event_natural_key ON market.corporate_event
   (event_type, issuer_id,
-   coalesce(public_date,  '1900-01-01'),
-   coalesce(exright_date, '1900-01-01'));
+   coalesce(public_date,   '1900-01-01'),
+   coalesce(exright_date,  '1900-01-01'),
+   coalesce(year_report,   0),
+   coalesce(length_report, 0));
 -- Review 2026-08-25: public_date cũng phải coalesce — Postgres mặc định NULLS DISTINCT,
 -- để public_date trần thì hai dòng trùng nhau với public_date NULL đều chèn được (dedupe thủng).
+-- Review vòng 3, C-3: Earning (57.176 bản ghi — endpoint lớn nhất nhóm) định danh bằng
+-- yearReport+lengthReport và KHÔNG có exright_date — doanh nghiệp công bố hai kỳ cùng ngày
+-- (nộp bù, riêng lẻ + hợp nhất) sẽ sập vào một dòng nếu khoá thiếu hai cột này.
 CREATE INDEX ON market.corporate_event (issuer_id, exright_date);
 
 CREATE TABLE market.financial_report_file (
@@ -159,6 +195,7 @@ CREATE TABLE market.financial_report_file (
 - **Ngữ nghĩa ghi `corporate_event`: UPSERT theo khoá tự nhiên** (unique index biểu thức — PK không chứa được `coalesce` nên dùng khoá nhân tạo + unique index). ETL lấy phần mới bằng `FromDate`. *Lưu ý triển khai (review vòng 2):* `INSERT … ON CONFLICT` phải lặp lại **nguyên văn cả hai biểu thức `coalesce`** thì Postgres mới suy ra được unique index này.
 - **Override tường minh so với thiết kế TimescaleDB cũ** *(review vòng 2, M2)*: các lệnh `create_hypertable` + lịch nén §5.2/§5.5/§5.7 của market-data-store **hết hiệu lực theo TimescaleDB** (ADR 0007 đổi kho realtime sang ClickHouse). Postgres thuần, **chưa partition** — khối lượng EOD/BCTC ở mức triệu-chục triệu dòng chưa cần; xét partition khi có bằng chứng chậm thật. "Không xoá gì" vẫn giữ nguyên.
 - `exright_date` là tín hiệu vận hành quan trọng nhất bảng này: có dòng mới với ngày này → re-crawl giá mã liên quan (§1).
+- **Chỉ nạp từ 6 endpoint `GetCorporate*` chuyên biệt** — không dùng endpoint gộp `getCalendarWatchList` (190k bản ghi, bộ `eventListCode` rộng hơn CHECK 6 giá trị; dùng nó sẽ bị CHECK chặn ~79k dòng — review vòng 3, M-5).
 
 ## 5. Điểm cần duyệt ở bước này
 
