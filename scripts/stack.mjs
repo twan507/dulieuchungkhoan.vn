@@ -1,7 +1,7 @@
 export function listeningPids(netstatOutput, port) {
   const pids = new Set();
   for (const line of netstatOutput.split(/\r?\n/)) {
-    const m = line.match(/^\s*TCP\s+(\S+)\s+\S+\s+LISTENING\s+(\d+)\s*$/i);
+    const m = line.match(/^\s*TCP6?\s+(\S+)\s+\S+\s+LISTENING\s+(\d+)\s*$/i);
     if (m && m[1].endsWith(`:${port}`)) pids.add(m[2]);
   }
   return [...pids];

@@ -37,3 +37,12 @@ test("assertVolumeSurvived: die khi volume có trước mà mất sau", () => {
   assert.equal(assertVolumeSurvived(["dlck-infra_pgdata"], ["dlck-infra_pgdata"], "dlck-infra_pgdata").ok, true);
   assert.equal(assertVolumeSurvived([], [], "dlck-infra_pgdata").ok, true);
 });
+
+test("listeningPids: bắt cả listener IPv6 (dòng TCP6)", () => {
+  const out = [
+    "  TCP6   [::]:8000    [::]:0    LISTENING    4242",
+    "  TCP6   [::1]:3000   [::]:0    TIME_WAIT    7777",
+  ].join("\r\n");
+  assert.deepEqual(listeningPids(out, 8000), ["4242"]);
+  assert.deepEqual(listeningPids(out, 3000), []);
+});
