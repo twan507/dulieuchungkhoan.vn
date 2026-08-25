@@ -33,3 +33,12 @@ Task 9: complete (commits 98daa78..9b0efd2, review clean — ma trận grant đ�
 Task 10: fix round 1/5 (1 addressed — câu "mỗi migration một file test" sai thực tế; commit c3ae1e8). Ruling: re-review scoped do controller tự thẩm trên diff (fix docs 1 câu, dữ kiện kiểm được trực tiếp) thay vì dispatch — Sai thì: bỏ lọt lỗi câu chữ, final review sẽ quét lại.
 Task 10: complete (commits 80ff53a..c3ae1e8, review 1 finding đã fix). NGHIỆM THU TOÀN PHẦN ĐÃ CHẠY THẬT: dev DB 0001→head→base→head sạch; pytest 35/35 ×2 lượt; LEFTOVER: [] sau downgrade; output dán trong task-10-report.md.
 Task 11: complete (controller tự làm theo plan; commit 7b40a85 — 4 mục checklist §1.7 xong, phép kiểm git grep đã chạy). Ruling: các hit "bảng organization" trong bộ market-field-selection (file sinh tự động, chuỗi lý-do gắn ngày đo 2026-08-15) chấp nhận như nội dung tại-thời-điểm, không sửa script để tránh churn — Sai thì: người đọc field-selection thấy tên cũ, đã có banner ở market-data-store dẫn về spec.
+
+## Final review + fix wave
+Final review (Opus, whole-branch, TỰ CHẠY LẠI nghiệm thu độc lập): không Critical; 4 Important (2 câu tài liệu sống đá nhau lọt phép kiểm §1.7 hẹp · thiếu ingested_at registry mà step-01 hứa "plan bổ sung đồng loạt" · test grants chưa phủ fix round) + 6 Minor. Triage: đóng PARKED Task 7 (reviewer tự chạy 35/35 + vòng downgrade/upgrade độc lập — bằng chứng sống thay thế).
+Fix wave (1 dispatch + 1 follow-up số liệu, commits 4390cc2..11c3ae5): migration 0010 registry ingested_at (11 bảng, docstring 5 miễn trừ) · test default-priv identity table · 2 câu docs sống sửa · các minor. Re-review scoped: 10/10 ADDRESSED, 0 breakage mới.
+Ruling: mệnh đề "8 file/9 migration" còn sót trong database/README (hệ quả F3 cùng diff) — controller sửa trực tiếp một mệnh đề (doc-only, tự thẩm tại chỗ vì re-review đã chỉ đúng vị trí và giá trị đúng) — Sai thì: không (giá trị kiểm được bằng ls/đếm).
+Ruling: finding #9 final review (omo_flow round-trip test không kiểm công thức) — chuyển yêu cầu "test công thức maturing/net thật" sang plan ETL. — Sai thì: công thức flow sai không bị bắt tới khi có job thật.
+Nghiệm thu cuối (controller, dán sống): dev DB `0010 (head)` · pytest `37 passed`.
+
+## KẾT THÚC PLAN: 11/11 task complete · 10 migration · 37 test xanh · final review + fix wave + re-review sạch. Nhánh feat/postgres-data-schema sẵn sàng merge (chưa push — chờ chủ dự án).
