@@ -56,15 +56,18 @@ FROM market.price_daily;
 CREATE TABLE market.financial_statement (
   issuer_id      bigint   NOT NULL REFERENCES market.issuer,
   year_report    smallint NOT NULL,
-  quarter_report smallint NOT NULL CHECK (quarter_report BETWEEN 1 AND 5), -- 1..4 quý, 5 = cả năm
+  length_report  smallint NOT NULL CHECK (length_report BETWEEN 1 AND 5),
+                 -- 1..4 = quý, 5 = cả năm. Đổi tên từ quarter_report (vòng 4, F10): giá trị 5
+                 -- nghĩa "cả năm" nên chữ "quarter" sai nghĩa; nguồn gọi lengthReport; một
+                 -- khái niệm một tên trên cả ba bảng dùng nó (§1.7)
   statement_type text     NOT NULL CHECK (statement_type IN ('BS','IS','CF','NO')),
   metric_code    text     NOT NULL,   -- mã chỉ tiêu (chữ thường): bsa1, isa22, cfa18…
   canonical_code text,                -- mã chuẩn của mình — điền dần, NULL không chặn
   value          numeric,
   ingested_at    timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (issuer_id, year_report, quarter_report, statement_type, metric_code)
+  PRIMARY KEY (issuer_id, year_report, length_report, statement_type, metric_code)
 );
-CREATE INDEX ON market.financial_statement (metric_code, year_report, quarter_report);
+CREATE INDEX ON market.financial_statement (metric_code, year_report, length_report);
 -- Review vòng 2, C4: bảng lớn nhất kho (~chục triệu dòng); mọi truy vấn ngữ nghĩa đã thiết kế
 -- (v_financial_ratios, compare_peers, screen_stocks — market-data-store §6) đều cắt ngang
 -- theo (metric_code, kỳ) — thiếu index này là seq-scan.
@@ -163,7 +166,12 @@ CREATE TABLE market.corporate_event (
   exright_date date,               -- kích hoạt re-crawl giá của mã thuộc issuer này
   record_date  date, payout_date date,
   year_report   smallint,          -- CHỈ Earning: kỳ báo cáo — phần khoá tự nhiên (vòng 3, C-3)
-  length_report smallint,          -- 1..4 quý · 5 cả năm
+  length_report smallint CHECK (length_report BETWEEN 1 AND 5),  -- CHECK thêm ở vòng 4, F10
+  stage_key     text,              -- vòng 4, F6: trường phân định cho các loại còn lại — ETL điền
+                                   -- từ nguồn: CashDividend/StockDividend ← dividendYear+stageName
+                                   -- ('Đợt 1'/'Đợt 2'/'Cả năm'); ShareIssuance ← issueMethodName+
+                                   -- issueYear. Không có nó: cổ tức còn lại năm cũ + tạm ứng năm
+                                   -- mới CÙNG ngày GDKHQ sẽ đè nhau im lặng (cùng chế độ hỏng C-3)
   payload      jsonb NOT NULL,
   source_url   text,
   ingested_at  timestamptz NOT NULL DEFAULT now()
@@ -173,7 +181,8 @@ CREATE UNIQUE INDEX corporate_event_natural_key ON market.corporate_event
    coalesce(public_date,   '1900-01-01'),
    coalesce(exright_date,  '1900-01-01'),
    coalesce(year_report,   0),
-   coalesce(length_report, 0));
+   coalesce(length_report, 0),
+   coalesce(stage_key,     ''));
 -- Review 2026-08-25: public_date cũng phải coalesce — Postgres mặc định NULLS DISTINCT,
 -- để public_date trần thì hai dòng trùng nhau với public_date NULL đều chèn được (dedupe thủng).
 -- Review vòng 3, C-3: Earning (57.176 bản ghi — endpoint lớn nhất nhóm) định danh bằng
@@ -185,14 +194,15 @@ CREATE TABLE market.financial_report_file (
   file_id       bigint generated always as identity PRIMARY KEY,
   issuer_id     bigint NOT NULL REFERENCES market.issuer,
   year_report   smallint,
-  length_report smallint,          -- 1..4 quý, 5 cả năm
+  length_report smallint CHECK (length_report BETWEEN 1 AND 5),  -- 1..4 quý, 5 cả năm (CHECK: vòng 4, F10)
   title         text,
   source_url    text NOT NULL UNIQUE,
   ingested_at   timestamptz NOT NULL DEFAULT now()
 );
 ```
 
-- **Ngữ nghĩa ghi `corporate_event`: UPSERT theo khoá tự nhiên** (unique index biểu thức — PK không chứa được `coalesce` nên dùng khoá nhân tạo + unique index). ETL lấy phần mới bằng `FromDate`. *Lưu ý triển khai (review vòng 2):* `INSERT … ON CONFLICT` phải lặp lại **nguyên văn cả hai biểu thức `coalesce`** thì Postgres mới suy ra được unique index này.
+- **Ngữ nghĩa ghi `corporate_event`: UPSERT theo khoá tự nhiên** (unique index biểu thức — PK không chứa được `coalesce` nên dùng khoá nhân tạo + unique index). ETL lấy phần mới bằng `FromDate`. *Lưu ý triển khai (vòng 2, cập nhật vòng 4 F9):* `INSERT … ON CONFLICT` phải lặp lại **nguyên văn TOÀN BỘ biểu thức `coalesce` của index** (hiện là năm) thì Postgres mới suy ra được arbiter.
+- **Chính sách `organCode` lạ** *(vòng 4, F7 — cùng chế độ hỏng C-2)*: lịch sự kiện trải nhiều năm (AGM 23k, Earning 57k bản ghi) và `getCorporateIPO` trả cả doanh nghiệp **chưa niêm yết**, trong khi danh bạ chỉ ~1,5k — mã vắng trong danh bạ ⇒ **tạo `issuer` tối thiểu** từ `organCode`+`organShortName` (kèm cảnh báo) rồi ghi sự kiện, không bỏ dòng, không để FK chặn job.
 - **Override tường minh so với thiết kế TimescaleDB cũ** *(review vòng 2, M2)*: các lệnh `create_hypertable` + lịch nén §5.2/§5.5/§5.7 của market-data-store **hết hiệu lực theo TimescaleDB** (ADR 0007 đổi kho realtime sang ClickHouse). Postgres thuần, **chưa partition** — khối lượng EOD/BCTC ở mức triệu-chục triệu dòng chưa cần; xét partition khi có bằng chứng chậm thật. "Không xoá gì" vẫn giữ nguyên.
 - `exright_date` là tín hiệu vận hành quan trọng nhất bảng này: có dòng mới với ngày này → re-crawl giá mã liên quan (§1).
 - **Chỉ nạp từ 6 endpoint `GetCorporate*` chuyên biệt** — không dùng endpoint gộp `getCalendarWatchList` (190k bản ghi, bộ `eventListCode` rộng hơn CHECK 6 giá trị; dùng nó sẽ bị CHECK chặn ~79k dòng — review vòng 3, M-5).
@@ -211,7 +221,9 @@ CREATE TABLE market.financial_report_file (
 2. UPSERT giá: ghi lại `(security_id, trading_date)` đã có với `close_adj` mới → 1 dòng, giá trị mới, `close_raw` giữ nguyên.
 3. UPSERT BCTC restate: ghi lại cùng khoá với `value` mới → 1 dòng, giá trị mới (mô phỏng restate quý).
 4. `corporate_event`: hai dòng trùng khoá tự nhiên với `exright_date NULL` → dòng hai bị chặn; **cả hai ngày cùng NULL** → vẫn bị chặn (case biên NULLS DISTINCT — đúng lỗi review 2026-08-25 đã vá).
-5. `quarter_report=6` → lỗi CHECK; `kind` lạ ở snapshot → lỗi CHECK.
+5. `length_report=6` → lỗi CHECK (cả ba bảng dùng nó); `kind` lạ ở snapshot → lỗi CHECK.
+5b. *(vòng 4, F4)* Hai Earning cùng `(issuer, public_date)` khác `(year_report, length_report)` → **2 dòng** (ca nộp bù hai kỳ cùng ngày — C-3); hai CashDividend cùng ngày khác `stage_key` → 2 dòng (F6).
+5c. *(vòng 4, F4)* `index_stat_daily`: UPSERT theo `(security_id, trading_date)` — 1 dòng sau 2 lần ghi; `index_contribution_daily`: khoá 3 chiều — cùng (chỉ số, ngày) hai mã khác nhau → 2 dòng.
 6. `metric_dictionary`: cùng `code` ở hai `dictionary` khác nhau → hợp lệ (hai từ điển tách khoá).
 
 Chốt xong → bước 4 (macro: registry chỉ tiêu + observation + OMO).

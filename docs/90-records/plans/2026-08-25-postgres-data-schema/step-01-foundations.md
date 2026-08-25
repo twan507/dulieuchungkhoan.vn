@@ -22,8 +22,11 @@ postgres-data                     (người ghi duy nhất: etl · api chỉ đ�
 ├── asset     giá tài sản: hàng hoá · FX · chỉ số quốc tế · crypto
 ├── news      tin tức toàn văn + tìm kiếm
 ├── staging   payload thô theo đợt nạp (landing zone)
-└── ops       trạng thái miền · giám sát hợp đồng · nhật ký ETL
+├── ops       trạng thái miền · giám sát hợp đồng · nhật ký ETL
+└── extensions  chỗ cài 4 extension — không phải miền dữ liệu, không có bảng
 ```
+
+*(Tổng cộng migration 0001 tạo **7 schema**: 6 schema miền + `extensions` — vòng 4, F2: bản trước chốt "cài extension vào schema riêng" nhưng quên tạo và quên đếm nó.)*
 
 - Ranh giới theo **miền tiêu thụ** (người dùng/API hỏi gì), không theo nguồn.
 - Mối nối chéo schema tối thiểu — chỉ theo **một chiều** `news` → `market.security` (hai FK: gắn mã bài viết và bảng tên thương mại — *đếm lại theo review vòng 2*; cùng instance nên FK hợp lệ; luật cấm JOIN chỉ áp **giữa hai instance** data/app).
@@ -44,18 +47,19 @@ postgres-data                     (người ghi duy nhất: etl · api chỉ đ�
 | Số | `numeric` không ép precision |
 | Ngày quan sát | `date` (quy ước neo kỳ của chuỗi tháng/quý ghi ở bước 4) |
 | Enum nghiệp vụ | `check` constraint, không dùng kiểu `ENUM` của Postgres (sửa giá trị đỡ đau) |
+| Qualify schema | **Mọi SQL của backend luôn ghi đủ `schema.bảng`** — hai bảng trùng tên khác schema tồn tại có chủ đích (`market.price_daily` vs `asset.price_daily`), query không qualify sẽ trúng bảng khác theo search_path mà không báo *(vòng 4, F13)* |
 | Extension | `unaccent` · `pg_trgm` · `vector` · `fuzzystrmatch` — bật từ migration đầu, **cài vào schema riêng `extensions`** (khoá `public` mà không chốt chỗ cài extension là tự đá nhau — review vòng 3, I-7). Hệ quả plan phải giữ: hàm bọc `news.immutable_unaccent` cố định `search_path`/qualify đầy đủ, opclass ghi `extensions.gin_trgm_ops`. *(`fuzzystrmatch` bổ sung 2026-08-25 khi duyệt bước 6 — luật "bước sau phát hiện thiếu")* |
 
 ## 4. Migration — Alembic
 
 - Thư mục `database/`: `alembic.ini` + env cho `postgres-data` + `versions/`. Cấu trúc chính xác chốt trong plan thực thi.
 - Migration viết **SQL thô** (`op.execute`) — kiểm soát từng dòng, không autogenerate từ ORM.
-- Migration `0001`: tạo 6 schema + **4 extension**. Các migration sau đi theo từng bước đã duyệt (bước 2 → một cụm migration, v.v.). *(Review vòng 2, I7: con số "3 extension" cũ chưa đổi theo khi thêm `fuzzystrmatch`.)*
+- Migration `0001`: tạo **7 schema** (6 miền + `extensions`, tạo `extensions` TRƯỚC khi `CREATE EXTENSION … SCHEMA extensions`) + **4 extension**. Các migration sau đi theo từng bước đã duyệt. *(Vòng 2 I7 sửa số extension; vòng 4 F2 sửa số schema.)*
 - Connection string: `DATA_DATABASE_URL` (env này) · `APP_DATABASE_URL` (để dành cho `postgres-app`).
 
 ## 5. Kiểm chứng của bước này (seam)
 
-1. `alembic upgrade head` trên DB test rỗng → đủ 6 schema, 4 extension.
+1. `alembic upgrade head` trên DB test rỗng → đủ 7 schema, 4 extension (nằm trong `extensions`).
 2. `alembic downgrade base` → DB sạch, không sót object.
 
 ## 6. Điểm cần duyệt ở bước này

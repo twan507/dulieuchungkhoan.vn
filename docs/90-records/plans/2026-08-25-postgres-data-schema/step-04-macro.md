@@ -146,6 +146,8 @@ CREATE TABLE macro.omo_flow (             -- TỰ DỰNG toàn phần từ omo_a
 -- (1) kho đã có ≥140 ngày lịch sử trước D (kỳ hạn dài nhất);
 -- (2) KHÔNG THIẾU PHIÊN NÀO trong cửa sổ [D−140, D] — đối chiếu omo_session với lịch ngày
 --     làm việc để phân biệt "không crawl" (hỏng cửa sổ) với "SBV không đấu thầu" (bình thường).
+--     Lịch ngày làm việc CHỐT NGUỒN (vòng 4, F8): suy từ SELECT DISTINCT trading_date của
+--     market.price_daily — có sẵn, cùng lịch nghỉ lễ VN với phiên OMO; không dựng bảng lịch riêng.
 -- Bỏ lỡ một phiên là hỏng cả cửa sổ 140 ngày sau đó, không vá được (sbv-omo.md §8) — chỉ mã
 -- hoá điều kiện (1) sẽ cho net_vnd thiếu vế đáo hạn mà vẫn complete=true: sai có hệ thống.
 -- Chiều dấu theo op_type khi dựng flow: reverse_repo phát hành = BƠM, đáo hạn = hút;

@@ -121,6 +121,7 @@ CREATE TABLE market.security_external_id (
 
 1. Unique một phần: hai dòng cùng `(ticker, exchange)` cùng `listed` → lỗi; một dòng `delisted` → hợp lệ.
 2. `security_external_id`: trùng `(source, external_code)` → lỗi; cùng `external_code` khác `source` → hợp lệ.
+2b. *(vòng 4, F4)* VN-Index mang **hai dòng cùng `source='bvsc'`** khác `external_sub` (`('bvsc','VNINDEX','tvc')` + `('bvsc','HOSE','snapshot')`) → cả hai hợp lệ, cùng trỏ một `security_id`.
 3. Cây ngành: chèn level 1 có `parent_id` → lỗi CHECK; level 2 không có `parent_id` → lỗi CHECK; level 3 → lỗi CHECK. Ràng buộc "`issuer.industry_id`/`industry_icb_map.industry_id` phải trỏ level 2" thi hành bằng **seam test + guard trong ETL, không dùng trigger** (review 2026-08-25 — ghi tường minh). Tương tự, CHECK hiện có **không** ràng buộc "cha phải là level 1" — hàng rào là seed test đối chiếu literal với industry-tree.md, đủ vì bảng chỉ được ghi bởi migration seed, không có đường ghi runtime *(review vòng 3, M-9)*.
 4. Seed đối chiếu `industry-tree.md`: sau seed, bảng có đúng 6 dòng level 1 + 24 dòng level 2; so khớp **danh sách code literal** (TAICHINH…NANGLUONG; NGANHANG…CONGNGHE) lấy thẳng từ file — expected độc lập với code seed.
 5. `industry_icb_map`: một `icb_code` chỉ map một ngành (PK); map tới `industry_id` không tồn tại → lỗi FK.

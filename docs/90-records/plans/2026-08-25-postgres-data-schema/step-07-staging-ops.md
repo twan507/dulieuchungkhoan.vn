@@ -26,7 +26,7 @@ CREATE INDEX ON staging.raw_payload (source, endpoint_key, fetched_at);
 
 Vai trò — "Bronze layer" theo chuẩn kho dữ liệu, ba việc:
 
-1. **Bảo hiểm đổi-schema:** nguồn đổi tên trường → sửa adapter rồi **dựng lại bảng chuẩn từ đồ thô đã lưu**, không crawl lại. (Bảng `market` có `raw jsonb` inline riêng vì payload 1-ứng-1 dòng; các nguồn còn lại payload là *một tài liệu chứa nhiều dòng* nên để staging.)
+1. **Bảo hiểm đổi-schema:** nguồn đổi tên trường → sửa adapter rồi **dựng lại bảng chuẩn từ đồ thô đã lưu**, không crawl lại. Luật phân chỗ *(viết lại ở vòng 4, F1 — bản cũ tự đá nhau và bỏ ngỏ nhóm ~100 GB/năm)*: **bản ghi nào đã có chỗ thô inline per-row trong bảng chính (`raw`/`payload` jsonb) thì KHÔNG vào staging** — mỗi phần tử của response chính là `raw` của dòng tương ứng, dựng lại từ bảng chính; staging chỉ nhận **tài liệu đa-dòng không có chỗ inline** và **nguồn không tải lại được**.
 2. **Cứu dữ liệu không tải lại được:** OMO chỉ hiện phiên mới nhất (HTML ~414 KB/phiên — markup viết tay, đổi là mất); WiChart cửa sổ trượt 2 năm. Với hai nguồn này, lưu thô là **bắt buộc**, không phải tuỳ chọn.
 3. **Trọng tài khi nghi ngờ:** số trong bảng chuẩn lệch → mở đồ thô cùng ngày xem lỗi ở nguồn hay ở adapter.
 
@@ -38,7 +38,20 @@ Ngữ nghĩa ghi: **append-only tuyệt đối** — mỗi lần crawl một dò
 
 Một luật phủ đúng mọi ca: OMO/WiChart payload đổi mỗi lần crawl → tự nhiên **lưu mọi lần** (đúng yêu cầu nguồn không tải lại được); LBMA cuối tuần trả y hệt → bỏ, hết rác full-history 0,9 MB/lời gọi; và **BCTC FiinTrade** (191–374 KB một tài liệu sinh hàng trăm dòng — đúng ca "một tài liệu nhiều dòng" phải để staging, bản trước bỏ sót cả nguồn lớn nhất kho — vòng 3, B7-4): lần re-crawl mùa báo cáo có **restate** → hash đổi → **giữ được cả bản trước lẫn sau restate** — vá đúng lỗ hổng G1 (FiinTrade không có API vintage, bản trước restate vốn mất vĩnh viễn). Bằng chứng "đã crawl ngày đó" không cần dòng staging trùng — nó nằm ở `ops.etl_run`.
 
-Danh sách `source` vì vậy gồm **cả `fiintrade`/`bvsc`** (payload đa-dòng: BCTC, danh bạ, sự kiện…), không chỉ nhóm macro/global. **Loại trừ tường minh: tin tức không đi qua staging** — nội dung đã bóc trong `news.article_revision.content` chính là bản lưu bền (không tải lại được vì link rot — news-pipeline §9.1), còn HTML thô 97–446 KB/trang đã quyết không lưu (§9.2, gấp 18–146 lần text sạch) *(vòng 3, B7-5)*.
+**Bảng đóng — cái gì vào staging** *(vòng 4, F1: liệt kê tường minh, hết mâu thuẫn "các nguồn còn lại")*:
+
+| Vào staging | Vì sao | Ước dung lượng |
+|---|---|---|
+| `sbv` — HTML OMO | không tải lại được, markup viết tay | ~150 MB/năm (414 KB/phiên) |
+| `wichart` — mọi key | cửa sổ trượt 2 năm, đuôi mất vĩnh viễn | chưa đo — ghi nhận qua ops |
+| `fred` · `lbma` · `yahoo` · `binance` · `frankfurter` | full-history/response nhỏ, hash-đổi lọc gần hết | nhỏ (LBMA 0,9 MB/lời gọi, chỉ lưu khi đổi) |
+| `fiintrade` — **riêng 3 endpoint BCTC** | tài liệu 191–374 KB sinh hàng trăm dòng, `financial_statement` không có chỗ inline; restate không vintage — hash-đổi giữ cả bản trước/sau (G1) | ~6,6 GB/năm (5.922 lời gọi/quý — 00-conventions §9) |
+
+| **KHÔNG vào staging** | Vì sao |
+|---|---|
+| `getPriceData` · datafeed EOD · snapshot · screener · sự kiện | từng bản ghi đã nằm inline trong `raw`/`payload` của bảng chính — lưu thêm là trùng lặp (~99 GB/năm riêng getPriceData); dựng lại từ bảng chính |
+| Danh bạ (`getListOrganization`/`getAllQuotes`/ICB) | không có chỗ inline nhưng **crawl lại rẻ** (4 lời gọi trước phiên, không có trạng thái quá khứ cần giữ — trạng thái đã nằm ở `status`/`updated_at` của bảng chính) |
+| Tin tức | `news.article_revision.content` chính là bản lưu bền (link rot — news-pipeline §9.1); HTML thô 97–446 KB/trang đã quyết không lưu (§9.2) *(vòng 3, B7-5)* |
 
 Dung lượng WiChart mỗi payload **chưa đo** — ghi nhận khi chạy thật qua `ops`, xét nén hay gộp khi có số thật, không đoán trước.
 
@@ -80,6 +93,10 @@ CREATE TABLE ops.series_health (          -- độ tươi Ở CẤP SERIES — v
   last_obs_date     date,
   days_since_change smallint,             -- giá đứng bao nhiêu ngày (bắt carry-forward/đóng băng)
   gap_median_days   numeric,              -- so với freq khai để bắt FREQMIS
+  source_last_updated timestamptz,        -- dấu thời gian NGUỒN TỰ KHAI (FRED last_updated) —
+                                          -- so với lần check trước để bắt vá-hồi-tố-im-lặng
+                                          -- ("last_updated đổi mà giá trị cũ cũng đổi" — fred.md
+                                          --  §8; vòng 4, F12)
   note         text,
   PRIMARY KEY (source, external_key, external_sub, checked_at)
 );
@@ -121,7 +138,7 @@ CREATE INDEX ON ops.etl_run (job, started_at DESC);
 
 1. `raw_payload`: chèn `content_type='json'` kèm `body` (hoặc thiếu `payload`) → lỗi CHECK; `'html'` thiếu `body` → lỗi CHECK *(CHECK đã siết ở M5 — test đuổi theo)*; chèn HTML OMO (literal rút gọn) rồi đọc lại nguyên văn.
 1b. Policy hash là logic ETL (test ở plan ETL, không phải constraint): hai dòng cùng `(source, endpoint_key)` khác hash → 2 dòng hợp lệ trong bảng.
-2. `data_domain_state`: `status='paused'` → lỗi CHECK; UPSERT `(domain, source)` đổi `frozen` → 1 dòng, trạng thái mới.
+2. `data_domain_state`: `status='paused'` → lỗi CHECK; `domain='market.unknown'` → lỗi CHECK *(danh sách đóng — vòng 4, F4)*; UPSERT `(domain, source)` đổi `frozen` → 1 dòng, trạng thái mới.
 3. `etl_run`: vòng đời `running` → `success` cập nhật được `finished_at`; truy vấn "lần chạy gần nhất của job X" ra đúng dòng (literal 2 lần chạy).
 4. `contract_snapshot`: hai lần check cùng endpoint khác `checked_at` → 2 dòng (lịch sử baseline giữ nguyên).
 

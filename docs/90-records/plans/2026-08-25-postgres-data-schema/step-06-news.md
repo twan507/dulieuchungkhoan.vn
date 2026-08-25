@@ -29,7 +29,10 @@ CREATE TABLE news.article (               -- một TIN canonical (sau dedupe) �
   group_from_feed smallint,               -- nhóm GỢI Ý từ feed — cặp với group_no để tự phát hiện
                                           -- feed xếp sai nhóm (news-pipeline §7.3; review vòng 2, I5)
   sub            text,                    -- sub-taxonomy ('3b'…) — 20 sub đã chốt
-  group_overridden boolean NOT NULL DEFAULT false,  -- bật khi group_no != group_from_feed → log
+  group_overridden boolean NOT NULL DEFAULT false,
+                   -- bật khi group_no KHÁC group_from_feed — ETL phải so bằng IS DISTINCT FROM
+                   -- (vòng 4, F14: tin nhãn 'x' có group_no NULL, phép != trả NULL và cờ không
+                   --  bao giờ bật → mất tín hiệu phát hiện feed xếp sai nhóm)
   confidence     numeric,
   classified_from text CHECK (classified_from IN ('content','title_only')),
   content_chars  int,                     -- số ký tự nạp classifier (đối chiếu chọn trần 3k/4k sau)
@@ -95,7 +98,8 @@ CREATE TABLE news.trade_name (            -- tên thương mại → mã, cho t�
   PRIMARY KEY (name, security_id)
 );
 CREATE INDEX ON news.trade_name
-  USING gin (news.immutable_unaccent(name) gin_trgm_ops);
+  USING gin (news.immutable_unaccent(name) extensions.gin_trgm_ops);
+  -- opclass qualify theo luật extension-schema bước 1 (vòng 4, F3 — bản trước để trần)
 -- Index trên BIỂU THỨC unaccent — khuôn truy vấn §3 so sánh qua unaccent, index trên cột thô
 -- sẽ không được dùng (review vòng 2, I4).
 -- Ngữ nghĩa ghi (M8): seed tay + bổ sung dần (UPSERT theo PK); không có đường ghi tự động từ AI.
@@ -137,6 +141,8 @@ Hoãn vì: chọn model embedding phải chốt **trước khi nạp cả kho** 
 1. Bài chứa "chứng khoán" → truy vấn không dấu `'chung khoan'` qua `tsv` bắt được; bài không chứa → không bắt (case sai).
 2. Thêm revision version 2 cho bài đã có → 2 dòng cùng `article_id`, bản 1 nguyên vẹn; chèn trùng `(article_id, version)` → lỗi PK.
 3. `article_ticker` trỏ `security_id` không tồn tại → lỗi FK; xoá security đang được tin trỏ → bị chặn (FK bảo vệ).
+3b. *(vòng 4, F4)* Cùng (bài, mã) với `via='lookup'` và `via='ai'` → **2 dòng cùng tồn tại** (nguyên liệu phép giám sát đối chiếu hai tầng); trùng cả bộ ba → lỗi PK.
+3c. *(vòng 4, F4)* `published_at NULL` + `published_at_src='unknown'` → hợp lệ; sắp xếp tầng đọc theo `coalesce(published_at, fetched_at)` cho ra thứ tự xác định (literal 2 bài).
 4. `trade_name` khớp gần đúng: seed `'Hòa Phát'` → truy vấn `similarity('Hoà Phát')` (khác dấu thanh) vẫn ra đúng mã (literal, ngưỡng chốt trong plan).
 4b. Levenshtein: `levenshtein('ngui','nguoi') = 1` (giải tay — thêm một chữ 'o'); truy vấn `'ngui'` trên seed chứa `'người'` (qua unaccent) xếp ứng viên đó hạng nhất.
 5. `canonical_url` trùng → lỗi UNIQUE (dedupe tầng DB là hàng rào cuối, dedupe thật ở pipeline).
