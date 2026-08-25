@@ -1,6 +1,6 @@
 # Bước 6 — Tin tức: bài viết, phiên bản, gắn mã, tìm kiếm
 
-**Trạng thái:** 🟡 chờ duyệt · **Phụ thuộc:** bước 1–5 (✅) · **Phạm vi:** schema `news` — kho toàn văn ~570 tin/ngày trước dedupe từ 8 báo, đầu ra của pipeline tin ([news-pipeline.md](../../../20-design/news-pipeline.md)). Đây là schema **duy nhất ghi nguồn** — báo nào đăng là dữ kiện nghiệp vụ, không phải xuất xứ kỹ thuật.
+**Trạng thái:** ✅ chốt 2026-08-25 (chủ dự án đồng ý 5 điểm duyệt; lớp gõ-gần-đúng Levenshtein thêm theo yêu cầu) · **Phụ thuộc:** bước 1–5 (✅) · **Phạm vi:** schema `news` — kho toàn văn ~570 tin/ngày trước dedupe từ 8 báo, đầu ra của pipeline tin ([news-pipeline.md](../../../20-design/news-pipeline.md)). Đây là schema **duy nhất ghi nguồn** — báo nào đăng là dữ kiện nghiệp vụ, không phải xuất xứ kỹ thuật.
 
 ---
 
