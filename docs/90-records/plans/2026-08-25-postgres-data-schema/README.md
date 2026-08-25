@@ -10,8 +10,8 @@
 | 2 | [step-02-market-identity.md](step-02-market-identity.md) | Định danh: issuer · security · ánh xạ nguồn · **bộ ngành riêng** (thay ICB) | ✅ chốt 2026-08-25 — cây ngành ở [industry-tree.md](../../../20-design/industry-tree.md) |
 | 3 | [step-03-market-data.md](step-03-market-data.md) | Giá EOD + view hệ số · BCTC · từ điển chỉ tiêu · snapshot/screener · sự kiện | ✅ chốt 2026-08-25 |
 | 4 | [step-04-macro.md](step-04-macro.md) | Registry chỉ tiêu + observation (UPSERT) · cụm OMO | ✅ chốt 2026-08-25 |
-| 5 | [step-05-asset.md](step-05-asset.md) | Registry tài sản · price/ohlc/fx · luật dầu-vàng-DXY | 🟡 chờ duyệt |
-| 6 | step-06-news.md | Article/revision không ghi đè · gắn mã · tìm kiếm | ⬜ chưa viết |
+| 5 | [step-05-asset.md](step-05-asset.md) | Registry tài sản · price/ohlc/fx · luật dầu-vàng-DXY | ✅ chốt 2026-08-25 |
+| 6 | [step-06-news.md](step-06-news.md) | Article/revision không ghi đè · gắn mã · tìm kiếm | 🟡 chờ duyệt |
 | 7 | step-07-staging-ops.md | Landing zone · data_domain_state · giám sát hợp đồng · etl_run | ⬜ chưa viết |
 | 8 | step-08-derived.md | **Tầng tự tính**: chỉ số ngành từ cây riêng · chỉ báo kỹ thuật · bảng dẫn xuất khác | ⬜ chưa viết — nguyên tắc đã chốt (xem dưới), danh sách bảng cụ thể chốt sau 3–7, công thức chốt khi có dữ liệu thật |
 

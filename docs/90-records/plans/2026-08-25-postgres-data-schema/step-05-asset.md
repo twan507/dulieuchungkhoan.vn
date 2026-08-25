@@ -1,6 +1,6 @@
 # Bước 5 — Giá tài sản: hàng hoá, tỷ giá, chỉ số quốc tế, crypto
 
-**Trạng thái:** 🟡 chờ duyệt · **Phụ thuộc:** bước 1–4 (✅) · **Phạm vi:** schema `asset` — mọi "thứ có giá" ngoài chứng khoán Việt Nam: hàng hoá trong nước + thế giới (WiChart ~61 key, FRED dầu, LBMA vàng bạc), tỷ giá (ECB), 36 chỉ số quốc tế + phụ trợ (Yahoo), crypto (Binance).
+**Trạng thái:** ✅ chốt 2026-08-25 (chủ dự án đồng ý 5 điểm duyệt) · **Phụ thuộc:** bước 1–4 (✅) · **Phạm vi:** schema `asset` — mọi "thứ có giá" ngoài chứng khoán Việt Nam: hàng hoá trong nước + thế giới (WiChart ~61 key, FRED dầu, LBMA vàng bạc), tỷ giá (ECB), 36 chỉ số quốc tế + phụ trợ (Yahoo), crypto (Binance).
 
 ---
 
