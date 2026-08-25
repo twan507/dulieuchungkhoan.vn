@@ -77,10 +77,17 @@ Luật để tránh hai tiến trình cùng ghi một chỗ rồi giẫm nhau:
 | Miền dữ liệu | Kho | Người ghi duy nhất | Người đọc |
 |---|---|---|---|
 | Tick · sổ lệnh · `bar_1m` · realtime state | ClickHouse + Redis | `ingester` | `api` (qua Redis pub/sub + ClickHouse) |
-| Tham chiếu · giá EOD · BCTC · snapshot · sự kiện · tin | Postgres | `etl` | `api` |
-| Tài khoản · watchlist · danh mục · tương tác user | Postgres | `api` | `api` |
+| Tham chiếu · giá EOD · BCTC · snapshot · sự kiện · tin | **`postgres-data`** | `etl` | `api` |
+| Tài khoản · watchlist · danh mục · tương tác user | **`postgres-app`** | `api` | `api` |
 
 FE chỉ đọc–ghi qua `api`. `api` chỉ ghi **miền user**; với dữ liệu thị trường nó là **read-only**.
+
+> 🔴 **Hai instance Postgres riêng — chốt D (2026-08-25).** Dữ liệu thị trường và dữ liệu user nằm ở **hai instance Postgres tách hẳn** (`postgres-data` và `postgres-app`), **không** chỉ khác schema, **không** chung instance. Ba lý do:
+> 1. **Backup khác chế độ (điểm quyết định):** data user cần **PITR**/backup dày (mất là mất thật); data thị trường **crawl lại được** nên không cần. PITR/WAL là **theo cả instance** → muốn hai chế độ thì buộc hai instance.
+> 2. **Blast-radius:** kho thị trường **churn nặng** (migrate/rebuild liên tục) — không được chung volume với account.
+> 3. **Tuning riêng:** phân tích (buffer lớn) vs OLTP nhẹ.
+>
+> **Kỷ luật giữ ngay từ thiết kế** (làm C↔D chỉ là đổi config, không sửa code): **hai connection string tách** (`DATA_DATABASE_URL` / `APP_DATABASE_URL`) và **cấm JOIN chéo hai miền** (watchlist = danh sách mã, giá lấy qua đường bình thường). **Thời điểm dựng:** `postgres-app` thêm vào [`deploy/infra`](../90-records/plans/2026-08-24-deploy-scaffold/spec.md) khi dựng `api` auth/watchlist; lát REST-first chỉ cần `postgres-data`.
 
 ## 5. Hệ quả bắt buộc phải tôn trọng
 
@@ -125,12 +132,11 @@ hạ tầng (docker-compose: PG + ClickHouse + Redis)
 
 ## 8. Quyết định mềm — ghi rõ để không chọn ngầm
 
-Ba điểm dưới đây chốt theo mặc định hợp lý, **có thể đảo** khi có lý do, và phải sửa thẳng vào tài liệu này *(luật tầng 20-design)*:
+Hai điểm dưới đây chốt theo mặc định hợp lý, **có thể đảo** khi có lý do, và phải sửa thẳng vào tài liệu này *(luật tầng 20-design)*:
 
 | Điểm | Chốt mặc định | Đảo khi |
 |---|---|---|
 | **Chatbot ở đâu** | Trong `api` (function calling) — theo [kho dữ liệu §2](market-data-store.md) | Tải LLM/độ trễ chatbot làm ảnh hưởng độ sẵn sàng của `api` request thường ⇒ tách `chatbot` thành tiến trình thứ tư |
 | **Pipeline tin (lưới AI)** | Một họ job trong `etl` — [news-pipeline.md](news-pipeline.md) | Lưới AI ngốn tài nguyên/lịch chạy riêng biệt tới mức cần tiến trình `news` riêng |
-| **Dữ liệu user nằm chung Postgres** | Cùng cụm Postgres với dữ liệu thị trường, tách theo schema | Yêu cầu tuân thủ/bảo mật buộc tách cụm DB riêng cho dữ liệu người dùng |
 
-Ba điểm này **không chặn** lát cắt đầu tiên (chỉ có `ingester` + `etl`), nên để mở tới khi dựng `api`.
+Hai điểm này **không chặn** lát cắt đầu tiên (chỉ có `ingester` + `etl`), nên để mở tới khi dựng `api`. *(Điểm "dữ liệu user" trước đây ở đây đã **chốt cứng — tách instance D**, xem §4.)*
