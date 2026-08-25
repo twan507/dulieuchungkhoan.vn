@@ -48,6 +48,6 @@ def downgrade() -> None:
         DROP SCHEMA macro CASCADE;
         DROP SCHEMA market CASCADE;
         DROP SCHEMA extensions CASCADE;
-        GRANT CREATE ON SCHEMA public TO PUBLIC;
+        -- không GRANT lại CREATE trên public: PG16 mặc định đã khoá, GRANT làm DB lỏng hơn trạng thái gốc (final review #5).
         """
     )

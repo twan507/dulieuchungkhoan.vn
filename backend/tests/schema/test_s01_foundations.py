@@ -27,4 +27,6 @@ def test_four_extensions_in_extensions_schema(db):
 
 def test_public_schema_locked(db):
     ok = db.execute(sa.text("SELECT has_schema_privilege('public', 'public', 'CREATE')")).scalar()
+    # PG16 mặc định đã khoá CREATE trên public — test này là chốt hồi quy (không đỏ được trước 0001),
+    # giữ để canh downgrade/config lạ (final review #8).
     assert ok is False  # step-01 §2: khoá CREATE trên public

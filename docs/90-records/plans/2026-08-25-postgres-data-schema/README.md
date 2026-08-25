@@ -25,7 +25,7 @@
 | 7 | [step-07-staging-ops.md](step-07-staging-ops.md) | Landing zone · data_domain_state · giám sát hợp đồng · series_health · source_build · etl_run | ✅ chốt 2026-08-25 (chủ dự án chốt sau 3 vòng review, kèm điều kiện chạy vòng review 4 toàn cục) |
 | 8 | step-08-derived.md | **Tầng tự tính**: chỉ số ngành từ cây riêng · chỉ báo kỹ thuật · bảng dẫn xuất khác | ⬜ chưa viết — nguyên tắc đã chốt (xem dưới), danh sách bảng cụ thể chốt sau 3–7, công thức chốt khi có dữ liệu thật |
 
-Sau khi cả 7 bước chốt: **[plan.md](plan.md)** đã viết (2026-08-25) — 11 task, TDD lát dọc trên Postgres thật, 9 migration + seed + grants; sổ thực thi sẽ ở `ledger.md`.
+Sau khi cả 7 bước chốt: **[plan.md](plan.md)** đã viết (2026-08-25) — 11 task, TDD lát dọc trên Postgres thật, 9 migration + seed + grants; sổ thực thi: [ledger.md](ledger.md) — **thực thi xong 2026-08-25** (11 task, 10 migration, 36 test, final review đã chạy).
 
 **Checklist quét tài liệu sống khi spec chốt xong** *(luật §1.7 — ghi sẵn từ review vòng 3 để không sót)*:
 - [x] `architecture.md` §3.1/§3.2 — "bảng `organization`" → `issuer`/`security`; "khung ngành = ICB" → `market.industry` (hợp đồng skill không đổi bản chất)

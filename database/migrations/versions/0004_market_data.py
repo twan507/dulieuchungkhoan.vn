@@ -28,6 +28,8 @@ def upgrade() -> None:
           highest_value numeric,
           lowest_value  numeric,
                                         -- ⚠️ O/H/L theo nền ĐÃ điều chỉnh (cùng nền close_adj)
+          -- ⚠️ 34 cột này theo nền giá THÔ của BVSC (khớp close_raw) — KHÁC nền đã-điều-chỉnh của
+          -- open_value/highest_value/lowest_value ở trên (bẫy trộn hai nền giá — step-03 M10).
           -- 34 cột dưới sinh bởi database/gen_price_columns.py từ market-field-selection.json
           -- (keep & nguon_chuan=BVSC) — không sửa tay:
           close_price numeric,

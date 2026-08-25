@@ -48,3 +48,4 @@ cd backend && uv run pytest tests/schema -v
   ```sql
   CREATE USER etl_worker LOGIN PASSWORD '…' IN ROLE dlck_etl;
   ```
+- ⚠️ downgrade 0003 xoá cả `market.industry_icb_map` (bản đồ ICB→ngành có thể gán tay) — trước khi downgrade qua 0003 trên DB có dữ liệu thật, backup bảng này.
