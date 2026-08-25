@@ -28,6 +28,6 @@ Tầng này ghi **lựa chọn của dulieuchungkhoan.vn** — cái gì xây th�
 
 ## Nơi hai nhánh gặp nhau
 
-Nhánh dữ liệu thị trường và nhánh tin tức độc lập tới tận tầng kho, gặp nhau lần đầu ở tầng ngữ nghĩa qua **mã cổ phiếu** — khoá nối duy nhất. Hệ quả quan trọng nhất: bảng `organization` là **nguồn sự thật duy nhất** cho danh sách mã, pipeline tin không được tự nạp bản riêng.
+Nhánh dữ liệu thị trường và nhánh tin tức độc lập tới tận tầng kho, gặp nhau lần đầu ở tầng ngữ nghĩa qua **mã cổ phiếu** — khoá nối duy nhất. Hệ quả quan trọng nhất: **`market.issuer` + `market.security`** (spec schema 2026-08-25 — trước là bảng `organization`) là **nguồn sự thật duy nhất** cho danh bạ, pipeline tin không được tự nạp bản riêng.
 
 Chi tiết ba mắt xích nối: [kiến trúc tổng thể §3](../00-overview/architecture.md).

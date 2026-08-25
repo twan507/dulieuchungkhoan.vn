@@ -5,6 +5,8 @@
 **Bối cảnh:** dulieuchungkhoan.vn được phép thu thập, lưu trữ và phái sinh toàn bộ dữ liệu từ nguồn BVSC/FiinTrade, phục vụ khách hàng cuối và một chatbot AI truy vấn không giới hạn.
 
 > ⚠️ **2026-08-24 — [ADR 0007](../00-overview/decisions/0007-monorepo-layout-and-stack.md):** kho realtime đã chốt đổi sang **ClickHouse** (lưu tick thô + sổ lệnh; Postgres giữ dữ liệu REST/BCTC/tin; Redis giữ pub/sub + leader lock). Tài liệu này **chưa cập nhật theo** — các phần lược đồ TimescaleDB, continuous aggregate, nén/retention sẽ thiết kế lại trong một phiên riêng, xem [lộ trình §5.2](../00-overview/roadmap.md).
+>
+> 🔴 **2026-08-25 — lược đồ Postgres đã có bản CHÍNH THỨC thay thế §5:** [spec 7 bước](../90-records/plans/2026-08-25-postgres-data-schema/) (đã thực thi — 9 migration trong `database/`, xem [database/README.md](../../database/README.md)). Khác biệt chính so với §5: tách `issuer`/`security` với khoá nội bộ + registry ánh xạ nguồn; **không cột `source` ở bảng dữ liệu** (override mục "làm ngay" của §9.6 — xuất xứ nằm ở registry/staging/ops); ngành theo [bộ riêng 6×24](industry-tree.md) thay ICB; BCTC dùng `length_report`; thêm các miền macro/asset/news/staging/ops. **§5 dưới đây giữ nguyên văn làm bối cảnh thiết kế, không phải DDL hiện hành.**
 
 ---
 
@@ -670,7 +672,7 @@ Thứ tự ưu tiên nghiên cứu nên theo **tầng A trước** — có ngu�
 
 | | |
 |---|---|
-| ✅ **Làm ngay** | Tách `security_id` khỏi `organ_code` · thêm cột `source` và `canonical_code` · bảng `data_domain_state` |
+| ✅ **Làm ngay** | Tách `security_id` khỏi `organ_code` · thêm cột `source` và `canonical_code` · bảng `data_domain_state` *(đã làm 2026-08-25 với một override có ý thức: cột `source` KHÔNG đặt ở bảng dữ liệu — nguồn có thể đổi, xuất xứ nằm ở bảng ánh xạ registry/staging/ops; `canonical_code` và `data_domain_state` giữ nguyên — xem [spec](../90-records/plans/2026-08-25-postgres-data-schema/README.md) quyết định #4)* |
 | ⏳ **Làm khi cần** | Tầng adapter cho nguồn cụ thể · logic hoà giải khi hai nguồn chồng lấn · điền đầy `metric_mapping` |
 | ❌ **Không làm** | Đừng dựng khung plugin trừu tượng cho nguồn chưa biết. Trừu tượng hoá sớm dựa trên một nguồn duy nhất thường tạo ra đúng cái khung sai |
 

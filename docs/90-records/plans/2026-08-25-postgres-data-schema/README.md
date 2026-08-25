@@ -28,10 +28,10 @@
 Sau khi cả 7 bước chốt: **[plan.md](plan.md)** đã viết (2026-08-25) — 11 task, TDD lát dọc trên Postgres thật, 9 migration + seed + grants; sổ thực thi sẽ ở `ledger.md`.
 
 **Checklist quét tài liệu sống khi spec chốt xong** *(luật §1.7 — ghi sẵn từ review vòng 3 để không sót)*:
-- [ ] `architecture.md` §3.1/§3.2 — "bảng `organization`" → `issuer`/`security`; "khung ngành = ICB" → `market.industry` (hợp đồng skill không đổi bản chất)
-- [ ] `20-design/README.md` dòng "bảng `organization` là nguồn sự thật duy nhất" → cập nhật theo tách issuer/security
-- [ ] `market-data-store.md` — đánh dấu §5 được thay bởi spec này (giữ nguyên văn làm lịch sử thiết kế, thêm banner trỏ sang), §9.6 mục cột `source` ghi override
-- [ ] `news-pipeline.md` §9.3 — đối chiếu spec bản ghi với DDL bước 6 (feed/group_from_feed/via 3 giá trị đã khớp)
+- [x] `architecture.md` §3.1/§3.2 — "bảng `organization`" → `issuer`/`security`; "khung ngành = ICB" → `market.industry` (hợp đồng skill không đổi bản chất)
+- [x] `20-design/README.md` dòng "bảng `organization` là nguồn sự thật duy nhất" → cập nhật theo tách issuer/security
+- [x] `market-data-store.md` — đánh dấu §5 được thay bởi spec này (giữ nguyên văn làm lịch sử thiết kế, thêm banner trỏ sang), §9.6 mục cột `source` ghi override
+- [x] `news-pipeline.md` §9.3 — đối chiếu spec bản ghi với DDL bước 6 (feed/group_from_feed/via 3 giá trị đã khớp)
 
 ## Quyết định xuyên suốt đã chốt (áp cho mọi bước)
 
