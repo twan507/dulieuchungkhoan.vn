@@ -11,6 +11,3 @@ __pycache__/
 # Node
 node_modules/
 .pnpm-store/
-
-# SDD scratch (subagent-driven-development ledger/artifacts)
-.superpowers/

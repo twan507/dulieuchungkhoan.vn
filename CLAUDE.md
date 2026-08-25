@@ -152,7 +152,7 @@ Task lớn đi đủ chuỗi, mỗi bước dùng skill superpowers có sẵn, k
 
 **Ba gate cứng, không nhảy:** spec được duyệt · plan tồn tại trước khi giao subagent · **test đỏ trước khi viết implementation**.
 
-Hồ sơ khảo sát: `docs/90-records/surveys/YYYY-MM-DD-<tên>/`.
+Hồ sơ khảo sát: `docs/90-records/surveys/YYYY-MM-DD-<tên>/`. **Sổ ghi thực thi (ledger)** khi chạy plan nằm **cùng thư mục plan** — `.../<plan>/ledger.md`, commit theo (tiền lệ plan 2026-08-15). Artifact tạm khi chạy subagent (report, gói diff review, log) để ở **scratchpad ngoài repo**; **cấm tạo `.superpowers/` trong repo** — tên đã nghỉ theo ADR 0007, và đây là chỗ đè mặc định `.superpowers/sdd/` của skill `subagent-driven-development`.
 
 **Giao hay tự làm — đánh giá TỪNG task theo effort + độ phức tạp trước khi bắt đầu:**
 
