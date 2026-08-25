@@ -27,6 +27,20 @@ Sau khi cả 7 bước chốt: viết `plan.md` (bẻ task thực thi) theo quy 
 | 5 | **Phân ngành dùng bộ riêng của chủ dự án**, không dùng cây ICB làm chuẩn — chi tiết chốt ở bước 2 | 2026-08-25 |
 | 6 | Hai instance `postgres-data`/`postgres-app`, hai connection string, cấm JOIN chéo instance (chốt D — service-topology §4) | 2026-08-25 |
 
+## Hợp đồng tháo lắp nguồn — ranh giới spec này ↔ code ETL
+
+Yêu cầu chủ dự án 2026-08-25: đổi nguồn raw = thay khối code ETL khác, vẫn chèn vào bảng chuẩn — nguồn tháo lắp như module. Phân vai:
+
+| Bộ phận | Vai trò trong việc tháo lắp | Nằm ở đâu |
+|---|---|---|
+| Registry ánh xạ (`*_external_id`, `indicator_source`) | **Ổ cắm** — adapter mới cắm vào bằng dòng ánh xạ, bảng dữ liệu không biết nguồn tồn tại | Spec này (bước 2/4/5) |
+| Bảng canonical + *ngữ nghĩa ghi* từng bảng (append / UPSERT / thêm-version) | **Mặt bích cố định** — hợp đồng mọi adapter phải tôn trọng | Spec này (bước 2–7) |
+| `staging.raw_payload` | Kho đồ thô theo nguồn — đổi adapter vẫn còn đồ cũ để dựng lại | Spec này (bước 7) |
+| `ops.data_domain_state` | **Công tắc** miền × nguồn: `active/frozen/migrating` | Spec này (bước 7) |
+| Cấu trúc module code: mỗi nguồn một **adapter** (fetch + parse + chuẩn hoá đơn vị/múi giờ), mỗi miền một **writer** (giữ ngữ nghĩa ghi) | Phần chuyển động | **Plan riêng** khi dựng lát ETL đầu, sau khi schema chốt |
+
+Giữ nguyên ràng buộc đã chốt ở [market-data-store §9.6](../../../20-design/market-data-store.md): **không dựng khung plugin trừu tượng** cho nguồn chưa biết — tháo lắp đạt bằng ranh giới adapter/writer + registry, không bằng framework tổng quát viết sớm.
+
 ## Hồ sơ kèm theo
 
 - Sơ đồ quan hệ để duyệt (artifact, cập nhật theo từng bước): https://claude.ai/code/artifact/f37d1b8f-505e-4915-8009-35b1ee203b01
