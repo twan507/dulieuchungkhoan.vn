@@ -20,7 +20,7 @@ Mỗi thư mục là một task, đặt tên `YYYY-MM-DD-<tên>`. File bên tron
 | [`2026-08-14-restructure-english-tree/`](plans/2026-08-14-restructure-english-tree/) | Tái cấu trúc kho tài liệu sang cây tiếng Anh — `spec.md` · `plan.md` | Đã áp dụng → [ADR 0005](../00-overview/decisions/0005-english-tree.md) |
 | [`2026-08-15-cap-nhat-tai-lieu-nguon/`](plans/2026-08-15-cap-nhat-tai-lieu-nguon/) | Cập nhật tài liệu nguồn theo khảo sát 2026-08-15 — `spec.md` · `plan.md` · `ledger.md` | Đã áp dụng → tài liệu 9 nguồn |
 | [`2026-08-24-monorepo-restructure/`](plans/2026-08-24-monorepo-restructure/) | Chuẩn hoá cây monorepo + chốt stack — `spec.md` · `plan.md` | Đã áp dụng → [ADR 0007](../00-overview/decisions/0007-monorepo-layout-and-stack.md) |
-| [`2026-08-24-deploy-scaffold/`](plans/2026-08-24-deploy-scaffold/) | Khung đóng gói một-nút (docker compose infra/app · `stack.mjs` · dev native + deploy docker) — học tinh hoa từ tutor-agent — `spec.md` · `plan.md` | 🔨 spec + plan xong; thực thi chưa |
+| [`2026-08-24-deploy-scaffold/`](plans/2026-08-24-deploy-scaffold/) | Khung đóng gói một-nút (docker compose infra/app · `stack.mjs` · dev native + deploy docker) — học tinh hoa từ tutor-agent — `spec.md` · `plan.md` | ✅ thực thi xong trên `feat/deploy-scaffold` (AC1–AC8 nghiệm thu live); chờ merge |
 
 ## `surveys/` — hồ sơ khảo sát
 
