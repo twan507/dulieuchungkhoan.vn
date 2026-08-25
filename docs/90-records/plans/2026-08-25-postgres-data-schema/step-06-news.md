@@ -78,7 +78,10 @@ CREATE INDEX ON news.trade_name USING gin (name gin_trgm_ops);
 |---|---|---|
 | Lọc cấu trúc | index thường: `published_at`, `(group_no, sub)`, `article_ticker(security_id)` | ✅ bước này |
 | Từ khoá | `tsv` + GIN, `unaccent` (người Việt gõ không dấu rất phổ biến) | ✅ bước này |
+| **Gõ gần đúng (chịu lỗi gõ)** | `pg_trgm` (index, lọc ứng viên) **+ `levenshtein`** (`fuzzystrmatch` — xếp hạng theo số bước sửa ít nhất: `ngui`→`nguoi` = 1 bước) | ✅ bước này *(yêu cầu chủ dự án 2026-08-25)* |
 | Ngữ nghĩa | `pgvector` + HNSW | ⏳ **hoãn có chủ đích** |
+
+Lớp gõ-gần-đúng áp cho **chuỗi ngắn** — ô tìm kiếm, tên doanh nghiệp/`trade_name`, ticker — nơi người dùng gõ thiếu/sai ký tự. Khuôn truy vấn chuẩn (chi tiết trong plan): `pg_trgm` quét index ra nhóm ứng viên → `levenshtein(unaccent(query), unaccent(candidate))` xếp hạng — `levenshtein` một mình không dùng được index nên **bắt buộc** đi sau trgm, không thay trgm. Toàn văn bài viết vẫn thuộc lớp từ khoá (`tsv`).
 
 ```sql
 -- HOÃN: tạo ở migration riêng khi chốt mô hình embedding (chiều vector chưa biết).
@@ -94,7 +97,7 @@ Hoãn vì: chọn model embedding phải chốt **trước khi nạp cả kho** 
 - [ ] **Tách bài/phiên bản**: phần định danh + phân loại ở `article` (phân loại sửa được — là nhận định của mình), nội dung ở `revision` bất biến, báo sửa bài thì thêm version — đồng ý?
 - [ ] **Dedupe giữ độ phủ**: một tin canonical + danh sách mọi báo đã đăng — đồng ý?
 - [ ] **Gắn mã trỏ thẳng `market.security`** (chỉ mã đang niêm yết), phân biệt đường gắn `lookup`/`ai` — đồng ý?
-- [ ] **Tìm kiếm**: lọc cấu trúc + từ khoá không dấu chạy ngay; lớp ngữ nghĩa (embedding) hoãn tới khi chốt model — đồng ý?
+- [ ] **Tìm kiếm**: lọc cấu trúc + từ khoá không dấu + **gõ gần đúng (trgm lọc, Levenshtein xếp hạng)** chạy ngay; lớp ngữ nghĩa (embedding) hoãn tới khi chốt model — đồng ý?
 - [ ] **Bảng tên thương mại → mã** với khớp gần đúng (`pg_trgm`) cho tầng gắn mã AI — đồng ý?
 
 ## 5. Kiểm chứng của bước này (seam)
@@ -103,6 +106,7 @@ Hoãn vì: chọn model embedding phải chốt **trước khi nạp cả kho** 
 2. Thêm revision version 2 cho bài đã có → 2 dòng cùng `article_id`, bản 1 nguyên vẹn; chèn trùng `(article_id, version)` → lỗi PK.
 3. `article_ticker` trỏ `security_id` không tồn tại → lỗi FK; xoá security đang được tin trỏ → bị chặn (FK bảo vệ).
 4. `trade_name` khớp gần đúng: seed `'Hòa Phát'` → truy vấn `similarity('Hoà Phát')` (khác dấu thanh) vẫn ra đúng mã (literal, ngưỡng chốt trong plan).
+4b. Levenshtein: `levenshtein('ngui','nguoi') = 1` (giải tay — thêm một chữ 'o'); truy vấn `'ngui'` trên seed chứa `'người'` (qua unaccent) xếp ứng viên đó hạng nhất.
 5. `canonical_url` trùng → lỗi UNIQUE (dedupe tầng DB là hàng rào cuối, dedupe thật ở pipeline).
 6. Migration tạo `news.immutable_unaccent` thành công và `tsv` sinh tự động khi INSERT (không phải NULL).
 

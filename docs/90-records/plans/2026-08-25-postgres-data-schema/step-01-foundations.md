@@ -44,7 +44,7 @@ postgres-data                     (người ghi duy nhất: etl · api chỉ đ�
 | Số | `numeric` không ép precision |
 | Ngày quan sát | `date` (quy ước neo kỳ của chuỗi tháng/quý ghi ở bước 4) |
 | Enum nghiệp vụ | `check` constraint, không dùng kiểu `ENUM` của Postgres (sửa giá trị đỡ đau) |
-| Extension | `unaccent` · `pg_trgm` · `vector` — bật từ migration đầu |
+| Extension | `unaccent` · `pg_trgm` · `vector` · `fuzzystrmatch` — bật từ migration đầu. *(`fuzzystrmatch` bổ sung 2026-08-25 khi duyệt bước 6: chủ dự án yêu cầu tìm kiếm chịu lỗi gõ theo khoảng cách Levenshtein — sửa ngược về đây theo luật "bước sau phát hiện thiếu")* |
 
 ## 4. Migration — Alembic
 
