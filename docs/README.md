@@ -59,6 +59,7 @@ Mục lục chi tiết từng file: [10-sources/README.md](10-sources/README.md)
 | [news-pipeline.md](20-design/news-pipeline.md) | Lưới AI không đường tắt · taxonomy 20 sub · gắn mã 3 tầng · kho toàn văn | ✅ đã duyệt |
 | [chatbot-semantic-layer.md](20-design/chatbot-semantic-layer.md) | Luật phân định 4 tầng · 8 function · ba quy tắc nối dữ liệu vào skill | 🟡 **đề xuất, chưa duyệt** |
 | [market-field-selection.md](20-design/market-field-selection.md) | Bảng lấy/bỏ từng trường cho ETL thị trường — 213 dòng, lý do tại chỗ, kèm [bản JSON máy đọc](20-design/market-field-selection.json). Cả hai sinh tự động từ [`gen_field_selection.py`](20-design/gen_field_selection.py), cấm sửa tay | ✅ đã chốt |
+| [industry-tree.md](20-design/industry-tree.md) | **Cây ngành riêng 6 nhóm × 24 ngành** — chủ sở hữu nội dung cây · quy tắc đặt tên · nguyên tắc gán mã · điểm mở cấp mã | ✅ chốt 2026-08-25 |
 
 ### 30 · Tri thức chuyên môn
 

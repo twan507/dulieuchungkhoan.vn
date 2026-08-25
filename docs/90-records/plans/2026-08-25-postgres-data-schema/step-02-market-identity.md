@@ -33,7 +33,8 @@ CREATE TABLE market.industry (            -- bộ ngành RIÊNG của dự án
   sort_order   smallint
 );
 -- Cây tự tham chiếu: chịu được 1 cấp, 2 cấp hay nhiều cấp.
--- NỘI DUNG bộ ngành là DỮ LIỆU, chủ dự án cung cấp sau — không chặn migration.
+-- NỘI DUNG bộ ngành là DỮ LIỆU — cây 2 cấp (6 nhóm × 24 ngành) đã chốt 2026-08-25,
+-- chủ sở hữu nội dung: docs/20-design/industry-tree.md.
 
 CREATE TABLE market.industry_icb_map (    -- ICB (nguồn) → ngành riêng: gán hàng loạt
   icb_code    text PRIMARY KEY,           -- + tự gán mã mới niêm yết
@@ -108,7 +109,7 @@ CREATE TABLE market.security_external_id (
 ## 5. Điểm cần duyệt ở bước này
 
 - [ ] Tách `issuer` / `security`, chỉ số không có issuer — đồng ý?
-- [ ] Ngành: cây tự tham chiếu chờ nội dung của anh + gán ở doanh nghiệp (mã thừa hưởng) + tay thắng máy — đồng ý?
+- [ ] Ngành: cây tự tham chiếu, nội dung đã chốt ([industry-tree.md](../../../20-design/industry-tree.md)) + gán ở doanh nghiệp (mã thừa hưởng) + tay thắng máy — đồng ý?
 - [ ] ICB giữ tham khảo đúng vai trò §3.2 (nạp nhanh, tự gán mã mới, đối chiếu) — đồng ý?
 - [ ] `status` listed/delisted + unique một phần theo `(ticker, exchange)` — đồng ý?
 
