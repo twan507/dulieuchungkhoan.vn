@@ -31,6 +31,9 @@ def upgrade() -> None:
           GRANT SELECT ON TABLES TO dlck_api;
         ALTER DEFAULT PRIVILEGES IN SCHEMA market, macro, asset, news, staging, ops
           GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO dlck_etl;
+        -- fix round 1: thiếu default priv sequence — bảng mới có identity sẽ chặn etl ghi
+        ALTER DEFAULT PRIVILEGES IN SCHEMA market, macro, asset, news, staging, ops
+          GRANT USAGE, SELECT ON SEQUENCES TO dlck_etl;
         """
     )
 
@@ -38,6 +41,8 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.execute(
         """
+        ALTER DEFAULT PRIVILEGES IN SCHEMA market, macro, asset, news, staging, ops
+          REVOKE USAGE, SELECT ON SEQUENCES FROM dlck_etl;
         ALTER DEFAULT PRIVILEGES IN SCHEMA market, macro, asset, news, staging, ops
           REVOKE SELECT, INSERT, UPDATE, DELETE ON TABLES FROM dlck_etl;
         ALTER DEFAULT PRIVILEGES IN SCHEMA market, macro, asset, news
