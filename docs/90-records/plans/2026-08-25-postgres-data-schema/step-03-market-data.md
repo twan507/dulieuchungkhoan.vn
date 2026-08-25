@@ -30,6 +30,10 @@ FROM market.price_daily;
 ```
 
 - **Ngữ nghĩa ghi: UPSERT theo `(security_id, trading_date)`.** Re-crawl một mã sau sự kiện quyền → `close_adj` toàn chuỗi đổi theo điều chỉnh mới của nguồn → hệ số trong view tự đổi → mọi nến quá khứ hiển thị đúng **mà không viết lại dòng nào** (`close_raw` bất biến).
+- **Nguồn gốc hai cột giá — và vì sao `close_raw` nullable** *(làm rõ 2026-08-25 theo câu hỏi chủ dự án)*:
+  - **Quá khứ (backfill):** `getPriceData` trả chuỗi **đã điều chỉnh về hiện tại** — giá thô lịch sử không tồn tại ở nguồn nào. Backfill chỉ điền `close_adj`; `close_raw` để **NULL**, không bịa.
+  - **Từ ngày vận hành:** mỗi ngày ghi giá khớp thật của chính ngày đó (EOD `/datafeed/instruments` — chưa điều chỉnh) vào `close_raw` một lần rồi bất biến; `close_adj` tiếp tục UPSERT theo nguồn.
+  - **Khớp nhu cầu:** hệ số chỉ dùng để điều chỉnh **nến intraday** (ClickHouse) — nến intraday cũng chỉ tồn tại từ ngày Ingester chạy. Giai đoạn cần hệ số = giai đoạn có raw. Ngày không có raw, view trả NULL là hành vi đúng; chart dài hạn dùng thẳng `close_adj` (chuỗi tự nhất quán).
 - View `price_factor` cũng là điểm nối duy nhất sang ClickHouse (điều chỉnh nến intraday — cơ chế thuộc phiên ClickHouse).
 - Kích hoạt re-crawl: từ `corporate_event.exright_date` (§4).
 
