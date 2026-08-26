@@ -23,6 +23,10 @@ Spec: [`docs/90-records/plans/2026-08-25-postgres-data-schema/`](../docs/90-reco
 
 Spec: [`docs/90-records/plans/2026-08-25-clickhouse-realtime-store/`](../docs/90-records/plans/2026-08-25-clickhouse-realtime-store/) — `spec.md` (quyết định xuyên suốt, checklist §13), `plan.md`, `ledger.md`.
 
+> **Dung lượng — số ĐO THẬT** *(2026-08-26, nạp 2.316.573 record của một phiên chiều qua đúng đường ghi production: [hồ sơ đo §10](../docs/90-records/surveys/2026-08-26-bvsc-realtime-session/README.md))*: 5 bảng frame thô **~91 MiB/ngày** ⇒ TTL 3 tháng ≈ **6–8 GiB**; hai bảng nến **~0,5 GiB/năm**. Byte nén/dòng: `quote` 14,8 · `trade` 29,3 · `snapshot_delta` 36,1 · `index_delta` 48,5 · `pt_match` 23,5 · `bar_1m` 53,7.
+>
+> ⚠️ **Đừng dùng con số byte/dòng trong spec §10** — chúng đo trên dữ liệu tổng hợp lặp lại nên nén giả tạo (`snapshot_delta` ghi 5 B/dòng, thật là 36 B — lệch 7×). Ngược lại spec ước lượng nến cao hơn thực tế 5–13× (thật ~37–41k nến/ngày, không phải 200–540k). Hai sai số ngược chiều nên tổng vẫn nằm trong dải cũ, nhưng từng con số thì không dùng lại được.
+
 Cách chạy (từ `backend/`, `PYTHONIOENCODING=utf-8`):
 
 ```bash
