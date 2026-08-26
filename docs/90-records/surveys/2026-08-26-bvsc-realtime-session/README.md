@@ -82,3 +82,38 @@ So với dải ước lượng **5–35 triệu dòng/ngày** của [spec ClickH
 | Ý nghĩa `MS`, `NOF` (idx) · `TSI` (i) | Không có tài liệu đối chiếu; chỉ ghi nhận giá trị quan sát |
 | Có nên thu phái sinh không | Đã biết **thu được**; quyết định phạm vi + lược đồ là việc riêng |
 | Có nên nâng `OP`/`LO` thành cột | Cần một migration ClickHouse mới |
+
+---
+
+## 10. Dung lượng ClickHouse — đo thật *(2026-08-26 tối, phục vụ quyết định TTL)*
+
+Nạp **toàn bộ 2.316.573 record** của phiên chiều qua **đúng đường ghi production** (`parse_packet` → `records_of` → `symbol_of` + `Stamper` → `normalize`) vào database tạm `measure_tmp` dựng từ chính DDL `0002_rt_schema.sql`, `OPTIMIZE FINAL`, đo `system.parts`, rồi `DROP DATABASE`. Script: [`measure_size.py`](measure_size.py) · số liệu thô: [`size-measurement-raw.json`](size-measurement-raw.json).
+
+> ✅ **Kết quả phụ quan trọng: 2.316.573 record chuẩn hoá, `normalize_error = 0`, `no_symbol = 0`.** Đường ghi production chạy đúng đầu-cuối trên dữ liệu thật — bằng chứng bản sửa vỏ bọc sails.io (§1) là đủ. Số dòng insert khớp `system.parts` từng bảng ⇒ không mất dòng.
+
+| Bảng | Số dòng | Nén | B nén/dòng | Tỷ lệ nén |
+|---|---:|---:|---:|---:|
+| `quote` | 1.647.375 | 23,3 MiB | 14,8 | 4,6× |
+| `snapshot_delta` | 519.133 | 17,9 MiB | 36,1 | 8,2× |
+| `trade` | 130.869 | 3,7 MiB | 29,3 | 2,1× |
+| `index_delta` | 17.770 | 0,8 MiB | 48,5 | 2,5× |
+| `pt_match` | 1.426 | 0,03 MiB | 23,5 | 6,2× |
+| **Tổng frame thô / phiên chiều** | **2.316.573** | **45,7 MiB** | | |
+| `bar_1m` | 18.648 | 0,95 MiB | 53,7 | 2,3× |
+| `index_bar_1m` | 1.594 | 0,07 MiB | 45,6 | 2,1× |
+
+**Quy đổi** *(hệ số ×2 cho cả ngày — phiên sáng CHƯA ĐO; 21 phiên/tháng)*: frame thô **~91 MiB/ngày** ⇒ 1,9 GiB/tháng ⇒ **TTL 3 tháng ≈ 5,6–7,5 GiB** (cửa sổ thật 3–4 tháng) · TTL 6 tháng ≈ 11,2 GiB · TTL 12 tháng ≈ 22,5 GiB. Nến vĩnh viễn **~0,5 GiB/năm**.
+
+**Đối chiếu ước lượng cũ ([spec ClickHouse §10](../../plans/2026-08-25-clickhouse-realtime-store/spec.md))** — thực tế nằm ở **đáy mọi dải**:
+
+| Đại lượng | Ước lượng cũ | Đo thật | |
+|---|---|---|---|
+| Dòng/ngày | 5–35 triệu | ~4,6 triệu | dưới cận dưới |
+| MB/ngày | 50–500 MB | ~91 MiB | đáy dải |
+| Cửa sổ 3–4 tháng | 5–60 GB | ~6–8 GiB | nhỏ hơn kịch bản xấu 8× |
+| Nến/ngày | 200–540k | **~37k** | nhỏ hơn 5–14× |
+| Nến/năm | ~4 GB | ~0,5 GiB | nhỏ hơn 8× |
+
+Nến ít hơn nhiều vì chỉ ~800 mã thật sự có khớp lệnh, và mỗi mã chỉ sinh nến ở phút có giao dịch — không phải 2.000 mã × 250 phút.
+
+**Hệ quả cho quyết định TTL:** dung lượng **không còn là ràng buộc** (cả năm frame thô ~25 GB; ổ D còn 116 GB trống). Ràng buộc thật của cửa sổ là *thời gian tối đa để phát hiện và vá lỗi gom nến* — vá được chỉ khi `trade` còn trong cửa sổ. Chờ chủ dự án chốt giữ 3 tháng hay nới 6 tháng.

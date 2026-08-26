@@ -1,0 +1,68 @@
+{
+  "n_frames": 2316957,
+  "n_records": 2316573,
+  "n_not_event": 384,
+  "n_no_symbol": 0,
+  "n_normalize_error": 0,
+  "row_counts_loaded": {
+    "trade": 130869,
+    "quote": 1647375,
+    "snapshot_delta": 519133,
+    "index_delta": 17770,
+    "pt_match": 1426
+  },
+  "metrics_counters": {
+    "decimal_normalized": 47541
+  },
+  "tables": {
+    "trade": {
+      "rows": 130869,
+      "compressed_bytes": 3836635,
+      "uncompressed_bytes": 8118438,
+      "ratio": 2.116030844737641,
+      "bytes_per_row": 29.316606683018897
+    },
+    "quote": {
+      "rows": 1647375,
+      "compressed_bytes": 24443784,
+      "uncompressed_bytes": 111571021,
+      "ratio": 4.56439236249183,
+      "bytes_per_row": 14.83802048713863
+    },
+    "snapshot_delta": {
+      "rows": 519133,
+      "compressed_bytes": 18759479,
+      "uncompressed_bytes": 154563324,
+      "ratio": 8.23921197385066,
+      "bytes_per_row": 36.13617127017547
+    },
+    "index_delta": {
+      "rows": 17770,
+      "compressed_bytes": 861422,
+      "uncompressed_bytes": 2124399,
+      "ratio": 2.466153638982984,
+      "bytes_per_row": 48.47619583567811
+    },
+    "pt_match": {
+      "rows": 1426,
+      "compressed_bytes": 33492,
+      "uncompressed_bytes": 206483,
+      "ratio": 6.1651439149647675,
+      "bytes_per_row": 23.486676016830295
+    },
+    "bar_1m": {
+      "rows": 18648,
+      "compressed_bytes": 1001064,
+      "uncompressed_bytes": 2313563,
+      "ratio": 2.3111039853595776,
+      "bytes_per_row": 53.68211068211068
+    },
+    "index_bar_1m": {
+      "rows": 1594,
+      "compressed_bytes": 72658,
+      "uncompressed_bytes": 148661,
+      "ratio": 2.0460376008147763,
+      "bytes_per_row": 45.58218318695106
+    }
+  }
+}
