@@ -5,7 +5,7 @@ mapping/set trần để test không cần database.
 """
 
 from dataclasses import dataclass
-from typing import AbstractSet, Mapping
+from collections.abc import Mapping, Set as AbstractSet
 
 DROP_RATIO = 0.02        # tầng 1 (spec §4)
 DELIST_RATIO = 0.01      # tầng 2
@@ -35,18 +35,18 @@ def check(
             count = counts[key]
             if count < base_count * (1 - DROP_RATIO):
                 reasons.append(
-                    f"{key}: count {count} < baseline {base_count} minus {DROP_RATIO:.0%}"
+                    f"{key}: đếm được {count} — sụt quá {DROP_RATIO:.0%} so mốc {base_count}"
                 )
 
     # Tầng 1 — khớp-tập cho indexsnaps, chạy CẢ KHI không có mốc.
     missing = expected_index_codes - index_codes_seen
     if missing:
-        reasons.append(f"indexsnaps missing expected codes: {sorted(missing)}")
+        reasons.append(f"indexsnaps thiếu mã chỉ số: {sorted(missing)}")
 
     # Tầng 2 — tỷ lệ tác động của phép lật delisted.
     if listed_now > 0 and planned_delist > listed_now * DELIST_RATIO:
         reasons.append(
-            f"planned_delist {planned_delist} > listed_now {listed_now} times {DELIST_RATIO:.0%}"
+            f"sắp lật delisted {planned_delist} mã — quá {DELIST_RATIO:.0%} của {listed_now} đang niêm yết"
         )
 
     return GuardVerdict(ok=not reasons, reasons=tuple(reasons))

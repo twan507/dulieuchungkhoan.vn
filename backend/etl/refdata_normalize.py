@@ -38,6 +38,7 @@ class OrgRec:
     organ_name: str
     organ_short_name: str | None
     com_type_code: str | None
+    organ_type_code: str | None   # 'DN' | 'OTHER' — luật 6: khử trùng ticker ưu tiên DN
     icb_code: str | None
 
 
@@ -137,6 +138,7 @@ def normalize(raw: dict[str, str]) -> NormResult:
             organ_name=r["organName"],
             organ_short_name=r.get("organShortName"),
             com_type_code=r.get("comTypeCode"),
+            organ_type_code=r.get("organTypeCode"),
             icb_code=r.get("icbCode"),
         )
         for r in _unwrap_items(raw["organization"])

@@ -45,3 +45,39 @@ def test_target_tickers_are_unique():
     t = _target()
     tickers = [s.ticker for s in t.securities]
     assert len(tickers) == len(set(tickers))
+
+
+def test_unknown_com_group_skipped_not_fatal():
+    """Final review M1: comGroupCode lạ ở dòng fiin-only → bỏ + đếm, không KeyError."""
+    import json
+    raw = {k: (FIX / f"{k}.json").read_text(encoding="utf-8")
+           for k in ("quotes", "indexsnaps", "organization", "icb")}
+    d = json.loads(raw["organization"])
+    d["items"].append({"organCode": "XTEST", "ticker": "XTS", "comGroupCode": "MoonIndex",
+                       "organName": "Thử nghiệm", "organShortName": None,
+                       "comTypeCode": "CT", "icbCode": None})
+    raw["organization"] = json.dumps(d, ensure_ascii=False)
+    t = merge(normalize(raw))
+    assert t.counters["unknown_com_group"] == 1
+    assert not any(s.ticker == "XTS" for s in t.securities)
+
+
+def test_duplicate_org_ticker_prefers_dn():
+    """Spec §3 luật 6 (phòng thủ): trùng ticker trong GetListOrganization —
+    ưu tiên organTypeCode='DN', bản ghi còn lại đếm + log, không chặn job."""
+    import json
+    raw = {k: (FIX / f"{k}.json").read_text(encoding="utf-8")
+           for k in ("quotes", "indexsnaps", "organization", "icb")}
+    d = json.loads(raw["organization"])
+    # ACV đã có trong fixture (organTypeCode vắng mặt trong fixture cũ → coi như DN);
+    # thêm bản ghi TRÙNG ticker ACV loại OTHER với organCode khác
+    for item in d["items"]:
+        item.setdefault("organTypeCode", "DN")
+    d["items"].append({"organCode": "ACV_DUP", "ticker": "ACV", "comGroupCode": "VNINDEX",
+                       "organName": "Bản trùng", "organShortName": None,
+                       "comTypeCode": "CT", "icbCode": None, "organTypeCode": "OTHER"})
+    raw["organization"] = json.dumps(d, ensure_ascii=False)
+    t = merge(normalize(raw))
+    by = {s.ticker: s for s in t.securities}
+    assert by["ACV"].organ_code == "ACVN"            # bản DN thắng
+    assert t.counters["dup_org_ticker"] == 1

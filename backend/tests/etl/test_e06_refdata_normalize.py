@@ -34,3 +34,29 @@ def test_org_rec_carries_identity_fields():
     vhm = next(o for o in n.orgs if o.ticker == "VHM")
     assert vhm.organ_code == "NHN"                     # bẫy organCode ≠ ticker
     assert vhm.com_group_code == "VNINDEX"
+
+
+def test_unknown_stocktype_skipped_and_counted():
+    """Seam 1 (bổ sung final review): StockType lạ → bỏ + đếm, không nổ."""
+    raw = _raw()
+    d = json.loads(raw["quotes"])
+    d["d"].append({"symbol": "ZZZ", "FullName": "x", "exchange": "HOSE",
+                   "StockType": "99", "tradelot": 100})
+    raw["quotes"] = json.dumps(d)
+    n = normalize(raw)
+    assert n.counters["unknown_stocktype"] == 1
+    assert not any(q.symbol == "ZZZ" for q in n.quotes)
+
+
+def test_junk_row_disappearing_still_passes():
+    """Seam 3 (bổ sung final review): indexsnaps mất một DÒNG RÁC (20→19 thô)
+    vẫn đủ 18 mã thật — không được làm chốt chặn nổ oan."""
+    raw = _raw()
+    d = json.loads(raw["indexsnaps"])
+    lst = d["d"] if isinstance(d, dict) else d
+    kept = [r for r in lst if str(r.get("marketCode")) != "0"]   # bỏ dòng placeholder
+    assert len(kept) == len(lst) - 1
+    raw["indexsnaps"] = json.dumps({"d": kept} if isinstance(d, dict) else kept)
+    n = normalize(raw)
+    assert len(n.index_codes) == 18
+    assert n.counters["index_junk"] == 1

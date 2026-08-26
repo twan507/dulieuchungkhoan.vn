@@ -46,12 +46,11 @@ def run(accept_drop: bool = False) -> int:
         t = refdata_merge.merge(n)
         counts = {"quotes": len(n.quotes), "organization": len(n.orgs), "icb": len(n.icb)}
         baseline = refdata_store.load_baseline(engine)
-        target_tickers = {s.ticker for s in t.securities}
         try:
             with engine.begin() as conn:
-                delist, listed = refdata_store.plan_delist(conn, target_tickers)
+                delist, planned_flips, listed = refdata_store.plan_delist(conn, t)
                 verdict = refdata_guard.check(
-                    counts, baseline, n.index_codes, SNAP_CODES, len(delist), listed
+                    counts, baseline, n.index_codes, SNAP_CODES, planned_flips, listed
                 )
                 if not verdict.ok and not accept_drop:
                     raise GuardRefused(verdict.reasons)
@@ -61,7 +60,7 @@ def run(accept_drop: bool = False) -> int:
             omo_store.close_run(engine, run_id, "failed", error=f"guard refused: {'; '.join(e.reasons)}")
             log.error("refdata từ chối: %s", e.reasons)
             return 1
-        stats = {**apply_stats, "counts": counts, **n.counters, **t.counters}
+        stats = {**apply_stats, "counts": counts, **t.counters}
         if accept_drop:
             stats["accept_drop"] = True
         omo_store.close_run(engine, run_id, "success", stats)

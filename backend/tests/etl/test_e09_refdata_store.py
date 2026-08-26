@@ -20,7 +20,7 @@ def _as_etl(db):
 def test_apply_twice_is_idempotent_including_timestamps(db):
     _as_etl(db)
     t = _target()
-    delist, _ = refdata_store.plan_delist(db, {s.ticker for s in t.securities})
+    delist, _, _ = refdata_store.plan_delist(db, t)
     refdata_store.apply(db, t, delist)
     snap1 = db.execute(sa.text(
         "SELECT ticker, exchange, security_type, status, updated_at FROM market.security ORDER BY ticker"
@@ -92,7 +92,15 @@ def test_manual_industry_assignment_survives_rerun(db):
     db.execute(sa.text("UPDATE market.issuer SET industry_id=:d WHERE issuer_id=:i"),
                {"d": ind, "i": iid})
     db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
-    refdata_store.apply(db, t, [])                      # job chạy lại
+    # Đích lượt sau phải THẬT SỰ đổi một trường issuer — không thì câu UPDATE bị đuôi
+    # IS DISTINCT FROM lọc, dòng SET không bao giờ chạy, và test xanh cả với mutant
+    # `SET industry_id = NULL` (final review I2, kiểm bằng thí nghiệm đột biến).
+    from dataclasses import replace
+    t2 = type(t)(securities=t.securities,
+                 issuers=[replace(x, name=x.name + " (đổi tên)") if x.organ_code == "NHN" else x
+                          for x in t.issuers],
+                 icb=t.icb, counters=t.counters)
+    refdata_store.apply(db, t2, [])                     # job chạy lại, UPDATE thật sự nổ
     assert db.execute(sa.text("SELECT industry_id FROM market.issuer WHERE issuer_id=:i"),
                       {"i": iid}).scalar_one() == ind   # tay THẮNG máy
 
@@ -101,6 +109,46 @@ def test_plan_delist_counts(db):
     _as_etl(db)
     t = _target()
     refdata_store.apply(db, t, [])
-    tickers = {s.ticker for s in t.securities}
-    delist, listed = refdata_store.plan_delist(db, tickers - {"ACV"})
-    assert delist == ["ACV"] and listed == len([s for s in t.securities if s.status == "listed"])
+    from dataclasses import replace
+    t_no_acv = type(t)(securities=[s for s in t.securities if s.ticker != "ACV"],
+                       issuers=t.issuers, icb=t.icb, counters=t.counters)
+    delist, flips, listed = refdata_store.plan_delist(db, t_no_acv)
+    assert delist == ["ACV"] and flips == 1
+    assert listed == len([s for s in t.securities if s.status == "listed"])
+
+
+def test_planned_flips_count_the_common_delisting_path(db):
+    """Final review I1: mã rời /quotes nhưng CÒN ở FiinTrade nằm trong đích với
+    status='delisted' — plan_delist cũ chỉ đếm ticker VẮNG khỏi đích, nên đường huỷ
+    phổ biến nhất (~78% cổ phiếu có issuer) tàng hình trước tầng 2 của chốt chặn."""
+    _as_etl(db)
+    t = _target()
+    refdata_store.apply(db, t, [])                       # kho: 27 listed (fixture)
+    from dataclasses import replace
+    # ACV "rời /quotes nhưng còn ở FiinTrade": đích vẫn chứa ACV, status delisted
+    t2 = type(t)(securities=[replace(s, status="delisted") if s.ticker == "ACV" else s
+                             for s in t.securities],
+                 issuers=t.issuers, icb=t.icb, counters=t.counters)
+    absent, planned_flips, listed_now = refdata_store.plan_delist(db, t2)
+    assert absent == []                                  # ACV không vắng khỏi đích
+    assert planned_flips == 1                            # nhưng PHẢI được đếm là một phép lật
+    assert listed_now == len([s for s in t.securities if s.status == "listed"])
+    stats = refdata_store.apply(db, t2, absent)
+    assert stats["delisted"] == 1                        # và stats phải báo đúng 1, không phải 0
+
+
+def test_vanished_icb_codes_kept_and_counted(db):
+    """Spec §5: mã ICB biến mất khỏi nguồn → GIỮ NGUYÊN dòng, đếm + log (final review)."""
+    _as_etl(db)
+    t = _target()
+    refdata_store.apply(db, t, [])
+    n_before = db.execute(sa.text("SELECT count(*) FROM market.icb_industry")).scalar_one()
+    assert n_before == 176
+    t2 = type(t)(securities=t.securities, issuers=t.issuers,
+                 icb=[r for r in t.icb if r.icb_code != "8350"],   # Ngân hàng biến mất
+                 counters=t.counters)
+    stats = refdata_store.apply(db, t2, [])
+    assert stats["icb_orphaned"] == 1
+    assert db.execute(sa.text("SELECT count(*) FROM market.icb_industry")).scalar_one() == 176
+    assert db.execute(sa.text(
+        "SELECT count(*) FROM market.icb_industry WHERE icb_code='8350'")).scalar_one() == 1

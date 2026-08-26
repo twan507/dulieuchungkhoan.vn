@@ -7,10 +7,13 @@ danh sách `SecurityTarget` duy nhất theo ticker, cộng danh sách `IssuerTar
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 from etl.refdata_indices import INDICES
 from etl.refdata_normalize import IcbRec, NormResult, OrgRec, QuoteRec
+
+log = logging.getLogger(__name__)
 
 COM_GROUP_TO_EXCHANGE = {"VNINDEX": "HOSE", "HNXIndex": "HNX", "UpcomIndex": "UPCOM"}
 
@@ -81,11 +84,16 @@ def _index_targets() -> list[SecurityTarget]:
     return targets
 
 
-def _fiin_only_target(org: OrgRec) -> SecurityTarget:
+def _fiin_only_target(org: OrgRec) -> SecurityTarget | None:
+    """None khi `comGroupCode` lạ — giá trị lạ không được giết cả job (luật nhà:
+    cùng cách xử StockType lạ và mã ICB lạ), caller đếm + log."""
+    exchange = COM_GROUP_TO_EXCHANGE.get(org.com_group_code)
+    if exchange is None:
+        return None
     security_type = "fund_cert" if org.com_type_code == "QU" else "stock"
     return SecurityTarget(
         ticker=org.ticker,
-        exchange=COM_GROUP_TO_EXCHANGE[org.com_group_code],
+        exchange=exchange,
         security_type=security_type,
         status="delisted",
         tradelot=None,
@@ -95,8 +103,27 @@ def _fiin_only_target(org: OrgRec) -> SecurityTarget:
     )
 
 
+def _dedupe_orgs(orgs) -> tuple[list, int]:
+    """Luật 6 (phòng thủ — chưa từng quan sát trùng, đo 2026-08-26): trùng ticker
+    thì bản `organTypeCode='DN'` thắng, bản còn lại đếm + log, không chặn job."""
+    by_ticker: dict[str, object] = {}
+    dups = 0
+    for o in orgs:
+        cur = by_ticker.get(o.ticker)
+        if cur is None:
+            by_ticker[o.ticker] = o
+            continue
+        dups += 1
+        keep, drop = (o, cur) if (o.organ_type_code == "DN" and cur.organ_type_code != "DN") else (cur, o)
+        by_ticker[o.ticker] = keep
+        log.warning("trùng ticker %s trong GetListOrganization — giữ %s (organTypeCode=%s), bỏ %s",
+                    o.ticker, keep.organ_code, keep.organ_type_code, drop.organ_code)
+    return list(by_ticker.values()), dups
+
+
 def merge(n: NormResult) -> TargetState:
-    org_by_ticker = {o.ticker: o for o in n.orgs}
+    orgs, dup_org_ticker = _dedupe_orgs(n.orgs)
+    org_by_ticker = {o.ticker: o for o in orgs}
     index_tickers = {d.ticker for d in INDICES}
     quote_tickers = {q.symbol for q in n.quotes}
 
@@ -113,14 +140,23 @@ def merge(n: NormResult) -> TargetState:
     securities.extend(_index_targets())
 
     fiin_only_delisted = 0
-    for o in n.orgs:
+    unknown_com_group = 0
+    for o in orgs:
         if o.ticker in quote_tickers or o.ticker in index_tickers:
             continue
-        securities.append(_fiin_only_target(o))
+        target = _fiin_only_target(o)
+        if target is None:
+            unknown_com_group += 1
+            log.warning("comGroupCode lạ %r ở ticker %s — bỏ, không chặn job",
+                        o.com_group_code, o.ticker)
+            continue
+        securities.append(target)
         fiin_only_delisted += 1
 
     counters["stocks_no_issuer"] = stocks_no_issuer
     counters["fiin_only_delisted"] = fiin_only_delisted
+    counters["unknown_com_group"] = unknown_com_group
+    counters["dup_org_ticker"] = dup_org_ticker
 
     issuers = [
         IssuerTarget(
@@ -130,7 +166,7 @@ def merge(n: NormResult) -> TargetState:
             com_type_code=o.com_type_code,
             icb_code=o.icb_code,
         )
-        for o in n.orgs
+        for o in orgs
     ]
 
     return TargetState(

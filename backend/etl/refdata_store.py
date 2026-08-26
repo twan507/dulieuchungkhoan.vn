@@ -16,9 +16,13 @@ from __future__ import annotations
 
 import json
 
+import logging
+
 import sqlalchemy as sa
 
 from etl.refdata_merge import TargetState
+
+log = logging.getLogger(__name__)
 
 JOB = "market.refdata"
 
@@ -39,14 +43,25 @@ def load_baseline(engine) -> dict | None:
     return stats.get("counts") if stats else None
 
 
-def plan_delist(conn, target_tickers: set[str]) -> tuple[list[str], int]:
-    """Ticker đang `listed` trong kho mà không có trong trạng thái đích của lượt."""
+def plan_delist(conn, target: TargetState) -> tuple[list[str], int, int]:
+    """(ticker vắng khỏi đích, TỔNG số dòng listed sẽ bị lật delisted, tổng listed).
+
+    Phép lật đi qua HAI đường và tầng 2 của chốt chặn phải thấy cả hai (final
+    review I1 — bản đầu chỉ đếm đường vắng-mặt, nên đường phổ biến nhất — mã rời
+    /quotes nhưng còn ở FiinTrade, tức CÓ trong đích với status='delisted' —
+    tàng hình trước chốt chặn và stats báo 0):
+      (a) vắng hẳn khỏi đích  → lật bằng câu UPDATE hàng loạt cuối `apply`;
+      (b) có trong đích nhưng đích ghi 'delisted' → lật bằng UPDATE từng dòng.
+    """
     rows = conn.execute(
         sa.text("SELECT ticker FROM market.security WHERE status = 'listed'")
     ).all()
-    listed = [r[0] for r in rows]
-    delist = sorted(t for t in listed if t not in target_tickers)
-    return delist, len(listed)
+    listed = {r[0] for r in rows}
+    target_tickers = {t.ticker for t in target.securities}
+    target_delisted = {t.ticker for t in target.securities if t.status == "delisted"}
+    absent = sorted(listed - target_tickers)
+    flips = len(absent) + len(listed & target_delisted)
+    return absent, flips, len(listed)
 
 
 def apply(conn, target: TargetState, delist: list[str]) -> dict:
@@ -143,6 +158,8 @@ def apply(conn, target: TargetState, delist: list[str]) -> dict:
             )
             if changed:
                 stats["sec_updated"] += 1
+                if row.status == "listed" and s.status == "delisted":
+                    stats["delisted"] += 1     # đường lật (b) — xem plan_delist
                 if row.exchange != s.exchange:
                     stats["exchange_moves"] += 1
             else:
@@ -181,6 +198,20 @@ def apply(conn, target: TargetState, delist: list[str]) -> dict:
         )
         stats["icb_rows"] += 1
 
+    # 4b. Mã ICB biến mất khỏi nguồn: GIỮ NGUYÊN dòng (issuer.icb_code có thể còn trỏ
+    # tới — không FK nhưng vẫn là tham chiếu), chỉ đếm + log (spec §5).
+    if target.icb:
+        orphaned = conn.execute(
+            sa.text("SELECT count(*) FROM market.icb_industry"
+                    " WHERE NOT (icb_code = ANY(:codes))"),
+            {"codes": [r.icb_code for r in target.icb]},
+        ).scalar_one()
+        stats["icb_orphaned"] = orphaned
+        if orphaned:
+            log.warning("%d mã ICB trong kho không còn ở nguồn — giữ nguyên, không xoá", orphaned)
+    else:
+        stats["icb_orphaned"] = 0
+
     # 5. delist — không bao giờ xoá dòng
     if delist:
         result = conn.execute(
@@ -190,7 +221,7 @@ def apply(conn, target: TargetState, delist: list[str]) -> dict:
             ),
             {"t": delist},
         )
-        stats["delisted"] = result.rowcount
+        stats["delisted"] += result.rowcount   # đường lật (a) — cộng dồn với đường (b)
 
     return stats
 
