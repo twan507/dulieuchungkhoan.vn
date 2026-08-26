@@ -64,8 +64,8 @@ def test_chet_giua_chung_chay_lai_di_qua_duoc(ch, tmp_path):
 
 def test_assert_migrated(ch, tmp_path):
     _reset(ch)
-    _write(tmp_path, "0002_rt_schema.sql", "CREATE TABLE IF NOT EXISTS rt.a (x UInt8) ENGINE = MergeTree ORDER BY x;")
+    _write(tmp_path, "0002_zz_fake.sql", "CREATE TABLE IF NOT EXISTS rt.a (x UInt8) ENGINE = MergeTree ORDER BY x;")
     with pytest.raises(RuntimeError):
-        ch_migrate.assert_migrated(ch)                        # rt chưa tồn tại / sổ trống
+        ch_migrate.assert_migrated(ch, required="0002_zz_fake")  # rt chưa tồn tại / sổ trống
     ch_migrate.upgrade(ch, versions_dir=tmp_path)
-    ch_migrate.assert_migrated(ch)                            # không raise
+    ch_migrate.assert_migrated(ch, required="0002_zz_fake")      # không raise
