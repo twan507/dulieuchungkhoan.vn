@@ -55,6 +55,30 @@ class Normalized:
     symbol: str
 
 
+def records_of(payload: dict) -> list[dict]:
+    """Bóc vỏ sails.io: frame thật là `{"a": "<u|i>", "d": [ <bản ghi>, ... ]}`.
+
+    Tài liệu nguồn (11-bvsc-realtime.md §4-§8) chỉ chép BẢN GHI BÊN TRONG, nên
+    mẫu dạng trần vẫn phải dùng được (test literal, tài liệu). Khoá `a` là cờ
+    hành động của lớp vận chuyển (`u` cập nhật · `i` chèn), KHÔNG phải trường
+    của bản ghi — bỏ có chủ đích, không đưa vào `extra`.
+    (Đo 2026-08-26 trên 2.316.573 frame thật: `d` luôn đúng 1 phần tử; vẫn duyệt
+    mảng để một packet nhiều bản ghi không bị rơi im lặng.)
+    """
+    d = payload.get("d")
+    if isinstance(d, list):
+        return [r for r in d if isinstance(r, dict)]
+    if isinstance(d, dict):
+        return [d]
+    return [payload]
+
+
+def _has(payload: dict, key: str) -> bool:
+    """Có giá trị dùng được không — khoá vắng mặt và chuỗi rỗng đều coi là thiếu."""
+    v = payload.get(key, None)
+    return v is not None and v != ""
+
+
 def _dec2(v, metrics: Metrics) -> Decimal:
     try:
         d = Decimal(str(v))
@@ -196,10 +220,13 @@ def _normalize_i(payload: dict, received_at_ms: int, metrics: Metrics) -> Normal
         raise NormalizeError(f"frame i hỏng: {e}") from e
 
     row: dict = {"symbol": symbol, "exchange": exchange, "ts": ts}
+    # Chuỗi rỗng = "không có giá trị ở thời điểm này", KHÔNG phải lỗi dữ liệu:
+    # đo 2026-08-26 thấy B1/S1 rỗng ở 615/519.133 frame (0,12%) — mã tạm hết dư
+    # mua/bán bậc 1. Ép kiểu thẳng sẽ đầu độc cả block qua đường poison.
     for src, col in _I_DEC_FIELDS.items():
-        row[col] = _dec2(payload[src], metrics) if src in payload else None
+        row[col] = _dec2(payload[src], metrics) if _has(payload, src) else None
     for src, col in _I_UINT_FIELDS.items():
-        row[col] = _uint(payload[src]) if src in payload else None
+        row[col] = _uint(payload[src]) if _has(payload, src) else None
 
     if "CV" in payload and "P1" in payload and row["last_vol"] != row["last_vol2"]:
         metrics.inc("cv_ne_p1")
@@ -237,9 +264,9 @@ def _normalize_idx(payload: dict, received_at_ms: int, metrics: Metrics) -> Norm
 
     row: dict = {"symbol": symbol, "ts": ts}
     for src, col in _IDX_DEC_FIELDS.items():
-        row[col] = _dec2(payload[src], metrics) if src in payload else None
+        row[col] = _dec2(payload[src], metrics) if _has(payload, src) else None
     for src, col in _IDX_UINT_FIELDS.items():
-        row[col] = _uint(payload[src]) if src in payload else None
+        row[col] = _uint(payload[src]) if _has(payload, src) else None
 
     known = _IDX_KNOWN_TOP | set(_IDX_DEC_FIELDS) | set(_IDX_UINT_FIELDS) | _IDX_DROPPED
     extra = {k: v for k, v in payload.items() if k not in known}

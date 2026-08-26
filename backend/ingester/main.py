@@ -27,7 +27,13 @@ from ingester import state as state_mod
 from ingester.chwriter import ChWriter
 from ingester.dedup import FrameDedup, Stamper, frame_key
 from ingester.measure import MeasureWriter
-from ingester.normalize import Metrics, NormalizeError, normalize, symbol_of
+from ingester.normalize import (
+    Metrics,
+    NormalizeError,
+    normalize,
+    records_of,
+    symbol_of,
+)
 from ingester.reconcile import reconcile
 
 log = logging.getLogger("ingester")
@@ -166,25 +172,27 @@ def make_on_packet(writer: ChWriter, metrics: Metrics, dedup: FrameDedup, stampe
         pkt = eio.parse_packet(raw)
         if not isinstance(pkt, eio.Event) or pkt.name not in EVENTS:
             return
-        event, payload = pkt.name, pkt.payload
+        event = pkt.name
         now = time.time()
-        if dedup.seen(frame_key(event, payload), now):
-            metrics.inc("dup_dropped")
-            return
-        symbol = symbol_of(event, payload)
-        if symbol is None:
-            metrics.inc("no_symbol_dropped")
-            return
-        stamped_ms = stamper.stamp(symbol, int(now * 1000))
-        try:
-            n = normalize(event, payload, stamped_ms, metrics)
-        except NormalizeError as e:
-            log.warning("normalize lỗi %s %s: %r", event, symbol, e)
-            metrics.inc("normalize_error")
-            return
-        writer.add(n)
-        if is_leader.is_set():
-            redis_queue.put_nowait(n)
+        # Frame thật có vỏ sails.io: mỗi bản ghi trong `d` là MỘT dòng (đo 2026-08-26).
+        for record in records_of(pkt.payload):
+            if dedup.seen(frame_key(event, record), now):
+                metrics.inc("dup_dropped")
+                continue
+            symbol = symbol_of(event, record)
+            if symbol is None:
+                metrics.inc("no_symbol_dropped")
+                continue
+            stamped_ms = stamper.stamp(symbol, int(now * 1000))
+            try:
+                n = normalize(event, record, stamped_ms, metrics)
+            except NormalizeError as e:
+                log.warning("normalize lỗi %s %s: %r", event, symbol, e)
+                metrics.inc("normalize_error")
+                continue
+            writer.add(n)
+            if is_leader.is_set():
+                redis_queue.put_nowait(n)
     return on_packet
 
 

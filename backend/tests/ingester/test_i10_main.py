@@ -247,3 +247,27 @@ def test_leader_state_watcher_refetches_fresh_base_each_leadership(monkeypatch):
         stop.set()
         await asyncio.wait_for(task, 1)
     asyncio.run(scenario())
+
+
+# --- vỏ bọc sails.io (đo thật 2026-08-26) ---------------------------------
+
+REAL_T_PACKET = ('42["t",{"a":"i","d":[{"TD":"26/08/2026","FV":"1","LC":"B","FMP":"1942.3",'
+                 '"FCV":"2.4","SM":"550316","AVO":"130589","AVA":"25356027540000.0",'
+                 '"FT":"13:00:01","SB":"41I1G9000"}]}]')
+REAL_T_PACKET_2REC = REAL_T_PACKET.replace(
+    '"SB":"41I1G9000"}]', '"SB":"41I1G9000"},{"TD":"26/08/2026","FV":"2","LC":"S",'
+    '"FMP":"1942.5","FCV":"2.6","SM":"550317","AVO":"130591","AVA":"25356031425000.0",'
+    '"FT":"13:00:02","SB":"41I1G9000"}]')
+
+
+def test_on_packet_unwraps_real_envelope():
+    writer, metrics, on_packet = _make_on_packet()
+    on_packet(REAL_T_PACKET)
+    assert len(writer.buffers["trade"]) == 1
+    assert metrics.counters.get("normalize_error") is None
+
+
+def test_on_packet_handles_multi_record_envelope():
+    writer, metrics, on_packet = _make_on_packet()
+    on_packet(REAL_T_PACKET_2REC)
+    assert len(writer.buffers["trade"]) == 2      # mỗi bản ghi trong `d` là một dòng
