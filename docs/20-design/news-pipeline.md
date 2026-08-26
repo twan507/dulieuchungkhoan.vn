@@ -279,6 +279,22 @@ to_tsvector('simple', unaccent(title || ' ' || content))
 
 > Quyết định mô hình embedding nên chốt sớm. Embed lại 50.000 bài về sau tốn hơn embed dần từ đầu rất nhiều.
 
+#### ✅ Chốt 2026-08-26 (chủ dự án): **768 chiều, lưu bằng `halfvec`**
+
+Ràng buộc quyết định: VPS đích chỉ **~50 GB đĩa cho toàn bộ hệ** (thị trường + realtime + tin + user + nền hệ thống). Pipeline embed **hai vector mỗi bài** (`summary` và `summary_ai`, giữ riêng) trên ~128k bài/năm ⇒ 256k vector/năm:
+
+| Cấu hình | Byte/vector | Mỗi năm (kèm index HNSW) |
+|---|---:|---:|
+| 1536 chiều `vector` (float32) | 6,1 KB | ~2,3 GB |
+| 768 chiều `vector` (float32) | 3,1 KB | ~1,2 GB |
+| **768 chiều `halfvec` (2 byte)** ✅ | **1,5 KB** | **~0,6 GB** |
+
+`halfvec` giảm một nửa dung lượng mà **không đổi thứ hạng gần/xa** một cách đáng kể — việc này chỉ cần xếp hạng độ tương đồng, không cần độ chính xác tuyệt đối của từng toạ độ. Chênh giữa lựa chọn tốn nhất và lựa chọn đã chốt là **4 lần** (2,3 GB vs 0,6 GB mỗi năm), tương đương ~7 năm dùng trong cùng một ngân sách đĩa.
+
+**Còn để ngỏ có chủ đích:** *mô hình cụ thể* nào sinh ra 768 chiều đó (tự host hay gọi API) — chốt bằng cách **đo trên chính tin đã crawl**: mô hình nào tách tin trùng tốt nhất, không chọn theo tiếng tăm. Ràng buộc cứng khi chọn: **phải ra 768 chiều** (đổi số chiều = embed lại toàn kho), và phải xử lý được tiếng Việt.
+
+⚠️ Cột lưu phải khai `halfvec(768)` ngay từ migration đầu — đổi kiểu cột sau khi đã có vài trăm nghìn dòng là một lần rewrite bảng.
+
 **Chưa cần partition.** 55–150k dòng/năm là nhỏ. Chỉ tính đến khi chạm vài triệu dòng.
 
 ### 9.6 Backfill lịch sử — làm sớm
@@ -335,7 +351,7 @@ Lưu tiêu đề + link để tham chiếu là một chuyện, lưu toàn văn l
 | **Danh sách mã niêm yết** | Cần nguồn cập nhật ~1.600 mã HOSE/HNX/UPCoM cho tầng 2 |
 | **Bảng tên thương mại → mã** | Cho tầng 3. Dùng `pg_trgm` để khớp gần đúng |
 | **Ngưỡng `confidence`** | Dưới bao nhiêu thì đưa vào hàng chờ rà tay |
-| **Chọn mô hình embedding** | Nên chốt trước khi chạy thật — embed lại toàn kho về sau rất tốn. Nhớ embed cả `summary` và `summary_ai`, giữ riêng |
+| **Chọn mô hình embedding** | 🟡 **Kích thước + kiểu lưu đã chốt 2026-08-26: `halfvec(768)`** (§9.5) — còn ngỏ: mô hình cụ thể, chọn bằng cách đo khả năng tách tin trùng trên tin đã crawl. Nhớ embed cả `summary` và `summary_ai`, giữ riêng |
 | **Tách từ tiếng Việt** | Chỉ làm khi có bằng chứng `simple` + `unaccent` không đủ chính xác |
 | **Luật bỏ boilerplate từng nguồn** | ✅ đã khảo sát 2026-08-15 — luật từng nguồn ở [article-structure.md](../10-sources/news/article-structure.md); còn ngỏ: dạng bài longform/video/bài cũ chưa phủ |
 | **Trần 3.000 hay 4.000 ký tự** | Chốt bằng cách đối chiếu `content_chars` với các ca phân loại sai sau vài tuần chạy. Đã có số nền: trên 33 bài mẫu, **17/33 dài ≥ 3.000 ký tự, 9/33 ≥ 4.000, trung vị 3.124** (đo 2026-08-15, [article-structure.md](../10-sources/news/article-structure.md) mục 3.5). Cả hai mức đều chạm trần đủ thường xuyên để `content_chars` đáng ghi lại, nhưng chưa có ca phân loại sai thật nên chưa chốt được mức nào |

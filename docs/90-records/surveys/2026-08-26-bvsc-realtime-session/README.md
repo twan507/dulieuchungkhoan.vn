@@ -116,4 +116,6 @@ Nạp **toàn bộ 2.316.573 record** của phiên chiều qua **đúng đườn
 
 Nến ít hơn nhiều vì chỉ ~800 mã thật sự có khớp lệnh, và mỗi mã chỉ sinh nến ở phút có giao dịch — không phải 2.000 mã × 250 phút.
 
-**Hệ quả cho quyết định TTL:** dung lượng **không còn là ràng buộc** (cả năm frame thô ~25 GB; ổ D còn 116 GB trống). Ràng buộc thật của cửa sổ là *thời gian tối đa để phát hiện và vá lỗi gom nến* — vá được chỉ khi `trade` còn trong cửa sổ. Chờ chủ dự án chốt giữ 3 tháng hay nới 6 tháng.
+**Hệ quả cho quyết định TTL:** dung lượng **không còn là ràng buộc trên máy dev** (cả năm frame thô ~25 GB; ổ D còn 116 GB trống). Ràng buộc thật của cửa sổ là *thời gian tối đa để phát hiện và vá lỗi gom nến* — vá được chỉ khi `trade` còn trong cửa sổ.
+
+> ✅ **Chốt 2026-08-26 (chủ dự án): GIỮ TTL 3 tháng** — không nới 6 tháng. Ràng buộc quyết định không phải máy dev mà là **VPS đích ~50 GB** dùng chung cho cả kho thị trường, tin (kèm embedding) và dữ liệu người dùng: 3 tháng ≈ 6–8 GiB vừa khung, 6 tháng ≈ 12 GiB thì ăn mất dư địa của tin và backup. Cần hồi cứu vi cấu trúc xa hơn thì đẩy partition cũ lên R2 rồi `RESTORE` khi cần. **Không cần migration** — schema hiện tại đã là 3 tháng.

@@ -40,7 +40,13 @@ Test (dựng/huỷ container ClickHouse ephemeral, cần Docker chạy sẵn):
 uv run pytest tests/clickhouse -v
 ```
 
-Backup (script `core.ch_backup`, env `CLICKHOUSE_BACKUP_DIR` trỏ thư mục host ngoài Docker volume): dev chạy tay `uv run python -m core.ch_backup`; khi deploy Linux, đặt cron sau 15:30 (sau khi phiên đóng, tránh tranh I/O giờ giao dịch). `CLICKHOUSE_BACKUP_DIR` tương đối được giải theo `deploy/infra/` (cùng gốc với `docker-compose.yml`, cùng chuẩn compose dùng) — nên đặt đường dẫn tuyệt đối khi deploy thật.
+Backup (script `core.ch_backup`, env `CLICKHOUSE_BACKUP_DIR` trỏ thư mục host ngoài Docker volume): dev chạy tay `uv run python -m core.ch_backup`; khi deploy Linux, đặt cron sau 15:30 (sau khi phiên đóng, tránh tranh I/O giờ giao dịch).
+
+> ✅ **Đích backup khi lên VPS — chốt 2026-08-26 (chủ dự án): Cloudflare R2**, không giữ nhiều bản trên đĩa máy chủ. Lý do: VPS đích ~50 GB, mà chính sách "7 bản nến + 1× cửa sổ frame" giữ tại chỗ sẽ chiếm ~10–12 GB năm 1 và **~17–19 GB năm 3 ⇒ vượt 50 GB** khi cộng với dữ liệu sống ([số đo](../docs/90-records/surveys/2026-08-26-bvsc-realtime-session/README.md) §10).
+>
+> Cách làm: R2 nói giao thức S3 và ClickHouse `BACKUP TO Disk(...)` cấu hình được disk kiểu S3 ⇒ **chỉ thêm một khối XML trong `config.d/`**, không sửa `core.ch_backup`. Gói miễn phí R2: **10 GB-tháng + 1 triệu ghi + 10 triệu đọc, băng thông tải ra miễn phí** *(tra 2026-08-26)*; vượt thì $0,015/GB-tháng — mức dùng dự kiến 12–14 GB năm 1 ⇒ **dưới 2.000 đ/tháng**. Giữ **1 bản nến gần nhất tại máy** để khôi phục nhanh, phần còn lại đẩy R2.
+>
+> ⚠️ Khi dựng: nghiệm thu bằng **khôi phục thật** (restore vào database tạm rồi đối chiếu số dòng), không phải bằng "đã upload xong" — luật [CLAUDE.md §3.5](../CLAUDE.md). `CLICKHOUSE_BACKUP_DIR` tương đối được giải theo `deploy/infra/` (cùng gốc với `docker-compose.yml`, cùng chuẩn compose dùng) — nên đặt đường dẫn tuyệt đối khi deploy thật.
 
 > **Idempotency dựa trên tên file, không kiểm nội dung:** script coi một partition/ngày là "đã backup" nếu file `.zip` cùng tên đã tồn tại. File `.zip` hỏng do crash giữa chừng (ví dụ mất điện khi đang ghi) vẫn bị coi là đã backup và sẽ không được ghi lại — kiểm toàn vẹn định kỳ là việc vận hành, chưa tự động hoá.
 

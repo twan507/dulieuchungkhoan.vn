@@ -47,7 +47,7 @@ Ba việc 1b–3 đều **phụ thuộc bên ngoài**, không tự làm được
 
 | # | Việc | Vì sao không hoãn được |
 |---|---|---|
-| **4** | **Ingester realtime + tích luỹ `bar_1m`** — 🟡 *code đã dựng xong 2026-08-26 ([hồ sơ lát cắt](../90-records/plans/2026-08-26-ingester-omo-first-slice/)); đã bắt được **một phiên chiều** bằng chế độ `--measure` (2,3 triệu frame). Còn lại đúng một việc chặn: **phiên đo trọn trong giờ giao dịch** (SM + phái sinh §5.1 + giờ đẩy idx — spec ClickHouse §4.1/§10) rồi chốt luật SM ⇒ bật task ghi thật (đang DISABLED có chủ đích)* | Nến intraday **không tồn tại ở bất kỳ nguồn nào**. Mọi dữ liệu khác crawl lại lúc nào cũng được, riêng cái này không |
+| **4** | **Ingester realtime + tích luỹ `bar_1m`** — 🟡 *code đã dựng xong 2026-08-26 ([hồ sơ lát cắt](../90-records/plans/2026-08-26-ingester-omo-first-slice/)); đã bắt được **một phiên chiều** bằng chế độ `--measure` (2,3 triệu frame). Còn lại đúng một việc chặn kỹ thuật: **phiên đo trọn trong giờ giao dịch** (SM + phái sinh §5.1 + giờ đẩy idx — spec ClickHouse §4.1/§10). 🔴 **Quyết định chủ dự án 2026-08-26: CHƯA bật ghi tick, hoàn thiện phần dev rồi bật một thể** — task `dlck-ingester` giữ DISABLED, **không session nào được tự bật** cho tới khi chủ dự án nói. Việc cần làm trước khi bật: 2 minor trong [ledger lát cắt](../90-records/plans/2026-08-26-ingester-omo-first-slice/ledger.md) (M-new-1 mã lỗi dữ liệu, M-new-3 trần chờ flush cuối phiên) + một phiên `--measure` trọn ngày phủ phiên sáng/ATO* | Nến intraday **không tồn tại ở bất kỳ nguồn nào**. Mọi dữ liệu khác crawl lại lúc nào cũng được, riêng cái này không |
 | **5** | **Backfill lịch sử tin** từ sitemap TinnhanhCK / BNews / NguoiQuanSat | Dữ liệu chỉ còn chừng nào họ còn giữ sitemap |
 
 **Ingester chờ hạ tầng DB — quyết định chủ dự án 2026-08-15.** Nó không còn chạy song song ngay từ đầu nữa mà xếp sau [1]. Lý do gấp thì **không mất đi**: mỗi ngày chưa có Ingester vẫn là một ngày nến 1 phút mất vĩnh viễn, không nguồn nào backfill lại được. Đó chính là **lý do dựng hạ tầng DB là việc kế tiếp** — làm xong hạ tầng là đồng hồ mất dữ liệu dừng lại. *(Cập nhật 2026-08-26: hạ tầng đã xong — điều kiện chờ đã hết.)*
@@ -94,7 +94,7 @@ Bốn mục đang nằm trong danh sách **"Còn để ngỏ"** của pipeline t
 | Việc | Ghi chú | Chốt bằng cách nào |
 |---|---|---|
 | ~~**Luật bỏ boilerplate cho từng nguồn**~~ | ✅ **Đã khảo sát 2026-08-15** — luật riêng cho cả 8 nguồn báo nằm ở [cấu trúc trang bài](../10-sources/news/article-structure.md) (33 bài, chạy thật trên trang đã tải). Còn ngỏ: dạng bài longform/video/bài cũ chưa phủ | Đã làm — đúng bằng một vòng soi tương tự vòng soi feed |
-| **Chọn mô hình embedding** | Chốt **trước** khi nạp dữ liệu — embed lại toàn kho về sau rất tốn | Nhớ embed cả `summary` và `summary_ai`, giữ riêng |
+| **Chọn mô hình embedding** | 🟡 **Kích thước + kiểu lưu chốt 2026-08-26: `halfvec(768)`** — ràng buộc từ VPS 50 GB, chênh 4× dung lượng so với 1536 chiều float32 ([news-pipeline §9.5](../20-design/news-pipeline.md)). Còn ngỏ: mô hình cụ thể | Chọn bằng cách **đo khả năng tách tin trùng** trên tin đã crawl, không theo tiếng tăm. Đổi số chiều = embed lại toàn kho |
 | **Ngưỡng `confidence`** phân loại | Dưới bao nhiêu thì vào hàng chờ rà tay | Sau vài tuần chạy thật |
 | **Trần 3.000 hay 4.000 ký tự** | | Đối chiếu `content_chars` với các ca phân loại sai |
 | **Tách từ tiếng Việt** | Chỉ làm nếu có bằng chứng `simple` + `unaccent` không đủ | |

@@ -99,3 +99,14 @@ Re-reviewer tự dựng phản chứng thay vì tin báo cáo: khôi phục bả
 - **M-new-4:** `exchange`/`market` default `""` có thể `HSET` đè giá trị tốt trong Redis nếu frame thiếu `EX`. Đo được độ phủ `EX` = 100% ⇒ phòng thủ thuần. **Ruling:** park.
 
 **Trạng thái nhánh:** 179 test xanh · 12 commit · reviewer kết luận **merge được**.
+
+## Bốn quyết định chủ dự án 2026-08-26 (tối)
+
+| # | Quyết định | Ghi ở đâu |
+|---|---|---|
+| 1 | **Backup lên Cloudflare R2**, không giữ nhiều bản trên VPS (~50 GB không đủ: chính sách 7 bản tại chỗ chạm 17–19 GB ở năm 3). Gói free 10 GB + băng thông ra miễn phí; dùng ~12–14 GB ⇒ dưới 2.000 đ/tháng | [database/README.md](../../../../database/README.md) |
+| 2 | **Giữ TTL frame thô 3 tháng**, không nới 6 tháng — ràng buộc là VPS 50 GB dùng chung, không phải máy dev. Không cần migration (schema đã là 3 tháng) | [hồ sơ đo §10](../../surveys/2026-08-26-bvsc-realtime-session/README.md) |
+| 3 | **Embedding `halfvec(768)`** — tối ưu dung lượng, chênh 4× so với 1536 chiều float32 (0,6 vs 2,3 GB/năm). Mô hình cụ thể còn ngỏ, chọn bằng cách đo tách tin trùng | [news-pipeline §9.5](../../../20-design/news-pipeline.md) |
+| 4 | **Chưa bật ghi tick** — vẫn giai đoạn dev, hoàn thiện rồi bật một thể. `dlck-ingester` giữ DISABLED; **không session nào tự bật** | [roadmap §2 việc 4](../../../00-overview/roadmap.md) |
+
+**Việc cần làm trước khi bật ghi tick** (theo quyết định #4): M-new-1 (bổ sung `INCORRECT_DATA`/`DECIMAL_OVERFLOW`, dò cả `e.name`) · M-new-3 (nâng trần chờ flush cuối phiên quá ngân sách retry) · một phiên `--measure` trọn ngày phủ phiên sáng + ATO.
