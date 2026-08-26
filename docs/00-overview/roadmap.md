@@ -26,14 +26,15 @@ Ba khối vốn có ba danh sách việc riêng, mỗi danh sách tự cho mình
 | **Độ rộng nguồn** | ✅ **Khép 2026-08-15** — 9 nguồn, ~400 lời gọi thật. Danh sách *"Ngoài phạm vi"* đã phân rã hết, **không còn mục nào chưa có câu trả lời** | [`10-sources/README.md` §2](../10-sources/README.md) |
 | **Repo vào git** | ✅ `git init` + commit đầu 2026-08-14 | toàn bộ docs + hai skill |
 | **Stack sản phẩm + cây monorepo** | ✅ **Chốt 2026-08-24** — Next.js · Python/FastAPI · Postgres + ClickHouse (lưu tick thô) · skill dời về `backend/agent/skills/` | [ADR 0007](decisions/0007-monorepo-layout-and-stack.md) |
-| **Toàn bộ phần cài đặt** | ❌ Chưa bắt đầu | |
+| **Hạ tầng + schema hai kho** | ✅ **Xong 2026-08-26** — compose (PG+Redis+CH, profile `realtime`) · schema `postgres-data` 10 migration · schema `rt` ClickHouse 2 migration · 71 test · một lượt dev trọn (dev-start → migrate → test → dev-stop) chạy sạch | [database/README.md](../../database/README.md) |
+| **Code sản phẩm (ingester · ETL thật · api)** | ❌ Chưa bắt đầu — việc kế tiếp là lát cắt dọc đầu tiên ([service-topology §7](../20-design/service-topology.md)) | |
 | **Realtime phái sinh** | 🔴 **Chưa đo được** — đo ngày thứ Bảy, thị trường đóng. Phải đo **trong phiên** | [§5](#5-việc-còn-thật-sự-để-ngỏ) |
 
 ## 1. Việc chặn nhiều thứ nhất — làm trước
 
 | # | Việc | Chặn cái gì | Nguồn |
 |---|---|---|---|
-| **1** | **Dựng hạ tầng Postgres + ClickHouse (+ Redis)** | Mọi ETL | kho dữ liệu §8 GĐ 0 · [ADR 0007](decisions/0007-monorepo-layout-and-stack.md) |
+| ~~1~~ | ~~Dựng hạ tầng Postgres + ClickHouse (+ Redis)~~ | ✅ **Xong 2026-08-26** — compose profile `realtime`, schema cả hai kho đã migrate, một lượt dev trọn chạy sạch ([database/README.md](../../database/README.md)). Việc chặn đã hết — [4] và [6] đều làm được ngay | kho dữ liệu §8 GĐ 0 · [ADR 0007](decisions/0007-monorepo-layout-and-stack.md) |
 | ~~1b~~ | ~~Xác nhận rate limit với FiinGroup~~ | ✅ **Đã kiểm bằng tải kế hoạch 2026-08-15** — burst Screener 52 trang chạy tuần tự (~29 request/phút, 1,8 phút) không gặp tín hiệu chặn nào, và không có header hạn mức nào. Xác nhận chính thức từ FiinGroup **không còn là điều kiện chặn**. Chủ đích không dò ngưỡng trần; nhịp 8 luồng thì chưa kiểm — xem [§10 quy ước chung](../10-sources/market/00-conventions.md). *(Danh sách 11 mã chỉ tiêu chưa giải mã vẫn gửi kèm khi có dịp trao đổi — xem [Phụ lục A §A.5](../10-sources/market/appendix-A-field-codes.md), không chặn việc gì)* | |
 | ~~2~~ | ~~Chốt giấy phép WiFeed với WiGroup~~ | ✅ **Đã chốt 2026-08-15** — chủ dự án xác nhận. Mở khoá toàn bộ nhánh vĩ mô/hàng hoá, 87 endpoint | |
 | ~~3~~ | ~~Yêu cầu FiinGroup bảng ánh xạ mã chỉ tiêu BCTC~~ | ✅ **Đã tự giải quyết 2026-08-14** — 729 mã, độ phủ 100% trên response thật, lấy từ bundle JS ứng dụng FiinTrade. Kèm tên Việt/Anh (98,5%) và **đơn vị dữ liệu** (99,7%). Xem [Phụ lục A §A.5](../10-sources/market/appendix-A-field-codes.md). Còn 11 mã chưa giải mã — không chặn việc gì | |
@@ -46,10 +47,10 @@ Ba việc 1b–3 đều **phụ thuộc bên ngoài**, không tự làm được
 
 | # | Việc | Vì sao không hoãn được |
 |---|---|---|
-| **4** | **Ingester realtime + tích luỹ `bar_1m`** — *chờ hạ tầng DB, xem ghi chú dưới bảng* | Nến intraday **không tồn tại ở bất kỳ nguồn nào**. Mọi dữ liệu khác crawl lại lúc nào cũng được, riêng cái này không |
+| **4** | **Ingester realtime + tích luỹ `bar_1m`** — *hạ tầng đã xong 2026-08-26 ⇒ LÀM ĐƯỢC NGAY, đây là việc kế tiếp (lát cắt dọc đầu — [service-topology §7](../20-design/service-topology.md)); điều kiện tiên quyết trước khi bật ghi thật: phiên đo trong giờ giao dịch (SM + phái sinh §5.1 + giờ đẩy idx — spec ClickHouse §4.1/§10)* | Nến intraday **không tồn tại ở bất kỳ nguồn nào**. Mọi dữ liệu khác crawl lại lúc nào cũng được, riêng cái này không |
 | **5** | **Backfill lịch sử tin** từ sitemap TinnhanhCK / BNews / NguoiQuanSat | Dữ liệu chỉ còn chừng nào họ còn giữ sitemap |
 
-**Ingester chờ hạ tầng DB — quyết định chủ dự án 2026-08-15.** Nó không còn chạy song song ngay từ đầu nữa mà xếp sau [1]. Lý do gấp thì **không mất đi**: mỗi ngày chưa có Ingester vẫn là một ngày nến 1 phút mất vĩnh viễn, không nguồn nào backfill lại được. Đó chính là **lý do dựng hạ tầng DB là việc kế tiếp** — làm xong hạ tầng là đồng hồ mất dữ liệu dừng lại.
+**Ingester chờ hạ tầng DB — quyết định chủ dự án 2026-08-15.** Nó không còn chạy song song ngay từ đầu nữa mà xếp sau [1]. Lý do gấp thì **không mất đi**: mỗi ngày chưa có Ingester vẫn là một ngày nến 1 phút mất vĩnh viễn, không nguồn nào backfill lại được. Đó chính là **lý do dựng hạ tầng DB là việc kế tiếp** — làm xong hạ tầng là đồng hồ mất dữ liệu dừng lại. *(Cập nhật 2026-08-26: hạ tầng đã xong — điều kiện chờ đã hết.)*
 
 ## 3. Việc theo thứ tự phụ thuộc
 
