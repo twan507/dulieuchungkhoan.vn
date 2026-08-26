@@ -61,11 +61,12 @@ function capture(cmd, args) {
 function volumes() { return capture("docker", ["volume", "ls", "--format", "{{.Name}}"]).split(/\r?\n/); }
 
 function ensureEnv() {
-  if (fs.existsSync(ENV_FILE)) return;
-  const ex = path.join(ROOT, ".env.example");
-  if (!fs.existsSync(ex)) die(".env và .env.example đều không tồn tại");
-  fs.copyFileSync(ex, ENV_FILE);
-  log("đã tạo .env từ .env.example — nhớ điền giá trị thật");
+  if (!fs.existsSync(ENV_FILE)) {
+    const ex = path.join(ROOT, ".env.example");
+    if (!fs.existsSync(ex)) die(".env và .env.example đều không tồn tại");
+    fs.copyFileSync(ex, ENV_FILE);
+    log("đã tạo .env từ .env.example — nhớ điền giá trị thật");
+  }
   const err = realtimeMisconfigured(fs.readFileSync(ENV_FILE, "utf8"));
   if (err) die(err);
 }
