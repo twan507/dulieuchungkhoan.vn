@@ -420,7 +420,7 @@ Với một mã thanh khoản cao, tổng cả `i` + `o` + `t` vào khoảng **2
 3. **Topic dùng ticker**, khác API FiinTrade dùng `organCode`.
 4. **`i` và `idx` là delta** — phải giữ trạng thái, không ghi đè toàn bộ.
 5. **Mọi giá trị số ở `o`, `t`, `idx` đều là chuỗi.**
-6. **`open`/`low`/`ceiling`/`floor`/`reference` không được đẩy** — lấy từ REST khi khởi tạo.
+6. **`ceiling`/`floor`/`reference` không được đẩy** — lấy từ REST khi khởi tạo. *(`open`/`low` **có** được đẩy dưới tên `OP`/`LO` — đính chính 2026-08-26, xem §4.)*
 7. **Sổ lệnh chỉ 3 bậc** trên mọi sàn.
 8. **Phải tự nối lại và đăng ký lại** khi rớt — quan sát 2 lần rớt trong 4 phút.
 9. **Danh sách 34 trường của `i` KHÔNG đóng** — *(đo 2026-08-26)* thực tế 37 khoá, thêm `OP`/`LO`/`TSI`; `idx` thêm `IC`/`MS`/`NOF`. Phải có chỗ chứa trường lạ.

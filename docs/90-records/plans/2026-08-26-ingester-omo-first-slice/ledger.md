@@ -60,3 +60,20 @@ Task tự nhất quán: T5 test expected phải chép từ fixture thật (T4 đ
 - **15:10 capture phiên chiều 2026-08-26 ĐÓNG SẠCH** (chạy trọn 12:56→15:10, không rớt hẳn, 320 packet control = ping/pong + vài lần reconnect tự lành). Tổng frame: `o` 1.647.375 · `i` 519.133 · `t` 130.869 · `idx` 17.770 · `ptm` 1.426 · ack 64. Dung lượng **52 MB gzip** / 4 file giờ trong `D:\twan_projects\dlck-runtime\measure\20260826`. Đây là nguyên liệu phân tích SM/phái sinh/pth cho gate T19 (phiên sau phân tích offline).
 - Đã commit 3 mốc: 56ba33b (track OMO) · 23dbbdb (track ingester) · 57a8728 (ledger). Toàn bộ `uv run pytest tests` = **148 passed** (AC1 tạm đạt ở mức bộ test; AC2/AC4/AC5 còn chờ T17/T19).
 - **DỪNG PHIÊN TẠI ĐÂY theo yêu cầu tiết kiệm.** Việc còn lại đã liệt kê ở dòng "13:4x" phía trên.
+
+## Phiên làm việc tiếp (2026-08-26 chiều/tối)
+
+- Re-review fix wave 2: **6/6 ADDRESSED**, không breakage mới (stress test race chạy lại 5 lần đều xanh).
+- Task 17 (vận hành): CH dev bật + migrate (`0001_roles`, `0002_rt_schema`); **Postgres dev chưa từng migrate** → chạy `alembic upgrade head` (0010); tạo user `ingester_worker` (CH) + `etl_worker` (PG), 3 biến env mới vào `.env` (mật khẩu sinh ngẫu nhiên, không in ra); `.env.example` + `scripts/register-tasks.ps1` + `backend/README.md`.
+- **AC5 đạt**: `python -m etl omo` chạy thật — ghi phiên 26/08 (4 dòng đấu thầu, 5 dòng flow, HTML 406 KB vào staging, `etl_run` success, `data_domain_state` watermark). Chạy lại → `{"skipped": true}`, không ghi đè.
+- **BUG THẬT do chạy thật mới lộ:** `omo_flow.rebuild` dùng `TRUNCATE` — đòi quyền chủ bảng, `dlck_etl` chỉ có DML ⇒ job chết. Test cũ không bắt vì chạy bằng user owner. Sửa `DELETE FROM` + thêm test chạy dưới `SET LOCAL ROLE dlck_etl`.
+- **AC2 đạt**: `--measure --minutes 2` ngoài giờ — nối thật, 64 lô ack, file JSONL sinh ra, 0 frame dữ liệu (đúng vì thị trường đóng).
+- **AC6 đạt**: 4 task OMO `Ready`, `dlck-ingester` `Disabled` (gate).
+- Sửa lỗi cách ly test `test_load_run_mode_requires_db` — nó chỉ xanh khi `.env` còn thiếu khoá; giờ patch `load_dotenv`.
+- **Phân tích phiên đo (agent) + kiểm chéo của controller** → phát hiện lớn: **frame thật có vỏ `{"a":…,"d":[…]}`**. Code normalize viết theo tài liệu sẽ từ chối MỌI frame thật. Đã sửa `records_of()` + `on_packet` duyệt mảng; test dùng packet nguyên văn từ capture. **Ruling:** giữ fallback "payload trần" trong `records_of` để mẫu tài liệu/test literal vẫn dùng được — chi phí nếu sai: một shape lạ lọt qua thay vì báo lỗi, đổi lại tương thích tài liệu nguồn.
+- Sửa kèm: chuỗi rỗng ở `B1`/`S1` (0,12% frame `i`) → NULL thay vì đầu độc block.
+- **Ruling (OP/LO):** đo được `open`/`low` CÓ đẩy, nhưng **không** thêm cột lượt này — để `extra` JSON (đúng mục đích cột đó), nâng cột là migration riêng. Chi phí nếu sai: truy vấn OP/LO phải qua JSON cho tới khi có migration.
+- **Ruling (phái sinh):** đã đo được là thu được qua `i`/`o`/`t`, nhưng **không mở rộng danh mục** lượt này — spec §8 xếp phái sinh ngoài phạm vi, mở rộng cần chốt lược đồ. Chi phí nếu sai: chưa thu tick phái sinh, mất dữ liệu phái sinh cho tới khi quyết.
+- Tài liệu: hồ sơ khảo sát `surveys/2026-08-26-bvsc-realtime-session/` + cập nhật `11-bvsc-realtime.md` (7 chỗ, kèm ngày đo) + roadmap §0/§5.1 + index. `git grep` bắt 2 chỗ tài liệu tự đá nhau (§11 tóm tắt và bảng roadmap §0) → đã sửa.
+- Test: **161 passed** toàn backend. Commit: 1eca9a3 (ops) · c88cda2 (vỏ bọc) · 960351b (tài liệu đo).
+- Minor deferred cho final review: `log_loop` ngủ 60 s nên tiến trình đo/ghi thoát trễ tối đa ~60 s sau deadline (vô hại, thấy khi smoke `--minutes 2` kết thúc lúc phút thứ 3).

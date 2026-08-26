@@ -28,7 +28,7 @@ Ba khối vốn có ba danh sách việc riêng, mỗi danh sách tự cho mình
 | **Stack sản phẩm + cây monorepo** | ✅ **Chốt 2026-08-24** — Next.js · Python/FastAPI · Postgres + ClickHouse (lưu tick thô) · skill dời về `backend/agent/skills/` | [ADR 0007](decisions/0007-monorepo-layout-and-stack.md) |
 | **Hạ tầng + schema hai kho** | ✅ **Xong 2026-08-26** — compose (PG+Redis+CH, profile `realtime`) · schema `postgres-data` 10 migration · schema `rt` ClickHouse 2 migration · 71 test · một lượt dev trọn (dev-start → migrate → test → dev-stop) chạy sạch | [database/README.md](../../database/README.md) |
 | **Code sản phẩm (ingester · ETL thật · api)** | 🟡 **Lát cắt dọc đầu đã dựng 2026-08-26** — `ingester` (socket EIO3 → chuẩn hoá → Redis + ClickHouse, leader lock, đối chứng cuối phiên) và job `etl omo`; 148 test xanh trên DB thật, job OMO **đã chạy thật** (phiên 26/08 vào kho). Chờ **gate phiên đo** trước khi bật ghi tick thật. `api` chưa bắt đầu | [plans/2026-08-26-ingester-omo-first-slice/](../90-records/plans/2026-08-26-ingester-omo-first-slice/) |
-| **Realtime phái sinh** | 🔴 **Chưa đo được** — đo ngày thứ Bảy, thị trường đóng. Phải đo **trong phiên** | [§5](#5-việc-còn-thật-sự-để-ngỏ) |
+| **Realtime phái sinh** | ✅ **Đã đo 2026-08-26 trong phiên** — phái sinh đi chung topic `i`/`o10`/`t` với cổ phiếu (`EX="XHNF"`), không có kênh riêng, không có `openInterest` | [§5.1](#51--realtime-phái-sinh--đã-đo-2026-08-26-phiên-chiều) · [hồ sơ đo](../90-records/surveys/2026-08-26-bvsc-realtime-session/README.md) |
 
 ## 1. Việc chặn nhiều thứ nhất — làm trước
 
