@@ -165,8 +165,13 @@ def make_on_packet(writer: ChWriter, metrics: Metrics, dedup: FrameDedup, stampe
 
     raw → parse_packet → Event? name trong 5 topic? → frame_key + dedup.seen? bỏ
         → symbol_of → None? bỏ → stamper.stamp → normalize
-        → NormalizeError? log+metric, bỏ → writer.add (luôn — buffer chỉ leader flush)
-        → is_leader? đẩy vào queue cho task redis_consumer gọi RedisSink.apply
+        → NormalizeError? log+metric, bỏ
+        → is_leader? writer.add + đẩy vào queue cho task redis_consumer gọi RedisSink.apply
+
+    Standby KHÔNG tích dòng vào ChWriter (review cuối CRITICAL 3): buffer standby mà
+    được thăng cấp giữa chừng sẽ flush lại đúng những dòng leader cũ đã ghi — ghi đôi,
+    và lưới dedup block của ClickHouse không bắt được vì received_at khác. Standby vẫn
+    chạy dedup + stamper để giữ seen-set/mốc thời gian ấm, sẵn sàng tiếp quản.
     """
     def on_packet(raw: str) -> None:
         pkt = eio.parse_packet(raw)
@@ -190,8 +195,8 @@ def make_on_packet(writer: ChWriter, metrics: Metrics, dedup: FrameDedup, stampe
                 log.warning("normalize lỗi %s %s: %r", event, symbol, e)
                 metrics.inc("normalize_error")
                 continue
-            writer.add(n)
             if is_leader.is_set():
+                writer.add(n)
                 redis_queue.put_nowait(n)
     return on_packet
 
@@ -218,8 +223,24 @@ def _print_reconcile(result) -> None:
         log.warning(line)
 
 
+def _merge_base_state(boot: dict, fresh: dict, symbols) -> dict:
+    """State nền để nạp vào Redis: nền boot + bản tươi ĐÈ LÊN, lọc theo danh mục.
+
+    - Nền boot là `catalog.base_state`: hợp nhất /datafeed/instruments VỚI fallback
+      ceiling/floor/reference từ /quotes (spec §3.2). Mã kiểu VFMVF1 chỉ có ở /quotes,
+      nếu chỉ dùng bản tươi (chỉ /datafeed/instruments) thì thủng state nền — trước
+      review cuối, cả boot lẫn reconnect đều gọi thẳng `fetch_base_state()` nên nền này
+      không bao giờ được dùng (IMPORTANT 2).
+    - Bản tươi thắng vì có thể đã đổi so với lúc boot (giá tham chiếu phiên mới).
+    - Lọc theo `catalog.symbols`: /datafeed/instruments trả CẢ chứng quyền, trái phiếu và
+      phái sinh — bốn khối dự án loại CÓ CHỦ ĐÍCH, không được ghi `rt:state:*` (IMPORTANT 3).
+    """
+    keep = set(symbols)
+    return {s: v for s, v in {**boot, **fresh}.items() if s in keep}
+
+
 def make_on_reconnect(is_leader: asyncio.Event, sink: state_mod.RedisSink,
-                      loop: asyncio.AbstractEventLoop):
+                      loop: asyncio.AbstractEventLoop, catalog: cat.Catalog):
     """`on_reconnect` cho `socket_loop` — CHỈ leader mới ghi Redis (spec §3.6).
     Standby không leader thì bỏ qua NGAY, kể cả không gọi REST (review wave 2 CRITICAL 2).
     Chạy trong thread riêng (socket_loop gọi qua `asyncio.to_thread`) — REST đồng bộ,
@@ -228,23 +249,26 @@ def make_on_reconnect(is_leader: asyncio.Event, sink: state_mod.RedisSink,
     def on_reconnect() -> None:
         if not is_leader.is_set():
             return
-        base = cat.fetch_base_state()
+        fresh = cat.fetch_base_state()
+        base = _merge_base_state(catalog.base_state, fresh, catalog.symbols)
         fut = asyncio.run_coroutine_threadsafe(sink.init_state(base), loop)
         fut.result(timeout=30)
     return on_reconnect
 
 
 async def _leader_state_watcher(is_leader: asyncio.Event, sink: state_mod.RedisSink,
-                                stop: asyncio.Event, poll_s: float = 0.2) -> None:
+                                stop: asyncio.Event, catalog: cat.Catalog,
+                                poll_s: float = 0.2) -> None:
     """init_state khi GIÀNH được leader — cả lần đầu lẫn tiếp quản giữa phiên
     (leader.run tự tranh/giữ khoá — hàm này chỉ bắt cạnh lên False→True).
     Luôn RE-FETCH base mới từ REST — KHÔNG dùng cache lúc boot vì có thể đã cũ
-    (review wave 2 CRITICAL 2)."""
+    (review wave 2 CRITICAL 2) — rồi merge lên nền boot và lọc (xem `_merge_base_state`)."""
     was_leader = False
     while not stop.is_set():
         now_leader = is_leader.is_set()
         if now_leader and not was_leader:
-            base = await asyncio.to_thread(cat.fetch_base_state)
+            fresh = await asyncio.to_thread(cat.fetch_base_state)
+            base = _merge_base_state(catalog.base_state, fresh, catalog.symbols)
             await sink.init_state(base)
             log.info("đã init_state (giành leader)")
         was_leader = now_leader
@@ -290,7 +314,7 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
     loop = asyncio.get_running_loop()
 
     on_packet = make_on_packet(writer, metrics, dedup, stamper, is_leader, redis_queue)
-    on_reconnect = make_on_reconnect(is_leader, sink, loop)
+    on_reconnect = make_on_reconnect(is_leader, sink, loop, catalog)
 
     deadline = _run_deadline(minutes, SESSION_END_RUN)
     log.info("run chạy tới %s", deadline.isoformat())
@@ -311,26 +335,13 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
                 redis_queue.task_done()
 
     async def flush_loop():
-        # Chỉ leader flush ClickHouse; standby giữ buffer ấm nhưng xả bỏ block
-        # quá 120 s tuổi để không phình vô hạn (plan Task 16 — đường packet mode run).
-        last_standby_clear = time.monotonic()
+        # Chỉ leader flush ClickHouse. Không còn cơ chế "standby xả bỏ block quá 120 s":
+        # standby không tích dòng nào nữa (on_packet chỉ add khi là leader), nên buffer
+        # standby luôn rỗng — review cuối CRITICAL 3.
         while not stop.is_set():
             await asyncio.sleep(1.0)
             if is_leader.is_set():
-                last_standby_clear = time.monotonic()
                 await asyncio.to_thread(writer.flush_once)
-                continue
-            now = time.monotonic()
-            if now - last_standby_clear >= 120.0:
-                dropped = sum(len(b) for b in writer.buffers.values())
-                dropped += sum(len(blk) for q in writer.pending.values() for blk in q)
-                for buf in writer.buffers.values():
-                    buf.clear()
-                for q in writer.pending.values():
-                    q.clear()
-                if dropped:
-                    writer.metrics.inc("standby_dropped", dropped)
-                last_standby_clear = now
 
     async def log_loop():
         while not stop.is_set():
@@ -345,7 +356,7 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
         asyncio.create_task(log_loop()),
         asyncio.create_task(session_timer()),
         asyncio.create_task(redis_consumer()),
-        asyncio.create_task(_leader_state_watcher(is_leader, sink, stop)),
+        asyncio.create_task(_leader_state_watcher(is_leader, sink, stop, catalog)),
     ]
     socket_task = tasks[1]
 
@@ -357,7 +368,14 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
     await asyncio.gather(*tasks, return_exceptions=True)
 
     if is_leader.is_set():
-        await asyncio.to_thread(writer.flush_once)
+        # `flush_loop` bị cancel ở tầng await nhưng THREAD `flush_once` của nó vẫn chạy
+        # tiếp; mutex xả (review cuối IMPORTANT 4) làm lời gọi này về ngay thay vì giẫm
+        # lên nó. Lặp có trần cho tới khi buffer/pending sạch để không bỏ lại đuôi phiên.
+        for _ in range(30):
+            await asyncio.to_thread(writer.flush_once)
+            if not any(writer.buffers.values()) and not any(writer.pending.values()):
+                break
+            await asyncio.sleep(0.1)
     await redis.aclose()
 
     result = reconcile(client, datetime.now(TZ).date())

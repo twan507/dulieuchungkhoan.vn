@@ -123,3 +123,65 @@ def test_normalize_t_missing_side_defaults_to_empty_string():
             "FMP": "42100.0", "SM": "74027"}
     n = normalize("t", base, RECV, Metrics())
     assert n.row["side"] == ""
+
+
+# --- review cuối: chuỗi rỗng = thiếu (I6) + cột NON-NULLABLE còn lọt None (I7) ---
+
+def test_normalize_t_empty_optional_fields_default_not_error():
+    """IMPORTANT 6 — luật "chuỗi rỗng = thiếu" trước chỉ áp cho `i`/`idx`; `t` vẫn dùng
+    `"KEY" in payload` nên FCV/AVO/AVA rỗng làm NormalizeError → VỨT CẢ LỆNH KHỚP THẬT.
+    """
+    p = {**T_FRAME, "FCV": "", "AVO": "", "AVA": ""}
+    n = normalize("t", p, RECV, Metrics())
+    assert n.row["change"] == Decimal("0.00")
+    assert n.row["cum_volume"] == 0
+    assert n.row["cum_value"] == Decimal("0.00")
+    assert n.row["price"] == Decimal("42100.00")      # phần thật của lệnh khớp vẫn nguyên
+
+
+def test_normalize_t_empty_required_field_raises():
+    with pytest.raises(NormalizeError):
+        normalize("t", {**T_FRAME, "FMP": ""}, RECV, Metrics())   # giá khớp rỗng = frame hỏng
+
+
+def test_normalize_o_empty_optional_fields_default_not_error():
+    p = {"SB": "ACV", "t": 1786330492737, "TOP": "1", "ACT": "", "BP": "", "BQ": "",
+         "SP": "41000.0", "SQ": "300", "CBV": "", "CSV": ""}
+    n = normalize("o", p, RECV, Metrics())
+    assert n.row["bid_price"] == Decimal("0.00") and n.row["bid_qty"] == 0
+    assert n.row["ask_price"] == Decimal("41000.00") and n.row["ask_qty"] == 300
+    assert n.row["action"] == "" and n.row["cum_bid"] == 0 and n.row["cum_ask"] == 0
+
+
+def test_normalize_o_empty_top_raises():
+    p = {"SB": "ACV", "t": 1786330492737, "TOP": "", "BP": "42100.0"}
+    with pytest.raises(NormalizeError):
+        normalize("o", p, RECV, Metrics())
+
+
+def test_normalize_i_missing_exchange_defaults_to_empty_string():
+    # DDL §3.3: exchange là LowCardinality(String), KHÔNG Nullable — None sẽ hỏng insert
+    n = normalize("i", {"SB": "BID", "t": 1786330492737}, RECV, Metrics())
+    assert n.row["exchange"] == ""
+
+
+PTM_FRAME = {"SB": "DBC", "MC": "HOSE", "PR": "16650.0", "MVL": 590000,
+             "CNO": "VN000000DBC2-mdds:0:682530462", "LS": 1786342157}
+
+
+def test_normalize_ptm_missing_market_and_order_id_default_to_empty_string():
+    # DDL §3.5: market/order_id là String không Nullable → thiếu thì "" chứ không None
+    p = {k: v for k, v in PTM_FRAME.items() if k not in ("MC", "CNO")}
+    n = normalize("ptm", p, RECV, Metrics())
+    assert n.row["market"] == "" and n.row["order_id"] == ""
+
+
+def test_normalize_ptm_missing_price_raises():
+    # PR/MVL là dữ liệu cốt lõi của bản ghi thoả thuận (Decimal64(2)/UInt64 không Nullable)
+    with pytest.raises(NormalizeError):
+        normalize("ptm", {k: v for k, v in PTM_FRAME.items() if k != "PR"}, RECV, Metrics())
+
+
+def test_normalize_ptm_empty_volume_raises():
+    with pytest.raises(NormalizeError):
+        normalize("ptm", {**PTM_FRAME, "MVL": ""}, RECV, Metrics())

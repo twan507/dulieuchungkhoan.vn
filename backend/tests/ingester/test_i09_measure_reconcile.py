@@ -62,3 +62,24 @@ def test_classify_branches():
     assert _classify(100, 200) == "p2"
     assert _classify(999, 1000) == "minor"
     assert _classify(100, 100) == "ok"
+
+
+def test_reconcile_names_symbol_missing_from_bars(migrated):
+    """MINOR 1 review cuối — `coalesce(b.symbol, t.symbol)` giả định FULL JOIN đệm NULL,
+    nhưng ClickHouse mặc định `join_use_nulls = 0` đệm CHUỖI RỖNG cho phía không khớp.
+    Mã chỉ có trong `rt.trade` (không có nến) vì thế bị báo với tên RỖNG — đúng ca P2 mà
+    người trực cần biết mã nào.
+    """
+    tz = ZoneInfo("Asia/Ho_Chi_Minh")
+    ts = datetime(2026, 7, 20, 9, 15, 1, tzinfo=tz)
+    migrated.insert("rt.trade", [
+        ["NOBAR", ts, 1, Decimal("10.00"), 100, "B", Decimal("0.00"), 200,
+         Decimal("2000.00"), ts]], column_names=[
+        "symbol", "ts", "seq", "price", "volume", "side", "change",
+        "cum_volume", "cum_value", "received_at"])
+    # xoá nến do MV sinh ra → mã này chỉ còn ở một phía của FULL JOIN
+    migrated.command("ALTER TABLE rt.bar_1m DROP PARTITION '202607'")
+    r = reconcile(migrated, date(2026, 7, 20))
+    assert [s for s, *_ in r.p2] == ["NOBAR"]      # có tên thật, không phải chuỗi rỗng
+    assert r.p1 == []
+    migrated.command("ALTER TABLE rt.trade DELETE WHERE symbol='NOBAR'")

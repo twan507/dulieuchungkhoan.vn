@@ -13,6 +13,10 @@ FROM (SELECT symbol, sum(v) AS sv FROM rt.bar_1m_v WHERE toDate(ts) = {d:Date} G
 FULL OUTER JOIN
      (SELECT symbol, max(cum_volume) AS mv FROM rt.trade WHERE toDate(ts) = {d:Date} GROUP BY symbol) t
 ON b.symbol = t.symbol
+-- ClickHouse mặc định join_use_nulls = 0: phía không khớp của FULL JOIN được đệm bằng
+-- GIÁ TRỊ MẶC ĐỊNH của kiểu (chuỗi rỗng, 0), không phải NULL — coalesce(b.symbol, t.symbol)
+-- vì thế trả tên RỖNG cho mã chỉ có ở một bên, đúng ca P1/P2 cần biết mã nào.
+SETTINGS join_use_nulls = 1
 """
 
 

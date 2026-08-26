@@ -79,6 +79,17 @@ def _has(payload: dict, key: str) -> bool:
     return v is not None and v != ""
 
 
+def _require(event: str, payload: dict, keys: tuple[str, ...]) -> None:
+    """Trường BẮT BUỘC: vắng mặt HOẶC rỗng đều là frame hỏng tất định (đường poison §5.8).
+
+    Tách riêng khỏi các trường tuỳ chọn vì luật rỗng của hai nhóm ngược nhau: tuỳ chọn
+    rỗng → dùng default của cột non-nullable; bắt buộc rỗng → NormalizeError.
+    """
+    for k in keys:
+        if not _has(payload, k):
+            raise NormalizeError(f"frame {event} thiếu trường bắt buộc {k!r}")
+
+
 def _dec2(v, metrics: Metrics) -> Decimal:
     try:
         d = Decimal(str(v))
@@ -135,6 +146,7 @@ def _normalize_t(payload: dict, received_at_ms: int, metrics: Metrics) -> Normal
     known = {"TD", "FT", "SB", "FV", "LC", "FMP", "FCV", "SM", "AVO", "AVA"}
     _count_unknown("t", payload, known, metrics)
 
+    _require("t", payload, ("SB", "TD", "FT", "FMP", "FV", "SM"))
     try:
         symbol = payload["SB"]
         ts = datetime.strptime(f"{payload['TD']} {payload['FT']}", "%d/%m/%Y %H:%M:%S")
@@ -150,11 +162,12 @@ def _normalize_t(payload: dict, received_at_ms: int, metrics: Metrics) -> Normal
         "volume": _uint(payload["FV"]),
         # DDL §3.1: side không Nullable — LC thiếu mặc định "" (LowCardinality(String) chấp nhận,
         # nến chỉ cộng v_bu/v_sd khi side=='B'/'S' nên "" vô hại).
-        "side": payload.get("LC", ""),
-        # DDL §3.1: change/cum_volume/cum_value không Nullable — thiếu frame mặc định 0.
-        "change": _dec2(payload["FCV"], metrics) if "FCV" in payload else Decimal("0.00"),
-        "cum_volume": _uint(payload["AVO"]) if "AVO" in payload else 0,
-        "cum_value": _dec2(payload["AVA"], metrics) if "AVA" in payload else Decimal("0.00"),
+        "side": payload["LC"] if _has(payload, "LC") else "",
+        # DDL §3.1: change/cum_volume/cum_value không Nullable — thiếu HOẶC RỖNG mặc định 0
+        # (rỗng nghĩa là "frame này không nhắc tới", không phải lỗi — review cuối IMPORTANT 6).
+        "change": _dec2(payload["FCV"], metrics) if _has(payload, "FCV") else Decimal("0.00"),
+        "cum_volume": _uint(payload["AVO"]) if _has(payload, "AVO") else 0,
+        "cum_value": _dec2(payload["AVA"], metrics) if _has(payload, "AVA") else Decimal("0.00"),
         "received_at": _received_at(received_at_ms),
     }
     delta = _delta_of("trade", row, int(ts.timestamp() * 1000))
@@ -165,10 +178,11 @@ def _normalize_o(payload: dict, received_at_ms: int, metrics: Metrics) -> Normal
     known = {"SB", "t", "TOP", "ACT", "BP", "BQ", "SP", "SQ", "CBV", "CSV", "id"}
     _count_unknown("o", payload, known, metrics)
 
+    _require("o", payload, ("SB", "TOP", "t"))
     try:
         symbol = payload["SB"]
         ts = _ts_ms(payload["t"])
-        # DDL §3.2: top không Nullable — TOP thiếu hoặc không phải bậc 1..3 là frame hỏng tất định.
+        # DDL §3.2: top không Nullable — TOP thiếu/rỗng hoặc không phải bậc 1..3 là frame hỏng.
         top = _uint(payload["TOP"])
         if top not in (1, 2, 3):
             raise NormalizeError(f"TOP ngoài phạm vi 1..3: {top!r}")
@@ -180,13 +194,13 @@ def _normalize_o(payload: dict, received_at_ms: int, metrics: Metrics) -> Normal
         "ts": ts,
         "top": top,
         # DDL §3.2: action/bid_*/ask_*/cum_* không Nullable — thiếu frame mặc định "" / 0.
-        "action": payload.get("ACT", ""),
-        "bid_price": _dec2(payload["BP"], metrics) if "BP" in payload else Decimal("0.00"),
-        "bid_qty": _uint(payload["BQ"]) if "BQ" in payload else 0,
-        "ask_price": _dec2(payload["SP"], metrics) if "SP" in payload else Decimal("0.00"),
-        "ask_qty": _uint(payload["SQ"]) if "SQ" in payload else 0,
-        "cum_bid": _uint(payload["CBV"]) if "CBV" in payload else 0,
-        "cum_ask": _uint(payload["CSV"]) if "CSV" in payload else 0,
+        "action": payload["ACT"] if _has(payload, "ACT") else "",
+        "bid_price": _dec2(payload["BP"], metrics) if _has(payload, "BP") else Decimal("0.00"),
+        "bid_qty": _uint(payload["BQ"]) if _has(payload, "BQ") else 0,
+        "ask_price": _dec2(payload["SP"], metrics) if _has(payload, "SP") else Decimal("0.00"),
+        "ask_qty": _uint(payload["SQ"]) if _has(payload, "SQ") else 0,
+        "cum_bid": _uint(payload["CBV"]) if _has(payload, "CBV") else 0,
+        "cum_ask": _uint(payload["CSV"]) if _has(payload, "CSV") else 0,
         "received_at": _received_at(received_at_ms),
     }
     delta = _delta_of("quote", row, int(ts.timestamp() * 1000))
@@ -212,9 +226,11 @@ _I_KNOWN_TOP = {"SB", "EX", "t"}
 
 
 def _normalize_i(payload: dict, received_at_ms: int, metrics: Metrics) -> Normalized:
+    _require("i", payload, ("SB", "t"))
     try:
         symbol = payload["SB"]
-        exchange = payload.get("EX")
+        # DDL §3.3: exchange là LowCardinality(String), KHÔNG Nullable — thiếu thì "".
+        exchange = payload["EX"] if _has(payload, "EX") else ""
         ts = _ts_ms(payload["t"])
     except KeyError as e:
         raise NormalizeError(f"frame i hỏng: {e}") from e
@@ -256,6 +272,7 @@ _IDX_DROPPED = {"IT", "TD"}
 
 
 def _normalize_idx(payload: dict, received_at_ms: int, metrics: Metrics) -> Normalized:
+    _require("idx", payload, ("MC", "t"))
     try:
         symbol = payload["MC"]
         ts = _ts_ms(payload["t"])
@@ -284,9 +301,13 @@ _PTM_ALWAYS_EXTRA = {"MKI", "IAC"}
 
 
 def _normalize_ptm(payload: dict, received_at_ms: int, metrics: Metrics) -> Normalized:
+    # DDL §3.5: price/volume là Decimal64(2)/UInt64 KHÔNG Nullable, và là dữ liệu cốt lõi
+    # của một bản ghi thoả thuận — thiếu/rỗng thì bản ghi vô nghĩa, không default.
+    _require("ptm", payload, ("SB", "LS", "PR", "MVL"))
     try:
         symbol = payload["SB"]
-        market = payload.get("MC")
+        # market/order_id là String không Nullable — thiếu thì "" chứ không None.
+        market = payload["MC"] if _has(payload, "MC") else ""
         ts = datetime.fromtimestamp(_uint(payload["LS"]), tz=TZ)
     except KeyError as e:
         raise NormalizeError(f"frame ptm hỏng: {e}") from e
@@ -295,12 +316,12 @@ def _normalize_ptm(payload: dict, received_at_ms: int, metrics: Metrics) -> Norm
         "symbol": symbol,
         "market": market,
         "ts": ts,
-        "price": _dec2(payload["PR"], metrics) if "PR" in payload else None,
-        "volume": _uint(payload["MVL"]) if "MVL" in payload else None,
-        "ref_price": _dec2(payload["RE"], metrics) if "RE" in payload else None,
-        "ceil_price": _dec2(payload["CE"], metrics) if "CE" in payload else None,
-        "floor_price": _dec2(payload["FL"], metrics) if "FL" in payload else None,
-        "order_id": payload.get("CNO"),
+        "price": _dec2(payload["PR"], metrics),
+        "volume": _uint(payload["MVL"]),
+        "ref_price": _dec2(payload["RE"], metrics) if _has(payload, "RE") else None,
+        "ceil_price": _dec2(payload["CE"], metrics) if _has(payload, "CE") else None,
+        "floor_price": _dec2(payload["FL"], metrics) if _has(payload, "FL") else None,
+        "order_id": payload["CNO"] if _has(payload, "CNO") else "",
     }
 
     known = _PTM_KNOWN_TOP | {"PR", "MVL", "RE", "CE", "FL", "CNO"} | _PTM_DROPPED | _PTM_ALWAYS_EXTRA

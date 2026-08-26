@@ -11,22 +11,33 @@ import sqlalchemy as sa
 
 _REBUILD = """
 DELETE FROM macro.omo_flow;   -- KHÔNG dùng TRUNCATE: đòi quyền chủ bảng, role dlck_etl chỉ có DML (migration 0009)
-WITH signed AS (
-  SELECT session_date, tenor_days,
-         CASE WHEN op_type = 'reverse_repo' THEN volume_vnd ELSE -volume_vnd END AS sv
+-- injection_vnd / maturing_vnd là HAI CHIỀU TIỀN, đều KHÔNG ÂM (không bù trừ dấu):
+--   injection = tiền BƠM RA thị trường trong ngày, maturing = tiền HÚT VỀ trong ngày.
+-- Mỗi phiên đấu thầu sinh HAI sự kiện tiền: phát hành tại session_date và đáo hạn tại
+-- session_date + tenor_days. Hai nhóm nghiệp vụ ngược chiều nhau:
+--   reverse_repo (SBV cho vay có kỳ hạn) : phát hành = bơm, đáo hạn = hút
+--   repo / outright_sale (SBV phát hành tín phiếu) : phát hành = hút, đáo hạn = bơm
+-- Ca thường gặp — phiên chỉ có reverse_repo — cho ra đúng nghĩa tên cột: injection là
+-- tiền bơm của phiên hôm nay, maturing là tiền đáo hạn của các phiên trước. Hai số hạng
+-- CHÉO (đáo hạn vào injection, phát hành vào maturing) chỉ xuất hiện khi SBV phát hành
+-- tín phiếu. net_vnd = injection − maturing (dương = bơm ròng) giữ nguyên nghĩa và giá
+-- trị như trước, và outstanding_vnd vẫn là cộng dồn net theo ngày.
+-- (KHÔNG đặt dấu chấm phẩy trong chú thích — rebuild() cắt câu lệnh bằng dấu đó)
+WITH ev AS (
+  SELECT session_date AS d,
+         CASE WHEN op_type = 'reverse_repo' THEN volume_vnd ELSE 0 END AS inj,
+         CASE WHEN op_type = 'reverse_repo' THEN 0 ELSE volume_vnd END AS mat
+  FROM macro.omo_auction
+  UNION ALL
+  SELECT (session_date + tenor_days) AS d,
+         CASE WHEN op_type = 'reverse_repo' THEN 0 ELSE volume_vnd END AS inj,
+         CASE WHEN op_type = 'reverse_repo' THEN volume_vnd ELSE 0 END AS mat
   FROM macro.omo_auction
 ),
-inj AS (SELECT session_date AS d, sum(sv) AS v FROM signed GROUP BY 1),
-mat AS (SELECT (session_date + tenor_days) AS d, sum(sv) AS v FROM signed GROUP BY 1),
-days AS (SELECT d FROM inj UNION SELECT d FROM mat)
+agg AS (SELECT d, sum(inj) AS inj, sum(mat) AS mat FROM ev GROUP BY d)
 INSERT INTO macro.omo_flow (flow_date, injection_vnd, maturing_vnd, net_vnd, outstanding_vnd, complete)
-SELECT days.d,
-       coalesce(inj.v, 0),
-       coalesce(mat.v, 0),
-       coalesce(inj.v, 0) - coalesce(mat.v, 0),
-       sum(coalesce(inj.v, 0) - coalesce(mat.v, 0)) OVER (ORDER BY days.d),
-       false
-FROM days LEFT JOIN inj ON inj.d = days.d LEFT JOIN mat ON mat.d = days.d;
+SELECT d, inj, mat, inj - mat, sum(inj - mat) OVER (ORDER BY d), false
+FROM agg;
 
 UPDATE macro.omo_flow f SET complete = true
 WHERE (SELECT min(session_date) FROM macro.omo_session) <= f.flow_date - 140

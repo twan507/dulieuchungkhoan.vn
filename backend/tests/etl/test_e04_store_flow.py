@@ -67,15 +67,46 @@ def test_flow_hand_solved(db):
     assert r.complete is False        # price_daily rỗng → không đánh giá được cửa sổ
 
 
-def test_flow_outright_sale_reversed_sign(db):
+def test_flow_outright_sale_is_maturing_not_negative_injection(db):
+    """IMPORTANT 5 review cuối — `injection_vnd`/`maturing_vnd` là HAI CHIỀU TIỀN, đều
+    KHÔNG ÂM, đúng nghĩa tên cột trong migration 0005 ("bơm trong ngày" / "đáo hạn").
+
+    Trước fix, hai cột lưu số đã bù trừ dấu nên phát hành tín phiếu ra cột injection ÂM.
+    Giải tay: SBV bán hẳn 1.000 tỷ tại D ⇒ D hút 1.000 tỷ (maturing), D+7 khi tín phiếu
+    đáo hạn thì tiền trả lại thị trường ⇒ D+7 bơm 1.000 tỷ (injection).
+    """
     _seed(db, date(2026, 8, 14), 7, "1000", op="outright_sale")
     rebuild(db)
-    r = db.execute(sa.text(
-        "SELECT injection_vnd, net_vnd FROM macro.omo_flow WHERE flow_date='2026-08-14'")).one()
-    assert r.injection_vnd == Decimal("-1000") * 10**9    # phát hành tín phiếu = hút
+    d = db.execute(sa.text(
+        "SELECT injection_vnd, maturing_vnd, net_vnd FROM macro.omo_flow"
+        " WHERE flow_date='2026-08-14'")).one()
+    assert d.injection_vnd == 0
+    assert d.maturing_vnd == Decimal("1000") * 10**9
+    assert d.net_vnd == Decimal("-1000") * 10**9          # phát hành tín phiếu = hút ròng
     m = db.execute(sa.text(
-        "SELECT net_vnd FROM macro.omo_flow WHERE flow_date='2026-08-21'")).one()
+        "SELECT injection_vnd, maturing_vnd, net_vnd FROM macro.omo_flow"
+        " WHERE flow_date='2026-08-21'")).one()
+    assert m.injection_vnd == Decimal("1000") * 10**9
+    assert m.maturing_vnd == 0
     assert m.net_vnd == Decimal("1000") * 10**9           # đáo hạn tín phiếu = bơm trả lại
+
+
+def test_flow_mixed_session_keeps_both_directions_separate(db):
+    """Phiên HỖN HỢP (SBV vừa cho vay vừa phát hành tín phiếu) — giải tay:
+    reverse_repo 10.000 tỷ phát hành tại D ⇒ bơm 10.000 tỷ;
+    outright_sale 4.000 tỷ phát hành tại D ⇒ hút 4.000 tỷ;
+    net = 10.000 − 4.000 = +6.000 tỷ. Luật bù trừ dấu cũ cho injection = 6.000 tỷ, mất
+    hẳn thông tin quy mô hai chiều.
+    """
+    _seed(db, date(2026, 8, 14), 7, "10000", op="reverse_repo")
+    _seed(db, date(2026, 8, 14), 91, "4000", op="outright_sale")
+    rebuild(db)
+    r = db.execute(sa.text(
+        "SELECT injection_vnd, maturing_vnd, net_vnd FROM macro.omo_flow"
+        " WHERE flow_date='2026-08-14'")).one()
+    assert r.injection_vnd == Decimal("10000") * 10**9
+    assert r.maturing_vnd == Decimal("4000") * 10**9
+    assert r.net_vnd == Decimal("6000") * 10**9
 
 
 def test_flow_rebuild_idempotent(db):

@@ -6,10 +6,12 @@ from datetime import date
 import websockets
 
 import ingester.main as main_mod
+from ingester.catalog import Catalog
 from ingester.chwriter import ChWriter
 from ingester.config import Config as IngesterConfig
 from ingester.dedup import FrameDedup, Stamper
 from ingester.main import (
+    _merge_base_state,
     make_on_packet,
     make_on_reconnect,
     measure_extra_topics,
@@ -97,12 +99,14 @@ class _NullChClient:
         self.inserted.append((table, list(data), column_names))
 
 
-def _make_on_packet():
+def _make_on_packet(leader: bool = True):
     writer = ChWriter(_NullChClient())
     metrics = Metrics()
     dedup = FrameDedup()
     stamper = Stamper()
     is_leader = asyncio.Event()
+    if leader:
+        is_leader.set()
     queue: asyncio.Queue = asyncio.Queue()
     on_packet = make_on_packet(writer, metrics, dedup, stamper, is_leader, queue)
     return writer, metrics, on_packet
@@ -182,6 +186,15 @@ def test_print_reconcile_logs_p1_as_error_p2_as_warning(caplog):
     assert p2_records and p2_records[0].levelno == logging.WARNING
 
 
+# Danh mục boot: VFMVF1 chỉ có nền từ /quotes (spec §3.2) — /datafeed/instruments không
+# trả mã này, nên nó phải SỐNG SÓT qua merge. CACB2602 là chứng quyền: ngoài catalog.symbols.
+_CATALOG = Catalog(
+    symbols=["ACV", "VFMVF1"],
+    base_state={"ACV": {"open": "0"}, "VFMVF1": {"reference": "12000"}},
+)
+_A_CATALOG = Catalog(symbols=["A"], base_state={"A": {"open": "0"}})
+
+
 class _FakeSink:
     """RedisSink giả — chỉ ghi nhận init_state được gọi với base nào."""
 
@@ -201,7 +214,7 @@ def test_make_on_reconnect_standby_skips_fetch_and_init(monkeypatch):
         loop = asyncio.get_running_loop()
         is_leader = asyncio.Event()          # KHÔNG set — standby
         sink = _FakeSink()
-        on_reconnect = make_on_reconnect(is_leader, sink, loop)
+        on_reconnect = make_on_reconnect(is_leader, sink, loop, _CATALOG)
         await asyncio.to_thread(on_reconnect)
         assert fetch_calls == []             # standby: không gọi cả REST
         assert sink.calls == []
@@ -219,10 +232,11 @@ def test_make_on_reconnect_leader_fetches_and_inits(monkeypatch):
         is_leader = asyncio.Event()
         is_leader.set()                      # đang leader
         sink = _FakeSink()
-        on_reconnect = make_on_reconnect(is_leader, sink, loop)
+        on_reconnect = make_on_reconnect(is_leader, sink, loop, _CATALOG)
         await asyncio.to_thread(on_reconnect)
         assert len(fetch_calls) == 1
-        assert sink.calls == [base]
+        # fresh đè lên nền boot, lọc theo catalog.symbols (IMPORTANT 2 + 3 review cuối)
+        assert sink.calls == [{"ACV": {"open": "1"}, "VFMVF1": {"reference": "12000"}}]
     asyncio.run(scenario())
 
 
@@ -235,7 +249,7 @@ def test_leader_state_watcher_refetches_fresh_base_each_leadership(monkeypatch):
         stop = asyncio.Event()
         sink = _FakeSink()
         task = asyncio.create_task(
-            main_mod._leader_state_watcher(is_leader, sink, stop, poll_s=0.01))
+            main_mod._leader_state_watcher(is_leader, sink, stop, _A_CATALOG, poll_s=0.01))
         is_leader.set()                                  # giành leader lần đầu
         await asyncio.sleep(0.05)
         assert sink.calls == [{"A": {"open": "1"}}]
@@ -271,3 +285,45 @@ def test_on_packet_handles_multi_record_envelope():
     writer, metrics, on_packet = _make_on_packet()
     on_packet(REAL_T_PACKET_2REC)
     assert len(writer.buffers["trade"]) == 2      # mỗi bản ghi trong `d` là một dòng
+
+
+# --- review cuối ------------------------------------------------------------
+
+def test_on_packet_standby_does_not_buffer_rows():
+    """CRITICAL 3 review cuối — standby KHÔNG được tích dòng vào ChWriter.
+
+    Trước fix, `writer.add(n)` chạy vô điều kiện: standby tích buffer tới 120 s rồi mới
+    xả bỏ; nếu được thăng cấp trước mốc đó, phần còn lại bị flush = ghi ĐÔI đúng những
+    dòng leader cũ đã ghi (lưới dedup block của ClickHouse không bắt được vì received_at
+    khác). Standby vẫn phải chạy dedup/stamper để giữ seen-set ấm.
+    """
+    writer, metrics, on_packet = _make_on_packet(leader=False)
+    on_packet(T_PACKET)
+    assert all(len(b) == 0 for b in writer.buffers.values())
+    assert all(len(q) == 0 for q in writer.pending.values())
+    on_packet(T_PACKET)                              # seen-set vẫn ấm: frame lặp bị dedup
+    assert metrics.counters.get("dup_dropped") == 1
+
+
+def test_on_packet_leader_buffers_rows():
+    writer, metrics, on_packet = _make_on_packet(leader=True)
+    on_packet(T_PACKET)
+    assert len(writer.buffers["trade"]) == 1
+
+
+def test_merge_base_state_fresh_wins_boot_survives_outsiders_dropped():
+    """IMPORTANT 2 + 3 review cuối.
+
+    I2: `catalog.base_state` (có fallback ceiling/floor/reference từ /quotes cho mã kiểu
+    VFMVF1) KHÔNG BAO GIỜ được dùng — boot lẫn reconnect đều gọi thẳng `fetch_base_state()`
+    (chỉ /datafeed/instruments) ⇒ mã chỉ-có-ở-/quotes thủng state nền.
+    I3: init_state ghi `rt:state:*` cho MỌI mã của /datafeed/instruments, gồm chứng quyền /
+    trái phiếu / phái sinh — bốn khối loại CÓ CHỦ ĐÍCH của dự án.
+    """
+    boot = {"ACV": {"open": "1", "reference": "10"},
+            "VFMVF1": {"ceiling": "0", "floor": "0", "reference": "12000"}}
+    fresh = {"ACV": {"open": "2"},                 # tươi hơn → thắng
+             "41I1G8000": {"open": "9"}}           # phái sinh → phải bị loại
+    merged = _merge_base_state(boot, fresh, ["ACV", "VFMVF1"])
+    assert merged == {"ACV": {"open": "2"},
+                      "VFMVF1": {"ceiling": "0", "floor": "0", "reference": "12000"}}
