@@ -370,10 +370,17 @@ class _FakeClock:
         self.now += d
 
 
+def test_drain_budget_strictly_exceeds_writer_retry_budget():
+    """Bất biến thật, độc lập với con số cụ thể của cả hai bên."""
+    assert main_mod.DRAIN_BUDGET_S > chwriter_mod.RETRY_BUDGET_S
+
+
 def test_drain_writer_outlasts_chwriter_retry_budget():
     clock = _FakeClock()
-    # Đuôi phiên ghi xong SAU khi ngân sách retry cạn — kịch bản xấu nhất còn hợp lệ.
-    stuck = _StuckWriter(clock, clears_after_s=chwriter_mod.RETRY_BUDGET_S + 5)
+    # Đúng biên: thread cũ ngốn TRỌN ngân sách retry rồi mới ghi xong. Lấy đúng hằng số
+    # kia làm mốc, không cộng thêm biên nới tay — nới thì một chỉnh sửa thu hẹp
+    # DRAIN_BUDGET_S vẫn lọt qua.
+    stuck = _StuckWriter(clock, clears_after_s=chwriter_mod.RETRY_BUDGET_S)
 
     ok = asyncio.run(main_mod.drain_writer(stuck, sleep_fn=clock.sleep, clock=clock))
 

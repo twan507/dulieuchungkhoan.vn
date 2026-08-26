@@ -289,16 +289,33 @@ def test_two_flush_threads_do_not_lose_a_block():
 #
 # Mã số lấy từ danh mục lỗi của ClickHouse, không suy từ code của mình.
 
-CH_ERR = {                       # mã: (tên ký hiệu, có phải lỗi dữ liệu không)
-    407: ("DECIMAL_OVERFLOW", True),
-    117: ("INCORRECT_DATA", True),
-    252: ("TOO_MANY_PARTS", False),      # backpressure — PHẢI giữ transient
+class _FakeClock:
+    """Đồng hồ giả: `sleep(d)` nhảy d giây; `advance(d)` mô phỏng thời gian trôi trong I/O."""
+
+    def __init__(self):
+        self.now = 1000.0
+
+    def __call__(self) -> float:
+        return self.now
+
+    def advance(self, d: float) -> None:
+        self.now += d
+
+    def sleep(self, d: float) -> None:
+        self.now += d
+
+
+
+CH_ERR = {                       # mã ClickHouse -> tên ký hiệu
+    407: "DECIMAL_OVERFLOW",
+    117: "INCORRECT_DATA",
+    252: "TOO_MANY_PARTS",           # backpressure — PHẢI giữ transient
 }
 
 
 def _server_error(code: int, *, detail: bool = True):
     """Dựng đúng hình dạng exception mà clickhouse_connect sinh ra."""
-    name, _ = CH_ERR[code]
+    name = CH_ERR[code]
     if detail:
         msg = (f"Received ClickHouse exception, code: {code}, server response: "
                f"Code: {code}. DB::Exception: ... ({name}) (for url http://127.0.0.1:8123)")
@@ -325,7 +342,10 @@ class _RejectingClient:
 
 def _run_with(exc):
     client = _RejectingClient(exc, poison_seq=70002)
-    w = ChWriter(client, sleep_fn=lambda s: None)
+    # Đồng hồ giả: ngân sách retry nay tính THỜI GIAN THỰC, nên `sleep` vô hiệu mà đồng hồ
+    # thật vẫn chạy sẽ làm nhánh transient quay tròn đủ 60 giây đồng hồ tường.
+    clock = _FakeClock()
+    w = ChWriter(client, sleep_fn=clock.sleep, clock=clock)
     for seq in (70001, 70002, 70003):
         w.add(_n(SM=str(seq)))
     w.flush_once()
@@ -361,3 +381,38 @@ def test_backpressure_code_stays_transient():
     assert w.metrics.counters.get("poison_row.trade") is None
     assert w.metrics.counters.get("dropped_block.trade") == 3   # giữ nguyên block rồi bỏ
     assert client.written == []
+
+
+# --- Ngân sách retry phải là THỜI GIAN THỰC, không phải tổng thời gian ngủ -----------
+#
+# `RETRY_BUDGET_S` tự khai là "< tuổi thọ cửa sổ dedup ~100 s". Nhưng nó chỉ cộng
+# `delay` của mỗi lần ngủ, còn thời gian nằm TRONG `client.insert` thì không đếm — mà
+# driver mặc định `send_receive_timeout=300`, nên một server treo làm mỗi lần thử ăn tới
+# 300 s thời gian thực trong khi bộ đếm vẫn gần 0. Hệ quả: block treo hàng chục phút,
+# vượt xa cửa sổ dedup, và ngân sách xả cuối phiên (suy ra từ hằng số này) mất căn cứ.
+
+
+class _HangingClient:
+    """Mỗi lần insert ăn hết read-timeout của driver rồi hỏng theo kiểu transient."""
+
+    def __init__(self, clock, cost_s: float):
+        self.clock, self.cost_s, self.attempts = clock, cost_s, 0
+
+    def insert(self, table, data, column_names):
+        self.attempts += 1
+        self.clock.advance(self.cost_s)
+        raise ConnectionError("server treo, đọc quá hạn")
+
+
+def test_retry_budget_counts_wall_clock_not_sleep_time():
+    clock = _FakeClock()
+    # 300 s = mặc định `send_receive_timeout` của clickhouse_connect.
+    client = _HangingClient(clock, cost_s=300.0)
+    w = ChWriter(client, sleep_fn=clock.sleep, clock=clock)
+    w.add(_n(SM="60001"))
+    w.flush_once()
+
+    # Lần thử ĐẦU đã ăn 300 s > ngân sách 60 s ⇒ phải bỏ ngay, không thử lần hai.
+    assert client.attempts == 1
+    assert w.metrics.counters.get("dropped_block.trade") == 1
+    assert clock.now - 1000.0 == 300.0            # không kéo dài thêm bằng backoff

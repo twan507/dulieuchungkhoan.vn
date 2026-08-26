@@ -16,6 +16,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import clickhouse_connect
+from clickhouse_connect.driver.exceptions import ClickHouseError
 import redis.asyncio as aioredis
 import websockets
 
@@ -310,11 +311,21 @@ async def drain_writer(writer, budget_s: float = DRAIN_BUDGET_S,
         await sleep_fn(0.1)
 
 
+# Mặc định `send_receive_timeout` của clickhouse_connect là 300 s — gấp 5 lần cả ngân
+# sách retry 60 s, nên một lần thử treo là đã vượt trần trước khi kịp thử lại lần nào.
+# 20 s cho phép ~3 lần thử nằm gọn trong ngân sách; ghi 5.000 dòng bình thường mất dưới
+# một giây, nên chạm 20 s nghĩa là server đang thật sự có vấn đề.
+CH_IO_TIMEOUT_S = 20
+
+
 async def _run_run(cfg: config.Config, minutes: float | None) -> int:
-    client = clickhouse_connect.get_client(dsn=cfg.clickhouse_url)
+    client = clickhouse_connect.get_client(dsn=cfg.clickhouse_url,
+                                           send_receive_timeout=CH_IO_TIMEOUT_S)
     try:
         ch_migrate.assert_migrated(client)
-    except RuntimeError as e:
+    except (RuntimeError, ClickHouseError) as e:
+        # Bắt cả lỗi ClickHouse: sự cố ACCESS_DENIED 2026-08-26 thoát ra dạng traceback
+        # trần với exit 1, đi vòng qua đúng hợp đồng exit 3 dựng ra để báo lỗi khởi động.
         print(f"ingester: {e}", file=sys.stderr)
         log.error("assert_migrated thất bại: %s", e)
         return 3
@@ -394,12 +405,18 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
             t.cancel()
     await asyncio.gather(*tasks, return_exceptions=True)
 
+    drained = True
     if is_leader.is_set():
-        await drain_writer(writer)
+        drained = await drain_writer(writer)
     await redis.aclose()
 
     result = reconcile(client, datetime.now(TZ).date())
     _print_reconcile(result)
+    if not drained:
+        # Xả chưa sạch thì kho còn thiếu đuôi phiên, nên P2 ở trên có thể là báo động giả.
+        # Nói thẳng ra thay vì để người đọc tưởng đây là kết luận toàn vẹn dữ liệu.
+        print("reconcile: PHÁN QUYẾT KHÔNG ĐÁNG TIN — xả cuối phiên chưa sạch",
+              file=sys.stderr)
     return 1 if (result.p1 or result.p2) else 0
 
 
