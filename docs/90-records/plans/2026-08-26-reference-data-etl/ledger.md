@@ -39,3 +39,9 @@ Chụp 4 endpoint thật (8 lời gọi kể cả lượt hỏng vì lỗi đư�
 **Phát hiện 2 — bẫy mới, sửa luật 2:** **14 bản ghi `StockType=2` không phải cổ phiếu** — quyền mua ("Quyền L40 03.06.2026"), tín phiếu Kho bạc (`TPKB16003`), TPCP (`TD1623483`) dán nhãn 2. Nạp theo luật 2 bản cũ là 14 mã rác vào `market.security`. Vá: cổ phiếu = StockType 2 **và** symbol khớp `^[A-Z0-9]{3}$` (1.962 mã thoả — khớp phân bố độ dài). Cùng họ bẫy 3/4 của roadmap §6: *nhãn nguồn tự khai không khớp dữ liệu nguồn tự trả*.
 
 Fixture chọn có chủ đích: `ACV`/`VHM` (organCode≠ticker) · `SHB` (NH) · `HTB`+1 (CP không issuer) · `L40_WFT_01` (ca rác StockType=2) · `FUEMAVND` (ETF khớp QU) · `E1SSHN30`/`FUEVCDIV` (ETF không QU) · `EGL`/`FUCTVGF4` (org-only ⇒ delisted) · 2 CW + 2 bond (ca bị bỏ).
+
+
+## 2026-08-26 (đêm) — thực thi plan, sổ theo task
+
+- **T1 `refdata_indices`**: xong (sonnet), 3 test. **T4 `refdata_guard`**: xong (sonnet), 4 test — hai task chạy SONG SONG; giữa chừng controller phát hiện lệnh dispatch ban đầu vi phạm §4.2 (hai agent tự commit cùng checkout) → đổi sang "agent ghi file, controller commit" qua SendMessage, cả hai tuân thủ. Controller review code thật rồi commit `7af84de` + `f2150df`; dịch comment guard sang tiếng Việt (§1.5) trước khi commit.
+- **T2 `refdata_normalize`**: xong (sonnet), commit `fee6a5f`, 32 test cụm etl xanh. **Ruling (judgment call của agent, controller chuẩn y):** assert-giao 18 mã ∩ symbols kiểm với **tập sống sót sau phân loại**, không phải symbol thô — mục đích của assert là chống va chạm PK `(source, external_code)`, mà chỉ dòng sống sót mới sinh `('bvsc', ticker, '')`; chứng quyền tên "ALL" không được nạp thì không va gì. Chuẩn hơn chữ spec; chữ spec giữ nguyên, nghĩa chốt tại đây.
