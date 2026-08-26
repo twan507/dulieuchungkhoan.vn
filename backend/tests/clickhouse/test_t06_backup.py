@@ -53,3 +53,25 @@ def test_restore_partition_du_dong_khong_kich_mv(migrated, ch_backup_dir):
                      " SETTINGS allow_non_empty_tables = true")
     assert migrated.query("SELECT count() FROM rt.trade WHERE symbol='TBK'").result_rows[0][0] == 2
     assert migrated.query("SELECT count() FROM rt.bar_1m_v").result_rows[0][0] == bars_before
+
+
+def test_prune_bars_giu_7_va_ban_dau_thang(tmp_path):
+    """Giải tay: 10 bản ngày 10..19 + 1 bản ngày 01. keep=7 giữ 13..19; ngày 01 miễn tử; 10,11,12 bị xoá."""
+    from core.ch_backup import _prune_bars
+    for d in range(10, 20):
+        (tmp_path / f"bar_1m-202608{d}.zip").write_bytes(b"x")
+    (tmp_path / "bar_1m-20260801.zip").write_bytes(b"x")
+    removed = _prune_bars(tmp_path, "bar_1m", keep=7)
+    names = {p.name for p in tmp_path.iterdir()}
+    assert names == {f"bar_1m-202608{d}.zip" for d in range(13, 20)} | {"bar_1m-20260801.zip"}
+    assert sorted(removed) == ["prune:bar_1m-20260810.zip", "prune:bar_1m-20260811.zip", "prune:bar_1m-20260812.zip"]
+
+
+def test_prune_file_partition_da_ttl_drop(migrated, ch_backup_dir):
+    """File backup của partition không còn trong system.parts (đã TTL drop) phải bị dọn."""
+    from core import ch_backup
+    stale = ch_backup_dir / "trade-200001.zip"
+    stale.write_bytes(b"x")
+    acts = ch_backup.run_backup(migrated, ch_backup_dir, today=TODAY)
+    assert not stale.exists()
+    assert "prune:trade-200001.zip" in acts
