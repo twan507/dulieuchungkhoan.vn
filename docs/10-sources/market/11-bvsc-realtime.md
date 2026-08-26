@@ -6,7 +6,15 @@ Xác thực: không có
 
 Một kết nối duy nhất phục vụ toàn bộ nhu cầu realtime: giá, sổ lệnh, khớp lệnh, chỉ số, thoả thuận.
 
-**Số liệu trong tài liệu này** đo trong phiên chiều 10/08/2026, 13:08–13:12, **3.266 frame** trên 53 topic đăng ký, 12 mã cả ba sàn.
+**Số liệu trong tài liệu này** đo trong phiên chiều 10/08/2026, 13:08–13:12, **3.266 frame** trên 53 topic đăng ký, 12 mã cả ba sàn — **bổ sung bằng phiên đo 2026-08-26** (2.316.573 frame, 6.322 topic, 2.007 mã, trọn phiên chiều 12:56–15:10): xem [hồ sơ phiên đo](../../90-records/surveys/2026-08-26-bvsc-realtime-session/README.md). Mọi mục đã đo lại đều gắn nhãn *(đo 2026-08-26)*.
+
+> 🔴 **BẮT BUỘC ĐỌC TRƯỚC KHI VIẾT CLIENT — frame thật có VỎ BỌC** *(đo 2026-08-26)*. Các mẫu JSON ở §4–§8 dưới đây là **bản ghi bên trong**, không phải nguyên văn frame. Frame thật:
+>
+> ```
+> 42["t",{"a":"i","d":[ {"TD":"26/08/2026","FV":"1","SB":"41I1G9000", ...} ]}]
+> ```
+>
+> Bản ghi nằm trong **mảng `d`**; `a` là cờ lớp vận chuyển (`u` cập nhật · `i` chèn), không phải trường dữ liệu. Đo trên 2.316.573 frame: `d` luôn đúng **1 phần tử**, nhưng client vẫn nên duyệt mảng. Không bóc vỏ thì **mọi frame thật đều hỏng ở cổng ép kiểu** mà không có lỗi socket nào — đúng loại bẫy "gọi thật vẫn chưa đủ".
 
 ---
 
@@ -191,15 +199,17 @@ Các trường còn lại suy ra theo đối xứng (`B`↔`S`, `V`↔`U`) và x
 
 Nhóm `PMP`/`PMQ`/`PTQ`/`PTV` khớp tên với `PT_MATCH_PRICE` / `PT_MATCH_QTTY` / `PT_TOTAL_TRADED_QTTY` / `PT_TOTAL_TRADED_VALUE` bên REST.
 
-### ⚠️ Trường KHÔNG được đẩy
+### ⚠️ Trường KHÔNG được đẩy — **đính chính 2026-08-26**
 
-`open` · `low` · `ceiling` · `floor` · `reference`
+`ceiling` · `floor` · `reference` — vẫn đúng, phải lấy từ [`getInstrumentSnapshot`](01-bvsc-rest.md) khi khởi tạo.
 
-Bắt buộc lấy từ [`getInstrumentSnapshot`](01-bvsc-rest.md) khi khởi tạo. `HI` (cao nhất) có xuất hiện nhưng cực hiếm (1/843 frame) — không nên phụ thuộc, nên tự tính từ luồng `t`.
+🔴 **`open` và `low` THÌ CÓ được đẩy** *(đo 2026-08-26)* — dưới tên `OP` và `LO`, hai trong ba khoá không có trong bảng 34 trường (khoá thứ ba: `TSI`, giá trị quan sát `"OPEN"`, chỉ thấy ở mã phái sinh). Mẫu thật: `{"SB":"WCS","EX":"HNX","t":1787724001934,"OP":290600,"LO":290600,"HI":290600,"CP":290600,...}`. Ghi chú cũ ("không được đẩy") dựa trên mẫu 843 frame/4 phút của đợt 2026-08-15 — quá ngắn để thấy trường hiếm. `HI` (cao nhất) có xuất hiện nhưng cực hiếm (1/843 frame) — không nên phụ thuộc, nên tự tính từ luồng `t`.
 
-### ⚠️ Danh sách trường có thể chưa đầy đủ
+### ⚠️ Danh sách trường có thể chưa đầy đủ — **xác nhận 2026-08-26: KHÔNG đóng**
 
-Số trường quan sát được tăng dần theo thời gian đo: 22 → 27 → 29 → 33 → **34**, ổn định từ giây thứ 142. Các trường hiếm (`HI`, `PMP`, `PMQ`, `PTQ`, `PTV`) chỉ lộ ra khi có sự kiện tương ứng. **Không loại trừ còn trường khác chưa xuất hiện** — ví dụ trường giá thấp nhất phiên, hoặc trạng thái phiên. Client nên xử lý trường lạ một cách an toàn thay vì giả định danh sách đóng.
+Phiên đo 2026-08-26 (519.133 frame `i`) thấy **37 khoá phân biệt** — 34 khoá cũ **cộng** `OP`, `LO`, `TSI`. Không khoá cũ nào biến mất. ⇒ Client **phải** có chỗ chứa trường lạ (dự án đưa vào cột `extra` JSON), đừng giả định danh sách đóng.
+
+Số trường quan sát được tăng dần theo thời gian đo *(đợt 2026-08-15)*: 22 → 27 → 29 → 33 → **34**, ổn định từ giây thứ 142. Các trường hiếm (`HI`, `PMP`, `PMQ`, `PTQ`, `PTV`) chỉ lộ ra khi có sự kiện tương ứng. **Không loại trừ còn trường khác chưa xuất hiện** — ví dụ trường giá thấp nhất phiên, hoặc trạng thái phiên. Client nên xử lý trường lạ một cách an toàn thay vì giả định danh sách đóng.
 
 ---
 
@@ -294,6 +304,8 @@ Tên trường tương ứng với [`getIndexSnapshots`](01-bvsc-rest.md): `MI`�
 
 ⚠️ Cũng theo cơ chế **delta** — mẫu trên thiếu `ADV`, `NOC`, `PTT` vì chúng không đổi tại thời điểm đó.
 
+**Ba khoá ngoài bảng 18 trường** *(đo 2026-08-26, 17.770 frame `idx`)*: `IC` (giá trị `"up"` — khớp dấu của `ICH`), `MS` (giá trị `"5"`), `NOF` (giá trị `"1"`). **Ý nghĩa `MS`/`NOF` chưa xác định** — ghi lại để không rơi mất, không suy đoán.
+
 ---
 
 ## 8. Sự kiện `ptm` — Thoả thuận đã khớp (13 trường)
@@ -344,7 +356,9 @@ Tổng cộng **~6 phút** trong giờ giao dịch, cùng lúc `ptm` vẫn nhậ
 
 Hai endpoint REST đối ứng `/priceservice/ptorder/history/` và `/priceservice/adorder/history/` đều trả `404` trên host public.
 
-**Kết luận:** không đưa `pth` vào phạm vi. Cần BVSC xác nhận kênh này còn hoạt động hay không.
+**Đo lần hai 2026-08-26:** đăng ký `pth` cả 3 sàn suốt **2 giờ 13 phút** (12:56–15:10) — vẫn **0 frame**, trong khi `ptm` nhận 1.426 frame cùng lúc.
+
+**Kết luận:** không đưa `pth` vào phạm vi. Hai lần đo độc lập đều trống, nhưng **vẫn chưa đủ để tuyên "không có"** — kênh có thể chỉ sống khi có lệnh chào thoả thuận. Cần BVSC xác nhận.
 
 ---
 
@@ -384,6 +398,19 @@ Chỉ số ổn định ở khoảng **0,09 frame/giây** mỗi mã chỉ số (
 
 Với một mã thanh khoản cao, tổng cả `i` + `o` + `t` vào khoảng **2–2,5 frame/giây**. Bảng giá hiển thị 50 mã đồng thời sẽ nhận cỡ **100 frame/giây** trong giờ cao điểm.
 
+### Tải TOÀN THỊ TRƯỜNG — đo thật *(2026-08-26, 2.007 mã + 15 chỉ số + 3 sàn, phiên chiều trọn vẹn)*
+
+| Sự kiện | Frame | Tỷ lệ |
+|---|---:|---:|
+| `o` | 1.647.375 | 71,1% |
+| `i` | 519.133 | 22,4% |
+| `t` | 130.869 | 5,6% |
+| `idx` | 17.770 | 0,8% |
+| `ptm` | 1.426 | 0,1% |
+| **Tổng** | **2.316.573** | |
+
+**289,5 frame/giây trung bình**, **đỉnh 704,8 frame/giây** lúc 13:00 (mở lại sau nghỉ trưa). Nhân đôi thô cho cả ngày (**chưa đo phiên sáng**): **~4,6 triệu dòng/ngày**. Tỷ lệ giữa các sự kiện đảo hẳn so với mẫu 12 mã của đợt trước — `o` chiếm ưu thế tuyệt đối khi đăng ký toàn thị trường.
+
 ---
 
 ## 11. Tóm tắt điểm cần nhớ
@@ -396,5 +423,8 @@ Với một mã thanh khoản cao, tổng cả `i` + `o` + `t` vào khoảng **2
 6. **`open`/`low`/`ceiling`/`floor`/`reference` không được đẩy** — lấy từ REST khi khởi tạo.
 7. **Sổ lệnh chỉ 3 bậc** trên mọi sàn.
 8. **Phải tự nối lại và đăng ký lại** khi rớt — quan sát 2 lần rớt trong 4 phút.
-9. **Danh sách 34 trường của `i` chưa chắc đóng** — xử lý trường lạ một cách an toàn.
-10. **`ptm` rất thưa, `pth` không có dữ liệu.**
+9. **Danh sách 34 trường của `i` KHÔNG đóng** — *(đo 2026-08-26)* thực tế 37 khoá, thêm `OP`/`LO`/`TSI`; `idx` thêm `IC`/`MS`/`NOF`. Phải có chỗ chứa trường lạ.
+10. **`ptm` rất thưa, `pth` không có dữ liệu** (0 frame qua hai đợt đo, tổng ~2,4 giờ).
+11. 🔴 **Frame thật có vỏ `{"a":…,"d":[…]}`** — mẫu ở §4–§8 là bản ghi bên trong. Không bóc vỏ = hỏng toàn bộ, im lặng.
+12. **`open`/`low` CÓ được đẩy** dưới tên `OP`/`LO` — đính chính §4.
+13. **Phái sinh không có kênh riêng**: đi chung `i`/`o`/`t`, phân biệt bằng `EX="XHNF"`, **không có `openInterest`** *(đo 2026-08-26)*.

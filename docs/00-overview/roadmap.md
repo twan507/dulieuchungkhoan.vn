@@ -101,7 +101,13 @@ Bốn mục đang nằm trong danh sách **"Còn để ngỏ"** của pipeline t
 | ~~**Câu treo cuối của dự án skill**~~ | ✅ **Đã quyết 2026-08-14: giữ nguyên tên "ngân hàng"** trong luận điểm *ngành báo hiệu* — là cơ chế, không phải danh sách ngành cứng. Bảng rà `CAN-SUA.md` hết việc và đã xoá | |
 | **Đoạn giới hạn phạm vi vào system prompt** | Skill không tự gác cổng được — xem [§4](architecture.md) | Làm khi dựng backend |
 
-### 5.1 🔴 Realtime phái sinh — chưa đo được, phải đo TRONG PHIÊN
+### 5.1 ✅ Realtime phái sinh — ĐÃ ĐO 2026-08-26 (phiên chiều)
+
+> **Kết quả** *([hồ sơ phiên đo](../90-records/surveys/2026-08-26-bvsc-realtime-session/README.md))*: **phái sinh KHÔNG có kênh riêng** — tick phái sinh đi chung ba topic `i`/`o10`/`t` với cổ phiếu, phân biệt bằng `EX = "XHNF"`, cấu trúc trường **giống hệt** cổ phiếu, **không có `openInterest`** trong luồng realtime (muốn OI phải lấy từ `/datafeed/instruments`). 15 topic còn lại của bảng hằng số **không đẩy frame nào** — kể cả `pth`. Mã `41I1G9000` (VN30F1M) đẩy 24.162 lệnh khớp trong một phiên chiều, nhiều hơn mọi mã cổ phiếu.
+>
+> **Việc còn lại (không chặn lát cắt hiện tại):** mã phái sinh **không có trong `/quotes`** nên danh mục runtime chưa đăng ký chúng — mở rộng danh mục là một quyết định phạm vi riêng, cần cùng lúc chốt lược đồ (dùng chung bảng `trade`/`quote`/`snapshot_delta` hay tách).
+>
+> *(Nguyên văn phần chưa đo, giữ làm ngữ cảnh:)*
 
 **Việc gấp nhất còn lại của khối nguồn.** Đợt khảo sát chạy ngày **thứ Bảy 2026-08-15**, thị trường đóng (`tradingSessionID: "CLOSED"`), nên **không phép kiểm nào ngoài giờ có giá trị**: server BVSC trả ack `statusCode: 200` cho **mọi** chuỗi topic rồi im lặng — đăng ký thành công không chứng minh topic hợp lệ *(đã ghi ở [`11-bvsc-realtime.md` §1.4](../10-sources/market/11-bvsc-realtime.md))*.
 

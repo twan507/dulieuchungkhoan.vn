@@ -32,3 +32,4 @@ Mỗi thư mục là một đợt khảo sát, có README riêng làm mục lụ
 | Thư mục | Đợt | Quy mô |
 |---|---|---|
 | [`2026-08-15-nguon-du-lieu/`](surveys/2026-08-15-nguon-du-lieu/README.md) | Khảo sát nguồn dữ liệu — báo cáo từng nguồn, brief, rà soát nguồn cũ và việc chưa kiểm | 9 nguồn · ~400 lời gọi thật · mục lục ở README của đợt |
+| [`2026-08-26-bvsc-realtime-session/`](surveys/2026-08-26-bvsc-realtime-session/README.md) | **Phiên đo realtime BVSC** — chạy bằng chính `ingester --measure`: vỏ bọc frame thật, tính chất `SM`, phái sinh đi chung topic, trường lạ, tải toàn thị trường | 2.316.573 frame · 6.322 topic · phiên chiều 26/08 |
