@@ -319,9 +319,12 @@ CH_IO_TIMEOUT_S = 20
 
 
 async def _run_run(cfg: config.Config, minutes: float | None) -> int:
-    client = clickhouse_connect.get_client(dsn=cfg.clickhouse_url,
-                                           send_receive_timeout=CH_IO_TIMEOUT_S)
     try:
+        # get_client PHẢI nằm trong try: autoconnect nối ngay, nên ClickHouse sập lúc khởi
+        # động ném ngay tại đây — ngoài try thì thoát ra traceback trần exit 1, đi vòng
+        # qua đúng hợp đồng exit 3 dựng ra để báo lỗi khởi động.
+        client = clickhouse_connect.get_client(dsn=cfg.clickhouse_url,
+                                               send_receive_timeout=CH_IO_TIMEOUT_S)
         ch_migrate.assert_migrated(client)
     except (RuntimeError, ClickHouseError) as e:
         # Bắt cả lỗi ClickHouse: sự cố ACCESS_DENIED 2026-08-26 thoát ra dạng traceback
@@ -410,7 +413,14 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
         drained = await drain_writer(writer)
     await redis.aclose()
 
-    result = reconcile(client, datetime.now(TZ).date())
+    # Client riêng cho đối chứng: 20 s là trần hợp lý cho một INSERT, nhưng reconcile
+    # quét FULL OUTER JOIN trọn ngày nên cần trần mặc định của driver. Dùng chung client
+    # ghi sẽ biến một phiên sạch thành exit 1 vì hết giờ đọc, dù dữ liệu đã vào đủ.
+    rc_client = clickhouse_connect.get_client(dsn=cfg.clickhouse_url)
+    try:
+        result = reconcile(rc_client, datetime.now(TZ).date())
+    finally:
+        rc_client.close()
     _print_reconcile(result)
     if not drained:
         # Xả chưa sạch thì kho còn thiếu đuôi phiên, nên P2 ở trên có thể là báo động giả.

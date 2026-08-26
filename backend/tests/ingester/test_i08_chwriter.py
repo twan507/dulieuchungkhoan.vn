@@ -416,3 +416,69 @@ def test_retry_budget_counts_wall_clock_not_sleep_time():
     assert client.attempts == 1
     assert w.metrics.counters.get("dropped_block.trade") == 1
     assert clock.now - 1000.0 == 300.0            # không kéo dài thêm bằng backoff
+
+
+def test_retry_budget_is_shared_across_bisect_recursion():
+    """Ngân sách phải là HẠN CHÓT chung, không phải khoảng thời gian cấp lại mỗi tầng.
+
+    `_write_block` chia đôi đệ quy khi gặp lỗi dữ liệu. Nếu mỗi tầng được cấp lại trọn
+    ngân sách thì một dòng độc GẶP ĐÚNG LÚC ClickHouse trục trặc sẽ nhân ngân sách lên
+    theo độ sâu cây đệ quy — đo được 778 s cho một `flush_once` với ngân sách 60 s, vượt
+    xa cửa sổ dedup ~100 s và vượt cả ngân sách xả cuối phiên suy ra từ hằng số này.
+    """
+    clock = _FakeClock()
+
+    class _PoisonThenOutage:
+        """Dòng độc ở giữa; sau vài lần insert thì server chết hẳn kiểu transient."""
+
+        def __init__(self, die_after: int):
+            self.die_after, self.attempts = die_after, 0
+
+        def insert(self, table, data, column_names):
+            self.attempts += 1
+            if self.attempts > self.die_after:
+                clock.advance(20.0)                       # chạm read-timeout
+                raise ConnectionError("server chết giữa lúc chia đôi")
+            seq_i = COLUMNS[table.split(".")[-1]].index("seq")
+            if any(row[seq_i] == 80500 for row in data):
+                raise ChDatabaseError("hỏng", code=407, name="DECIMAL_OVERFLOW")
+
+    client = _PoisonThenOutage(die_after=3)
+    w = ChWriter(client, sleep_fn=clock.sleep, clock=clock)
+    for seq in range(80001, 80001 + 1000):
+        w.add(_n(SM=str(seq)))
+    w.add(_n(SM="80500"))
+    t0 = clock.now
+    w.flush_once()
+
+    elapsed = clock.now - t0
+    import ingester.chwriter as m
+    assert elapsed <= m.RETRY_BUDGET_S * 2, f"một lần xả ngốn {elapsed:.0f}s, ngân sách {m.RETRY_BUDGET_S}s"
+
+
+def test_fallback_markers_cover_the_two_codes_when_exception_has_no_code():
+    """Nhánh lùi dùng khi exception KHÔNG mang mã (lỗi transport, client lạ)."""
+    import ingester.chwriter as m
+    for name in ("INCORRECT_DATA", "DECIMAL_OVERFLOW"):
+        e = Exception(f"Code: 0. DB::Exception: ... ({name})")
+        assert not hasattr(e, "code")
+        assert m._is_deterministic(e) is True, name
+    # Ranh giới ngược: backpressure không mang mã vẫn phải là transient.
+    assert m._is_deterministic(Exception("DB::Exception: ... (TOO_MANY_PARTS)")) is False
+
+
+def test_drop_log_carries_error_code_when_message_is_scrubbed(caplog):
+    """show_clickhouse_errors=False ⇒ `str(e)` mất hết dấu vết, mã là thứ duy nhất còn lại."""
+    clock = _FakeClock()
+    scrubbed = ChDatabaseError("The ClickHouse server returned an error", code=252, name=None)
+
+    class _AlwaysFails:
+        def insert(self, table, data, column_names):
+            clock.advance(1.0)
+            raise scrubbed
+
+    w = ChWriter(_AlwaysFails(), sleep_fn=clock.sleep, clock=clock)
+    w.add(_n(SM="90501"))
+    with caplog.at_level("ERROR"):
+        w.flush_once()
+    assert "code=252" in caplog.text

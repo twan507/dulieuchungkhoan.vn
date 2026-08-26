@@ -1,5 +1,7 @@
 # Đăng ký Task Scheduler cho lát cắt ingester + OMO (spec 2026-08-26 §3.8/§4.5).
-# Chạy: pwsh scripts/register-tasks.ps1     (idempotent — ghi đè task cùng tên)
+# Chạy: pwsh scripts/register-tasks.ps1     (chạy lại được — ghi đè task cùng tên)
+# NGOẠI LỆ: `dlck-ingester-measure` là task MỘT LẦN, đã tồn tại thì giữ nguyên,
+# không nạp mốc mới — xem chốt chặn ở cuối file và lý do tại đó.
 #
 # GATE GHI TICK — MỞ 2026-08-26 (quyết định chủ dự án). `dlck-ingester` nay đăng ký ở
 # trạng thái BẬT. Trước đó nó bị Disable ngay sau khi đăng ký để chặn ghi thật cho tới

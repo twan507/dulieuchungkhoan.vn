@@ -197,7 +197,9 @@ Hai reviewer opus độc lập, chạy song song, báo riêng theo §4.1. **Khô
 
 Nghĩa là comment tôi viết khẳng định một bất biến **không đúng** — nguy hiểm hơn bug gốc ở chỗ nó **trông như đã suy ra**. Test đồng hồ giả của tôi cũng không thể thấy: `_FakeClock` chỉ nhích khi `sleep`, tức mặc định insert tốn 0 giây.
 
-**Sửa:** `_write_block` đếm thời gian thực (`self.clock()`), `ChWriter` nhận `clock` tiêm được; thêm `CH_IO_TIMEOUT_S = 20` tường minh cho client ingester (cho ~3 lần thử nằm gọn trong ngân sách; ghi 5.000 dòng bình thường dưới một giây). Nay `RETRY_BUDGET_S` mới đúng nghĩa nó tự khai.
+**Sửa:** `_write_block` đếm thời gian thực (`self.clock()`), `ChWriter` nhận `clock` tiêm được; thêm `CH_IO_TIMEOUT_S = 20` tường minh cho client ingester (cho ~3 lần thử nằm gọn trong ngân sách; ghi 5.000 dòng bình thường dưới một giây).
+
+> ⚠️ **Đính chính:** câu ban đầu viết ở đây — *"nay `RETRY_BUDGET_S` mới đúng nghĩa nó tự khai"* — **nói quá**. Re-review bắt được: sửa trên mới chỉ đúng cho đường phẳng. Xem mục dưới.
 
 ### Các finding còn lại — đã sửa hết trong cùng đợt
 
@@ -223,3 +225,36 @@ Nghĩa là comment tôi viết khẳng định một bất biến **không đún
 - **Cảnh báo phụ thuộc ngầm** (bộ 14 mã đủ *vì* `rt.*` chỉ dùng String/UInt/Decimal64/DateTime) — ghi lại ở đây làm mốc: **thêm cột `UUID`/`Float`/`IPv*` vào `rt.*` thì phải rà lại `_DETERMINISTIC_CODES`**, không có gì tự báo.
 
 **190 test xanh.** Chạy lại đường ghi thật sau đợt sửa: giành leader · 6.039 topic · `reconcile: p1=0 p2=0 ok=0` · exit 0.
+
+
+## Re-review có phạm vi cho đợt sửa (opus) — và đợt sửa thứ hai
+
+Re-reviewer **dựng phản chứng thật** thay vì đọc code: khôi phục bản cũ trong scratchpad ngoài repo rồi đo. Bản sửa `attempts=1, elapsed=300s`; bản cũ `attempts=8, elapsed=2463s`. 9/11 finding ADDRESSED, **2 PARTIALLY** — và bắt thêm **một regression do chính đợt sửa tạo ra**.
+
+### Important 1 — mới sửa được nửa. Tôi viết ledger quá lời.
+
+`_write_block` truyền xuống đệ quy một **KHOẢNG** ngân sách, không phải **HẠN CHÓT**, nên mỗi tầng chia đôi được cấp lại trọn 60 s. Reviewer đo trên block 5.000 dòng có một dòng độc, server chết giữa chừng:
+
+| Server chết sau insert thứ | Một `flush_once` ngốn |
+|---|---|
+| 1 | 129 s |
+| 7 | 389 s |
+| 13 | **778 s (13 phút)** |
+
+Ngân sách 60 s, `DRAIN_BUDGET_S` 75 s. Cận trên bệnh lý: 512 dòng → 42.476 s. **Có sẵn từ trước, không phải do đợt sửa** (bản cũ cũng reset `spent=0` mỗi tầng), nhưng câu tôi viết trong ledger là sai và đã đính chính ở trên.
+
+**Sửa:** `deadline` tuyệt đối tính một lần, truyền nguyên vào cả hai nhánh đệ quy. Test đỏ tái hiện đúng kịch bản trên rồi mới sửa.
+
+### 🔴 Regression do chính tôi tạo ra
+
+`CH_IO_TIMEOUT_S = 20` hợp lý cho INSERT, nhưng tôi gán nó cho **client dùng chung**, mà `reconcile()` cuối phiên quét `FULL OUTER JOIN` trọn ngày. Quá 20 giây là `OperationalError` không ai bắt → exit 1, **dù dữ liệu đã ghi đủ**. Một phiên sạch bị báo thành hỏng.
+
+**Sửa:** client riêng cho reconcile, giữ trần mặc định của driver. Ghi và đọc có hai đặc tính thời gian khác nhau, không dùng chung trần được.
+
+### Hai finding còn lại
+
+- **Minor 7 dư địa:** `get_client()` nằm **ngoài** `try`, mà `autoconnect=True` nối ngay ⇒ ClickHouse sập lúc 08:30 vẫn ra traceback trần exit 1, đi vòng qua hợp đồng exit 3. Đã đưa vào trong `try`, kèm test `test_run_mode_returns_exit_3_when_clickhouse_unreachable`.
+- **Không có test cho 4 thay đổi** (Missing 1, M4, M5, M7) — reviewer nói đúng, §4.5 đòi đỏ trước. Đã bổ sung test cho Missing 1, M4, M7. **M5 để trống có chủ đích:** phủ nó phải lái trọn `_run_run` với leader thật, đắt hơn giá trị; đường thoát của nó là một dòng `print` đã mắt thấy khi chạy thật.
+- **Bẫy tiềm ẩn reviewer cảnh báo:** sau khi ngân sách thành thời gian thực, thành ngữ test cũ `sleep_fn=lambda s: None` + đồng hồ thật sẽ **quay nóng** (đo được 484.127 lần insert trong 0,5 s) nếu client hỏng vĩnh viễn. Không test hiện tại nào chạm phải, nhưng **test mới viết theo thành ngữ đó là cháy 60 s CPU** — dùng `_FakeClock` cho mọi test có nhánh transient.
+
+**194 test xanh**, thời gian chạy 19,3 s không đổi (không busy-spin). Đường ghi thật chạy lại: leader · 6.039 topic · `p1=0 p2=0 ok=0` · exit 0.

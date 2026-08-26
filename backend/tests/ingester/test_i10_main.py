@@ -397,3 +397,20 @@ def test_drain_writer_gives_up_and_reports_when_never_drains():
     assert ok is False
     # Bỏ cuộc đúng lúc, không quay vô tận.
     assert clock.now - 1000.0 <= main_mod.DRAIN_BUDGET_S + 1.0
+
+
+def test_run_mode_returns_exit_3_when_clickhouse_unreachable(tmp_path, monkeypatch, capsys):
+    """get_client nối ngay (autoconnect); nó phải nằm TRONG hợp đồng exit 3."""
+    from clickhouse_connect.driver.exceptions import OperationalError
+
+    cfg = IngesterConfig(clickhouse_url="fake://", redis_url="redis://x",
+                         log_dir=tmp_path, measure_dir=tmp_path)
+    monkeypatch.setattr(main_mod.config, "load", lambda need_db: cfg)
+
+    def _boom(**kw):
+        raise OperationalError("không nối được ClickHouse")
+
+    monkeypatch.setattr(main_mod.clickhouse_connect, "get_client", _boom)
+    rc = asyncio.run(run("run"))
+    assert rc == 3
+    assert "ingester:" in capsys.readouterr().err
