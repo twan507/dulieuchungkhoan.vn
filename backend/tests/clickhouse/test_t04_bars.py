@@ -82,3 +82,14 @@ def test_index_o_c_on_dinh_qua_merge_khi_hoa_ms(migrated):
     migrated.command("OPTIMIZE TABLE rt.index_bar_1m FINAL")
     after = migrated.query("SELECT o, c FROM rt.index_bar_1m_v WHERE symbol='THNX'").result_rows
     assert before == after == [(Decimal("700.00"), Decimal("800.00"))]
+
+
+def test_o_c_theo_seq_trong_cung_giay_khong_theo_thu_tu_insert(migrated):
+    """Spec §9: hai tick CÙNG GIÂY khác seq — o/c theo thứ tự sở (seq), dù insert ngược thứ tự."""
+    t = dt_ago(6, 9, 18, 30)
+    _ins_trade(migrated, [["TSEQ", t, 9, Decimal("300.00"), 5, "B",
+                           Decimal("0.00"), 5, Decimal("1500.00"), dt_ago(6, 9, 18, 30, 100000)]])
+    _ins_trade(migrated, [["TSEQ", t, 3, Decimal("100.00"), 5, "B",
+                           Decimal("0.00"), 5, Decimal("500.00"), dt_ago(6, 9, 18, 30, 200000)]])
+    r = migrated.query("SELECT o, c FROM rt.bar_1m_v WHERE symbol='TSEQ'").result_rows
+    assert r == [(Decimal("100.00"), Decimal("300.00"))]      # o = seq nhỏ, c = seq lớn — bất chấp thứ tự insert/received_at

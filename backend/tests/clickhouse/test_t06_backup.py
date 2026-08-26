@@ -75,3 +75,13 @@ def test_prune_file_partition_da_ttl_drop(migrated, ch_backup_dir):
     acts = ch_backup.run_backup(migrated, ch_backup_dir, today=TODAY)
     assert not stale.exists()
     assert "prune:trade-200001.zip" in acts
+
+
+def test_ghi_trung_ten_backup_bi_chan(migrated, ch_backup_dir):
+    """Spec §12/T15: BACKUP trùng tên file bị server chặn — nền của luật ghi-mới-xoá-cũ."""
+    import pytest
+    fname = "trade-dup-check.zip"
+    migrated.command(f"BACKUP TABLE rt.trade TO Disk('backups', '{fname}')")
+    with pytest.raises(Exception, match="ALREADY_EXISTS"):
+        migrated.command(f"BACKUP TABLE rt.trade TO Disk('backups', '{fname}')")
+    (ch_backup_dir / fname).unlink()                          # dọn để không lẫn vào các test prune

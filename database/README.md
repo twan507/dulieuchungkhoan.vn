@@ -36,7 +36,9 @@ Test (dựng/huỷ container ClickHouse ephemeral, cần Docker chạy sẵn):
 uv run pytest tests/clickhouse -v
 ```
 
-Backup (script `core.ch_backup`, env `CLICKHOUSE_BACKUP_DIR` trỏ thư mục host ngoài Docker volume): dev chạy tay `uv run python -m core.ch_backup`; khi deploy Linux, đặt cron sau 15:30 (sau khi phiên đóng, tránh tranh I/O giờ giao dịch).
+Backup (script `core.ch_backup`, env `CLICKHOUSE_BACKUP_DIR` trỏ thư mục host ngoài Docker volume): dev chạy tay `uv run python -m core.ch_backup`; khi deploy Linux, đặt cron sau 15:30 (sau khi phiên đóng, tránh tranh I/O giờ giao dịch). `CLICKHOUSE_BACKUP_DIR` tương đối được giải theo `deploy/infra/` (cùng gốc với `docker-compose.yml`, cùng chuẩn compose dùng) — nên đặt đường dẫn tuyệt đối khi deploy thật.
+
+> **Idempotency dựa trên tên file, không kiểm nội dung:** script coi một partition/ngày là "đã backup" nếu file `.zip` cùng tên đã tồn tại. File `.zip` hỏng do crash giữa chừng (ví dụ mất điện khi đang ghi) vẫn bị coi là đã backup và sẽ không được ghi lại — kiểm toàn vẹn định kỳ là việc vận hành, chưa tự động hoá.
 
 > **Hai role trùng tên `dlck_api` — đừng nhầm hai kho:** Postgres có role `dlck_api` đọc 4 schema miền (`market`/`macro`/`asset`/`news`, xem mục Luật bên dưới); ClickHouse **cũng** có role `dlck_api` (migration `0001_roles.sql`) nhưng chỉ đọc schema `rt`. Hai role sống trên hai engine khác nhau, trùng tên có chủ đích (cùng vai trò "reader cho `api`"), không phải cấu hình chung.
 >

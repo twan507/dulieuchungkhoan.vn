@@ -76,7 +76,10 @@ def run_backup(client, backup_dir: Path, today: date | None = None) -> list[str]
 
 def main() -> None:
     from core.ch_migrate import get_client
-    backup_dir = Path(os.environ["CLICKHOUSE_BACKUP_DIR"])
+    from core.ch_migrate import REPO_ROOT
+    p = Path(os.environ["CLICKHOUSE_BACKUP_DIR"])
+    # Quy ước: đường dẫn tương đối giải theo deploy/infra — cùng gốc với docker-compose.yml
+    backup_dir = p if p.is_absolute() else (REPO_ROOT / "deploy" / "infra" / p)
     acts = run_backup(get_client(), backup_dir)
     print(f"backup: {acts or 'không có gì mới'}")
 
