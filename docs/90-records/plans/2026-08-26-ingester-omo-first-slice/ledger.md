@@ -110,3 +110,39 @@ Re-reviewer tự dựng phản chứng thay vì tin báo cáo: khôi phục bả
 | 4 | **Chưa bật ghi tick** — vẫn giai đoạn dev, hoàn thiện rồi bật một thể. `dlck-ingester` giữ DISABLED; **không session nào tự bật** | [roadmap §2 việc 4](../../../00-overview/roadmap.md) |
 
 **Việc cần làm trước khi bật ghi tick** (theo quyết định #4): M-new-1 (bổ sung `INCORRECT_DATA`/`DECIMAL_OVERFLOW`, dò cả `e.name`) · M-new-3 (nâng trần chờ flush cuối phiên quá ngân sách retry) · một phiên `--measure` trọn ngày phủ phiên sáng + ATO.
+
+
+## Đóng M-new-1 và M-new-3 (2026-08-26 tối, nhánh `fix/chwriter-error-classification-and-drain`)
+
+Hai minor park ở đợt re-review cuối, làm trước khi bật ghi tick theo quyết định #4. TDD đỏ→xanh từng cái, **185 test xanh** toàn backend (179 + 6 mới).
+
+- **M-new-3 — xong** (`319e7d7`). Vòng xả cuối phiên tách thành seam `drain_writer()` để lái được bằng đồng hồ giả; ngân sách **suy từ `RETRY_BUDGET_S`** (`+15 s`) thay vì viết lại số, để hai bên không trôi lệch. Xả thất bại nay log error nói rõ phán quyết reconcile bên dưới có thể sai — trước đó hỏng im lặng.
+  - *Phép kiểm đỏ đúng lý do:* tách seam giữ **nguyên hành vi cũ** (trần 3 s) trước, chạy test → `assert False is True`; đổi ngân sách → xanh. Không nhảy thẳng sang bản sửa.
+
+- **M-new-1 — xong** (`2684bc1`), **nhưng toa sửa trong ledger cũ SAI, đã sửa hướng.**
+
+  Toa cũ: *"dò thêm `getattr(e, "name", "")` và bổ sung hai mã"*. Đo lại trên ClickHouse 26.3.22.7 thật rồi đọc `build_http_error` của `clickhouse_connect` thì thấy **`name` không cứu được lỗ mà chính toa nêu ra**:
+
+  ```python
+  code = error_code_from_header(err_code)                          # LUÔN có — từ header HTTP
+  name = error_name_from_body(full_body) if show_detail else None  # None khi tắt detail
+  ```
+
+  `name` rút từ **body**, nên khi `show_clickhouse_errors=False` nó rơi cùng body, và `str(e)` rút gọn còn `"The ClickHouse server returned an error"` — sạch marker. Chỉ **`code`** sống sót vì đến từ **header**. Nên chốt: bắt theo **mã số**, chuỗi chỉ còn là đường lùi cho exception không mang mã (lỗi transport).
+
+  Đo được kèm (2026-08-26, `errorCodeToName` trên server thật):
+
+  | Đường lỗi | type | `code` | `name` |
+  |---|---|---|---|
+  | Decimal tràn qua SQL server | `DatabaseError` | 407 | `DECIMAL_OVERFLOW` |
+  | Decimal tràn qua `client.insert` mảng native | `DataError` | `None` | `None` |
+  | Tắt `show_clickhouse_errors` | `DatabaseError` | **còn** | `None` |
+  | `UNKNOWN_TABLE` (đối chứng) | `DatabaseError` | 60 | `UNKNOWN_TABLE` |
+
+  Dòng 2 giải thích vì sao `test_poison_row_isolated` cũ vẫn xanh dù luật sai: đường `insert()` mảng native ném `DataError`, đã được bắt **theo type** từ trước. Lỗi chỉ lộ ở đường server-side — chính là đường mà dữ liệu tick thật sẽ đi.
+
+  Test mới phủ cả **ranh giới ngược**: `TOO_MANY_PARTS` (252) phải **giữ transient**, không được chia đôi thành 5.000 INSERT một dòng.
+
+- **Bài học phương pháp:** toa sửa park lại trong ledger là **giả thuyết chưa kiểm**, không phải kết luận đã đo. Cùng họ với §3.4 CLAUDE.md (*mẫu trong tài liệu ≠ frame thật*): ở đây là *toa trong ledger ≠ hành vi thư viện thật*. Lần này toa đúng **triệu chứng** nhưng sai **thuốc**; đọc source thư viện mới ra.
+
+**Còn lại trước khi bật ghi tick:** đúng một điều kiện — phiên `--measure` trọn ngày phủ phiên sáng + ATO.
