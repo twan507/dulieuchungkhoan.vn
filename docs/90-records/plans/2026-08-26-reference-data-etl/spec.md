@@ -59,7 +59,7 @@ GetListOrganization    ──→ market.issuer (+ QU nối ETF/quỹ)
 | `/quotes` `StockType=4/12` | **không nạp** (chứng quyền, trái phiếu — §2.2) |
 | `/quotes` `StockType` **lạ** | **không nạp** + đếm vào `etl_run.stats` + log warning *(đồng nhất luật "mã ICB lạ không chặn job" của step-02)* |
 | Hằng số 18 chỉ số | `index` |
-| Ticker chỉ có ở FiinTrade | `stock` *(GetListOrganization chỉ chứa doanh nghiệp — an toàn)* |
+| Ticker chỉ có ở FiinTrade | `comTypeCode='QU'` → `fund_cert`, còn lại → `stock` *(sửa 2026-08-26 lúc chụp fixture: câu "GetListOrganization chỉ chứa doanh nghiệp" sai đo được — có 24 bản ghi QU là quỹ, và `FUCTVGF4` org-only chính là một quỹ đóng đã rời sàn; `comTypeCode` là trường đo được, không phải suy đoán)* |
 
 **Luật 2b — tách `etf` với `fund_cert` là câu hỏi mở, không được bịa.** `StockType=3` gộp chung *"ETF / Chứng chỉ quỹ"*, chưa đo được cách phân biệt. Nạp toàn bộ thành `etf`, ghi câu hỏi mở vào ledger. *(§1.3: chưa đo thì ghi "chưa kiểm".)*
 
