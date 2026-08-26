@@ -53,7 +53,8 @@ GetListOrganization    ──→ market.issuer (+ QU nối ETF/quỹ)
 
 | Nguồn gốc dòng | `security_type` |
 |---|---|
-| `/quotes` `StockType=2` | `stock` |
+| `/quotes` `StockType=2` **và symbol khớp `^[A-Z0-9]{3}$`** | `stock` |
+| `/quotes` `StockType=2` symbol KHÁC dạng 3 ký tự | **không nạp** + đếm (`junk_stocktype2`). *(Đo 2026-08-26 lúc chụp fixture: **14 bản ghi** StockType=2 là quyền mua "Quyền …", tín phiếu Kho bạc, TPCP dán nhãn 2 — ví dụ `L40_WFT_01`, `TPKB16003`. Phân bố độ dài xác nhận 1.962 mã 3 ký tự là cổ phiếu thật)* |
 | `/quotes` `StockType=3` | `etf` *(luật 2b)* |
 | `/quotes` `StockType=4/12` | **không nạp** (chứng quyền, trái phiếu — §2.2) |
 | `/quotes` `StockType` **lạ** | **không nạp** + đếm vào `etl_run.stats` + log warning *(đồng nhất luật "mã ICB lạ không chặn job" của step-02)* |
@@ -76,7 +77,7 @@ GetListOrganization    ──→ market.issuer (+ QU nối ETF/quỹ)
 | Ticker chỉ có ở FiinTrade | **ánh xạ `comGroupCode`**: `VNINDEX`→`HOSE` · `HNXIndex`→`HNX` · `UpcomIndex`→`UPCOM` *(quy ước FiinTrade khác BVSC — bảng ở [03-fiin-reference.md](../../../10-sources/market/03-fiin-reference.md); đừng nhầm chuỗi `VNINDEX` này với mã TVC của VN-Index ở §3.1)* |
 | Chỉ số | cột `exchange` trong hằng số §3.1 |
 
-**Luật 6 — trùng ticker trong `GetListOrganization`: chưa đo, phải kiểm ở fixture.** Nếu gặp: ưu tiên `organTypeCode='DN'` (1.522/1.553), bản ghi còn lại đếm + log, không chặn job. Plan phải kiểm fixture thật và ghi kết quả vào ledger.
+**Luật 6 — trùng ticker trong `GetListOrganization`: ✅ ĐÃ ĐO 2026-08-26 — KHÔNG có** (1.550 bản ghi, 1.550 ticker phân biệt). Vẫn giữ phòng thủ: nếu tương lai xuất hiện, ưu tiên `organTypeCode='DN'`, bản ghi còn lại đếm + log, không chặn job.
 
 ### 3.1 Hằng số 18 chỉ số — nội dung đầy đủ, một bảng một người ghi
 

@@ -26,3 +26,16 @@ Theo yêu cầu chủ dự án: một reviewer opus độc lập (không có ng�
 - Mã TVC của 15/18 chỉ số — chưa kiểm, không bịa.
 
 **Trạng thái:** spec bản 2 đã commit, **chờ chủ dự án duyệt** trước khi sang `writing-plans`.
+
+
+## 2026-08-26 (đêm) — chụp fixture + hai phát hiện làm sửa spec
+
+Chụp 4 endpoint thật (8 lời gọi kể cả lượt hỏng vì lỗi đường dẫn — trong tải an toàn §4.3). Bản FULL để scratchpad ngoài repo; fixture cắt đại diện + `indexsnaps`/`icb` giữ nguyên vào `backend/tests/etl/fixtures/refdata/`.
+
+**Đo được (2026-08-26):** `/quotes` 2.524 (StockType 2: 1.976 · 3: 31 · 4: 329 · 12: 188) · org 1.550 · indexsnaps 20 (đúng 18 mã + 2 rác `'0'`/`'indexCode'` như spec) · ICB 176 (level 11/19/40/106) · giao 18 mã ∩ symbols = **rỗng** (assert §3.1 hiện an toàn) · `comTypeCode QU` = 24 · org-only (huỷ niêm yết thật) = **4** · CP thật không issuer = **437**.
+
+**Phát hiện 1 — đóng luật 6:** `GetListOrganization` **không có trùng ticker**. Spec sửa từ "chưa đo" thành đã đo, giữ phòng thủ.
+
+**Phát hiện 2 — bẫy mới, sửa luật 2:** **14 bản ghi `StockType=2` không phải cổ phiếu** — quyền mua ("Quyền L40 03.06.2026"), tín phiếu Kho bạc (`TPKB16003`), TPCP (`TD1623483`) dán nhãn 2. Nạp theo luật 2 bản cũ là 14 mã rác vào `market.security`. Vá: cổ phiếu = StockType 2 **và** symbol khớp `^[A-Z0-9]{3}$` (1.962 mã thoả — khớp phân bố độ dài). Cùng họ bẫy 3/4 của roadmap §6: *nhãn nguồn tự khai không khớp dữ liệu nguồn tự trả*.
+
+Fixture chọn có chủ đích: `ACV`/`VHM` (organCode≠ticker) · `SHB` (NH) · `HTB`+1 (CP không issuer) · `L40_WFT_01` (ca rác StockType=2) · `FUEMAVND` (ETF khớp QU) · `E1SSHN30`/`FUEVCDIV` (ETF không QU) · `EGL`/`FUCTVGF4` (org-only ⇒ delisted) · 2 CW + 2 bond (ca bị bỏ).

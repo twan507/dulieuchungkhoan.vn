@@ -1,0 +1,145 @@
+{
+ "s": "ok",
+ "d": [
+  {
+   "symbol": "ACV",
+   "ceiling": 48400,
+   "floor": 35800,
+   "reference": 42100,
+   "FullName": "Tổng Công ty Cảng Hàng không Việt Nam - CTCP",
+   "StockType": "2",
+   "exchange": "UPCOM",
+   "tradelot": 100
+  },
+  {
+   "symbol": "VHM",
+   "ceiling": 78700,
+   "floor": 68500,
+   "reference": 73600,
+   "FullName": "CTCP Vinhomes",
+   "StockType": "2",
+   "exchange": "HOSE",
+   "tradelot": 100
+  },
+  {
+   "symbol": "SHB",
+   "ceiling": 12850,
+   "floor": 11250,
+   "reference": 12050,
+   "FullName": "Ngân hàng Thương mại Cổ phần Sài Gòn – Hà Nội",
+   "StockType": "2",
+   "exchange": "HOSE",
+   "tradelot": 100
+  },
+  {
+   "symbol": "L40_WFT_01",
+   "ceiling": 16500,
+   "floor": 13500,
+   "reference": 15000,
+   "FullName": "Quyền L40 03.06.2026",
+   "StockType": "2",
+   "exchange": "HNX",
+   "tradelot": 100
+  },
+  {
+   "symbol": "HTB",
+   "ceiling": 100,
+   "floor": 100,
+   "reference": 0,
+   "FullName": "CTCP Xây dựng Huy Thắng",
+   "StockType": "2",
+   "exchange": "HNX",
+   "tradelot": 100
+  },
+  {
+   "symbol": "CLI",
+   "ceiling": 32200,
+   "floor": 23800,
+   "reference": 28000,
+   "FullName": "CLI",
+   "StockType": "2",
+   "exchange": "UPCOM",
+   "tradelot": 100
+  },
+  {
+   "symbol": "NCG",
+   "ceiling": 12600,
+   "floor": 9400,
+   "reference": 11000,
+   "FullName": "CTCP Tập đoàn Nova Consumer",
+   "StockType": "2",
+   "exchange": "UPCOM",
+   "tradelot": 100
+  },
+  {
+   "symbol": "FUEMAVND",
+   "ceiling": 15820,
+   "floor": 13760,
+   "reference": 14790,
+   "FullName": "FUEMAVND-AUTO",
+   "StockType": "3",
+   "exchange": "HOSE",
+   "tradelot": 100
+  },
+  {
+   "symbol": "E1SSHN30",
+   "ceiling": 11000,
+   "floor": 9000,
+   "reference": 10000,
+   "FullName": "Chứng chỉ quỹ ETF SSIAM HNX30",
+   "StockType": "3",
+   "exchange": "HNX",
+   "tradelot": 100
+  },
+  {
+   "symbol": "FUEVCDIV",
+   "ceiling": 0,
+   "floor": 0,
+   "reference": 0,
+   "FullName": "FUEVCDIV",
+   "StockType": "3",
+   "exchange": "HOSE",
+   "tradelot": 100
+  },
+  {
+   "symbol": "CACB2602",
+   "ceiling": 1290,
+   "floor": 10,
+   "reference": 400,
+   "FullName": "Công ty cổ phần Chứng khoán Kỹ Thương",
+   "StockType": "4",
+   "exchange": "HOSE",
+   "tradelot": 100
+  },
+  {
+   "symbol": "CMWG2603",
+   "ceiling": 1740,
+   "floor": 10,
+   "reference": 690,
+   "FullName": "Công ty cổ phần Chứng khoán Kỹ Thương",
+   "StockType": "4",
+   "exchange": "HOSE",
+   "tradelot": 100
+  },
+  {
+   "symbol": "VBA122001",
+   "ceiling": 1500000000,
+   "floor": 1,
+   "reference": 105500,
+   "FullName": "VBA122001-AUTO",
+   "StockType": "12",
+   "exchange": "HNX",
+   "tradelot": 1
+  },
+  {
+   "symbol": "HDC425001",
+   "ceiling": 1500000000,
+   "floor": 1,
+   "reference": 104950,
+   "FullName": "Trái phiếu Công ty Cổ phần Phát triển Nhà Bà Rịa - Vũng Tàu",
+   "StockType": "12",
+   "exchange": "HNX",
+   "tradelot": 1
+  }
+ ]
+}
