@@ -44,4 +44,4 @@ Cần `ETL_DATABASE_URL` (user thuộc role `dlck_etl`). Job idempotent theo **n
 pwsh scripts/register-tasks.ps1
 ```
 
-Đăng ký 4 mốc OMO (11:30 · 15:30 · 18:00 · 21:30, ngày làm việc) và `dlck-ingester` 08:30 — **task ingester tạo ở trạng thái DISABLED**, bật bằng `schtasks /Change /TN dlck-ingester /ENABLE` sau khi qua gate.
+Đăng ký 4 mốc OMO (11:30 · 15:30 · 18:00 · 21:30, ngày làm việc) và `dlck-ingester` 08:30. **Gate ghi tick mở 2026-08-26** — `dlck-ingester` nay đăng ký ở trạng thái BẬT, kèm `dlck-ingester-measure` chạy **một lần** vào ngày làm việc kế tiếp để bắt frame thô song song. Bật/tắt tay bằng cmdlet `Enable-ScheduledTask` / `Disable-ScheduledTask`, **không dùng `schtasks.exe`** — xem cảnh báo đầu [`scripts/register-tasks.ps1`](../scripts/register-tasks.ps1).

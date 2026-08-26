@@ -146,3 +146,38 @@ Hai minor park ở đợt re-review cuối, làm trước khi bật ghi tick the
 - **Bài học phương pháp:** toa sửa park lại trong ledger là **giả thuyết chưa kiểm**, không phải kết luận đã đo. Cùng họ với §3.4 CLAUDE.md (*mẫu trong tài liệu ≠ frame thật*): ở đây là *toa trong ledger ≠ hành vi thư viện thật*. Lần này toa đúng **triệu chứng** nhưng sai **thuốc**; đọc source thư viện mới ra.
 
 **Còn lại trước khi bật ghi tick:** đúng một điều kiện — phiên `--measure` trọn ngày phủ phiên sáng + ATO.
+
+
+## Mở gate ghi tick (2026-08-26 tối)
+
+Chủ dự án quyết bật ghi. Điều kiện thứ ba (phiên đo trọn ngày) **không bỏ**, mà chuyển từ *chạy trước* sang *chạy song song*: `--measure` dùng `config.load(need_db=False)`, không đụng Redis/ClickHouse, không lấy leader lock ⇒ hai tiến trình độc lập. Bản thô vì thế vừa trả lời câu hỏi `SM`/ATO của [spec CH §4.1](../2026-08-25-clickhouse-realtime-store/spec.md), vừa là **lưới an toàn** cho chính phiên ghi đầu tiên — normalize từ chối frame lạ thì frame vẫn còn trên đĩa để dựng lại.
+
+- `dlck-ingester` — BẬT, hằng ngày 08:30, `python -m ingester`.
+- `dlck-ingester-measure` — **một lần** 27/08 08:30, `python -m ingester --measure`. Một lần vì gate cần đúng một ngày trọn (~110 MB gzip); chạy hằng ngày chỉ tích rác đĩa.
+- `Assert-TaskCommand` thêm `-MustNotContain`: hai task nay chỉ khác nhau một cờ, lẫn nhau là **ghi hụt cả phiên mà mọi bảng trạng thái vẫn báo `Ready`**.
+
+### 🔴 Bug chặn hẳn, bắt được nhờ chạy thật trước khi bật
+
+Chạy `python -m ingester --minutes 2` dưới **đúng credential production** (ngoài giờ, thị trường đóng) trước khi bật:
+
+```
+Code: 497. DB::Exception: ingester_worker: Not enough privileges.
+To execute this query, it's necessary to have the grant CREATE DATABASE ON rt.*. (ACCESS_DENIED)
+```
+
+`assert_migrated` — hợp đồng khởi động, gọi **trước khi nối socket** — đi qua `applied_versions` → `_bootstrap` → `CREATE DATABASE`. Role `dlck_ingester` chỉ có `SELECT, INSERT`. Ingester chết ngay dòng đầu, **mỗi phiên, im lặng**: task vẫn `Ready`, vẫn nổ đúng 08:30.
+
+**Cùng họ với bug `TRUNCATE` của `omo_flow`, và lọt vì cùng một lý do: mọi test cũ chạy bằng user owner.** Bài học §3.5 CLAUDE.md đã viết ra rồi mà vẫn cắn lần nữa — lần này ở một đường khác (đường ĐỌC lúc khởi động, không phải đường ghi).
+
+Sửa: `applied_versions` thành thuần đọc — hỏi `system.tables`, không có sổ thì trả rỗng (câu trả lời đúng, và để `assert_migrated` tự ném lỗi "chưa migrate" của nó); `_bootstrap` chuyển vào `upgrade()`, đường duy nhất có ghi. Test mới chạy `assert_migrated` qua user mang **đúng role production**, nên DDL quay lại đường này là bộ test đỏ chứ không phải một phiên chết.
+
+**Nghiệm thu sau khi sửa** — chạy lại đúng lệnh đã bắt lỗi: `assert_migrated` qua · giành leader · subscribe **6.039 topic / 2.007 mã** trong 61 lô · `drain_writer` (code M-new-3 mới) chạy êm · `reconcile: p1=0 p2=0 ok=0` · **exit 0**. 0 frame dữ liệu là đúng vì thị trường đã đóng.
+
+**188 test xanh** toàn backend.
+
+### Việc của phiên sau (27/08)
+
+1. Sáng: xác nhận cả hai task thật sự chạy — soi log `ingester-task.log` và `ingester-measure.log`, **không soi trạng thái task**.
+2. Chiều sau 15:05: đọc `reconcile` cuối phiên, đối chiếu số dòng `rt.trade`/`rt.bar_1m` với counter trong log.
+3. Phân tích bản đo trọn ngày → chốt tính chất `SM` (đơn điệu? duy nhất? bộ đếm toàn sở?) cho spec CH §4.1, và hành vi phiên ATO.
+4. Sau khi phân tích xong: cân nhắc gỡ `dlck-ingester-measure` (task một lần, đã bắn thì thôi) và dọn file đo cũ.
