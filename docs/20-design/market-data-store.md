@@ -186,6 +186,8 @@ Bốn luật rút ra từ những lần trả giá, mỗi luật chống một c
 
 ## 4. ETL REST
 
+> **2026-08-26 — job đầu tiên của nhóm này đã chạy thật:** `python -m etl refdata` (danh bạ + danh mục mã + cây ICB), 08:00 ngày làm việc, trước ingester 08:30. Hợp nhất `/quotes` + `indexsnaps` + 2 endpoint FiinTrade; chốt chặn sụt hai tầng (mốc = `ops.etl_run.stats` lượt success gần nhất — KHÔNG dùng `contract_snapshot`, bảng đó thuộc bộ giám sát hợp đồng); bằng chứng khi từ chối vào `staging.raw_payload` (`refdata:*`) trong giao dịch riêng — ngoại lệ hẹp có chủ đích so với luật "danh bạ không vào staging". Thiết kế: [spec](../90-records/plans/2026-08-26-reference-data-etl/spec.md).
+
 ### 4.1 Lịch chạy
 
 | Nhóm | Nhịp | Số lời gọi |

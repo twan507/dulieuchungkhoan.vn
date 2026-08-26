@@ -13,6 +13,8 @@ Thiết kế chi tiết phần Postgres/REST ở [`docs/20-design/market-data-st
 
 ## Trạng thái
 
+**Dữ liệu thật (2026-08-26 đêm):** 5 bảng tham chiếu đã nạp qua job `etl refdata` — `market.security` 2.015 · `market.issuer` 1.550 · `security_external_id` 2.014 · `issuer_external_id` 1.550 · `icb_industry` 176. `industry_icb_map` rỗng **có chủ đích** (lát ngành sau).
+
 Schema `postgres-data` đã dựng: **10 migration** Alembic (`0001` schemas/extensions … `0010` registry ingested_at), **37 test** seam chạy trên Postgres thật (`backend/tests/schema/test_sNN_*.py` — 9 file, không 1-1 với 10 migration: test seed `0003` gộp vào `test_s02_identity.py`, `test_s03_market_data.py` test migration `0004`; từ `test_s05_macro.py` trở đi NN khớp đúng số migration).
 
 Spec: [`docs/90-records/plans/2026-08-25-postgres-data-schema/`](../docs/90-records/plans/2026-08-25-postgres-data-schema/) — `README.md` (mục tiêu G1–G5, quyết định xuyên suốt), `step-01`…`step-07` (thiết kế từng miền), `plan.md` (11 task TDD), `ledger.md` (nhật ký thực thi).
