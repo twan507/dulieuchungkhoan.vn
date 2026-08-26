@@ -7,6 +7,8 @@
 > ⚠️ **2026-08-24 — [ADR 0007](../00-overview/decisions/0007-monorepo-layout-and-stack.md):** kho realtime đã chốt đổi sang **ClickHouse** (lưu tick thô + sổ lệnh; Postgres giữ dữ liệu REST/BCTC/tin; Redis giữ pub/sub + leader lock). Tài liệu này **chưa cập nhật theo** — các phần lược đồ TimescaleDB, continuous aggregate, nén/retention sẽ thiết kế lại trong một phiên riêng, xem [lộ trình §5.2](../00-overview/roadmap.md).
 >
 > 🔴 **2026-08-25 — lược đồ Postgres đã có bản CHÍNH THỨC thay thế §5:** [spec 7 bước](../90-records/plans/2026-08-25-postgres-data-schema/) (đã thực thi — 9 migration trong `database/`, xem [database/README.md](../../database/README.md)). Khác biệt chính so với §5: tách `issuer`/`security` với khoá nội bộ + registry ánh xạ nguồn; **không cột `source` ở bảng dữ liệu** (override mục "làm ngay" của §9.6 — xuất xứ nằm ở registry/staging/ops); ngành theo [bộ riêng 6×24](industry-tree.md) thay ICB; BCTC dùng `length_report`; thêm các miền macro/asset/news/staging/ops. **§5 dưới đây giữ nguyên văn làm bối cảnh thiết kế, không phải DDL hiện hành.**
+>
+> 🔴 **2026-08-26 — kho realtime đã có bản CHÍNH THỨC thay thế, dùng ClickHouse thay Postgres/TimescaleDB:** [spec ClickHouse realtime store](../90-records/plans/2026-08-25-clickhouse-realtime-store/spec.md) (đã thực thi — schema `rt` với 2 migration, xem [database/README.md](../../database/README.md)). Phần bị thay: **§3.2 bước 4** (batch writer gom nến `bar_1m` — nay ghi ClickHouse, không phải Postgres), **§5.3** (bảng `bar_1m` + continuous aggregate kiểu TimescaleDB), **§5.7 dòng `bar_1m`**. Thay đổi không chỉ là đổi engine lưu trữ: **khoá nến đổi từ `organ_code` sang `symbol` (ticker)** — ClickHouse không có bảng `organization` để tra `organ_code`, danh mục mã vẫn nằm ở Postgres. Nội dung realtime bên dưới **giữ nguyên văn làm bối cảnh lịch sử**, không phải lược đồ hiện hành.
 
 ---
 
@@ -15,7 +17,7 @@
 | | |
 |---|---|
 | **Cách ly hoàn toàn** | dulieuchungkhoan.vn không bao giờ gọi thẳng BVSC/FiinTrade khi phục vụ người dùng. Mọi truy vấn đi qua kho riêng |
-| **Lưu đầy đủ** | Kho ~10 GB chứa toàn bộ lịch sử khả dụng. Độc lập nhà cung cấp, chatbot không giới hạn |
+| **Lưu đầy đủ** | Kho ~10 GB chứa toàn bộ lịch sử khả dụng *(ước tính này chỉ tính phần Postgres REST/BCTC — chưa gồm tick thô ClickHouse, xem banner đầu trang và §5.7)*. Độc lập nhà cung cấp, chatbot không giới hạn |
 | **Giá lưu thô, điều chỉnh lúc đọc** | Không bao giờ sửa quá khứ. Hệ số suy ngược từ chính dữ liệu FiinTrade |
 | **Một socket vào, SSE ra** | Ingester tập trung ghép delta, fan-out một chiều qua SSE |
 | **Mỗi chỉ tiêu một nguồn chuẩn** | Nhiều nguồn cùng có thì chọn một. Nhóm chỉ tiêu dẫn xuất lẫn nhau thì lấy trọn bộ từ một nguồn, vì trộn nguồn giữa chừng tạo dữ liệu tự mâu thuẫn trong cùng một bảng. Nguồn chuẩn của từng mã trường: [chọn trường cho ETL thị trường](market-field-selection.md) |
@@ -46,6 +48,11 @@ BVSC / FiinTrade       │                                          │
                        │         └──→ PostgreSQL + TimescaleDB     │
                        │                    (kho đầy đủ)           │
                        └──────────────────┬───────────────────────┘
+```
+
+> 🔴 **Nhánh "Ingester → PostgreSQL + TimescaleDB" ở trên đã lỗi thời.** Ingester ghi tick thô/sổ lệnh vào **ClickHouse** (schema `rt`), không phải PostgreSQL/TimescaleDB — xem banner đầu trang. Sơ đồ giữ nguyên văn làm lịch sử.
+
+```
                                           │
                               ┌───────────┴─────────────┐
                               │ dulieuchungkhoan.vn API │
@@ -89,6 +96,8 @@ Topic đăng ký:
 3. Ghi Redis       → HASH state + PUBLISH kênh fan-out   ← ưu tiên, trong hot path
 4. Đẩy hàng đợi    → batch writer gom nến 1 phút, COPY mỗi 1–2 giây  ← ngoài hot path
 ```
+
+> 🔴 **Bước 4 đã lỗi thời.** Batch writer ghi nến `bar_1m` vào **ClickHouse** (schema `rt`), không phải Postgres qua `COPY` — xem banner đầu trang. Nguyên tắc "không ghi database trong hot path" vẫn đúng.
 
 **Không ghi database trong hot path.** Ghi đồng bộ cộng thêm 5–20 ms vào mọi frame.
 
@@ -255,6 +264,8 @@ Mỗi lần crawl lại `getPriceData`, `close_adj` đổi theo điều chỉnh 
 
 ### 5.3 Nến intraday — hypertable + continuous aggregate
 
+> 🔴 **Toàn bộ §5.3 đã lỗi thời.** Nến `bar_1m` (và các cấp gộp) nay sống trong **ClickHouse** (schema `rt`, khoá theo `symbol` chứ không phải `organ_code`), không phải hypertable Postgres/TimescaleDB dưới đây — xem banner đầu trang và [spec ClickHouse](../90-records/plans/2026-08-25-clickhouse-realtime-store/spec.md). Nội dung dưới giữ nguyên văn làm lịch sử.
+
 ```sql
 CREATE TABLE bar_1m (
   organ_code text NOT NULL,
@@ -370,14 +381,14 @@ CREATE INDEX ON corporate_event (organ_code, exright_date);
 
 | Bảng | Nén sau | Xoá |
 |---|---|---|
-| `bar_1m` và các aggregate | 7 ngày | **không xoá** |
+| `bar_1m` và các aggregate ⚠️ *(lỗi thời — nay ở ClickHouse, xem banner đầu trang)* | 7 ngày | **không xoá** |
 | `price_daily` | 30 ngày | **không xoá** |
 | `snapshot_daily`, `screener_daily` | 30 ngày | **không xoá** |
 | `financial_statement`, `corporate_event` | 90 ngày | **không xoá** |
 
 Kho là tài sản — không đặt retention drop. Nén cột của TimescaleDB đạt 10–20× với dữ liệu chuỗi thời gian.
 
-**Tổng dung lượng ước tính: dưới 10 GB cho toàn bộ lịch sử**, cộng ~1 GB/năm cho nến intraday.
+**Tổng dung lượng ước tính: dưới 10 GB cho toàn bộ lịch sử**, cộng ~1 GB/năm cho nến intraday *(con số nến intraday này đã lỗi thời cùng §5.3 — dung lượng thật của kho ClickHouse theo TTL frame thô 3–4 tháng + nến vĩnh viễn, xem [spec ClickHouse](../90-records/plans/2026-08-25-clickhouse-realtime-store/spec.md))*.
 
 ---
 

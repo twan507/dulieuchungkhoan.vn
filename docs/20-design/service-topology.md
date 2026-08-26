@@ -82,8 +82,12 @@ Luật để tránh hai tiến trình cùng ghi một chỗ rồi giẫm nhau:
 
 FE chỉ đọc–ghi qua `api`. `api` chỉ ghi **miền user**; với dữ liệu thị trường nó là **read-only**.
 
+> **2026-08-26 — retention ClickHouse (schema `rt`, [spec](../90-records/plans/2026-08-25-clickhouse-realtime-store/spec.md)):** 5 bảng frame thô (`trade`/`quote`/`snapshot_delta`/`index_delta`/`pt_match`) giữ **cửa sổ trượt TTL 3 tháng khai báo, thực tế 3–4 tháng** do hành vi drop theo part; hai bảng nến `bar_1m`/`index_bar_1m` **không TTL, giữ vĩnh viễn**. Đây là cơ sở cho ngoại lệ backup ở dưới.
+>
+> **Điểm nối hệ số điều chỉnh giá — đã đổi hướng so với thiết kế Postgres ban đầu:** ClickHouse chỉ lưu **giá thô**, không biết Postgres tồn tại và không phụ thuộc nó. Chiều phụ thuộc là ngược lại — **`api` cần đọc view hệ số bên Postgres (`market`)** để điều chỉnh giá lúc trả cho người dùng (giá thô × factor), tra qua ba chặng `symbol` (ClickHouse, là ticker) → `market.security` → `security_id` → factor.
+
 > 🔴 **Hai instance Postgres riêng — chốt D (2026-08-25).** Dữ liệu thị trường và dữ liệu user nằm ở **hai instance Postgres tách hẳn** (`postgres-data` và `postgres-app`), **không** chỉ khác schema, **không** chung instance. Ba lý do:
-> 1. **Backup khác chế độ (điểm quyết định):** data user cần **PITR**/backup dày (mất là mất thật); data thị trường **crawl lại được** nên không cần. PITR/WAL là **theo cả instance** → muốn hai chế độ thì buộc hai instance.
+> 1. **Backup khác chế độ (điểm quyết định):** data user cần **PITR**/backup dày (mất là mất thật); data thị trường **crawl lại được** nên không cần — **ngoại lệ: `bar_1m`/`index_bar_1m` bên ClickHouse KHÔNG crawl lại được** (nguồn realtime không có endpoint replay — [kho dữ liệu §3.3](market-data-store.md)) nên có backup hằng đêm riêng ([quyết định #10 của spec ClickHouse](../90-records/plans/2026-08-25-clickhouse-realtime-store/spec.md)); tiền đề "crawl lại được nên không cần backup" chỉ còn đúng cho phần Postgres. PITR/WAL là **theo cả instance** → muốn hai chế độ thì buộc hai instance.
 > 2. **Blast-radius:** kho thị trường **churn nặng** (migrate/rebuild liên tục) — không được chung volume với account.
 > 3. **Tuning riêng:** phân tích (buffer lớn) vs OLTP nhẹ.
 >
