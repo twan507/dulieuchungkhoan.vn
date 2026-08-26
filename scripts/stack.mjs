@@ -43,6 +43,10 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ENV_FILE = path.join(ROOT, ".env");
 const INFRA = ["-p", "dlck-infra", "-f", "deploy/infra/docker-compose.yml", "--env-file", ".env"];
+// stop/down phải liệt kê tường minh mọi profile: compose bỏ qua service profiled khi
+// profile không bật, nên tắt/gỡ mà thiếu cờ này sẽ bỏ sót container (đã gặp: clickhouse
+// sót lại sau docker-down khi COMPOSE_PROFILES không đặt trong .env)
+const INFRA_ALL = [...INFRA, "--profile", "realtime"];
 const APP = ["-p", "dlck-app", "-f", "deploy/app/docker-compose.yml", "--env-file", ".env"];
 const NETWORK = "dlck-net";
 const WIN = process.platform === "win32";
@@ -126,7 +130,7 @@ function devStop() {
   ensureEnv();
   killPort(8000);
   log("dừng container infra (giữ container + volume)…");
-  run("docker", ["compose", ...INFRA, "stop"], { allowFail: true });
+  run("docker", ["compose", ...INFRA_ALL, "stop"], { allowFail: true });
 }
 function dockerUp() {
   ensureEnv(); infraUp();
@@ -138,7 +142,7 @@ function dockerDown() {
   ensureEnv();
   const before = volumes();
   run("docker", ["compose", ...APP, "down"], { allowFail: true });
-  run("docker", ["compose", ...INFRA, "down"], { allowFail: true });
+  run("docker", ["compose", ...INFRA_ALL, "down"], { allowFail: true });
   for (const name of ["dlck-infra_pgdata", "dlck-infra_redisdata", "dlck-infra_chdata"]) {
     const r = assertVolumeSurvived(before, volumes(), name);
     if (!r.ok) die(`CẢNH BÁO: ${r.reason} — kiểm tra ngay`);
