@@ -53,4 +53,16 @@ Fixture chọn có chủ đích: `ACV`/`VHM` (organCode≠ticker) · `SHB` (NH) 
 
 **Câu hỏi mở còn lại của lát** (đã liệt ở spec §9, nhắc lại cho phiên sau): tách `etf`/`fund_cert` · mã TVC 15/18 chỉ số · lát ngành (`industry_icb_map`) · lát phái sinh (điều kiện đã đạt).
 
-## KẾT THÚC LÁT: 7/7 task · 217 test xanh toàn backend · job chạy thật 2 lượt idempotent · task 08:00 hằng ngày đã bật. Chờ final review toàn nhánh trước khi merge `main`.
+## Final review toàn nhánh (opus) + đợt sửa
+
+Reviewer kiểm bằng thí nghiệm đột biến trong scratchpad (repo không đụng), đối chiếu DB sống, chạy đủ 217 test. **Không Critical.** Kết luận: merge với điều kiện sửa 2 Important.
+
+- **I1 (nặng nhất, reviewer chứng minh bằng phản chứng chạy thật):** tầng 2 chốt chặn **mù với đường huỷ niêm yết phổ biến nhất** — mã rời `/quotes` nhưng còn ở FiinTrade thì CÓ trong đích với status `delisted`, mà `plan_delist` chỉ đếm ticker VẮNG khỏi đích ⇒ 3/27 mã fixture (11%) lật delisted với verdict `ok` và `stats.delisted == 0`. Nghĩa là một response `/quotes` cụt ≤2% (~40 mã) huỷ êm không ai thấy — đúng ca "số lượng bình thường nhưng nội dung lệch" mà tầng 2 sinh ra để bắt. **Sửa:** `plan_delist` nhận `TargetState`, đếm CẢ hai đường lật; `apply` đếm đường (b) từng dòng; regression test tái hiện đúng kịch bản của reviewer.
+- **I2:** test tay-thắng-máy **xanh cả với mutant `SET industry_id = NULL`** — vì đích lượt hai không đổi gì nên câu UPDATE bị đuôi `IS DISTINCT FROM` lọc, dòng SET không bao giờ chạy. Sửa theo đúng toa reviewer đã kiểm trên mutant: đích lượt hai đổi thật một trường issuer.
+- **I3:** `backend/README.md` — index hub bị bỏ sót khỏi quét §10 (checklist spec chỉ liệt 5 file; §1.7 đòi quét bất kể checklist). Đã sửa 3 chỗ.
+- Minor + lỗ spec-missing, sửa hết cùng đợt: `comGroupCode` lạ → bỏ + đếm thay vì `KeyError` giết job · luật 6 phòng thủ (trùng ticker ưu tiên `DN`, cài thật + test) · mã ICB biến mất → giữ + đếm `icb_orphaned` · test CLI `refdata`/`--accept-drop` đầu tiên · 2 seam gap (StockType lạ, mất dòng rác vẫn qua) · reason chốt chặn tiếng Việt · `collections.abc` · dọn `**n.counters` chết.
+- Ghi nhận, không sửa: commit `37efe07` mang nhầm code merge (đã khai ở trên, không viết lại lịch sử).
+
+**224 test xanh** (217 + 7). Chạy thật lần ba sau đợt sửa: exit 0, `sec_unchanged=2015`, các counter mới đều 0 (`icb_orphaned` · `unknown_com_group` · `dup_org_ticker`).
+
+## KẾT THÚC LÁT: 7/7 task · final review + đợt sửa xong · 224 test xanh · job chạy thật 3 lượt idempotent · task 08:00 hằng ngày đã bật · merge `main`.
