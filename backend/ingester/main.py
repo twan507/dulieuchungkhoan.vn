@@ -24,7 +24,7 @@ from ingester import catalog as cat
 from ingester import config, eio
 from ingester import leader as leader_mod
 from ingester import state as state_mod
-from ingester.chwriter import ChWriter
+from ingester.chwriter import RETRY_BUDGET_S, ChWriter
 from ingester.dedup import FrameDedup, Stamper, frame_key
 from ingester.measure import MeasureWriter
 from ingester.normalize import (
@@ -283,6 +283,33 @@ async def _run_reconcile(cfg: config.Config, d) -> int:
     return 1 if (result.p1 or result.p2) else 0
 
 
+# Ngân sách xả cuối phiên phải DÀI HƠN ngân sách retry của ChWriter: lúc đóng phiên,
+# thread `flush_once` cũ có thể còn kẹt trong backoff transient tới `RETRY_BUDGET_S`
+# giây, mà mutex xả làm mọi lời gọi mới về ngay nên vòng dưới chỉ quay rỗng chờ nó.
+# Trần cũ 3 s (30 vòng x 0,1 s) cạn trước ⇒ `reconcile()` đọc kho khi đuôi phiên chưa
+# ghi xong ⇒ P2 giả + exit code 1 (M-new-3). Suy từ hằng số kia để hai bên không trôi lệch.
+DRAIN_BUDGET_S = RETRY_BUDGET_S + 15.0
+
+
+async def drain_writer(writer, budget_s: float = DRAIN_BUDGET_S,
+                       sleep_fn=asyncio.sleep, clock=time.monotonic) -> bool:
+    """Xả nốt đuôi phiên trước khi reconcile. True nếu buffer/pending đã sạch.
+
+    `flush_loop` bị cancel ở tầng await nhưng THREAD `flush_once` của nó vẫn chạy tiếp;
+    mutex xả (review cuối IMPORTANT 4) làm lời gọi ở đây về ngay thay vì giẫm lên nó.
+    """
+    end = clock() + budget_s
+    while True:
+        await asyncio.to_thread(writer.flush_once)
+        if not any(writer.buffers.values()) and not any(writer.pending.values()):
+            return True
+        if clock() >= end:
+            log.error("hết %.0fs ngân sách xả mà buffer chưa sạch — phán quyết "
+                      "reconcile bên dưới có thể sai lệch (thiếu đuôi phiên)", budget_s)
+            return False
+        await sleep_fn(0.1)
+
+
 async def _run_run(cfg: config.Config, minutes: float | None) -> int:
     client = clickhouse_connect.get_client(dsn=cfg.clickhouse_url)
     try:
@@ -368,14 +395,7 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
     await asyncio.gather(*tasks, return_exceptions=True)
 
     if is_leader.is_set():
-        # `flush_loop` bị cancel ở tầng await nhưng THREAD `flush_once` của nó vẫn chạy
-        # tiếp; mutex xả (review cuối IMPORTANT 4) làm lời gọi này về ngay thay vì giẫm
-        # lên nó. Lặp có trần cho tới khi buffer/pending sạch để không bỏ lại đuôi phiên.
-        for _ in range(30):
-            await asyncio.to_thread(writer.flush_once)
-            if not any(writer.buffers.values()) and not any(writer.pending.values()):
-                break
-            await asyncio.sleep(0.1)
+        await drain_writer(writer)
     await redis.aclose()
 
     result = reconcile(client, datetime.now(TZ).date())

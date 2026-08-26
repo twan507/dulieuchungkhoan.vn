@@ -44,7 +44,15 @@ def _bootstrap(client) -> None:
 
 
 def applied_versions(client) -> set[str]:
-    _bootstrap(client)
+    """CHỈ ĐỌC — không dựng gì. `assert_migrated` đi qua đây và chạy dưới role
+    production `dlck_ingester` (chỉ SELECT/INSERT), nên mọi DDL ở đây là ACCESS_DENIED
+    ngay lúc ingester khởi động: task Scheduler vẫn "Ready", vẫn chạy đúng giờ, và chết
+    câm — mất trọn phiên. Dựng sổ migration là việc của `upgrade`, chạy bằng user owner.
+    """
+    exists = client.command(
+        "SELECT count() FROM system.tables WHERE database = 'rt' AND name = 'schema_migrations'")
+    if not int(exists):
+        return set()                 # chưa có sổ = chưa áp dụng gì
     rows = client.query("SELECT DISTINCT version FROM rt.schema_migrations").result_rows
     return {r[0] for r in rows}
 
@@ -52,6 +60,7 @@ def applied_versions(client) -> set[str]:
 def upgrade(client=None, versions_dir: Path | None = None) -> list[str]:
     client = client or get_client()
     versions_dir = versions_dir or DEFAULT_VERSIONS_DIR
+    _bootstrap(client)               # đường GHI mới được dựng sổ
     done = applied_versions(client)
     ran: list[str] = []
     for path in sorted(versions_dir.glob("*.sql")):

@@ -5,6 +5,7 @@ from datetime import date
 
 import websockets
 
+import ingester.chwriter as chwriter_mod
 import ingester.main as main_mod
 from ingester.catalog import Catalog
 from ingester.chwriter import ChWriter
@@ -327,3 +328,65 @@ def test_merge_base_state_fresh_wins_boot_survives_outsiders_dropped():
     merged = _merge_base_state(boot, fresh, ["ACV", "VFMVF1"])
     assert merged == {"ACV": {"open": "2"},
                       "VFMVF1": {"ceiling": "0", "floor": "0", "reference": "12000"}}
+
+
+# --- M-new-3: cửa sổ xả cuối phiên phải dài hơn ngân sách retry của ChWriter ---------
+#
+# Lúc đóng phiên, `flush_loop` bị cancel nhưng THREAD `flush_once` của nó có thể vẫn
+# đang kẹt trong backoff transient — tối đa `RETRY_BUDGET_S` giây. Mutex xả làm mọi lời
+# gọi `flush_once` mới về NGAY (không chờ), nên vòng xả cuối phiên chỉ quay rỗng. Nếu
+# ngân sách của nó ngắn hơn ngân sách retry thì nó bỏ cuộc trước khi đuôi phiên kịp ghi,
+# và `reconcile()` chạy sau đó đọc kho thiếu dữ liệu ⇒ P2 giả + exit code 1.
+#
+# Mốc so sánh là hằng số của hợp đồng ChWriter, KHÔNG phải số của chính vòng xả.
+
+
+class _StuckWriter:
+    """Giả lập thread flush cũ còn kẹt: `flush_once` về ngay, buffer chỉ sạch sau
+    `clears_after_s` giây (theo đồng hồ giả)."""
+
+    def __init__(self, clock, clears_after_s: float):
+        self._clock, self._at = clock, clock() + clears_after_s
+        self.buffers = {"trade": [["giữ chỗ"]]}
+        self.pending = {"trade": []}
+        self.calls = 0
+
+    def flush_once(self) -> None:
+        self.calls += 1
+        if self._clock() >= self._at:
+            self.buffers["trade"].clear()
+
+
+class _FakeClock:
+    """Đồng hồ giả: mỗi lần `sleep(d)` được gọi thì nhảy đúng d giây."""
+
+    def __init__(self):
+        self.now = 1000.0
+
+    def __call__(self) -> float:
+        return self.now
+
+    async def sleep(self, d: float) -> None:
+        self.now += d
+
+
+def test_drain_writer_outlasts_chwriter_retry_budget():
+    clock = _FakeClock()
+    # Đuôi phiên ghi xong SAU khi ngân sách retry cạn — kịch bản xấu nhất còn hợp lệ.
+    stuck = _StuckWriter(clock, clears_after_s=chwriter_mod.RETRY_BUDGET_S + 5)
+
+    ok = asyncio.run(main_mod.drain_writer(stuck, sleep_fn=clock.sleep, clock=clock))
+
+    assert ok is True
+    assert not stuck.buffers["trade"]
+
+
+def test_drain_writer_gives_up_and_reports_when_never_drains():
+    clock = _FakeClock()
+    stuck = _StuckWriter(clock, clears_after_s=float("inf"))
+
+    ok = asyncio.run(main_mod.drain_writer(stuck, sleep_fn=clock.sleep, clock=clock))
+
+    assert ok is False
+    # Bỏ cuộc đúng lúc, không quay vô tận.
+    assert clock.now - 1000.0 <= main_mod.DRAIN_BUDGET_S + 1.0

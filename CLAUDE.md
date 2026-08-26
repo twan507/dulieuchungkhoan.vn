@@ -136,14 +136,21 @@ Bắt được vì có **chế độ đo ghi frame nguyên văn trước khi cho
 
 ### 3.5 Nghiệm thu bằng thứ nó THỰC SỰ chạy, không bằng trạng thái hiển thị
 
-Hai lần cùng một lỗi trong một ngày *(2026-08-26)*:
+Ba lần cùng một lỗi *(2026-08-26)*:
 
 | Nghiệm thu sai | Sự thật |
 |---|---|
 | Task Scheduler báo `Ready` ⇒ coi như đăng ký xong | Lệnh đăng ký là `python -m ` **rỗng** — tham số hàm PowerShell đặt tên `$args`, trùng biến tự động. 5 task nổ đúng giờ rồi chết câm |
 | Test ghi Postgres xanh ⇒ coi như job chạy được | Test chạy bằng user **owner**; job thật chạy bằng role `dlck_etl` không có quyền `TRUNCATE` ⇒ chết ngay lần chạy đầu |
+| Test ClickHouse xanh + task đã bật ⇒ coi như ingester chạy được | `assert_migrated` — hợp đồng khởi động, chạy **trước khi nối socket** — phát `CREATE DATABASE`; role `dlck_ingester` chỉ có `SELECT, INSERT` ⇒ `ACCESS_DENIED` ngay dòng đầu, mỗi phiên, im lặng |
 
-Luật: kiểm **lệnh** chứ không kiểm trạng thái; test đường ghi phải chạy **dưới đúng quyền của production** (`SET LOCAL ROLE …`). Cả hai phép kiểm này nay đã mã hoá thành code — `Assert-TaskCommand` trong `scripts/register-tasks.ps1` và test `test_flow_rebuild_works_under_etl_role`.
+Luật: kiểm **lệnh** chứ không kiểm trạng thái; và test phải chạy **dưới đúng quyền của production** (`SET LOCAL ROLE …` / user mang role thật).
+
+🔴 **Ca thứ ba lọt vì luật viết hẹp:** bản cũ ghi *"test **đường ghi** phải chạy dưới đúng quyền"* — mà bug nằm ở **đường ĐỌC lúc khởi động**. Phạm vi đúng là **mọi đường mà tiến trình production đi qua**, đọc lẫn ghi; đường khởi động còn nguy hiểm hơn vì hỏng ở đó thì hỏng **toàn bộ**, không phải một phần.
+
+Và một phép kiểm rẻ đứng trên tất cả: **trước khi bật bất cứ job nào chạy tự động, chạy tay chính lệnh đó dưới đúng credential production ít nhất một lần.** Ca thứ ba bắt được đúng bằng cách này — `python -m ingester --minutes 2` ngoài giờ, hai phút, lộ ngay lỗi mà 185 test xanh không thấy.
+
+Cả ba phép kiểm nay đã mã hoá thành code — `Assert-TaskCommand` (kèm `-MustNotContain`) trong `scripts/register-tasks.ps1`, test `test_flow_rebuild_works_under_etl_role`, và `test_assert_migrated_works_under_ingester_role`.
 
 ### 3.6 Kết luận phủ định về toàn nguồn không suy được từ một endpoint
 

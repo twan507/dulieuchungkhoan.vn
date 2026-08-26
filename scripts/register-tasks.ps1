@@ -1,9 +1,11 @@
 # Đăng ký Task Scheduler cho lát cắt ingester + OMO (spec 2026-08-26 §3.8/§4.5).
 # Chạy: pwsh scripts/register-tasks.ps1     (idempotent — ghi đè task cùng tên)
 #
-# LƯU Ý: task `dlck-ingester` được tạo ở trạng thái DISABLED. Chỉ bật sau khi
-# phiên đo trong giờ giao dịch xong và chủ dự án duyệt luật SM/dedup (spec §3.5):
-#     Enable-ScheduledTask -TaskName dlck-ingester
+# GATE GHI TICK — MỞ 2026-08-26 (quyết định chủ dự án). `dlck-ingester` nay đăng ký ở
+# trạng thái BẬT. Trước đó nó bị Disable ngay sau khi đăng ký để chặn ghi thật cho tới
+# khi có phiên đo trong giờ giao dịch; điều kiện đó nay chuyển thành CHẠY SONG SONG:
+# phiên ghi thật đi kèm một phiên `--measure` bắt frame thô làm lưới an toàn, nên bản
+# thô vẫn còn nguyên nếu đường chuẩn hoá từ chối frame phiên sáng/ATO.
 #
 # ⚠️ Dùng cmdlet ScheduledTasks, KHÔNG dùng schtasks.exe: bản schtasks trước đây
 # đăng ký nhầm lệnh rỗng (`python -m `) vì tham số hàm đặt tên `$args` — trùng
@@ -22,12 +24,20 @@ function Register-DlckTask {
         [Parameter(Mandatory)][string] $TaskName,
         [Parameter(Mandatory)][string] $AtTime,      # "HH:mm"
         [Parameter(Mandatory)][string] $ModuleArgs,  # ví dụ "etl omo"
-        [Parameter(Mandatory)][string] $LogFile
+        [Parameter(Mandatory)][string] $LogFile,
+        [switch] $Once            # chạy đúng MỘT lần vào ngày làm việc kế tiếp
     )
     $inner = 'cd /d "{0}" && set PYTHONIOENCODING=utf-8 && "{1}" run python -m {2} >> "{3}" 2>&1' `
              -f $backend, $uv, $ModuleArgs, (Join-Path $logDir $LogFile)
     $action  = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c $inner"
-    $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At $AtTime
+    if ($Once) {
+        $d = (Get-Date).Date.AddDays(1)
+        while ($d.DayOfWeek -in 'Saturday', 'Sunday') { $d = $d.AddDays(1) }
+        $hm = [datetime]::ParseExact($AtTime, 'HH:mm', $null)
+        $trigger = New-ScheduledTaskTrigger -Once -At $d.AddHours($hm.Hour).AddMinutes($hm.Minute)
+    } else {
+        $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At $AtTime
+    }
     # StartWhenAvailable: máy ngủ/tắt qua giờ chạy thì chạy bù khi bật lại.
     # RestartCount/RestartInterval: tự khởi động lại khi tiến trình chết (spec §3.8).
     $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
@@ -35,15 +45,19 @@ function Register-DlckTask {
                     -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 12)
     Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger `
         -Settings $settings -Force | Out-Null
-    Write-Host ("  + {0,-16} {1}  ->  python -m {2}" -f $TaskName, $AtTime, $ModuleArgs)
+    $when = if ($Once) { "$AtTime (một lần)" } else { $AtTime }
+    Write-Host ("  + {0,-24} {1,-16}  ->  python -m {2}" -f $TaskName, $when, $ModuleArgs)
 }
 
 function Assert-TaskCommand {
     <#  Nghiệm thu: soi LỆNH thật của task, không soi trạng thái.  #>
-    param([string] $TaskName, [string] $MustContain)
+    param([string] $TaskName, [string] $MustContain, [string] $MustNotContain)
     $arg = (Get-ScheduledTask -TaskName $TaskName).Actions[0].Arguments
     if ($arg -notmatch [regex]::Escape($MustContain)) {
         throw "Task $TaskName đăng ký SAI lệnh — thiếu '$MustContain'. Lệnh thật: $arg"
+    }
+    if ($MustNotContain -and $arg -match [regex]::Escape($MustNotContain)) {
+        throw "Task $TaskName đăng ký SAI lệnh — KHÔNG được chứa '$MustNotContain'. Lệnh thật: $arg"
     }
 }
 
@@ -56,11 +70,20 @@ foreach ($t in @("11:30", "15:30", "18:00", "21:30")) {
 
 Write-Host "Đăng ký ingester theo phiên (08:30, tự thoát sau đối chứng ~15:05):"
 Register-DlckTask -TaskName "dlck-ingester" -AtTime "08:30" -ModuleArgs "ingester" -LogFile "ingester-task.log"
-Assert-TaskCommand -TaskName "dlck-ingester" -MustContain "python -m ingester "
-Disable-ScheduledTask -TaskName "dlck-ingester" | Out-Null
-Write-Host "  ! dlck-ingester đang DISABLED — bật sau gate phiên đo (spec §3.5)"
+Assert-TaskCommand -TaskName "dlck-ingester" -MustContain "python -m ingester " -MustNotContain "--measure"
+Enable-ScheduledTask -TaskName "dlck-ingester" | Out-Null
+Write-Host "  * dlck-ingester ĐANG BẬT — ghi tick thật (gate mở 2026-08-26)"
 
-Write-Host "`nĐã kiểm lệnh của cả 5 task. Xem lại bất cứ lúc nào:"
+# Phiên đo song song: bắt frame THÔ ra JSONL trong khi phiên ghi chạy. Đây là điều kiện
+# gate còn lại (phủ phiên sáng + ATO + tính chất SM — spec ClickHouse §4.1), và đồng thời
+# là lưới an toàn cho chính phiên ghi đầu tiên. Đăng ký MỘT LẦN: cần đúng một ngày trọn,
+# ~110 MB gzip; chạy hằng ngày thì tích rác đĩa vô ích.
+Write-Host "Đăng ký phiên đo song song (một lần, ngày làm việc kế tiếp):"
+Register-DlckTask -TaskName "dlck-ingester-measure" -AtTime "08:30" -ModuleArgs "ingester --measure" `
+                  -LogFile "ingester-measure.log" -Once
+Assert-TaskCommand -TaskName "dlck-ingester-measure" -MustContain "python -m ingester --measure "
+
+Write-Host "`nĐã kiểm lệnh của cả 6 task. Xem lại bất cứ lúc nào:"
 Write-Host '  Get-ScheduledTask -TaskName "dlck-*" | % { $_.TaskName + " -> " + $_.Actions[0].Arguments }'
 Write-Host "`n⚠️ Task chạy với tài khoản đang đăng nhập (Interactive). Muốn chạy cả khi"
 Write-Host "   không đăng nhập, đăng ký lại bằng quyền admin với -LogonType S4U."
