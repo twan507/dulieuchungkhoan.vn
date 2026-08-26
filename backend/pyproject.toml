@@ -18,7 +18,6 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8",
-    "httpx>=0.27",
 ]
 
 [tool.pytest.ini_options]
