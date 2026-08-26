@@ -112,7 +112,7 @@ Từ điển ánh xạ trường nguồn → tên cột `rt.*` là **một bản
 
 - Chuỗi số → `Decimal`/`int`; **không đi qua float**; khối lượng nguồn lúc có lúc không đuôi `.0` (`"215271860.0"` → `215271860`).
 - Thừa thập phân so với scale cột (`"100.005"` → cột `Decimal64(2)`): chuẩn hoá tại cổng theo luật **làm tròn half-even về scale 2 + đếm metric** — không thả cho ClickHouse cắt im lặng.
-- `t` (topic `t`): `ts` dựng từ `TD dd/MM/yyyy` + `FT HH:mm:ss` theo `Asia/Ho_Chi_Minh`; **assert `TD == toDate(ts)`** — lệch là bug parse, frame đi đường block độc (log + loại dòng), không ghi sai.
+- `t` (topic `t`): `ts` dựng từ `TD dd/MM/yyyy` + `FT HH:mm:ss` theo `Asia/Ho_Chi_Minh`. *(Đính chính khi thực thi 2026-08-26: yêu cầu **assert `TD == toDate(ts)`** ghi ở đây và ở [spec ClickHouse §3.1](../2026-08-25-clickhouse-realtime-store/spec.md) là **tautology với đường parse này** — `ts` dựng TRỰC TIẾP từ `TD`, không có cách nào lệch. Guard thật là `strptime` hỏng → `NormalizeError` → đường block độc. Assert chỉ có nghĩa nếu sau này `ts` đến từ nguồn khác `TD`; đổi đường dựng `ts` thì phải thêm assert lại.)*
 - `ptm`: `LS` là epoch **giây**; `i`/`o`/`idx`: `t` là epoch **ms**.
 - `i`/`idx`/`ptm`: trường không map vào cột → JSON vào `extra` (kể cả `MKI`/`IAC` của ptm). `t`/`o`: khoá lạ → **đếm + log, không lưu** (hợp đồng §5.6).
 - Frame `i` có cả `CV` lẫn `P1` → assert mềm `CV == P1`, lệch thì log (nghi `P1` đổi nghĩa).
