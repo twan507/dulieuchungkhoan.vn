@@ -77,3 +77,12 @@ Task tự nhất quán: T5 test expected phải chép từ fixture thật (T4 đ
 - Tài liệu: hồ sơ khảo sát `surveys/2026-08-26-bvsc-realtime-session/` + cập nhật `11-bvsc-realtime.md` (7 chỗ, kèm ngày đo) + roadmap §0/§5.1 + index. `git grep` bắt 2 chỗ tài liệu tự đá nhau (§11 tóm tắt và bảng roadmap §0) → đã sửa.
 - Test: **161 passed** toàn backend. Commit: 1eca9a3 (ops) · c88cda2 (vỏ bọc) · 960351b (tài liệu đo).
 - Minor deferred cho final review: `log_loop` ngủ 60 s nên tiến trình đo/ghi thoát trễ tối đa ~60 s sau deadline (vô hại, thấy khi smoke `--minutes 2` kết thúc lúc phút thứ 3).
+
+## Final review toàn nhánh (opus) + đợt sửa
+
+- **C1 (Critical, controller tự sửa ngay):** `scripts/register-tasks.ps1` đăng ký **lệnh rỗng** `python -m ` — tham số hàm đặt tên `$args`, trùng BIẾN TỰ ĐỘNG PowerShell nên thân hàm đọc ra rỗng. Cả 5 task "Ready" và chết câm ⇒ **các mốc OMO hôm nay đã lỡ**. Nghiệm thu AC6 của tôi kiểm TRẠNG THÁI task chứ không kiểm LỆNH — cùng họ lỗi với bug TRUNCATE. Đã viết lại bằng cmdlet `ScheduledTasks` + `Assert-TaskCommand` (kiểm lệnh) + restart-on-crash + chạy bù; chạy thử thật qua Scheduler: `LastTaskResult=0`, log đúng.
+- **Ruling (ghi nhận sai lầm phương pháp):** mọi AC "đã đăng ký/đã cấu hình" từ nay phải nghiệm thu bằng **thứ nó thực sự chạy**, không bằng trạng thái hiển thị. Đã mã hoá thành `Assert-TaskCommand` trong chính script.
+- **Ruling (reviewer nói đúng, tôi nhận):** ledger trước đó "resolve" câu hỏi phân loại lỗi poison bằng lập luận một chiều (test poison chạy nhanh ⇒ phân loại đúng). Nó KHÔNG phủ chiều nguy hiểm (transient bị đọc nhầm thành tất định = vứt sạch block) — chính là finding I1. Phán quyết cũ **sai**, đã sửa code theo I1.
+- 9 finding còn lại giao một agent (opus) sửa trọn gói, TDD từng cái: C2 (bắt sai lớp exception redis-py → run() chết câm → hai người ghi) · C3 (buffer standby → ghi đôi khi tiếp quản) · I1 (đảo luật transient/tất định + `DataError`) · I4 (mutex pha xả, race mất block lúc tắt) · I6 (`_has` cho cả 5 topic) · I7 (cột non-nullable) · I2+I3 (merge base_state, lọc theo catalog) · I5 (hai cột dòng tiền OMO thành hai chiều không âm) · M1 (`join_use_nulls=1`).
+- Agent tự phát hiện thêm 3 thứ trong lúc sửa: dòng độc thật ném `DataError` không kèm mã lỗi CH (phải bắt theo TYPE, không chỉ theo chuỗi); một test I4 ban đầu **pass nhầm** vì exception rơi trong thread phụ (pytest chỉ warning) — đã sửa test thu exception; `rebuild()` cắt SQL bằng `split(";")` nên dấu `;` trong chú thích tiếng Việt làm vỡ câu lệnh.
+- **179 test xanh.** Đang chạy re-review scoped (opus) cho đợt sửa này.
