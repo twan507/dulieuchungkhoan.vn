@@ -32,7 +32,7 @@ Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và m�
 | [architecture.md](00-overview/architecture.md) | Bốn tầng L0–L4 · ranh giới tài liệu · ba mắt xích nối ba khối · lỗ hổng gác cổng phạm vi · rủi ro pháp lý theo nguồn |
 | [roadmap.md](00-overview/roadmap.md) | Trạng thái từng khối · việc chặn nhiều nhất · việc gấp vì mất dữ liệu · cây phụ thuộc · việc còn để ngỏ · ba bẫy ngày đầu |
 | [reference-repos.md](00-overview/reference-repos.md) | Sổ đăng ký repo GitHub tham chiếu — đã dùng · kho nguồn · đã loại kèm lý do |
-| [decisions/](00-overview/decisions/) | Kho lịch sử quyết định kiến trúc — 0001 cấu trúc kho · 0002 chọn nguồn dữ liệu · 0003 đóng dự án skill · 0004 bỏ nhật ký phiên · 0005 tái cấu trúc cây tiếng Anh · 0006 chốt nguồn sau khảo sát 2026-08-15 |
+| [decisions/](00-overview/decisions/) | Kho lịch sử quyết định kiến trúc. **Danh sách ADR do [`decisions/README.md`](00-overview/decisions/README.md) sở hữu** — không chép lại ở đây, hai bản sẽ trôi lệch (§1.6); bản chép cũ đã dừng ở 0006 trong khi 0007 đã tồn tại |
 
 ### 10 · Nguồn dữ liệu — *reference*
 
@@ -55,7 +55,7 @@ Mục lục chi tiết từng file: [10-sources/README.md](10-sources/README.md)
 |---|---|---|
 | [service-topology.md](20-design/service-topology.md) | Ranh giới process backend · ba tiến trình `ingester`/`etl`/`api` · ai ghi miền nào · rate limiter Redis · lát cắt writer trước | ✅ chốt trước khi viết code |
 | [test-strategy.md](20-design/test-strategy.md) | Công cụ test theo stack · cấm gọi thật nguồn ngoài trong CI · DB test thật · chống test giả | ✅ chốt định hướng |
-| [market-data-store.md](20-design/market-data-store.md) | Cách ly hoàn toàn · Ingester + SSE · lược đồ Timescale · ETL · giám sát hợp đồng | ✅ đã duyệt · ⚠️ chờ cập nhật ClickHouse (ADR 0007) |
+| [market-data-store.md](20-design/market-data-store.md) | Cách ly hoàn toàn · Ingester + SSE · **hợp đồng ghi ClickHouse §3.7** · ETL · giám sát hợp đồng · lược đồ Timescale §5 giữ làm bối cảnh lịch sử | ✅ đã duyệt · cập nhật theo ClickHouse 2026-08-26 (ba banner đầu trang nói rõ phần nào đã bị thay) |
 | [news-pipeline.md](20-design/news-pipeline.md) | Lưới AI không đường tắt · taxonomy 20 sub · gắn mã 3 tầng · kho toàn văn | ✅ đã duyệt |
 | [chatbot-semantic-layer.md](20-design/chatbot-semantic-layer.md) | Luật phân định 4 tầng · 8 function · ba quy tắc nối dữ liệu vào skill | 🟡 **đề xuất, chưa duyệt** |
 | [market-field-selection.md](20-design/market-field-selection.md) | Bảng lấy/bỏ từng trường cho ETL thị trường — 213 dòng, lý do tại chỗ, kèm [bản JSON máy đọc](20-design/market-field-selection.json). Cả hai sinh tự động từ [`gen_field_selection.py`](20-design/gen_field_selection.py), cấm sửa tay | ✅ đã chốt |
