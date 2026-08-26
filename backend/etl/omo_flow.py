@@ -10,7 +10,7 @@ from __future__ import annotations
 import sqlalchemy as sa
 
 _REBUILD = """
-TRUNCATE macro.omo_flow;
+DELETE FROM macro.omo_flow;   -- KHÔNG dùng TRUNCATE: đòi quyền chủ bảng, role dlck_etl chỉ có DML (migration 0009)
 WITH signed AS (
   SELECT session_date, tenor_days,
          CASE WHEN op_type = 'reverse_repo' THEN volume_vnd ELSE -volume_vnd END AS sv

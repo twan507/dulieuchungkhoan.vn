@@ -84,3 +84,19 @@ def test_flow_rebuild_idempotent(db):
     first = db.execute(sa.text("SELECT * FROM macro.omo_flow ORDER BY flow_date")).all()
     rebuild(db)
     assert db.execute(sa.text("SELECT * FROM macro.omo_flow ORDER BY flow_date")).all() == first
+
+
+def test_flow_rebuild_works_under_etl_role(db):
+    """Regression: rebuild phải chạy được với QUYỀN THẬT của role dlck_etl.
+
+    Bộ test khác chạy bằng user owner nên không thấy: `TRUNCATE` đòi quyền chủ
+    bảng, trong khi migration 0009 chỉ cấp SELECT/INSERT/UPDATE/DELETE cho
+    dlck_etl → job thật chết giữa chừng (bắt được khi chạy `python -m etl omo`
+    lần đầu, 2026-08-26).
+    """
+    _seed(db, date(2026, 8, 14), 7, "6307.47")
+    db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
+    rebuild(db)
+    db.execute(sa.text("RESET ROLE"))
+    n = db.execute(sa.text("SELECT count(*) FROM macro.omo_flow")).scalar_one()
+    assert n == 2

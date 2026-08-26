@@ -244,7 +244,7 @@ Bối cảnh các đường khác *(khảo sát 2026-08-15)*:
 | Chưa kiểm | Vì sao đáng biết |
 |---|---|
 | Cấu trúc HTML của nhóm `Bán kỳ hạn` và `Bán hẳn` | Chưa từng quan sát — parser cho tín phiếu là **viết mù** cho tới phiên đầu tiên NHNN phát hành |
-| SBV đăng bài lúc mấy giờ trong ngày | Quyết định giờ chạy crawler. Đặt sai giờ = mất phiên = [Giới hạn 1](#-giới-hạn-1--chỉ-phiên-mới-nhất-không-có-kho-lưu) |
+| SBV đăng bài lúc mấy giờ trong ngày — **thu hẹp được một khoảng** *(đo 2026-08-26)*: lúc **13:00** trang còn treo phiên **25/08**, tới **16:40** đã là phiên **26/08** ⇒ bài lên trong khoảng 13:00–16:40. Chưa đủ để chốt một mốc | Quyết định giờ chạy crawler. Đặt sai giờ = mất phiên = [Giới hạn 1](#-giới-hạn-1--chỉ-phiên-mới-nhất-không-có-kho-lưu). Lịch hiện tại phòng thủ: **4 mốc/ngày** 11:30 · 15:30 · 18:00 · 21:30 |
 | WAF có siết theo tần suất không | Đợt đo chỉ gọi vài lần, chủ đích không dò ngưỡng |
 
 Xem thêm: [`wichart.md`](wichart.md) cho bốn nhân tố thanh khoản còn lại · [`../market/00-conventions.md`](../market/00-conventions.md) cho quy ước chung.
