@@ -37,7 +37,7 @@ def test_issuer_links():
     assert by["FUEMAVND"].organ_code == "2172623"    # ETF khớp QU (luật 4)
     assert by["E1SSHN30"].organ_code is None          # ETF không khớp
     assert by["HTB"].organ_code is None               # CP không issuer
-    assert t.counters["stocks_no_issuer"] == 2        # HTB + 1 (fixture README)
+    assert t.counters["stocks_no_issuer"] == 1  # chỉ HTB — giải tay từ fixture (README, sửa 2026-08-26)
     assert len(t.issuers) == 8
 
 
