@@ -1,0 +1,89 @@
+{
+ "page": 1,
+ "pageSize": 0,
+ "totalCount": 8,
+ "items": [
+  {
+   "organCode": "ACVN",
+   "ticker": "ACV",
+   "comGroupCode": "UpcomIndex",
+   "icbCode": "2777",
+   "organTypeCode": "DN",
+   "comTypeCode": "CT",
+   "organName": "Tổng Công ty Cảng Hàng không Việt Nam - CTCP",
+   "organShortName": "Cảng Hàng không VN"
+  },
+  {
+   "organCode": "NHN",
+   "ticker": "VHM",
+   "comGroupCode": "VNINDEX",
+   "icbCode": "8633",
+   "organTypeCode": "DN",
+   "comTypeCode": "CT",
+   "organName": "Công ty Cổ phần Vinhomes",
+   "organShortName": "Vinhomes"
+  },
+  {
+   "organCode": "SHB",
+   "ticker": "SHB",
+   "comGroupCode": "VNINDEX",
+   "icbCode": "8355",
+   "organTypeCode": "DN",
+   "comTypeCode": "NH",
+   "organName": "Ngân hàng Thương mại Cổ phần Sài Gòn – Hà Nội",
+   "organShortName": "SHB"
+  },
+  {
+   "organCode": "0106839469",
+   "ticker": "CLI",
+   "comGroupCode": "UpcomIndex",
+   "icbCode": "1755",
+   "organTypeCode": "DN",
+   "comTypeCode": "CT",
+   "organName": "Công ty Cổ phần Tập đoàn CNCTech",
+   "organShortName": "Tập đoàn CNCTech"
+  },
+  {
+   "organCode": "ANOVA",
+   "ticker": "NCG",
+   "comGroupCode": "UpcomIndex",
+   "icbCode": "3573",
+   "organTypeCode": "DN",
+   "comTypeCode": "CT",
+   "organName": "Công ty Cổ phần Đầu tư Anova Agri",
+   "organShortName": "Đầu tư Anova Agri"
+  },
+  {
+   "organCode": "2172623",
+   "ticker": "FUEMAVND",
+   "comGroupCode": "VNINDEX",
+   "icbCode": "8985",
+   "organTypeCode": "OTHER",
+   "comTypeCode": "QU",
+   "organName": "Quỹ ETF MAFM VNDIAMOND",
+   "organShortName": "Quỹ ETF MAFM VNDIAMOND"
+  },
+  {
+   "organCode": "0107490477",
+   "ticker": "EGL",
+   "comGroupCode": "UpcomIndex",
+   "icbCode": "2799",
+   "organTypeCode": "DN",
+   "comTypeCode": "CT",
+   "organName": "Công ty Cổ phần Môi Trường Đô Thị Gia Lâm",
+   "organShortName": "Urenco Gia Lam.,Jsc"
+  },
+  {
+   "organCode": "12615",
+   "ticker": "FUCTVGF4",
+   "comGroupCode": "VNINDEX",
+   "icbCode": "8985",
+   "organTypeCode": "OTHER",
+   "comTypeCode": "QU",
+   "organName": "Quỹ Đầu tư Tăng trưởng Thiên Việt 4",
+   "organShortName": "Quỹ Đầu tư Tăng trưởng Thiên Việt 4"
+  }
+ ],
+ "status": 0,
+ "errors": null
+}

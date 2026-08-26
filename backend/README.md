@@ -10,7 +10,7 @@
 
 **Đang có:** [`agent/skills/`](agent/skills/) — hai skill sản phẩm `vn-stock-advisor` · `vn-stock-knowledge` (3.046 dòng, đã test 6 vòng). ⚠️ **Trước khi sửa bất cứ gì trong đó, bắt buộc đọc [`docs/30-skills/maintenance.md`](../docs/30-skills/maintenance.md).** `agent/` sau này chứa luôn system prompt và glue function-calling.
 
-**Trạng thái phần code:** lát cắt dọc đầu tiên đã dựng — `ingester` (socket BVSC → Redis → ClickHouse) và job `etl omo` (crawl OMO của SBV → Postgres). Hồ sơ: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
+**Trạng thái phần code:** `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
 
 ---
 
@@ -38,10 +38,20 @@ uv run python -m etl omo            # một lần chạy, ghi rồi thoát
 
 Cần `ETL_DATABASE_URL` (user thuộc role `dlck_etl`). Job idempotent theo **ngày trong tiêu đề bài của SBV**: ngày đã có trong `macro.omo_session` thì bỏ qua, không ghi đè. Bị WAF chặn → `ops.etl_run` ghi `failed`, **không** ghi kho lẫn staging.
 
+## Chạy job refdata (danh bạ + danh mục mã + cây ICB)
+
+```bash
+cd backend
+uv run python -m etl refdata                  # một lần chạy, ghi rồi thoát
+uv run python -m etl refdata --accept-drop    # mở khoá MỘT lượt khi chốt chặn từ chối đúng
+```
+
+Cần `ETL_DATABASE_URL` (user thuộc role `dlck_etl`). Idempotent: lượt hai không đổi gì, `updated_at` không bị đụng. Chốt chặn sụt hai tầng — mốc là `ops.etl_run.stats` của lượt success gần nhất; bị từ chối thì rollback trọn, payload bằng chứng vào `staging.raw_payload` (`refdata:*`), và cần `--accept-drop` nếu cú sụt là thật (huỷ niêm yết hàng loạt). **Không bao giờ ghi `issuer.industry_id`** — cột đó gán tay, tay thắng máy.
+
 ## Lịch chạy (Windows Task Scheduler)
 
 ```bash
 pwsh scripts/register-tasks.ps1
 ```
 
-Đăng ký 4 mốc OMO (11:30 · 15:30 · 18:00 · 21:30, ngày làm việc) và `dlck-ingester` 08:30. **Gate ghi tick mở 2026-08-26** — `dlck-ingester` nay đăng ký ở trạng thái BẬT, kèm `dlck-ingester-measure` chạy **một lần** vào ngày làm việc kế tiếp để bắt frame thô song song. Bật/tắt tay bằng cmdlet `Enable-ScheduledTask` / `Disable-ScheduledTask`, **không dùng `schtasks.exe`** — xem cảnh báo đầu [`scripts/register-tasks.ps1`](../scripts/register-tasks.ps1).
+Đăng ký **7 task**: 4 mốc OMO (11:30 · 15:30 · 18:00 · 21:30, ngày làm việc) · `dlck-refdata` 08:00 (danh bạ tươi trước phiên) · `dlck-ingester` 08:30 · `dlck-ingester-measure` (một lần). **Gate ghi tick mở 2026-08-26** — `dlck-ingester` nay đăng ký ở trạng thái BẬT, kèm `dlck-ingester-measure` chạy **một lần** vào ngày làm việc kế tiếp để bắt frame thô song song. Bật/tắt tay bằng cmdlet `Enable-ScheduledTask` / `Disable-ScheduledTask`, **không dùng `schtasks.exe`** — xem cảnh báo đầu [`scripts/register-tasks.ps1`](../scripts/register-tasks.ps1).

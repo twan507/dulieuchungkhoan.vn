@@ -92,7 +92,7 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
 
 ⚠️ Con số *"~1.600 mã"* trong tài liệu pipeline là **ước lượng chưa kiểm chứng**; số đo thật là **1.974** *(đếm `StockType=2` từ `getAllQuotes` của BVSC, đo 2026-08-15; ngày 2026-08-10 là 1.972)*. Dùng số 1.974 (đo 2026-08-15) — và lưu ý con số này **đổi theo tuần**, nên lọc động thay vì hardcode.
 
-Hệ quả vận hành: bảng danh bạ — nay là **`market.issuer` + `market.security`** (spec schema 2026-08-25 tách đôi khái niệm `organization` cũ: doanh nghiệp phát hành vs mã giao dịch — xem [spec bước 2](../90-records/plans/2026-08-25-postgres-data-schema/step-02-market-identity.md)) — trở thành **phụ thuộc cứng của pipeline tin**. Pipeline tin không được tự nạp danh sách riêng — hai bản sao sẽ lệch nhau. Gắn mã chỉ nhận `security` có `status='listed'`.
+Hệ quả vận hành *(cập nhật 2026-08-26 đêm: danh bạ ĐÃ NẠP THẬT — job `etl refdata` hằng ngày 08:00, 2.015 mã, 1.550 doanh nghiệp; **ngành CHƯA gán** — `industry_id` rỗng chờ lát ngành, nên tầng lọc ngành của tin vẫn chặn)*: bảng danh bạ — nay là **`market.issuer` + `market.security`** (spec schema 2026-08-25 tách đôi khái niệm `organization` cũ: doanh nghiệp phát hành vs mã giao dịch — xem [spec bước 2](../90-records/plans/2026-08-25-postgres-data-schema/step-02-market-identity.md)) — trở thành **phụ thuộc cứng của pipeline tin**. Pipeline tin không được tự nạp danh sách riêng — hai bản sao sẽ lệch nhau. Gắn mã chỉ nhận `security` có `status='listed'`.
 
 ### 3.2 Bộ ngành riêng → khung ngành cho skill (ICB chỉ còn tham khảo)
 

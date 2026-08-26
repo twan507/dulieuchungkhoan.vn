@@ -70,6 +70,10 @@ foreach ($t in @("11:30", "15:30", "18:00", "21:30")) {
     Assert-TaskCommand -TaskName $name -MustContain "python -m etl omo"
 }
 
+Write-Host "Đăng ký refdata (08:00 ngày làm việc — danh bạ tươi TRƯỚC ingester 08:30 và ETL giá):"
+Register-DlckTask -TaskName "dlck-refdata" -AtTime "08:00" -ModuleArgs "etl refdata" -LogFile "refdata.log"
+Assert-TaskCommand -TaskName "dlck-refdata" -MustContain "python -m etl refdata"
+
 Write-Host "Đăng ký ingester theo phiên (08:30, tự thoát sau đối chứng ~15:05):"
 Register-DlckTask -TaskName "dlck-ingester" -AtTime "08:30" -ModuleArgs "ingester" -LogFile "ingester-task.log"
 Assert-TaskCommand -TaskName "dlck-ingester" -MustContain "python -m ingester " -MustNotContain "--measure"
@@ -101,7 +105,7 @@ if (Get-ScheduledTask -TaskName $measureTask -ErrorAction SilentlyContinue) {
 }
 Assert-TaskCommand -TaskName $measureTask -MustContain "python -m ingester --measure "
 
-Write-Host "`nĐã kiểm lệnh của cả 6 task. Xem lại bất cứ lúc nào:"
+Write-Host "`nĐã kiểm lệnh của cả 7 task. Xem lại bất cứ lúc nào:"
 Write-Host '  Get-ScheduledTask -TaskName "dlck-*" | % { $_.TaskName + " -> " + $_.Actions[0].Arguments }'
 Write-Host "`n⚠️ Task chạy với tài khoản đang đăng nhập (Interactive). Muốn chạy cả khi"
 Write-Host "   không đăng nhập, đăng ký lại bằng quyền admin với -LogonType S4U."

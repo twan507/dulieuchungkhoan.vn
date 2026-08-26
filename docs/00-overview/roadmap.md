@@ -57,7 +57,7 @@ Ba việc 1b–3 đều **phụ thuộc bên ngoài**, không tự làm được
 ```
 [1] hạ tầng
      │
-     ├─→ [6] Bảng tham chiếu + ETL danh bạ/ngành/instrument  ◄── nút thắt
+     ├─→ [6] Bảng tham chiếu + ETL danh bạ  ✅ XONG 2026-08-26 đêm (job `etl refdata` chạy thật, 2.015 mã; NGÀNH chưa gán — xem ghi chú dưới cây)
      │        │
      │        ├─→ [7]  ETL hằng ngày: giá, snapshot, screener, lịch sự kiện
      │        │         └─→ [8] Bộ giám sát hợp đồng (dựng cùng, dùng chung script)
@@ -73,7 +73,7 @@ Ba việc 1b–3 đều **phụ thuộc bên ngoài**, không tự làm được
                     └─→ [14] Test lại vòng 6 CÓ function calling
 ```
 
-**[6] là nút thắt thật của cả hệ.** Nó xuất hiện trong kho dữ liệu như "giai đoạn 1", nhưng pipeline tin cũng phụ thuộc nó mà không biết — xem [mắt xích 3.1](architecture.md). Làm xong [6] là mở khoá cả hai nhánh cùng lúc.
+**[6] là nút thắt thật của cả hệ** — và **đã thông 2026-08-26 đêm**: job `python -m etl refdata` chạy thật 2 lượt (idempotent), 2.015 security · 1.550 issuer · 176 mã ICB vào kho, task `dlck-refdata` 08:00/ngày; hồ sơ: [plans/2026-08-26-reference-data-etl/](../90-records/plans/2026-08-26-reference-data-etl/). ⚠️ **Phần NGÀNH hoãn có chủ đích** (quyết định chủ dự án): `industry_icb_map` + `issuer.industry_id` còn rỗng ⇒ [7] ETL giá mở khoá NGAY, nhưng tầng lọc tin theo ngành của [10] và khung ngành cho skill **vẫn chờ lát ngành**.
 
 ## 4. Việc đã có đáp án, chỉ cần áp dụng
 
