@@ -13,6 +13,14 @@ def _write(d: Path, name: str, sql: str) -> None:
     (d / name).write_text(sql, encoding="utf-8")
 
 
+@pytest.fixture(autouse=True, scope="module")
+def _don_sach_sau_module(ch):
+    """t02 nghịch database rt bằng migration giả — dọn sạch sau khi CẢ module chạy xong,
+    để t03+ nhận rt nguyên sơ từ fixture migrated (kẻ gây ô nhiễm tự dọn)."""
+    yield
+    ch.command("DROP DATABASE IF EXISTS rt")
+
+
 def test_split_statements_bo_comment_va_rong():
     sql = "-- chi comment\nCREATE TABLE IF NOT EXISTS rt.a (x UInt8) ENGINE = MergeTree ORDER BY x;\n\n-- nua\n;\nGRANT SELECT ON rt.* TO r1;"
     stmts = ch_migrate.split_statements(sql)
