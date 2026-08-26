@@ -181,3 +181,80 @@ Sửa: `applied_versions` thành thuần đọc — hỏi `system.tables`, khôn
 2. Chiều sau 15:05: đọc `reconcile` cuối phiên, đối chiếu số dòng `rt.trade`/`rt.bar_1m` với counter trong log.
 3. Phân tích bản đo trọn ngày → chốt tính chất `SM` (đơn điệu? duy nhất? bộ đếm toàn sở?) cho spec CH §4.1, và hành vi phiên ATO.
 4. Sau khi phân tích xong: cân nhắc gỡ `dlck-ingester-measure` (task một lần, đã bắn thì thôi) và dọn file đo cũ.
+
+
+## Review hai trục sau khi mở gate (2026-08-26 tối) — và đợt sửa
+
+Hai reviewer opus độc lập, chạy song song, báo riêng theo §4.1. **Không finding Critical nào.** Cả hai kết luận merge được.
+
+Điều đáng giá nhất: reviewer trục Spec **không tin commit message**, tự đọc `build_http_error` xác nhận lại khẳng định `code` (header) vs `name` (body); reviewer trục Chuẩn tự đối chiếu cả 14 mã với danh mục lỗi ClickHouse và xác nhận **không mã backpressure nào lọt vào** (252/241/159/209/210/242 đều vắng), tức hồi quy mà review trước đã vá không quay lại được qua bộ mã này.
+
+### 🔴 Important 1 — bất biến của M-new-3 KHÔNG đứng vững. Tôi suy sai, reviewer đúng.
+
+`DRAIN_BUDGET_S = RETRY_BUDGET_S + 15` giả định thread flush cũ kẹt tối đa `RETRY_BUDGET_S` **giây thực**. Nhưng `_write_block` cộng `spent += delay` — **chỉ thời gian NGỦ**. Thời gian nằm trong `client.insert` không vào sổ, mà driver mặc định `send_receive_timeout=300`.
+
+Đo bằng test đồng hồ giả: server treo cho ra **8 lần thử × 300 s = 2.400 giây (40 phút)** trong khi bộ đếm mới tới 63 s — và log tự khai *"sau 63.0s retry"*, tức **log nói sai luôn**. Vượt 40 lần ngân sách, và vượt xa cửa sổ dedup ~100 s mà chính hằng số này tự khai là phải nằm dưới.
+
+Nghĩa là comment tôi viết khẳng định một bất biến **không đúng** — nguy hiểm hơn bug gốc ở chỗ nó **trông như đã suy ra**. Test đồng hồ giả của tôi cũng không thể thấy: `_FakeClock` chỉ nhích khi `sleep`, tức mặc định insert tốn 0 giây.
+
+**Sửa:** `_write_block` đếm thời gian thực (`self.clock()`), `ChWriter` nhận `clock` tiêm được; thêm `CH_IO_TIMEOUT_S = 20` tường minh cho client ingester (cho ~3 lần thử nằm gọn trong ngân sách; ghi 5.000 dòng bình thường dưới một giây).
+
+> ⚠️ **Đính chính:** câu ban đầu viết ở đây — *"nay `RETRY_BUDGET_S` mới đúng nghĩa nó tự khai"* — **nói quá**. Re-review bắt được: sửa trên mới chỉ đúng cho đường phẳng. Xem mục dưới.
+
+### Các finding còn lại — đã sửa hết trong cùng đợt
+
+| # | Trục | Việc |
+|---|---|---|
+| Missing 1 | Spec | Nhánh lùi (exception không mang mã) vẫn thiếu `INCORRECT_DATA`/`DECIMAL_OVERFLOW` — đã bổ sung vào `_DETERMINISTIC_MARKERS` |
+| I2 | Chuẩn | `90-records/README.md` còn ghi "179 test · chờ gate" — **cột Trạng thái của index là khẳng định về HIỆN TẠI**, không phải bản ghi tại-thời-điểm, nên thuộc diện phải sửa. Quét §1.7 của tôi trượt vì grep "DISABLED/chưa bật" chứ không grep con số |
+| I3 | Chuẩn | Script tự khai idempotent nhưng task `-Once` nạp lại mốc mới mỗi lần chạy — đã thêm chốt "đã tồn tại thì giữ nguyên" |
+| M4 | Chuẩn | Log drop/poison nay in cả `e.code` — khi tắt `show_clickhouse_errors` thì mã là thứ DUY NHẤT còn lần ra được nguyên nhân |
+| M5 | Chuẩn | `drain_writer` trả `bool` mà không ai dùng — nay xả không sạch thì in thẳng "PHÁN QUYẾT KHÔNG ĐÁNG TIN" cạnh kết quả reconcile |
+| M7 | Chuẩn | Hợp đồng khởi động chỉ bắt `RuntimeError` — chính sự cố ACCESS_DENIED thoát ra dạng traceback trần, đi vòng qua hợp đồng exit 3. Nay bắt cả `ClickHouseError` |
+| M8 | Chuẩn | Phần tử tuple chết trong bảng `CH_ERR` của test |
+| M9 | Chuẩn | Test drain dùng biên `+5` nên nới `DRAIN_BUDGET_S` vẫn xanh — nay assert thẳng quan hệ hai hằng số, và ca hành vi lấy đúng `RETRY_BUDGET_S` làm mốc |
+| M10 | Chuẩn | `Enable-ScheduledTask` không được nghiệm thu — đúng thứ commit sinh ra để đổi lại là thứ duy nhất không kiểm. Đã thêm throw |
+| M11 | Chuẩn | `ParseExact('HH:mm', $null)` phụ thuộc culture — chuyển `InvariantCulture` |
+| — | (tự thấy khi sửa) | Cùng index `90-records/README.md` còn dòng deploy-scaffold ghi "chờ merge" trong khi `main..feat/deploy-scaffold` = **0 commit**. Sửa luôn vì cùng file, cùng luật |
+
+### Đã nhận, không sửa
+
+- **M6** (thông điệp "chưa migrate" đánh lừa nếu role không thấy bảng) — **PARK**. Grant hiện tại là `SELECT, INSERT ON rt.*` nên không xảy ra, và test role thật đang phủ. Chi phí nếu sai: một lần đọc nhầm thông điệp khi ai đó đổi grant.
+- **M12** (commit `27e3bbd` vào thẳng `main`) — **nhận, không đảo**. §4.7 không có ngoại lệ docs-only sau khi repo đã có code; viết lại lịch sử để sửa một commit tài liệu thì hại hơn lợi.
+- **Scope creep dòng `.gitignore`** — nhận. §4.4.3 nói rác có sẵn thì báo, không tự dọn; đúng ra phải hỏi trước.
+- **Cảnh báo phụ thuộc ngầm** (bộ 14 mã đủ *vì* `rt.*` chỉ dùng String/UInt/Decimal64/DateTime) — ghi lại ở đây làm mốc: **thêm cột `UUID`/`Float`/`IPv*` vào `rt.*` thì phải rà lại `_DETERMINISTIC_CODES`**, không có gì tự báo.
+
+**190 test xanh.** Chạy lại đường ghi thật sau đợt sửa: giành leader · 6.039 topic · `reconcile: p1=0 p2=0 ok=0` · exit 0.
+
+
+## Re-review có phạm vi cho đợt sửa (opus) — và đợt sửa thứ hai
+
+Re-reviewer **dựng phản chứng thật** thay vì đọc code: khôi phục bản cũ trong scratchpad ngoài repo rồi đo. Bản sửa `attempts=1, elapsed=300s`; bản cũ `attempts=8, elapsed=2463s`. 9/11 finding ADDRESSED, **2 PARTIALLY** — và bắt thêm **một regression do chính đợt sửa tạo ra**.
+
+### Important 1 — mới sửa được nửa. Tôi viết ledger quá lời.
+
+`_write_block` truyền xuống đệ quy một **KHOẢNG** ngân sách, không phải **HẠN CHÓT**, nên mỗi tầng chia đôi được cấp lại trọn 60 s. Reviewer đo trên block 5.000 dòng có một dòng độc, server chết giữa chừng:
+
+| Server chết sau insert thứ | Một `flush_once` ngốn |
+|---|---|
+| 1 | 129 s |
+| 7 | 389 s |
+| 13 | **778 s (13 phút)** |
+
+Ngân sách 60 s, `DRAIN_BUDGET_S` 75 s. Cận trên bệnh lý: 512 dòng → 42.476 s. **Có sẵn từ trước, không phải do đợt sửa** (bản cũ cũng reset `spent=0` mỗi tầng), nhưng câu tôi viết trong ledger là sai và đã đính chính ở trên.
+
+**Sửa:** `deadline` tuyệt đối tính một lần, truyền nguyên vào cả hai nhánh đệ quy. Test đỏ tái hiện đúng kịch bản trên rồi mới sửa.
+
+### 🔴 Regression do chính tôi tạo ra
+
+`CH_IO_TIMEOUT_S = 20` hợp lý cho INSERT, nhưng tôi gán nó cho **client dùng chung**, mà `reconcile()` cuối phiên quét `FULL OUTER JOIN` trọn ngày. Quá 20 giây là `OperationalError` không ai bắt → exit 1, **dù dữ liệu đã ghi đủ**. Một phiên sạch bị báo thành hỏng.
+
+**Sửa:** client riêng cho reconcile, giữ trần mặc định của driver. Ghi và đọc có hai đặc tính thời gian khác nhau, không dùng chung trần được.
+
+### Hai finding còn lại
+
+- **Minor 7 dư địa:** `get_client()` nằm **ngoài** `try`, mà `autoconnect=True` nối ngay ⇒ ClickHouse sập lúc 08:30 vẫn ra traceback trần exit 1, đi vòng qua hợp đồng exit 3. Đã đưa vào trong `try`, kèm test `test_run_mode_returns_exit_3_when_clickhouse_unreachable`.
+- **Không có test cho 4 thay đổi** (Missing 1, M4, M5, M7) — reviewer nói đúng, §4.5 đòi đỏ trước. Đã bổ sung test cho Missing 1, M4, M7. **M5 để trống có chủ đích:** phủ nó phải lái trọn `_run_run` với leader thật, đắt hơn giá trị; đường thoát của nó là một dòng `print` đã mắt thấy khi chạy thật.
+- **Bẫy tiềm ẩn reviewer cảnh báo:** sau khi ngân sách thành thời gian thực, thành ngữ test cũ `sleep_fn=lambda s: None` + đồng hồ thật sẽ **quay nóng** (đo được 484.127 lần insert trong 0,5 s) nếu client hỏng vĩnh viễn. Không test hiện tại nào chạm phải, nhưng **test mới viết theo thành ngữ đó là cháy 60 s CPU** — dùng `_FakeClock` cho mọi test có nhánh transient.
+
+**194 test xanh**, thời gian chạy 19,3 s không đổi (không busy-spin). Đường ghi thật chạy lại: leader · 6.039 topic · `p1=0 p2=0 ok=0` · exit 0.

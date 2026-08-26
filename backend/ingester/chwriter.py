@@ -23,7 +23,7 @@ RETRY_BUDGET_S = 60          # < tuổi thọ cửa sổ dedup ~100 s (spec CH �
 _DETERMINISTIC_MARKERS = (
     "ARGUMENT_OUT_OF_BOUND", "TYPE_MISMATCH", "CANNOT_PARSE",
     "VALUE_IS_OUT_OF_RANGE_OF_DATA_TYPE", "ILLEGAL_TYPE_OF_ARGUMENT",
-    "TOO_LARGE_STRING_SIZE",
+    "TOO_LARGE_STRING_SIZE", "INCORRECT_DATA", "DECIMAL_OVERFLOW",
 )
 # DataError = clickhouse_connect không đóng gói nổi giá trị vào mảng native — lỗi ở PHÍA
 # CLIENT, thông điệp không mang mã của server nhưng chắc chắn không tự lành.
@@ -69,9 +69,10 @@ def _is_deterministic(e: Exception) -> bool:
 
 
 class ChWriter:
-    def __init__(self, client, sleep_fn=time.sleep):
+    def __init__(self, client, sleep_fn=time.sleep, clock=time.monotonic):
         self.client = client
         self.sleep = sleep_fn
+        self.clock = clock
         self.metrics = Metrics()
         self.buffers: dict[str, list[list]] = {t: [] for t in COLUMNS}
         self.pending: dict[str, deque] = {t: deque() for t in COLUMNS}
@@ -113,9 +114,19 @@ class ChWriter:
         finally:
             self._flush_lock.release()
 
-    def _write_block(self, table: str, block: list, budget: float | None = None) -> None:
-        budget = RETRY_BUDGET_S if budget is None else budget
-        delay, spent = 1.0, 0.0
+    def _write_block(self, table: str, block: list, deadline: float | None = None) -> None:
+        # HẠN CHÓT TUYỆT ĐỐI, không phải "khoảng ngân sách". Bản trước truyền xuống một
+        # KHOẢNG, nên mỗi tầng chia đôi được cấp lại trọn 60 s: một dòng độc gặp đúng lúc
+        # server trục trặc nhân ngân sách lên theo độ sâu cây đệ quy (đo được 778 s cho
+        # một lần xả). Hạn chót chung làm cả cây đệ quy nằm gọn trong một ngân sách.
+        if deadline is None:
+            deadline = self.clock() + RETRY_BUDGET_S
+        # Đếm THỜI GIAN THỰC, không phải tổng thời gian ngủ. Bản cũ chỉ cộng `delay` nên
+        # thời gian nằm trong `client.insert` không vào sổ — mà driver mặc định
+        # `send_receive_timeout=300`, nên một server treo cho ra 8 lần thử × 300 s = 40
+        # PHÚT trong khi bộ đếm mới tới 63 s. Vượt xa cửa sổ dedup ~100 s mà hằng số này
+        # tự khai là phải nằm dưới, và làm ngân sách xả cuối phiên (suy ra từ đây) mất căn cứ.
+        delay = 1.0
         while True:
             try:
                 self.client.insert(f"rt.{table}", block, column_names=COLUMNS[table])
@@ -123,19 +134,24 @@ class ChWriter:
                 return
             except Exception as e:  # noqa: BLE001 — phân loại rồi xử lý theo hợp đồng
                 if not _is_deterministic(e):
-                    if spent >= budget:
+                    if self.clock() >= deadline:
                         self.metrics.inc(f"dropped_block.{table}", len(block))
-                        log.error("bỏ block %s (%d dòng) sau %ss retry: %r", table, len(block), spent, e)
+                        # In cả MÃ lỗi: khi server tắt show_clickhouse_errors thì `%r` rút
+                        # gọn còn câu chung chung, mã là thứ duy nhất còn dùng để lần ra
+                        # nguyên nhân và quyết định có bổ sung vào _DETERMINISTIC_CODES không.
+                        log.error("bỏ block %s (%d dòng) — quá hạn chung %ds thêm %.1fs: code=%s %r",
+                                  table, len(block), RETRY_BUDGET_S, self.clock() - deadline,
+                                  getattr(e, "code", None), e)
                         return
                     self.sleep(delay)
-                    spent += delay
                     delay = min(delay * 2, 16.0)
                     continue                      # retry NGUYÊN block — không gộp dòng mới
                 if len(block) == 1:
                     self.metrics.inc(f"poison_row.{table}")
-                    log.error("dòng độc %s: %r — %r", table, block[0], e)
+                    log.error("dòng độc %s: code=%s %r — %r",
+                              table, getattr(e, "code", None), block[0], e)
                     return
                 mid = len(block) // 2             # lỗi tất định → cô lập dòng hỏng (§5.8)
-                self._write_block(table, block[:mid], budget)
-                self._write_block(table, block[mid:], budget)
+                self._write_block(table, block[:mid], deadline)   # hạn chót CHUNG
+                self._write_block(table, block[mid:], deadline)
                 return
