@@ -29,12 +29,42 @@ _DETERMINISTIC_MARKERS = (
 # CLIENT, thông điệp không mang mã của server nhưng chắc chắn không tự lành.
 _DETERMINISTIC_TYPES = (DataError,)
 
+# Nguồn sự thật thật sự: MÃ SỐ lỗi. `build_http_error` của clickhouse_connect đặt
+# `code` từ HEADER HTTP nên nó LUÔN có với mọi lỗi từ server, kể cả khi
+# `show_clickhouse_errors=False` nuốt mất `name` lẫn toàn bộ chi tiết trong `str(e)`
+# (lúc đó thông điệp rút gọn thành "The ClickHouse server returned an error").
+# Dò chuỗi như luật cũ vì thế trượt hai đường: (a) tên không nằm trong danh sách
+# marker — DECIMAL_OVERFLOW là ca gặp thật khi giá tràn Decimal64(2); (b) chi tiết bị
+# tắt. Trượt = lỗi dữ liệu bị đọc thành transient ⇒ retry 60 s vô ích rồi VỨT CẢ BLOCK
+# (5.000 dòng) thay vì chia đôi cô lập một dòng (M-new-1).
+# Mã tra bằng `errorCodeToName` trên ClickHouse 26.3.22.7 (đo 2026-08-26), giới hạn
+# trong những lỗi có thể sinh ra trên đường INSERT mảng native vào `rt.*`.
+_DETERMINISTIC_CODES = frozenset({
+    6,    # CANNOT_PARSE_TEXT
+    26,   # CANNOT_PARSE_QUOTED_STRING
+    27,   # CANNOT_PARSE_INPUT_ASSERTION_FAILED
+    38,   # CANNOT_PARSE_DATE
+    41,   # CANNOT_PARSE_DATETIME
+    43,   # ILLEGAL_TYPE_OF_ARGUMENT
+    53,   # TYPE_MISMATCH
+    69,   # ARGUMENT_OUT_OF_BOUND
+    70,   # CANNOT_CONVERT_TYPE
+    72,   # CANNOT_PARSE_NUMBER
+    117,  # INCORRECT_DATA
+    131,  # TOO_LARGE_STRING_SIZE
+    321,  # VALUE_IS_OUT_OF_RANGE_OF_DATA_TYPE
+    407,  # DECIMAL_OVERFLOW
+})
+
 
 def _is_deterministic(e: Exception) -> bool:
     """Lỗi dữ liệu (không retry được) hay không. Mọi lỗi KHÁC coi là transient."""
     if isinstance(e, _DETERMINISTIC_TYPES):
         return True
-    text = str(e).upper()
+    code = getattr(e, "code", None)
+    if isinstance(code, int):
+        return code in _DETERMINISTIC_CODES   # có mã thì mã là phán quyết cuối
+    text = str(e).upper()                     # không mã (lỗi transport/lỗi lạ) → đường lùi
     return any(m in text for m in _DETERMINISTIC_MARKERS)
 
 

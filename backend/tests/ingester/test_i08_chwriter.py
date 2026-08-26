@@ -7,6 +7,8 @@ import threading
 import time
 from decimal import Decimal
 
+from clickhouse_connect.driver.exceptions import DatabaseError as ChDatabaseError
+
 from ingester.chwriter import COLUMNS, ChWriter
 from ingester.normalize import Metrics, Normalized, normalize
 
@@ -275,3 +277,87 @@ def test_two_flush_threads_do_not_lose_a_block():
         assert errors == []                            # hai thread giẫm nhau -> popleft rỗng
         assert set(all_seqs) == set(range(20_003))     # không dòng nào biến mất
         assert len(all_seqs) == 20_003                 # cũng không block nào bị ghi hai lần
+
+
+# --- M-new-1: phân loại lỗi phải bắt theo MÃ SỐ, không theo chuỗi trong str(e) --------
+#
+# Đo trên ClickHouse 26.3.22.7 thật (2026-08-26) + đọc `build_http_error` của
+# clickhouse_connect: `code` lấy từ HEADER HTTP nên LUÔN có, còn `name` và phần chi tiết
+# trong `str(e)` chỉ có khi `show_clickhouse_errors` bật. Bắt theo chuỗi ⇒ lỗi DỮ LIỆU bị
+# đọc nhầm thành transient ⇒ retry 60 s vô nghĩa rồi VỨT CẢ BLOCK (tới 5.000 dòng) thay
+# vì chia đôi để cô lập đúng một dòng hỏng.
+#
+# Mã số lấy từ danh mục lỗi của ClickHouse, không suy từ code của mình.
+
+CH_ERR = {                       # mã: (tên ký hiệu, có phải lỗi dữ liệu không)
+    407: ("DECIMAL_OVERFLOW", True),
+    117: ("INCORRECT_DATA", True),
+    252: ("TOO_MANY_PARTS", False),      # backpressure — PHẢI giữ transient
+}
+
+
+def _server_error(code: int, *, detail: bool = True):
+    """Dựng đúng hình dạng exception mà clickhouse_connect sinh ra."""
+    name, _ = CH_ERR[code]
+    if detail:
+        msg = (f"Received ClickHouse exception, code: {code}, server response: "
+               f"Code: {code}. DB::Exception: ... ({name}) (for url http://127.0.0.1:8123)")
+        return ChDatabaseError(msg, code=code, name=name)
+    # show_clickhouse_errors=False: body bị nuốt, CHỈ còn code từ header
+    return ChDatabaseError("The ClickHouse server returned an error", code=code, name=None)
+
+
+class _RejectingClient:
+    """Ném `exc` với mọi block còn chứa dòng độc; block sạch thì ghi nhận."""
+
+    def __init__(self, exc, poison_seq: int):
+        self.exc, self.poison_seq = exc, poison_seq
+        self.written: list[list] = []
+        self.attempts = 0
+
+    def insert(self, table, data, column_names):
+        self.attempts += 1
+        seq_i = COLUMNS[table.split(".")[-1]].index("seq")   # caller truyền "rt.<bảng>"
+        if any(row[seq_i] == self.poison_seq for row in data):
+            raise self.exc
+        self.written.extend(data)
+
+
+def _run_with(exc):
+    client = _RejectingClient(exc, poison_seq=70002)
+    w = ChWriter(client, sleep_fn=lambda s: None)
+    for seq in (70001, 70002, 70003):
+        w.add(_n(SM=str(seq)))
+    w.flush_once()
+    return w, client
+
+
+def test_decimal_overflow_isolates_poison_row_instead_of_dropping_block():
+    w, client = _run_with(_server_error(407))
+    assert w.metrics.counters.get("poison_row.trade") == 1
+    assert w.metrics.counters.get("dropped_block.trade") is None
+    assert len(client.written) == 2                  # hai dòng lành vẫn vào kho
+
+
+def test_incorrect_data_isolates_poison_row():
+    w, client = _run_with(_server_error(117))
+    assert w.metrics.counters.get("poison_row.trade") == 1
+    assert len(client.written) == 2
+
+
+def test_data_error_still_classified_when_server_detail_suppressed():
+    """show_clickhouse_errors=False nuốt cả `name` lẫn chuỗi — chỉ `code` sống sót."""
+    exc = _server_error(407, detail=False)
+    assert getattr(exc, "name", None) is None        # tiền đề: `name` KHÔNG dùng được
+    assert "DECIMAL_OVERFLOW" not in str(exc)        # tiền đề: chuỗi KHÔNG dùng được
+    w, client = _run_with(exc)
+    assert w.metrics.counters.get("poison_row.trade") == 1
+    assert len(client.written) == 2
+
+
+def test_backpressure_code_stays_transient():
+    """Ranh giới ngược: TOO_MANY_PARTS là quá tải, KHÔNG được chia đôi block."""
+    w, client = _run_with(_server_error(252))
+    assert w.metrics.counters.get("poison_row.trade") is None
+    assert w.metrics.counters.get("dropped_block.trade") == 3   # giữ nguyên block rồi bỏ
+    assert client.written == []
