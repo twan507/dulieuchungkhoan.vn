@@ -86,3 +86,16 @@ Task tự nhất quán: T5 test expected phải chép từ fixture thật (T4 đ
 - 9 finding còn lại giao một agent (opus) sửa trọn gói, TDD từng cái: C2 (bắt sai lớp exception redis-py → run() chết câm → hai người ghi) · C3 (buffer standby → ghi đôi khi tiếp quản) · I1 (đảo luật transient/tất định + `DataError`) · I4 (mutex pha xả, race mất block lúc tắt) · I6 (`_has` cho cả 5 topic) · I7 (cột non-nullable) · I2+I3 (merge base_state, lọc theo catalog) · I5 (hai cột dòng tiền OMO thành hai chiều không âm) · M1 (`join_use_nulls=1`).
 - Agent tự phát hiện thêm 3 thứ trong lúc sửa: dòng độc thật ném `DataError` không kèm mã lỗi CH (phải bắt theo TYPE, không chỉ theo chuỗi); một test I4 ban đầu **pass nhầm** vì exception rơi trong thread phụ (pytest chỉ warning) — đã sửa test thu exception; `rebuild()` cắt SQL bằng `split(";")` nên dấu `;` trong chú thích tiếng Việt làm vỡ câu lệnh.
 - **179 test xanh.** Đang chạy re-review scoped (opus) cho đợt sửa này.
+
+## Re-review đợt sửa cuối (opus) — 9/9 ADDRESSED, merge được
+
+Re-reviewer tự dựng phản chứng thay vì tin báo cáo: khôi phục bản `flush_once` cũ trong subclass (scratchpad, không sửa repo) → đo được **25.003 dòng cho 20.003 seq** (ghi đôi) + `IndexError` 3/3 lần; bản mới sạch 3/3. Cũng kiểm `join_use_nulls` trên CH thật (0 → tên rỗng, 1 → đúng mã) và giải tay lại công thức OMO hỗn hợp: `net`/`outstanding` **bằng đúng giá trị cũ từng bit**.
+
+**Bốn minor MỚI sinh ra từ đợt sửa — park có ruling, không chặn merge:**
+
+- **M-new-1 (đáng làm trước phiên ghi thật đầu tiên):** `_is_deterministic` dò chuỗi trong `str(e)` theo danh sách đóng — thiếu `INCORRECT_DATA` (117) và `DECIMAL_OVERFLOW` (407), và nếu server tắt `show_clickhouse_errors` thì mọi lỗi thành "transient". Hậu quả khi trượt: retry 60 s rồi **bỏ CẢ BLOCK** thay vì cô lập một dòng — đúng chiều ngược của bug vừa sửa. **Ruling:** park, nhưng ghi vào việc-phải-làm trước khi bật ghi thật (AC4); sửa rẻ: dò thêm `getattr(e, "name", "")` và bổ sung hai mã. Chi phí nếu bỏ qua: mất một block (~1 giây dữ liệu) mỗi lần gặp lỗi dữ liệu ngoài danh sách.
+- **M-new-2:** lỗi tất định **không phải dữ liệu** (`UNKNOWN_TABLE`, `AUTHENTICATION_FAILED`) nay thành transient → 60 s retry mỗi block khi cấu hình sai. **Ruling:** chấp nhận — `assert_migrated` chặn từ lúc khởi động, và thà retry còn hơn vứt.
+- **M-new-3:** cuối phiên, nếu thread flush đang trong backoff thì vòng chờ có trần (~3 s) hết trước khi đuôi dữ liệu kịp ghi ⇒ `reconcile()` đọc sớm → **P2 giả + exit code 1**. Dữ liệu không mất, chỉ sai phán quyết cuối phiên. **Ruling:** park; nâng trần chờ lên quá ngân sách retry (>60 s) là sửa một dòng, làm cùng M-new-1.
+- **M-new-4:** `exchange`/`market` default `""` có thể `HSET` đè giá trị tốt trong Redis nếu frame thiếu `EX`. Đo được độ phủ `EX` = 100% ⇒ phòng thủ thuần. **Ruling:** park.
+
+**Trạng thái nhánh:** 179 test xanh · 12 commit · reviewer kết luận **merge được**.
