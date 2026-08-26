@@ -132,7 +132,9 @@ hạ tầng (docker-compose: PG + ClickHouse + Redis)
 
 `api` (reader + user) dựng sau khi kho đã có dữ liệu. Điều này khớp với hướng "làm phía backend ghi dữ liệu trước" — hiểu đúng nghĩa hẹp là **phía writer trước**.
 
-> ⚠️ **Chưa được giả định có tick phái sinh realtime** cho tới khi đo xong socket phái sinh BVSC trong phiên *(lộ trình §5.1)*. Lược đồ và ingester của lát cắt đầu bám cổ phiếu/chỉ số trước.
+> ✅ **Đã đo 2026-08-26** *(cập nhật — trước đó mục này ghi "chưa được giả định có tick phái sinh")*: phái sinh **có** tick realtime và **đi chung ba topic `i`/`o10`/`t`** với cổ phiếu, phân biệt bằng `EX = "XHNF"`, cấu trúc trường giống hệt, **không có `openInterest`** trong luồng ([hồ sơ đo](../90-records/surveys/2026-08-26-bvsc-realtime-session/README.md)). Lát cắt đầu **vẫn chỉ đăng ký cổ phiếu/ETF/chỉ số** — mã phái sinh không có trong `/quotes` nên danh mục runtime không thấy chúng; mở rộng là quyết định phạm vi riêng, cần chốt cùng lược đồ (dùng chung bảng hay tách).
+
+> **Lát cắt này đã dựng xong và merge `main` 2026-08-26** — `ingester` chạy theo phiên (3 chế độ: đo · ghi thật · đối chứng) và job `etl omo` chạy 4 mốc/ngày. Hồ sơ: [plans/2026-08-26-ingester-omo-first-slice/](../90-records/plans/2026-08-26-ingester-omo-first-slice/).
 
 ## 8. Quyết định mềm — ghi rõ để không chọn ngầm
 

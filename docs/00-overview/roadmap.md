@@ -15,7 +15,7 @@ Ba khối vốn có ba danh sách việc riêng, mỗi danh sách tự cho mình
 | **Tài liệu OMO (SBV)** | ✅ **Mới 2026-08-15** — tải và parse thật 1 phiên | [`macro/sbv-omo.md`](../10-sources/macro/sbv-omo.md) |
 | **Tài liệu 5 nguồn quốc tế** | ✅ **Mới 2026-08-15** — FRED · Frankfurter · Yahoo · LBMA · Binance | [`10-sources/global/`](../10-sources/global/) |
 | Tài liệu nguồn tin | ✅ Đo thật trên 307 URL, 1.408 tiêu đề | ~570 tin/ngày chưa dedupe |
-| Thiết kế kho dữ liệu thị trường | ✅ Đã duyệt | chưa viết dòng code nào |
+| Thiết kế kho dữ liệu thị trường | ✅ Đã duyệt · **phần realtime đã có code chạy** (2026-08-26) | schema `rt` + ingester đã dựng; phần REST chưa viết |
 | Thiết kế pipeline tin | ✅ Đã duyệt | chưa viết dòng code nào |
 | Hai skill chứng khoán | ✅ Xong, test 6 vòng, **dự án đã đóng 2026-08-14** | 3.046 dòng · [bảo trì skill](../30-skills/maintenance.md) |
 | Tầng ngữ nghĩa nối dữ liệu ↔ skill | 🟡 Mới đề xuất, chưa duyệt | [chatbot-semantic-layer.md](../20-design/chatbot-semantic-layer.md) |
@@ -27,7 +27,7 @@ Ba khối vốn có ba danh sách việc riêng, mỗi danh sách tự cho mình
 | **Repo vào git** | ✅ `git init` + commit đầu 2026-08-14 | toàn bộ docs + hai skill |
 | **Stack sản phẩm + cây monorepo** | ✅ **Chốt 2026-08-24** — Next.js · Python/FastAPI · Postgres + ClickHouse (lưu tick thô) · skill dời về `backend/agent/skills/` | [ADR 0007](decisions/0007-monorepo-layout-and-stack.md) |
 | **Hạ tầng + schema hai kho** | ✅ **Xong 2026-08-26** — compose (PG+Redis+CH, profile `realtime`) · schema `postgres-data` 10 migration · schema `rt` ClickHouse 2 migration · 71 test · một lượt dev trọn (dev-start → migrate → test → dev-stop) chạy sạch | [database/README.md](../../database/README.md) |
-| **Code sản phẩm (ingester · ETL thật · api)** | 🟡 **Lát cắt dọc đầu đã dựng 2026-08-26** — `ingester` (socket EIO3 → chuẩn hoá → Redis + ClickHouse, leader lock, đối chứng cuối phiên) và job `etl omo`; 148 test xanh trên DB thật, job OMO **đã chạy thật** (phiên 26/08 vào kho). Chờ **gate phiên đo** trước khi bật ghi tick thật. `api` chưa bắt đầu | [plans/2026-08-26-ingester-omo-first-slice/](../90-records/plans/2026-08-26-ingester-omo-first-slice/) |
+| **Code sản phẩm (ingester · ETL thật · api)** | 🟡 **Lát cắt dọc đầu đã dựng 2026-08-26** — `ingester` (socket EIO3 → chuẩn hoá → Redis + ClickHouse, leader lock, đối chứng cuối phiên) và job `etl omo`; **179 test xanh** trên Postgres/Redis/ClickHouse thật, đã qua review toàn nhánh và **merge `main` 2026-08-26**. Job OMO **đang chạy thật** (4 mốc/ngày, phiên 26/08 đã vào kho) ⇒ đồng hồ mất dữ liệu OMO đã dừng. Ghi tick realtime **chưa bật** — chờ **gate phiên đo trọn ngày**. `api` chưa bắt đầu | [plans/2026-08-26-ingester-omo-first-slice/](../90-records/plans/2026-08-26-ingester-omo-first-slice/) |
 | **Realtime phái sinh** | ✅ **Đã đo 2026-08-26 trong phiên** — phái sinh đi chung topic `i`/`o10`/`t` với cổ phiếu (`EX="XHNF"`), không có kênh riêng, không có `openInterest` | [§5.1](#51--realtime-phái-sinh--đã-đo-2026-08-26-phiên-chiều) · [hồ sơ đo](../90-records/surveys/2026-08-26-bvsc-realtime-session/README.md) |
 
 ## 1. Việc chặn nhiều thứ nhất — làm trước

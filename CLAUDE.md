@@ -128,7 +128,24 @@ Một báo cáo trong đợt khảo sát viết *"đã thử ghép ngày d−1, 
 
 **Bẫy đã viết ra vẫn cắn được người viết.** Đọc `docs/10-sources/market/00-conventions.md` trước khi gọi bất kỳ endpoint FiinTrade nào.
 
-### 3.4 Kết luận phủ định về toàn nguồn không suy được từ một endpoint
+### 3.4 🔴 Mẫu trong tài liệu nguồn ≠ frame thật — kiểm vỏ bọc trước khi tin
+
+Tài liệu `11-bvsc-realtime.md` chép mẫu JSON của socket BVSC dạng `{"SB":"ACV",…}`. Frame thật *(đo 2026-08-26, 2,3 triệu frame)* là `42["t",{"a":"i","d":[{…}]}]` — bản ghi nằm trong **mảng `d`**, kèm cờ vận chuyển `a`. Code chuẩn hoá viết theo tài liệu **từ chối mọi frame thật**, mà socket không báo lỗi gì: chỉ có counter `normalize_error` tăng.
+
+Bắt được vì có **chế độ đo ghi frame nguyên văn trước khi cho phép ghi kho**. Luật rút ra: với nguồn dạng stream, mẫu trong tài liệu là *bản ghi đã bóc vỏ* cho tới khi chính mình bắt được packet thô và kiểm.
+
+### 3.5 Nghiệm thu bằng thứ nó THỰC SỰ chạy, không bằng trạng thái hiển thị
+
+Hai lần cùng một lỗi trong một ngày *(2026-08-26)*:
+
+| Nghiệm thu sai | Sự thật |
+|---|---|
+| Task Scheduler báo `Ready` ⇒ coi như đăng ký xong | Lệnh đăng ký là `python -m ` **rỗng** — tham số hàm PowerShell đặt tên `$args`, trùng biến tự động. 5 task nổ đúng giờ rồi chết câm |
+| Test ghi Postgres xanh ⇒ coi như job chạy được | Test chạy bằng user **owner**; job thật chạy bằng role `dlck_etl` không có quyền `TRUNCATE` ⇒ chết ngay lần chạy đầu |
+
+Luật: kiểm **lệnh** chứ không kiểm trạng thái; test đường ghi phải chạy **dưới đúng quyền của production** (`SET LOCAL ROLE …`). Cả hai phép kiểm này nay đã mã hoá thành code — `Assert-TaskCommand` trong `scripts/register-tasks.ps1` và test `test_flow_rebuild_works_under_etl_role`.
+
+### 3.6 Kết luận phủ định về toàn nguồn không suy được từ một endpoint
 
 Tài liệu từng khẳng định *"BVSC không cung cấp dữ liệu phái sinh qua bất kỳ endpoint public nào"* — suy ra từ việc `/quotes` không có mã phái sinh. Quan sát đúng, **suy luận sai**: phái sinh nằm ở `/datafeed/instruments`, 14 hợp đồng, 62 trường.
 
