@@ -27,8 +27,8 @@ Ba khối vốn có ba danh sách việc riêng, mỗi danh sách tự cho mình
 | **Repo vào git** | ✅ `git init` + commit đầu 2026-08-14 | toàn bộ docs + hai skill |
 | **Stack sản phẩm + cây monorepo** | ✅ **Chốt 2026-08-24** — Next.js · Python/FastAPI · Postgres + ClickHouse (lưu tick thô) · skill dời về `backend/agent/skills/` | [ADR 0007](decisions/0007-monorepo-layout-and-stack.md) |
 | **Hạ tầng + schema hai kho** | ✅ **Xong 2026-08-26** — compose (PG+Redis+CH, profile `realtime`) · schema `postgres-data` 10 migration · schema `rt` ClickHouse 2 migration · 71 test · một lượt dev trọn (dev-start → migrate → test → dev-stop) chạy sạch | [database/README.md](../../database/README.md) |
-| **Code sản phẩm (ingester · ETL thật · api)** | ❌ Chưa bắt đầu — việc kế tiếp là lát cắt dọc đầu tiên ([service-topology §7](../20-design/service-topology.md)) | |
-| **Realtime phái sinh** | 🔴 **Chưa đo được** — đo ngày thứ Bảy, thị trường đóng. Phải đo **trong phiên** | [§5](#5-việc-còn-thật-sự-để-ngỏ) |
+| **Code sản phẩm (ingester · ETL thật · api)** | 🟡 **Lát cắt dọc đầu đã dựng 2026-08-26** — `ingester` (socket EIO3 → chuẩn hoá → Redis + ClickHouse, leader lock, đối chứng cuối phiên) và job `etl omo`; 148 test xanh trên DB thật, job OMO **đã chạy thật** (phiên 26/08 vào kho). Chờ **gate phiên đo** trước khi bật ghi tick thật. `api` chưa bắt đầu | [plans/2026-08-26-ingester-omo-first-slice/](../90-records/plans/2026-08-26-ingester-omo-first-slice/) |
+| **Realtime phái sinh** | ✅ **Đã đo 2026-08-26 trong phiên** — phái sinh đi chung topic `i`/`o10`/`t` với cổ phiếu (`EX="XHNF"`), không có kênh riêng, không có `openInterest` | [§5.1](#51--realtime-phái-sinh--đã-đo-2026-08-26-phiên-chiều) · [hồ sơ đo](../90-records/surveys/2026-08-26-bvsc-realtime-session/README.md) |
 
 ## 1. Việc chặn nhiều thứ nhất — làm trước
 
@@ -47,7 +47,7 @@ Ba việc 1b–3 đều **phụ thuộc bên ngoài**, không tự làm được
 
 | # | Việc | Vì sao không hoãn được |
 |---|---|---|
-| **4** | **Ingester realtime + tích luỹ `bar_1m`** — *hạ tầng đã xong 2026-08-26 ⇒ LÀM ĐƯỢC NGAY, đây là việc kế tiếp (lát cắt dọc đầu — [service-topology §7](../20-design/service-topology.md)); điều kiện tiên quyết trước khi bật ghi thật: phiên đo trong giờ giao dịch (SM + phái sinh §5.1 + giờ đẩy idx — spec ClickHouse §4.1/§10)* | Nến intraday **không tồn tại ở bất kỳ nguồn nào**. Mọi dữ liệu khác crawl lại lúc nào cũng được, riêng cái này không |
+| **4** | **Ingester realtime + tích luỹ `bar_1m`** — 🟡 *code đã dựng xong 2026-08-26 ([hồ sơ lát cắt](../90-records/plans/2026-08-26-ingester-omo-first-slice/)); đã bắt được **một phiên chiều** bằng chế độ `--measure` (2,3 triệu frame). Còn lại đúng một việc chặn: **phiên đo trọn trong giờ giao dịch** (SM + phái sinh §5.1 + giờ đẩy idx — spec ClickHouse §4.1/§10) rồi chốt luật SM ⇒ bật task ghi thật (đang DISABLED có chủ đích)* | Nến intraday **không tồn tại ở bất kỳ nguồn nào**. Mọi dữ liệu khác crawl lại lúc nào cũng được, riêng cái này không |
 | **5** | **Backfill lịch sử tin** từ sitemap TinnhanhCK / BNews / NguoiQuanSat | Dữ liệu chỉ còn chừng nào họ còn giữ sitemap |
 
 **Ingester chờ hạ tầng DB — quyết định chủ dự án 2026-08-15.** Nó không còn chạy song song ngay từ đầu nữa mà xếp sau [1]. Lý do gấp thì **không mất đi**: mỗi ngày chưa có Ingester vẫn là một ngày nến 1 phút mất vĩnh viễn, không nguồn nào backfill lại được. Đó chính là **lý do dựng hạ tầng DB là việc kế tiếp** — làm xong hạ tầng là đồng hồ mất dữ liệu dừng lại. *(Cập nhật 2026-08-26: hạ tầng đã xong — điều kiện chờ đã hết.)*
@@ -101,7 +101,13 @@ Bốn mục đang nằm trong danh sách **"Còn để ngỏ"** của pipeline t
 | ~~**Câu treo cuối của dự án skill**~~ | ✅ **Đã quyết 2026-08-14: giữ nguyên tên "ngân hàng"** trong luận điểm *ngành báo hiệu* — là cơ chế, không phải danh sách ngành cứng. Bảng rà `CAN-SUA.md` hết việc và đã xoá | |
 | **Đoạn giới hạn phạm vi vào system prompt** | Skill không tự gác cổng được — xem [§4](architecture.md) | Làm khi dựng backend |
 
-### 5.1 🔴 Realtime phái sinh — chưa đo được, phải đo TRONG PHIÊN
+### 5.1 ✅ Realtime phái sinh — ĐÃ ĐO 2026-08-26 (phiên chiều)
+
+> **Kết quả** *([hồ sơ phiên đo](../90-records/surveys/2026-08-26-bvsc-realtime-session/README.md))*: **phái sinh KHÔNG có kênh riêng** — tick phái sinh đi chung ba topic `i`/`o10`/`t` với cổ phiếu, phân biệt bằng `EX = "XHNF"`, cấu trúc trường **giống hệt** cổ phiếu, **không có `openInterest`** trong luồng realtime (muốn OI phải lấy từ `/datafeed/instruments`). 15 topic còn lại của bảng hằng số **không đẩy frame nào** — kể cả `pth`. Mã `41I1G9000` (VN30F1M) đẩy 24.162 lệnh khớp trong một phiên chiều, nhiều hơn mọi mã cổ phiếu.
+>
+> **Việc còn lại (không chặn lát cắt hiện tại):** mã phái sinh **không có trong `/quotes`** nên danh mục runtime chưa đăng ký chúng — mở rộng danh mục là một quyết định phạm vi riêng, cần cùng lúc chốt lược đồ (dùng chung bảng `trade`/`quote`/`snapshot_delta` hay tách).
+>
+> *(Nguyên văn phần chưa đo, giữ làm ngữ cảnh:)*
 
 **Việc gấp nhất còn lại của khối nguồn.** Đợt khảo sát chạy ngày **thứ Bảy 2026-08-15**, thị trường đóng (`tradingSessionID: "CLOSED"`), nên **không phép kiểm nào ngoài giờ có giá trị**: server BVSC trả ack `statusCode: 200` cho **mọi** chuỗi topic rồi im lặng — đăng ký thành công không chứng minh topic hợp lệ *(đã ghi ở [`11-bvsc-realtime.md` §1.4](../10-sources/market/11-bvsc-realtime.md))*.
 
