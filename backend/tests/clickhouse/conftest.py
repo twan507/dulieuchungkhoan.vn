@@ -3,6 +3,7 @@ import socket
 import subprocess
 import time
 import uuid
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import clickhouse_connect
@@ -57,3 +58,23 @@ def ch(ch_backup_dir):
         yield client
     finally:
         subprocess.run(["docker", "rm", "-f", name], capture_output=True)
+
+
+@pytest.fixture()
+def migrated(ch):
+    """Đảm bảo đã upgrade (idempotent — chạy lại là no-op). Test dùng symbol riêng để cách ly."""
+    from core import ch_migrate
+    ch_migrate.upgrade(ch)
+    return ch
+
+
+TODAY = date.today()
+
+
+def dt_ago(days: int, h: int = 9, m: int = 15, s: int = 1, micro: int = 0) -> datetime:
+    d = TODAY - timedelta(days=days)
+    return datetime(d.year, d.month, d.day, h, m, s, micro)
+
+
+def part_of(dt: datetime) -> str:
+    return dt.strftime("%Y%m")
