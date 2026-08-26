@@ -6,6 +6,7 @@ import {
   dockerMajor,
   shouldPruneAnonVolumes,
   assertVolumeSurvived,
+  realtimeMisconfigured,
 } from "./stack.mjs";
 
 test("listeningPids: chỉ PID của dòng LISTENING đúng cổng, bỏ TIME_WAIT", () => {
@@ -45,4 +46,15 @@ test("listeningPids: bắt cả listener IPv6 (dòng TCP6)", () => {
   ].join("\r\n");
   assert.deepEqual(listeningPids(out, 8000), ["4242"]);
   assert.deepEqual(listeningPids(out, 3000), []);
+});
+
+test("realtimeMisconfigured: không bật realtime thì không đòi gì", () => {
+  assert.equal(realtimeMisconfigured("POSTGRES_DB=x\n"), null);
+  assert.equal(realtimeMisconfigured("COMPOSE_PROFILES=web\nCLICKHOUSE_PASSWORD=\n"), null);
+});
+
+test("realtimeMisconfigured: bật realtime mà thiếu CLICKHOUSE_PASSWORD thì báo", () => {
+  const msg = realtimeMisconfigured("COMPOSE_PROFILES=realtime\n");
+  assert.ok(msg && msg.includes("CLICKHOUSE_PASSWORD"));
+  assert.equal(realtimeMisconfigured("COMPOSE_PROFILES=web,realtime\nCLICKHOUSE_PASSWORD=abc\n"), null);
 });

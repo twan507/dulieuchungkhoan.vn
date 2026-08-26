@@ -11,3 +11,6 @@ __pycache__/
 # Node
 node_modules/
 .pnpm-store/
+
+# ClickHouse backups
+deploy/infra/clickhouse-backups/

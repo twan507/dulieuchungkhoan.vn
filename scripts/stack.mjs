@@ -23,6 +23,18 @@ export function assertVolumeSurvived(before, after, name) {
   return { ok: true, existed: had };
 }
 
+export function realtimeMisconfigured(envText) {
+  const env = {};
+  for (const line of String(envText).split(/\r?\n/)) {
+    const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)$/);
+    if (m) env[m[1]] = m[2].trim();
+  }
+  const profiles = (env.COMPOSE_PROFILES || "").split(",").map((s) => s.trim());
+  if (!profiles.includes("realtime")) return null;
+  if (!env.CLICKHOUSE_PASSWORD) return "COMPOSE_PROFILES có realtime nhưng CLICKHOUSE_PASSWORD chưa đặt trong .env";
+  return null;
+}
+
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -54,6 +66,8 @@ function ensureEnv() {
   if (!fs.existsSync(ex)) die(".env và .env.example đều không tồn tại");
   fs.copyFileSync(ex, ENV_FILE);
   log("đã tạo .env từ .env.example — nhớ điền giá trị thật");
+  const err = realtimeMisconfigured(fs.readFileSync(ENV_FILE, "utf8"));
+  if (err) die(err);
 }
 function ensureNetwork() {
   if (!capture("docker", ["network", "ls", "--format", "{{.Name}}"]).split(/\r?\n/).includes(NETWORK))
@@ -124,7 +138,7 @@ function dockerDown() {
   const before = volumes();
   run("docker", ["compose", ...APP, "down"], { allowFail: true });
   run("docker", ["compose", ...INFRA, "down"], { allowFail: true });
-  for (const name of ["dlck-infra_pgdata", "dlck-infra_redisdata"]) {
+  for (const name of ["dlck-infra_pgdata", "dlck-infra_redisdata", "dlck-infra_chdata"]) {
     const r = assertVolumeSurvived(before, volumes(), name);
     if (!r.ok) die(`CẢNH BÁO: ${r.reason} — kiểm tra ngay`);
   }
@@ -138,7 +152,7 @@ function dockerClean() {
   const major = dockerMajor(capture("docker", ["version", "--format", "{{.Server.Version}}"]));
   if (shouldPruneAnonVolumes(major)) run("docker", ["volume", "prune", "-f"], { allowFail: true });
   else log(`Docker Engine ${major ?? "?"}: bỏ qua prune volume vô danh cho an toàn`);
-  for (const name of ["dlck-infra_pgdata", "dlck-infra_redisdata"]) {
+  for (const name of ["dlck-infra_pgdata", "dlck-infra_redisdata", "dlck-infra_chdata"]) {
     const r = assertVolumeSurvived(before, volumes(), name);
     if (!r.ok) die(`CẢNH BÁO: ${r.reason} sau khi dọn — KHÔNG được phép`);
   }
