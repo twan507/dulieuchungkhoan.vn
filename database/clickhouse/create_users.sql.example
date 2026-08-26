@@ -1,0 +1,4 @@
+-- Template tạo user login per-môi-trường (spec §6) — KHÔNG commit bản có mật khẩu thật.
+-- Chạy bằng user quản trị:  clickhouse-client --password ... --multiquery < create_users.sql
+CREATE USER IF NOT EXISTS ingester_worker IDENTIFIED WITH sha256_password BY 'CHANGE-ME' DEFAULT ROLE dlck_ingester;
+CREATE USER IF NOT EXISTS api_reader     IDENTIFIED WITH sha256_password BY 'CHANGE-ME' DEFAULT ROLE dlck_api;
