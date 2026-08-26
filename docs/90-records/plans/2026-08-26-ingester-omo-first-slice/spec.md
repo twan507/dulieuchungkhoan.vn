@@ -133,7 +133,7 @@ State dựng lại từ `/datafeed/instruments` khi khởi động/reconnect, **
 
 ### 3.5 Chế độ đo `--measure` + phiên đo trong giờ (GATE cứng)
 
-**Chế độ đo:** nối socket, đăng ký như thật **cộng thêm**: toàn bộ 20 topic của bảng hằng số ([roadmap §5.1](../../../00-overview/roadmap.md)) cho 2–3 mã phái sinh (`41I1G8000` là mã duy nhất có thanh khoản thật, đo 2026-08-15) + `pth:` ba sàn. Mỗi frame ghi một dòng JSONL: `{"received_at_ms":…,"event":…,"payload":<nguyên văn>}`, xoay file theo giờ, nén gzip khi đóng file. Không ghi DB, không cần Redis/lock.
+**Chế độ đo:** nối socket, đăng ký như thật **cộng thêm**: toàn bộ 20 topic của bảng hằng số ([roadmap §5.1](../../../00-overview/roadmap.md)) cho 2–3 mã phái sinh (`41I1G8000` là mã duy nhất có thanh khoản thật, đo 2026-08-15) + `pth:` ba sàn. Mỗi frame ghi một dòng JSONL: `{"r":<received_at_ms>,"p":"<packet nguyên văn>"}` — lưu **cả packet chưa parse** để round-trip đúng từng byte; xoay file theo giờ, nén gzip khi đóng file. Không ghi DB, không cần Redis/lock.
 
 **Phiên đo** (một phiên giao dịch trọn, 08:40–15:05, sớm nhất là phiên kế tiếp):
 
