@@ -101,6 +101,8 @@ Bảng nằm **trong thân bài viết**, không phải trong một component c�
 KẾT QUẢ ĐẤU THẦU THỊ TRƯỜNG MỞ (14.08.26)
 ```
 
+> ⚠️ **Markup đã đổi** *(đo lại 2026-08-26 — đúng cảnh báo Giới hạn 3)*: tiêu đề giờ là `<h4 class="ls01-subheading">KẾT QUẢ ĐẤU THẦU THỊ TRƯỜNG MỞ</h4>` **không kèm ngày**; ngày chuyển sang `<div class="ls01-date">Ngày 25 tháng 08 năm 2026</div>` dạng `Ngày DD tháng MM năm YYYY`. Quan sát thêm cùng ngày: dòng nhóm là `<tr class="ls01-group"><td colspan="4">…</td></tr>`; nhãn kỳ hạn có tiền tố `- ` (`- Kỳ hạn 14 ngày`); dòng tổng class `ls01-total`, nhãn **`Tổng cộng`**; header cột 3/4 chứa `<br>`. Parser phải nhận **cả hai** dạng ngày — markup viết tay có thể đổi lại.
+
 ---
 
 ## 5. Dữ liệu mẫu thật — phiên 14/08/2026
