@@ -21,7 +21,7 @@
 | 7 | **Chưa có gì cho phái sinh** — bảng bám cổ phiếu/chỉ số | Chưa đo được realtime phái sinh trong phiên ([roadmap §5.1](../../../00-overview/roadmap.md)); cấm giả định |
 | 8 | **Phạm vi đăng ký: toàn bộ mã cổ phiếu + ETF đang giao dịch**, danh mục **hợp nhất `/quotes` + `/datafeed/instruments`** khử trùng theo mã, phân loại bằng bảng `StockType` **của `/quotes`** × 3 topic `i`/`o10`/`t` + **15 mã chỉ số** `idx` + **3 sàn** `ptm` | Mục tiêu là nến 1' **toàn thị trường** ([roadmap §2 việc 4](../../../00-overview/roadmap.md)) — đăng ký rổ con là tự tạo lỗ hổng dữ liệu vĩnh viễn. ⚠️ Không lọc bằng `StockType` của `/datafeed/instruments`: **bảng mã chỉ có nghĩa trong phạm vi một endpoint** ([00-conventions bẫy 10](../../../10-sources/market/00-conventions.md) — cùng mã trả `12` ở `/quotes` nhưng `1` ở instruments), và **không endpoint nào một mình đủ làm danh mục** (bẫy 11 — `VFMVF1` chỉ có ở `/quotes`). Chứng quyền/lô lẻ/trái phiếu **loại có chủ đích** theo [CLAUDE.md §2.2](../../../../CLAUDE.md). N thật chưa đếm trên danh mục hợp nhất — §10 dùng dải. Tải kéo theo: xem §10 |
 | 9 | **Danh sách mã do ingester tự sở hữu lúc runtime**: gọi REST BVSC hợp nhất hai endpoint lúc khởi động + làm mới **trước phiên mỗi ngày**; reconnect giữa phiên dùng cache, **không** gọi lại. **Không đọc Postgres** | Đọc `market.security` bên Postgres là tạo đúng phụ thuộc runtime chéo kho mà quyết định #4 dựng ra để tránh. Mã niêm yết mới **trong ngày** chờ lần làm mới hôm sau — chấp nhận có ý thức (danh mục tăng ~4 mã/5 ngày, [01-bvsc-rest](../../../10-sources/market/01-bvsc-rest.md): "bảng này không tĩnh") |
-| 10 | **Backup hai bảng vĩnh viễn hằng đêm**: `BACKUP TABLE rt.bar_1m, rt.index_bar_1m TO Disk('backups', …)` — disk `backups` trỏ **thư mục host ngoài Docker volume**; giữ 7 bản gần nhất + 1 bản đầu mỗi tháng; chạy bằng user quản trị theo lịch (không phải `dlck_*`). 5 bảng frame **không backup** — chấp nhận có ý thức: mất volume là mất cửa sổ 3 tháng vi cấu trúc, nhưng nến vĩnh viễn khôi phục được | `bar_1m` là **dữ liệu không tái tạo được** (nguồn không có replay, `trade` chỉ giữ 3–4 tháng) trên một instance đơn không replica — tiền đề "data thị trường crawl lại được nên không cần backup" của [service-topology §4](../../../20-design/service-topology.md) **không áp dụng** cho miền này; câu đó phải sửa theo (checklist §13). Thủ tục restore chốt ở plan |
+| 10 | **Backup hai bảng vĩnh viễn hằng đêm**: `BACKUP TABLE rt.bar_1m, rt.index_bar_1m TO Disk('backups', …)` — disk `backups` trỏ **thư mục host ngoài Docker volume**; giữ 7 bản gần nhất + 1 bản đầu mỗi tháng; chạy bằng user quản trị theo lịch (không phải `dlck_*`; cơ chế lịch — cron host hay scheduler — chốt ở plan). 5 bảng frame **không backup** — chấp nhận có ý thức: mất volume là mất cửa sổ 3 tháng vi cấu trúc, nhưng nến vĩnh viễn khôi phục được | `bar_1m` là **dữ liệu không tái tạo được** (nguồn không có replay, `trade` chỉ giữ 3–4 tháng) trên một instance đơn không replica — tiền đề "data thị trường crawl lại được nên không cần backup" của [service-topology §4](../../../20-design/service-topology.md) **không áp dụng** cho miền này; câu đó phải sửa theo (checklist §13). Thủ tục restore chốt ở plan |
 
 **Đã cân nhắc và loại (loại có chủ đích):**
 
@@ -178,7 +178,7 @@ CREATE TABLE rt.index_delta (
   change      Nullable(Decimal64(2)),                   -- ICH
   change_pct  Nullable(Decimal64(2)),                   -- IPC
   total_vol   Nullable(UInt64),                         -- TV
-  total_value Nullable(Decimal64(2)),                   -- TVA (đo được 5,7×10¹² — trần Decimal64(2) ≈ 10¹⁶, dư hàng nghìn lần; PHẢI khớp kiểu với state cum_value ở §4.2)
+  total_value Nullable(Decimal64(2)),                   -- TVA (đo được 5,7×10¹²; dải kiểu xem §2 — PHẢI khớp kiểu với state cum_value ở §4.2)
   advances    Nullable(UInt16),                         -- ADV
   declines    Nullable(UInt16),                         -- DE
   unchanged   Nullable(UInt16),                         -- NC
@@ -268,10 +268,10 @@ GROUP BY symbol, ts;
 
 **Bất biến của khoá `argMin`/`argMax` — khoá phải TOTAL trong (mã, phút):** khi hai dòng hoà khoá, `argMin`/`argMax` chọn **không xác định và không ổn định qua merge nền** — đo được nến trả một giá trước merge và giá khác sau merge *(phản chứng review lượt 3, 2026-08-26)* — không chấp nhận được trên bảng vĩnh viễn tuyên bố "giá thô bất biến". Vì tính duy nhất của `SM` trong (mã, giây) **chưa đo**, khoá phải thêm `received_at` làm nhánh phân thắng: `(event_ts, seq, received_at)` — đã kiểm ổn định qua nhiều lần `OPTIMIZE FINAL` *(§12, T12)*. Writer vì thế phải cấp `received_at` **đơn điệu tăng theo mã trong một phiên chạy** (đồng hồ tường + tie-break bộ đếm nếu hai frame cùng ms — chi tiết ở plan ingester); hoà cả ba thành phần chỉ còn xảy ra cho frame trùng thật sự — thứ lưới dedup §5.4 đã chặn.
 
-Hai chi tiết cú pháp **bắt buộc**, đã kiểm trên ClickHouse thật *(xem §12)*:
+Hai chi tiết cú pháp, đã kiểm trên ClickHouse thật *(xem §12)*:
 
-- Kiểu khoá trong `AggregateFunction(argMin, …)` phải khai **đủ múi giờ** `Tuple(DateTime('Asia/Ho_Chi_Minh'), UInt64)` — khớp đúng kiểu cột `ts` của `trade`; đây cũng là quy ước §2 "khai múi giờ tường minh".
-- MV đọc qua **subquery đổi tên** `ts AS event_ts` để loại hẳn tình trạng alias `toStartOfMinute(ts) AS ts` **che khuất cột gốc** — hành vi phân giải alias trùng tên phụ thuộc analyzer từng phiên bản, không được dựa vào.
+- Kiểu khoá trong `AggregateFunction(argMin, …)` phải khai **đủ múi giờ và đủ ba thành phần** `Tuple(DateTime('Asia/Ho_Chi_Minh'), UInt64, DateTime64(3, 'Asia/Ho_Chi_Minh'))` — khớp đúng kiểu `(ts, seq, received_at)` của `trade`; đây cũng là quy ước §2 "khai múi giờ tường minh".
+- MV đọc qua **subquery đổi tên** `ts AS event_ts` — chọn để an toàn đa phiên bản: bản alias trực tiếp đo trên 26.3 chạy đúng (T7) nhưng hành vi phân giải alias trùng tên phụ thuộc analyzer, không cam kết.
 
 Cột `val` tồn tại vì nguyên tắc "chưng cất trước khi quên": không có nó thì **VWAP và giá trị giao dịch theo phút không suy được** từ o/h/l/c/v, và sau 3 tháng `trade` bị TTL xoá là mất vĩnh viễn. `Decimal128(2)` cho riêng cột này vì là tích cộng dồn.
 
@@ -299,7 +299,7 @@ Ba luật nghiệp vụ của nến:
 
 0. **Dừng ingester (hoặc `DETACH` MV) trước, gắn lại sau khi xong** — bất kỳ tick nào lọt vào giữa chừng sẽ được đếm **hai lần** (một qua MV lúc insert, một qua SELECT backfill); phản chứng review lượt 3 đo được `v` gấp đôi khi bỏ bước này.
 1. `ALTER TABLE rt.bar_1m DROP PARTITION <YYYYMM>`.
-2. `INSERT INTO rt.bar_1m SELECT <đúng biểu thức MV, kể cả khoá (event_ts, seq, received_at)> FROM rt.trade WHERE toYYYYMM(toDate(ts)) = <YYYYMM>`.
+2. `INSERT INTO rt.bar_1m SETTINGS insert_deduplication_token = 'repair-<YYYYMM>-<run-id>' SELECT <đúng biểu thức MV, kể cả khoá (event_ts, seq, received_at)> FROM rt.trade WHERE toYYYYMM(toDate(ts)) = <YYYYMM>`. **Token bắt buộc, cố định trong một đợt vá**: cửa sổ dedup **không phủ `INSERT … SELECT`** theo nội dung — retry không token là **nến nhân đôi im lặng** (đo §12/T13: không token retry ra 20 thay vì 10; cùng token thì retry bị nuốt, ra đúng 10). Đợt vá mới (sau một lần DROP mới) dùng `run-id` mới.
 
 Ràng buộc cứng: **chỉ vá được phần `trade` còn trong cửa sổ TTL (3–4 tháng)** — đây chính là lý do "3 tháng đủ thời gian phát hiện lỗi gom nến" ở quyết định #2, và là lý do test MV phải chặt ngay từ đầu. Ngoài cửa sổ đó, nguồn cứu cuối là **backup hằng đêm** (quyết định #10).
 
@@ -313,10 +313,10 @@ Chỉ số không có "lệnh khớp" — nến gom từ chuỗi `index_value` c
 CREATE TABLE rt.index_bar_1m (
   symbol LowCardinality(String),
   ts     DateTime('Asia/Ho_Chi_Minh'),
-  o AggregateFunction(argMin, Decimal64(2), DateTime64(3, 'Asia/Ho_Chi_Minh')),
+  o AggregateFunction(argMin, Decimal64(2), Tuple(DateTime64(3, 'Asia/Ho_Chi_Minh'), DateTime64(3, 'Asia/Ho_Chi_Minh'))),
   h AggregateFunction(max, Decimal64(2)),
   l AggregateFunction(min, Decimal64(2)),
-  c AggregateFunction(argMax, Decimal64(2), DateTime64(3, 'Asia/Ho_Chi_Minh')),
+  c AggregateFunction(argMax, Decimal64(2), Tuple(DateTime64(3, 'Asia/Ho_Chi_Minh'), DateTime64(3, 'Asia/Ho_Chi_Minh'))),
   cum_vol   AggregateFunction(max, Nullable(UInt64)),
   cum_value AggregateFunction(max, Nullable(Decimal64(2)))
 )
@@ -329,20 +329,22 @@ CREATE MATERIALIZED VIEW rt.mv_index_to_bar_1m TO rt.index_bar_1m AS
 SELECT
   symbol,
   toStartOfMinute(toDateTime(event_ts))                     AS ts,
-  argMinState(assumeNotNull(index_value), event_ts)         AS o,
-  maxState(assumeNotNull(index_value))                      AS h,
-  minState(assumeNotNull(index_value))                      AS l,
-  argMaxState(assumeNotNull(index_value), event_ts)         AS c,
-  maxState(total_vol)                                       AS cum_vol,
-  maxState(total_value)                                     AS cum_value
-FROM (SELECT symbol, ts AS event_ts, index_value, total_vol, total_value
+  argMinState(assumeNotNull(index_value), (event_ts, received_at))  AS o,
+  maxState(assumeNotNull(index_value))                              AS h,
+  minState(assumeNotNull(index_value))                              AS l,
+  argMaxState(assumeNotNull(index_value), (event_ts, received_at))  AS c,
+  maxState(total_vol)                                               AS cum_vol,
+  maxState(total_value)                                             AS cum_value
+FROM (SELECT symbol, ts AS event_ts, index_value, total_vol, total_value, received_at
       FROM rt.index_delta WHERE index_value IS NOT NULL AND index_value > 0)
 GROUP BY symbol, ts;
 ```
 
+*(Khoá argMin/argMax cũng phải **total** ở đây — cùng bất biến §4.1, cùng là bảng vĩnh viễn: phản chứng review lượt 4 đo được khoá một thành phần `event_ts` cho `o`/`c` **đổi giá trị sau merge** khi hai frame hoà mili-giây; khoá `(event_ts, received_at)` đo ổn định qua `OPTIMIZE FINAL` — §12, T14. Xác suất hoà ms của `idx` chưa đo nên không được viện "hiếm". Tính idempotent-với-bản-sao của §5.4 giữ nguyên: frame trùng thật thì cả khoá lẫn giá trị đều bằng nhau.)*
+
 *(Guard `index_value > 0`: chặn nến rác nếu nguồn đẩy `MI = 0` quanh mở phiên — **giờ đẩy `idx` ngoài 13:08–13:12 chưa được đo** (mẫu đo nằm giữa phiên chiều); bảng vĩnh viễn nên thà chặn thừa. Tuần đầu chạy thật phải ghi nhận phút sớm nhất/muộn nhất có frame `idx` và `t` — xem §10.)*
 
-**Ngữ nghĩa NULL của hai cột luỹ kế — quyết định spec, không phải chi tiết plan** (vì bảng vĩnh viễn, sai là không dựng lại được): `idx` là delta nên **cả phút có thể không frame nào mang `TV`/`TVA`**. Nếu ép `assumeNotNull` như hai cột giá, phút đó thành `cum_vol = 0` → người đọc suy khối lượng-theo-phút bằng hiệu sẽ được **một cặp hiệu âm/dương khổng lồ**. Chốt: state khai `Nullable`, `maxState` **bỏ qua NULL và trả NULL khi cả phút NULL** *(đã kiểm hành vi trên ClickHouse thật — §12)* — NULL nghĩa trung thực là "phút này nguồn không cập nhật luỹ kế", người đọc carry-forward bằng window function. `assumeNotNull` chỉ dùng cho `index_value` vì subquery đã `WHERE index_value IS NOT NULL`.
+**Ngữ nghĩa NULL của hai cột luỹ kế — quyết định spec, không phải chi tiết plan** (vì bảng vĩnh viễn, sai là không dựng lại được): `idx` là delta nên **cả phút có thể không frame nào mang `TV`/`TVA`**. Nếu ép `assumeNotNull` như hai cột giá, phút đó thành `cum_vol = 0` → người đọc suy khối lượng-theo-phút bằng hiệu sẽ được **một cặp hiệu âm/dương khổng lồ**. Chốt: state khai `Nullable`, `maxState` **bỏ qua NULL và trả NULL khi cả phút NULL** *(đã kiểm hành vi trên ClickHouse thật — §12)* — NULL nghĩa trung thực là "phút này nguồn không cập nhật luỹ kế", người đọc carry-forward bằng window function. `assumeNotNull` chỉ dùng cho `index_value` vì subquery đã `WHERE index_value IS NOT NULL`. Lưu ý cho người đọc dữ liệu: NULL của `cum_vol` có **hai** nguyên nhân — phút không frame nào mang `TV`, **hoặc** frame mang `TV` nhưng không mang `MI` nên bị `WHERE` loại cả dòng; cả hai đều tự lành ở phút sau (luỹ kế), carry-forward xử lý như nhau.
 
 View đọc (mặt tiếp xúc cho `api`):
 
@@ -372,9 +374,9 @@ Chi tiết code thuộc plan dựng ingester; spec chốt **hợp đồng**:
    - **Lưới frame (tại ingester):** bỏ frame đã thấy khi nguồn đẩy lại sau nối lại + đăng ký lại. Cấu trúc cụ thể (tập khoá trong cửa sổ trượt — **không phải** chỉ nhớ một khoá cuối, vì reconnect đẩy lại cả loạt) chốt ở plan ingester. ⚠️ **Giả định chưa đo:** dedup theo `SM` giả định SM đơn điệu/duy nhất theo mã — tài liệu nguồn chưa đo tính chất này; plan ingester phải kèm một phiên đo SM trước khi chốt luật, trước đó dùng tập-khoá-đã-thấy, không dùng so sánh thứ tự.
    - **Lưới block (tại ClickHouse):** bắt kịch bản lưới frame **không thể** bắt: flush thành công nhưng ack rớt (timeout, CH restart) → writer retry **nguyên block** → block trùng bị server nuốt im lặng. `non_replicated_deduplication_window = 100` đặt trên **cả 5 bảng frame và `rt.bar_1m`**. Đã đo *(§12)*: dedup của bảng gốc **không tự lan xuống bảng đích MV** — thiếu window trên `bar_1m` là nến đếm đôi dù `trade` sạch (T4 lượt đầu); có window ở cả hai thì retry bị nuốt trọn **kể cả khi client không truyền** `deduplicate_blocks_in_dependent_materialized_views` (T4 chạy lại sau đổi khoá — trên 26.3, block state của MV trùng hash bị chính window của `bar_1m` chặn). Setting đó vẫn **đặt server-side bằng SETTINGS PROFILE gắn role `dlck_ingester` trong migration** *(đo T9: profile ăn tới tận MV)* làm dây đai phòng hờ — hành vi dedup MV không cam kết đa phiên bản. Cửa sổ dedup **sống qua restart server** *(đo T8)*. Hệ quả cho writer: **retry một INSERT phải gửi lại đúng block cũ nguyên vẹn** (không gộp thêm dòng mới — đổi nội dung là đổi hash, mất tác dụng dedup). Trong migration, `CREATE ROLE` phải đứng **trước** `CREATE SETTINGS PROFILE … TO role` — chiều ngược lại lỗi `Code: 511` *(đo lượt 3)*.
    - **Bất biến phải giữ:** MV chỉ số (`max`/`argMin`/`argMax`) **idempotent với bản sao** — window trên các bảng frame còn lại là để bảo vệ **mặt đọc trực tiếp** của chính bảng thô, không phải MV. Ràng buộc đi kèm: **cấm thêm aggregate cộng dồn (`sum`/`count`) lên `index_delta`/`snapshot_delta`** mà không có dedup + kiểm tương đương `trade`.
-5. **Mất mát chấp nhận có ý thức:** ingester chết → mất tối đa ~1 s buffer chưa flush + thời gian standby tiếp quản (< 2 s). Không có cơ chế replay từ nguồn — đã biết từ khảo sát. Retry INSERT lỗi được phép (an toàn nhờ lưới block), nhưng **ngân sách retry phải nhỏ hơn tuổi thọ cửa sổ dedup**: window 100 block ở nhịp 1 block/giây ≈ 100 giây — backoff tổng của một block phải xong dưới ngưỡng đó, quá thì bỏ block (mất mát, đếm vào metric) chứ không ghi liều.
+5. **Mất mát chấp nhận có ý thức:** ingester chết → mất tối đa ~1 s buffer chưa flush + thời gian standby tiếp quản (< 2 s). Không có cơ chế replay từ nguồn — đã biết từ khảo sát. Retry INSERT lỗi được phép — **an toàn nhờ lưới block chỉ với INSERT native block của writer**; đường `INSERT … SELECT` (thủ tục vá §4.1) **không** được lưới nội dung phủ, phải dùng `insert_deduplication_token` *(đo §12/T13)*. Ngân sách retry phải nhỏ hơn tuổi thọ cửa sổ dedup: window 100 block ở nhịp 1 block/giây ≈ 100 giây — backoff tổng của một block phải xong dưới ngưỡng đó, quá thì bỏ block (mất mát, đếm vào metric) chứ không ghi liều.
 6. **Trường lạ:** frame `i`/`idx`/`ptm` — trường không map vào cột → JSON vào `extra`, không rơi rụng; bộ giám sát hợp đồng theo dõi tỷ lệ `extra != ''` để biết nguồn vừa thêm trường. Frame `t`/`o` **không có lưới `extra`** — đây là **chấp nhận có ý thức chưa đo** (nguồn không cảnh báo danh sách mở cho `t`/`o`, nhưng cũng chưa ai đo tính đóng; mẫu chỉ 356 frame `t`/933 frame `o`): bù bằng ingester **đếm và log khoá lạ** gặp trong `t`/`o` (không lưu), khoá lạ xuất hiện là tín hiệu P2 để nâng cột bằng migration.
-7. **Đối chứng nội tại cuối phiên (bất biến vận hành):** với mỗi (mã, ngày), so `Σ bar_1m_v.v` với `max(trade.cum_volume)` (tương tự `val` vs `cum_value`). **Hai chiều lệch mang nghĩa khác nhau, ngưỡng khác nhau** — vì §5.5 đã chấp nhận mất ~1 s buffer và nguồn rớt kết nối thường xuyên, đẳng thức tuyệt đối sẽ tự vi phạm ngay khi hệ chạy đúng thiết kế (bẫy [CLAUDE.md §4.4.4](../../../../CLAUDE.md)):
+7. **Đối chứng nội tại cuối phiên (bất biến vận hành):** với mỗi (mã, ngày), so `Σ bar_1m_v.v` với `max(trade.cum_volume)` (tương tự `val` vs `cum_value`). **Chủ sở hữu: plan ingester** — chạy như task cuối phiên của tiến trình ingester (chỉ đọc CH); khi bộ giám sát hợp đồng dựng ở giai đoạn ETL 3b ([market-data-store §7.1](../../../20-design/market-data-store.md) — nơi định nghĩa mức cảnh báo P1/P2/P3 dùng ở đây) thì hợp nhất về đó. **Hai chiều lệch mang nghĩa khác nhau, ngưỡng khác nhau** — vì §5.5 đã chấp nhận mất ~1 s buffer và nguồn rớt kết nối thường xuyên, đẳng thức tuyệt đối sẽ tự vi phạm ngay khi hệ chạy đúng thiết kế (bẫy [CLAUDE.md §4.4.4](../../../../CLAUDE.md)):
    - `Σv > max(AVO)` — **luôn là lỗi** (đếm đôi): cảnh báo **P1** ở mọi mức lệch.
    - `Σv < max(AVO)` — có thể là mất mát đã chấp nhận: dưới 0,1 % ghi metric, **quá 0,1 % thì P2** (ngưỡng hiệu chỉnh lại sau tuần đầu — §10).
    Phép kiểm miễn phí (cột `AVO`/`AVA` đã lưu), và kiểm luôn giả định "`t` không lẫn thoả thuận" (§4.1 luật 1) trên dữ liệu thật mỗi ngày.
@@ -388,9 +390,9 @@ Soi gương **đúng mô hình** role Postgres ([database/README.md](../../../..
 | Đối tượng | Quyền | Tạo ở đâu | Dùng bởi |
 |---|---|---|---|
 | ROLE `dlck_ingester` + SETTINGS PROFILE `deduplicate_blocks_in_dependent_materialized_views=1` gắn role (lưới block §5.4, đo T9) | INSERT + SELECT trên `rt.*` | migration | — |
-| ROLE `dlck_api` | **chỉ SELECT** trên `rt.*` — không DDL; `SHOW DATABASES` chỉ hiện `rt` *(đo 2026-08-25 trên CH 26.3)* | migration | — |
-| user login (vd `ingester_worker`, `api_reader`) | `GRANT <role> TO <user>` | script per-môi-trường, ngoài migration | `ingester` / `api` |
-| user quản trị mặc định của image | DDL — chỉ runner migration dùng | env của container | migration |
+| ROLE `dlck_api` | **chỉ SELECT** trên `rt.*` — không DDL; `SHOW DATABASES` chỉ hiện `rt` *(§12, T10)* | migration | — |
+| user login (tên cụ thể chốt ở plan; `ingester_worker`/`api_reader` là ví dụ) | `GRANT <role> TO <user>` | script per-môi-trường, ngoài migration | `ingester` / `api` |
+| user quản trị mặc định của image | DDL + `BACKUP` — runner migration và job backup (quyết định #10) dùng; credential từ env container, không in ra log | env của container | migration · backup |
 
 Điều kiện tiên quyết: container phải bật SQL access management qua env `CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1` thì `CREATE ROLE` trong migration mới chạy được *(đo T6: có env này thì tạo được role/user; mặc-định-không-bật là theo tài liệu image, chưa đo mặt phủ định)*.
 
@@ -408,6 +410,8 @@ Soi gương **đúng mô hình** role Postgres ([database/README.md](../../../..
 - `CLICKHOUSE_USER`/`CLICKHOUSE_PASSWORD`, mật khẩu user ứng dụng: qua env, không in giá trị ra log.
 - Env `CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1` — bắt buộc để migration tạo được ROLE (§6).
 - `ulimits: nofile 262144` cho service *(khuyến nghị của ClickHouse cho image chính thức — chưa kiểm ngưỡng thấp hơn trên máy này)*.
+- **Pin `TZ`/`<timezone>` của container = `Asia/Ho_Chi_Minh`** — mọi cột đã khai tz tường minh, nhưng `DEFAULT now64(3)`, literal không tz và output client đều ăn theo tz server; pin để loại cả lớp bẫy [CLAUDE.md §3.1](../../../../CLAUDE.md).
+- Entry `ingester` trong `deploy/app/docker-compose.yml` (deploy-scaffold §3 gộp chung profile `realtime`) **không thuộc lượt thực thi spec này** — plan ingester dựng sau; lượt này chỉ thêm service `clickhouse` phía `infra`.
 - Cấu hình mem thấp cho máy đơn (`max_server_memory_usage_to_ram_ratio` — khuyến nghị, con số chốt ở plan).
 - **TTL cho bảng log hệ thống**: 7 bảng `system.*_log` của image **không có TTL mặc định** và nằm cùng volume `chdata` — `metric_log` tích ~1 dòng/giây, `part_log` phình theo nhịp insert *(đo lượt 3)*; chốt TTL (cỡ 30 ngày) hoặc tắt bảng không dùng qua config server, con số ở plan.
 - Ghi chú cho dev: **lát cắt dọc đầu tiên** ([service-topology §7](../../../20-design/service-topology.md)) cần ClickHouse ⇒ dev chạy lát ingester phải bật profile `realtime` tường minh — `dev-start` mặc định không kéo nó lên.
@@ -426,13 +430,15 @@ backend/…                              runner: python -m <module> upgrade
 - **Idempotent ở mức statement, không chỉ mức file** — vì ClickHouse **không có transaction cho DDL**: file chết ở statement thứ k thì các object 1..k−1 đã tồn tại mà sổ chưa ghi; lần chạy lại phải đi qua được. Luật cứng: **mọi statement trong `versions/` phải idempotent** — `CREATE … IF NOT EXISTS` / `DROP … IF EXISTS` cho DDL tạo/xoá; `GRANT`/`REVOKE` vốn idempotent; `ALTER … MODIFY SETTING` idempotent theo bản chất; statement không đưa được về idempotent (INSERT seed…) thì tự bọc điều kiện tồn tại. Mặt trái phải kiểm: `IF NOT EXISTS` **che drift** (bảng tồn tại với định nghĩa cũ thì bỏ qua im lặng) — seam §9 đối chiếu `system.tables.create_table_query` với bản kỳ vọng, bắt drift chứ không chỉ bắt thiếu.
 - **Không có downgrade** (khác Alembic): sửa sai = viết migration tiếp theo. Cùng luật "không sửa file migration đã chạy" của Postgres.
 - **Thời điểm chạy migration:** **ngoài giờ giao dịch.** Sửa MV = `DROP` + `CREATE` — khoảng giữa hai statement, INSERT vào bảng nguồn **không sinh nến**, và nguồn không có replay. Buộc phải chạy trong phiên thì dừng ingester trước, chạy xong gom bù phần thiếu từ `trade` theo thủ tục sửa nến §4.1.
-- **Hợp đồng khởi động (migration ↔ ingester):** khi boot, ingester đọc `rt.schema_migrations` và yêu cầu **version ≥ bản mà build của nó cần**; thiếu (DB chưa migrate, khởi động lạnh) thì **không nối socket, thoát với lỗi rõ** — nối rồi INSERT hỏng là đốt ngân sách retry ~100 s/block rồi vứt frame thật. Trình tự bật profile `realtime` lần đầu: container CH lên + healthcheck → runner migration → script tạo user per-môi-trường (deliverable của plan — §13) → ingester. Thứ tự statement trong migration: `CREATE ROLE` trước `CREATE SETTINGS PROFILE … TO role` (§5.4).
-- Một file SQL có thể chứa nhiều statement, tách bằng `;` — quy ước parse chốt ở plan.
-- Vị trí chính xác của module runner (trong `backend/core/` hay script riêng) chốt ở plan cùng cấu trúc test.
+- **Hợp đồng khởi động (migration ↔ ingester):** khi boot, ingester đọc `rt.schema_migrations` và yêu cầu **version ≥ bản mà build của nó cần** (cách mã hoá hằng số version trong code chốt ở plan); thiếu (DB chưa migrate, khởi động lạnh) thì **không nối socket, thoát với lỗi rõ** — nối rồi INSERT hỏng là đốt ngân sách retry ~100 s/block rồi vứt frame thật. Trình tự bật profile `realtime` lần đầu: container CH lên + healthcheck → runner migration → script tạo user per-môi-trường (deliverable của plan — §13) → ingester. Thứ tự statement trong migration: `CREATE ROLE` trước `CREATE SETTINGS PROFILE … TO role` (§5.4).
+- Một file SQL có thể chứa nhiều statement, tách bằng `;` — quy ước parse và **cách chia file `versions/`** (một `0001` cho cả 12 object hay tách nhóm) chốt ở plan.
+- Vị trí chính xác của module runner (trong `backend/core/` hay script riêng) chốt ở plan cùng cấu trúc test (kể cả cách dựng container ClickHouse cho CI — [test-strategy.md](../../../20-design/test-strategy.md) cấm gọi nguồn ngoài nhưng DB test dùng thật).
 
 ## 9. Test — seam dự kiến (danh sách chốt lại ở plan, theo §4.5)
 
 Chạy trên **ClickHouse thật** (container test, giống cách test schema Postgres dùng DB thật — [test-strategy.md](../../../20-design/test-strategy.md)); TDD đỏ trước xanh; expected từ nguồn độc lập (bộ tick literal giải tay).
+
+**Phân định sở hữu:** seam **không gắn nhãn** thuộc plan thực thi spec này (schema/migration/quyền/compose — thao tác thẳng ClickHouse bằng SQL test). Ba seam gắn nhãn *"plan ingester"* / *"plan api"* chỉ **ghi trước** ở đây để danh sách seam trọn vẹn — plan tương ứng chốt và thực thi, plan này không viết code cho chúng.
 
 | Seam | Kiểm gì | Case biên tối thiểu |
 |---|---|---|
@@ -441,11 +447,11 @@ Chạy trên **ClickHouse thật** (container test, giống cách test schema Po
 | MV nến chỉ số | Chuỗi `index_delta` literal → `index_bar_1m_v` đúng o/h/l/c giải tay | **phút không frame nào mang `TV` → `cum_vol` là NULL, không phải 0** (ngữ nghĩa §4.2) · frame `MI = 0` không sinh nến (guard) |
 | Hợp đồng đọc luỹ kế (tầng đọc `api` — ghi trước cho plan api) | Chuỗi hai ngày liên tiếp → khối-lượng-theo-phút không bao giờ âm; phút đầu ngày = chính `cum_vol` | ngày chỉ có NULL không phá carry-forward |
 | Dedup block | INSERT lại nguyên block đã ghi **không truyền setting phía client** (chỉ dựa PROFILE của role) → số dòng `trade` không tăng **và** `bar_1m_v` không đếm đôi | block *khác nội dung* nhưng trùng khoá vẫn được ghi (dedup theo hash block, không theo khoá) · dedup còn tác dụng sau restart server |
-| Sửa nến (thủ tục §4.1) | `DROP PARTITION` + gom lại từ `trade` → `bar_1m_v` khớp giải tay, không đếm đôi | partition khác không bị đụng |
+| Sửa nến (thủ tục §4.1) | `DROP PARTITION` + gom lại từ `trade` (có `insert_deduplication_token`) → `bar_1m_v` khớp giải tay, không đếm đôi | partition khác không bị đụng · **retry backfill cùng token bị nuốt, không token thì nhân đôi** (§12/T13) |
 | TTL — hành vi thật | Chèn dòng `ts` lùi 5 tháng + dòng lùi 1 tháng (hai partition) → `ALTER TABLE … MATERIALIZE TTL` (mutations_sync) → dòng cũ biến mất, dòng mới còn | bảng nến: chèn dòng 2 năm trước, `OPTIMIZE FINAL` → **vẫn còn** (không TTL) · **hai dòng cùng PART, một hết hạn → cả hai còn** (khoá cứng ngữ nghĩa part-level của `ttl_only_drop_parts` — §2) |
 | Trường lạ (tầng ánh xạ ingester — ghi trước cho plan ingester) | Frame `i` có trường ngoài danh sách → dòng ghi vào `snapshot_delta` với `extra` chứa đúng trường đó (JSON) | frame không trường lạ → `extra = ''` · khoá lạ trong frame `t`/`o` được đếm/log (không lưu) |
 | Quyền | `dlck_api` INSERT bị từ chối, SELECT được; `dlck_ingester` INSERT được | `dlck_api` không `DROP`/`ALTER` được; `SHOW DATABASES` của nó không hiện database nghiệp vụ nào ngoài `rt` |
-| Ép kiểu + timezone (thuộc plan ingester, ghi trước) | `"42100.0"` → Decimal đúng; `"215271860.0"` → UInt64 = 215271860 (khối lượng nguồn **lúc có lúc không** đuôi `.0`); `TD`+`FT` giờ VN không lệch ngày, assert `TD == toDate(ts)` | epoch `LS` giây vs `t` ms · giá trị Decimal truyền qua `clickhouse-connect` bằng `decimal.Decimal`/chuỗi, **không** bằng `float` (tránh làm tròn nhị phân) |
+| Ép kiểu + timezone (thuộc plan ingester, ghi trước) | `"42100.0"` → Decimal đúng; `"215271860.0"` → UInt64 = 215271860 (khối lượng nguồn **lúc có lúc không** đuôi `.0`); `"100.005"` → chuẩn hoá tại cổng, **không** thả cho CH cắt im lặng (§2); `TD`+`FT` giờ VN không lệch ngày, assert `TD == toDate(ts)` | epoch `LS` giây vs `t` ms · giá trị Decimal truyền qua `clickhouse-connect` bằng `decimal.Decimal`/chuỗi, **không** bằng `float` (tránh làm tròn nhị phân) · frame `i` có cả `CV` lẫn `P1` → assert `CV == P1`, lệch thì log (nghi `P1` mang giá thay vì khối lượng) |
 
 ## 10. Ước lượng tải và dung lượng
 
@@ -456,7 +462,7 @@ Suy từ mẫu 12 mã / 239 s (đo 10/08/2026 — [11-bvsc-realtime §10](../../
 | Chặn dưới (đuôi dài ít giao dịch, hoạt động dồn vào ~200 mã đầu) | ~5–15 triệu dòng/ngày |
 | Chặn trên (suy tuyến tính thô 1,14 frame/s/mã × 2.000 mã — chắc chắn cao hơn thực tế) | ~35 triệu dòng/ngày |
 | Byte/dòng đã đo trên dữ liệu tổng hợp *(lượt 3, 2026-08-26)* | `trade` 9–21 B · `snapshot_delta` **5 B** (31 cột Nullable thưa nén rất tốt) |
-| Dung lượng frame thô — **chủ duy nhất của con số này** | ~50–500 MB/ngày ⇒ **cửa sổ thật 3–4 tháng cỡ 5–60 GB** — dải rộng vì chưa đo dữ liệu thật; đo trong **tuần đầu chạy** rồi ghi lại vào đây. Chạm đầu cao: TTL rút còn 1–2 tháng là **một lệnh ALTER**, không phải thiết kế lại |
+| Dung lượng frame thô — **chủ duy nhất của con số này** | ~50–500 MB/ngày ⇒ **cửa sổ thật 3–4 tháng cỡ 5–60 GB** — dải rộng vì chưa đo dữ liệu thật (`quote`/`pt_match` chưa đo byte/dòng bao giờ); đo trong **tuần đầu chạy** rồi ghi lại vào đây. Chạm đầu cao: TTL rút còn 1–2 tháng là **một lệnh ALTER**, không phải thiết kế lại |
 | `bar_1m` + `index_bar_1m` | ~200–540k dòng/ngày. **Đo tổng hợp 2026-08-26** (500k nến/ngày, khoá argMin 3 thành phần): **16 MiB/ngày ⇒ ~4 GB/năm**, trong đó hai state `o`/`c` chiếm ~97% — giá của khoá total-order, trả có ý thức cho tính bất biến của nến. Đo lại trên dữ liệu thật sau một tháng |
 | Nhịp insert từ ingester | **1 part/giây/bảng** (5 bảng × flush 1 s) — đúng **trần** khuyến nghị của ClickHouse (≤1 insert/giây mỗi bảng), không phải mức thoải mái: **flush không được nhanh hơn 1 s**. Lưu ý MV làm `bar_1m`/`index_bar_1m` nhận part cùng nhịp với bảng nguồn — tổng 7 bảng nhận part, merge nền phải theo kịp (dự kiến ổn ở quy mô này; theo dõi `system.parts` tuần đầu) |
 
@@ -470,6 +476,8 @@ Suy từ mẫu 12 mã / 239 s (đo 10/08/2026 — [11-bvsc-realtime §10](../../
 
 ## 11. Ngoài phạm vi spec này
 
+*(Cột "Loại" dùng ba loại của [CLAUDE.md §1.4](../../../../CLAUDE.md), cộng một nhãn thứ tư **có chủ đích** — "chưa đo được / chưa kết luận được" — cho mục đã đi tìm nhưng phép đo chưa thể chạy hoặc chưa đủ để kết luận; khác "đã kiểm — không có".)*
+
 | Mục | Loại | Ghi chú |
 |---|---|---|
 | Tick phái sinh | **chưa đo được** | Cấm giả định cho tới khi đo trong phiên ([roadmap §5.1](../../../00-overview/roadmap.md)); khi đo xong sẽ bổ sung bảng/cột bằng migration mới |
@@ -480,11 +488,11 @@ Suy từ mẫu 12 mã / 239 s (đo 10/08/2026 — [11-bvsc-realtime §10](../../
 
 ## 12. Kiểm chứng DDL trên ClickHouse thật *(đo 2026-08-25 → 2026-08-26, ba đợt)*
 
-Chạy trên **ClickHouse 26.3.22.7 (LTS)**, container Docker chính thức — đợt 1 sau review lượt 1 (T1–T7), đợt 2 sau review lượt 2 (T8–T10), đợt 3 sau review lượt 3 (T11–T12, gồm chạy lại T1–T4 trên DDL bản cuối). Review lượt 3 còn tự chạy một bộ phản chứng riêng — kết quả các phép **đúng** của nó (GRANT phủ bảng tạo sau, maxState Nullable ổn định qua FINAL, partition pruning qua view, idempotency từng loại statement, MODIFY SETTING trên bảng có dữ liệu, tràn Decimal lỗi cứng, cắt thập phân im lặng…) ghi rải trong thân spec kèm nhãn *(đo lượt 3)*. Mọi khẳng định "đã kiểm" trong spec trỏ về đây:
+Chạy trên **ClickHouse 26.3.22.7 (LTS)**, container Docker chính thức — đợt 1 sau review lượt 1 (T1–T7), đợt 2 sau review lượt 2 (T8–T10), đợt 3 sau review lượt 3 (T11–T12, gồm chạy lại T1–T4), đợt 4 sau review lượt 4 (T13–T14, gồm chạy lại T3 và toàn bộ DDL bản cuối). Review lượt 3 và 4 còn tự chạy các bộ phản chứng riêng — kết quả các phép **đúng** của nó (GRANT phủ bảng tạo sau, maxState Nullable ổn định qua FINAL, partition pruning qua view, idempotency từng loại statement, MODIFY SETTING trên bảng có dữ liệu, tràn Decimal lỗi cứng, cắt thập phân im lặng…) ghi rải trong thân spec kèm nhãn *(đo lượt 3)*. Mọi khẳng định "đã kiểm" trong spec trỏ về đây:
 
 | # | Phép kiểm | Kết quả đo |
 |---|---|---|
-| DDL | Toàn bộ DDL §2–§4 (8 bảng, 2 MV subquery, 2 view, TTL + settings) | ✅ chạy sạch, `system.tables` đủ 12 object đúng engine |
+| DDL | Toàn bộ DDL §2–§4 + §8 (8 bảng — 7 ở §3–§4, sổ migration ở §8; 2 MV subquery, 2 view, TTL + settings) | ✅ chạy sạch, `system.tables` đủ 12 object đúng engine |
 | T1 | MV nến: 3 tick giải tay (2 block insert, cùng phút) | ✅ `o=100 h=101 l=99 c=99 v=350 val=35150 v_bu=150 v_sd=200` — khớp giải tay tuyệt đối |
 | T2 | `side` lạ (`'X'`) | ✅ vào `v`, không vào `v_bu`/`v_sd` |
 | T3 | Phút không frame nào mang `TV` — và phút có `TVA` thật | ✅ `cum_vol`/`cum_value` = **NULL** (không phải 0) — ngữ nghĩa §4.2 đứng vững; phút sau có `TVA = 12.000.000,00` đọc ra đúng số qua state `Nullable(Decimal64(2))` (đường ghi không-NULL cũng được phủ; DDL đem kiểm dùng `Decimal64` nhất quán ở cả `index_delta.total_value` lẫn state — đúng bản spec sau sửa lượt 2) |
@@ -493,10 +501,12 @@ Chạy trên **ClickHouse 26.3.22.7 (LTS)**, container Docker chính thức — 
 | T6 | `CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1` + `CREATE ROLE`/`GRANT`/`CREATE USER` | ✅ tạo được role/user từ SQL; user gắn `dlck_api`: SELECT được, INSERT và DROP đều bị `ACCESS_DENIED` |
 | T7 | Bản MV **gốc** (alias `toStartOfMinute(ts) AS ts` che cột) | Trên 26.3: phân giải về **alias**, ghi đúng 1 dòng/phút — không lỗi. Vẫn giữ dạng subquery vì hành vi này phụ thuộc analyzer, không cam kết đa phiên bản |
 | T8 | Dedup qua **restart server**: insert → `docker restart` → retry nguyên block | ✅ `trade` 1 dòng, nến không đếm đôi — cửa sổ hash sống qua restart, kịch bản "CH restart" của §5.4 được phủ thật |
-| T9 | SETTINGS PROFILE `deduplicate_blocks_in_dependent_materialized_views=1` gắn role `dlck_ingester`; INSERT bằng user đó **không truyền setting phía client** | ✅ retry bị nuốt trọn (`trade` 1 dòng, `v` không đôi) — lưới thứ ba đặt được server-side, không phụ thuộc kỷ luật code writer |
+| T9 | SETTINGS PROFILE `deduplicate_blocks_in_dependent_materialized_views=1` gắn role `dlck_ingester`; INSERT bằng user đó **không truyền setting phía client** | ✅ retry bị nuốt trọn (`trade` 1 dòng, `v` không đôi) — dây đai server-side hoạt động, không phụ thuộc kỷ luật code writer |
 | T10 | `SHOW DATABASES` của user gắn `dlck_api` (tồn tại database nghiệp vụ khác) | ✅ chỉ hiện `rt` |
 | T11 *(2026-08-26, sau sửa lượt 3)* | Chạy lại **toàn bộ DDL bản cuối** (khoá 3 thành phần, dedup window 5 bảng + `bar_1m`, DEFAULT `received_at`, guard `MI>0`, `ReplacingMergeTree` cho sổ migration) + nguyên bộ T1–T4, **không truyền setting dedup phía client** | ✅ T1 khớp giải tay nguyên vẹn (o/h/l/c/v/val/v_bu/v_sd) · T2/T3 như cũ · T4: retry bị nuốt **dù không có client setting** — window của chính `bar_1m` chặn block state trùng hash; ghi nhận: điều kiện (3) của §5.4 trên 26.3 là dây đai, không phải điều kiện sống còn |
 | T12 *(2026-08-26)* | Khoá argMin/argMax **total** `(ts, seq, received_at)`: hai tick hoà `(ts,seq)` ở hai block, khác `received_at` → đọc trước/sau 2 lần `OPTIMIZE FINAL` · đo kích thước với 2 triệu tick → 500k nến | ✅ `o`/`c` ổn định tuyệt đối qua merge (khoá cũ 2 thành phần: **đổi giá trị sau merge** — phản chứng lượt 3) · `bar_1m` = 16 MiB/500k nến, `o`+`c` chiếm ~97% |
+| T13 *(2026-08-26, sau review lượt 4)* | Thủ tục vá §4.1: DROP PARTITION → backfill `INSERT … SELECT` → retry — không token và có `insert_deduplication_token` cố định | ✅ backfill sau DROP ghi bình thường (nội dung trùng block MV cũ **không** bị window chặn) · ❗ retry **không token: nhân đôi** (`v` 10→20 — `INSERT … SELECT` không được dedup nội dung phủ) · cùng token: retry bị nuốt, `v` giữ 10. Bài học phụ lúc đo: dòng có `ts` ngoài cửa sổ TTL bị **loại ngay tại INSERT** (part toàn dòng hết hạn bị drop) nhưng MV vẫn kịp sinh nến từ block — backfill/ghi muộn quá 3–4 tháng không đưa dữ liệu về `trade` được nữa |
+| T14 *(2026-08-26, sau review lượt 4)* | Nến chỉ số khoá total `(event_ts, received_at)`: hai frame `idx` hoà mili-giây, khác `received_at`, hai block → trước/sau `OPTIMIZE FINAL`; chạy lại T3 (ngữ nghĩa NULL) trên DDL mới | ✅ `o=700 c=800` bất biến qua merge (khoá một thành phần: phản chứng lượt 4 đo `o`/`c` **đổi giá trị sau merge**) · T3 nguyên vẹn: phút không `TV` → NULL, phút có → đúng số |
 
 Giới hạn của phép kiểm: chạy trên dữ liệu literal vài dòng — **chưa đo tải thật** (tần suất part, merge, RAM); mục §10 vẫn là ước lượng. Guard `index_value > 0` (§4.2) thêm **sau** đợt đo theo review lượt 2 — chỉ là thêm một vị từ WHERE, ngữ nghĩa NULL/không-NULL đã kiểm không đổi; bộ seam §9 sẽ phủ nó chính thức. Kịch bản kiểm lưu ở scratchpad phiên làm việc, sẽ tái lập thành test seam chính thức ở bước plan (§9).
 
@@ -509,6 +519,6 @@ Giới hạn của phép kiểm: chạy trên dữ liệu literal vài dòng —
 - [ ] `roadmap.md` §5.2 — đánh dấu dòng "Cập nhật market-data-store theo ClickHouse" đã xong, trỏ hồ sơ này
 - [ ] `deploy-scaffold` spec/ledger — **không sửa** (vùng lịch sử 90-records); profile `realtime` ghi ở compose thật khi thực thi
 - [ ] `.env.example` — thêm khối ClickHouse cùng lượt thực thi (biến default rỗng trong compose, fail-fast ở `stack.mjs` khi bật profile — §7)
-- [ ] `scripts/stack.mjs` — thêm **`dlck-infra_chdata`** (tên đầy đủ kèm tiền tố project — tên trần `chdata` không khớp) vào danh sách volume bất biến. ⚠️ Guard hiện tại **fail-open**: tên không tồn tại trong `before` thì luôn `ok:true` — smoke test của lần thực thi phải kiểm `existed=true` sau khi bật profile `realtime`, nếu không đăng ký sai tên sẽ câm lặng
+- [ ] `scripts/stack.mjs` — thêm **`dlck-infra_chdata`** (tên đầy đủ kèm tiền tố project — tên trần `chdata` không khớp) vào danh sách volume bất biến, **ở cả hai call site hardcode (dòng 127 và 141)**. ⚠️ Guard hiện tại **fail-open**: tên không tồn tại trong `before` thì luôn `ok:true` — smoke test của lần thực thi phải kiểm `existed=true` sau khi bật profile `realtime`, nếu không đăng ký sai tên sẽ câm lặng
 - [ ] Script tạo user per-môi-trường cho ClickHouse (§6/§8) — deliverable của plan, chưa tồn tại
 - [ ] `git grep` "TimescaleDB\|bar_1m\|hypertable" toàn repo — xác nhận mọi hit còn lại hoặc đã đúng, hoặc thuộc vùng lịch sử
