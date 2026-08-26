@@ -152,6 +152,36 @@ Giữ nguyên mô hình delta tới tận trình duyệt: đo được `V1` (kh�
 | Gộp frame | 0–250 ms |
 | **Tổng cộng thêm** | **~10 ms + chu kỳ gộp** |
 
+
+### 3.7 Hợp đồng ghi ClickHouse — mất một dòng hay mất năm nghìn dòng
+
+*(Viết vào tài liệu sống 2026-08-26 theo §1.1: trước đó hợp đồng này chỉ nằm trong spec ở `90-records/` và trong comment code — xoá thư mục kế hoạch là mất luôn tri thức vận hành.)*
+
+Batch writer gom dòng rồi xả mỗi giây. Khi một lô ghi hỏng, **cách phân loại lỗi quyết định mất bao nhiêu dữ liệu**:
+
+| Loại lỗi | Xử lý | Thiệt hại |
+|---|---|---|
+| **Dữ liệu** (dòng sai kiểu, tràn số) | Chia đôi lô đệ quy để cô lập | **1 dòng** |
+| **Mọi lỗi khác** (mạng, quá tải, cấu hình) | Thử lại nguyên lô tới hạn chót, hết hạn thì bỏ | tới **5.000 dòng** ≈ 1 giây tick |
+
+Bốn luật rút ra từ những lần trả giá, mỗi luật chống một chiều hỏng khác nhau:
+
+1. **Phân loại theo MÃ SỐ lỗi, không theo chuỗi trong thông điệp.** ClickHouse đặt mã ở **header HTTP** nên nó luôn có; còn tên ký hiệu và phần chi tiết nằm trong **body**, và biến mất sạch khi server tắt `show_clickhouse_errors` — lúc đó thông điệp rút gọn thành một câu chung chung không còn dấu vết gì. Dò chuỗi vì thế hỏng đúng lúc cần nhất.
+
+2. **Mã lạ ⇒ coi là transient**, không phải ngược lại. Hai chiều sai không cân nhau: đọc nhầm lỗi dữ liệu thành transient chỉ mất một lô sau một khoảng có hạn, còn đọc nhầm **quá tải** thành lỗi dữ liệu sẽ chia đôi đệ quy thành 5.000 lệnh ghi một dòng — giáng thẳng vào đúng cái server đang ngộp. Vì vậy danh sách mã dữ liệu là **danh sách đóng**, mọi thứ ngoài nó đi nhánh có hạn.
+
+3. **Ngân sách thử lại phải đo THỜI GIAN THỰC và là HẠN CHÓT CHUNG cho cả cây chia đôi.** Hai bẫy đã cắn thật:
+   - Đếm bằng tổng thời gian *ngủ* thì thời gian nằm trong lệnh ghi không vào sổ. Driver mặc định chờ đọc **300 giây**, nên một server treo cho ra **40 phút** thực trong khi bộ đếm mới tới 63 giây.
+   - Truyền xuống đệ quy một *khoảng* thay vì một *hạn chót* thì mỗi tầng chia đôi được cấp lại trọn ngân sách — đo được **778 giây cho một lần xả**.
+
+   Ràng buộc cứng: ngân sách phải **nhỏ hơn cửa sổ chống trùng của ClickHouse (~100 giây)**. Vượt qua đó thì lô thử lại không còn được nhận diện là trùng, và dữ liệu bị **đếm đôi** — hỏng âm thầm, tệ hơn mất dòng.
+
+4. **Cửa sổ xả cuối phiên phải dài hơn ngân sách thử lại.** Lúc đóng phiên, luồng xả cũ có thể còn đang chờ trong nhịp lùi; mutex làm mọi lời gọi mới quay về ngay, nên vòng chờ chỉ quay rỗng. Bỏ cuộc sớm thì bước đối chứng chạy trên kho còn thiếu đuôi phiên và **báo thiếu dữ liệu giả**. Ngân sách xả vì thế **suy ra từ** ngân sách thử lại, không viết lại thành một số riêng — hai số rời nhau sẽ trôi lệch.
+
+> 🔗 **Phụ thuộc ngầm phải nhớ:** danh sách mã lỗi dữ liệu đủ dùng **vì** các bảng `rt.*` hiện chỉ dùng `String` · `UInt*` · `Decimal64(2)` · `DateTime*`. **Thêm cột kiểu `UUID`, `Float`, `IPv4/6` thì phải rà lại danh sách** — không có gì tự báo, triệu chứng sẽ là những lô bị bỏ mà không rõ vì sao.
+
+**Trần chờ đọc phải tách riêng cho ghi và cho đọc.** Trần hợp lý cho một lệnh ghi (giây) quá ngắn cho truy vấn đối chứng cuối phiên (quét trọn ngày) — dùng chung một trần sẽ biến một phiên sạch thành phiên báo lỗi dù dữ liệu đã vào đủ.
+
 ---
 
 ## 4. ETL REST

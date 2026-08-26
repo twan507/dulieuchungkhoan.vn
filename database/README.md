@@ -19,7 +19,7 @@ Spec: [`docs/90-records/plans/2026-08-25-postgres-data-schema/`](../docs/90-reco
 
 ## Schema ClickHouse (`rt`)
 
-**Trạng thái:** **2 migration** SQL thuần (`database/clickhouse/versions/0001_roles.sql` — role `dlck_ingester`/`dlck_api`, `0002_rt_schema.sql` — 5 bảng frame thô TTL 3 tháng + 2 bảng nến vĩnh viễn + materialized view), chạy bằng runner riêng `core.ch_migrate` (không dùng Alembic — ClickHouse không hỗ trợ transaction DDL kiểu Postgres). **29 test** seam trong `backend/tests/clickhouse/` (`test_t01_fixture.py` … `test_t06_backup.py`) — **cần Docker** vì mỗi phiên test dựng container ClickHouse ephemeral riêng (không dùng CH dev đang chạy).
+**Trạng thái:** **2 migration** SQL thuần (`database/clickhouse/versions/0001_roles.sql` — role `dlck_ingester`/`dlck_api`, `0002_rt_schema.sql` — 5 bảng frame thô TTL 3 tháng + 2 bảng nến vĩnh viễn + materialized view), chạy bằng runner riêng `core.ch_migrate` (không dùng Alembic — ClickHouse không hỗ trợ transaction DDL kiểu Postgres). **35 test** seam trong `backend/tests/clickhouse/` (`test_t01_fixture.py` … `test_t06_backup.py`) *(đếm 2026-08-26 tối; +6 so với mốc dựng schema — lát cắt ingester và vòng review mở gate bổ sung, trong đó có bộ test chạy `assert_migrated` dưới đúng role `dlck_ingester`)* — **cần Docker** vì mỗi phiên test dựng container ClickHouse ephemeral riêng (không dùng CH dev đang chạy).
 
 Spec: [`docs/90-records/plans/2026-08-25-clickhouse-realtime-store/`](../docs/90-records/plans/2026-08-25-clickhouse-realtime-store/) — `spec.md` (quyết định xuyên suốt, checklist §13), `plan.md`, `ledger.md`.
 
