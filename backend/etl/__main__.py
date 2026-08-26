@@ -1,3 +1,4 @@
+import argparse
 import sys
 import time
 from datetime import datetime, timezone
@@ -18,7 +19,13 @@ def main(argv: list[str] | None = None) -> int:
     if args[0] == "omo":
         import etl.omo_job
         return etl.omo_job.run()
-    print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo)", file=sys.stderr)
+    if args[0] == "refdata":
+        import etl.refdata_job
+        parser = argparse.ArgumentParser(prog="etl refdata")
+        parser.add_argument("--accept-drop", action="store_true")
+        parsed = parser.parse_args(args[1:])
+        return etl.refdata_job.run(accept_drop=parsed.accept_drop)
+    print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata)", file=sys.stderr)
     return 2
 
 
