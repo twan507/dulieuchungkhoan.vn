@@ -26,6 +26,15 @@ Mỗi thư mục là một task, đặt tên `YYYY-MM-DD-<tên>`. File bên tron
 | [`2026-08-26-ingester-omo-first-slice/`](plans/2026-08-26-ingester-omo-first-slice/) | **Lát cắt dọc đầu tiên** — `ingester` realtime (socket BVSC → Redis → ClickHouse) + job `etl omo` (crawl OMO của SBV → Postgres) — `spec.md` · `plan.md` · `ledger.md` | ✅ **merge `main` 2026-08-26** — 2 vòng review + review toàn nhánh; OMO chạy thật 4 mốc/ngày. **Ghi tick bật 2026-08-26 tối**, phiên ghi đầu 27/08 chạy song song một phiên `--measure`; **194 test xanh** *(cập nhật 2026-08-26 tối)* |
 | [`2026-08-26-reference-data-etl/`](plans/2026-08-26-reference-data-etl/) | **ETL dữ liệu tham chiếu** — danh bạ doanh nghiệp, danh mục mã (hợp nhất 2 endpoint BVSC), 18 chỉ số thị trường, cây ICB. Việc [6] của lộ trình — nút thắt mở khoá cả ETL thị trường lẫn pipeline tin — `spec.md` | ✅ **thực thi xong 2026-08-26 đêm** — spec 2 vòng review + 6 task subagent TDD + chạy thật 2 lượt idempotent (2.015 mã vào kho, task 08:00/ngày); 217 test toàn backend; ngành hoãn có chủ đích (`industry_id` rỗng) — `spec.md` · `plan.md` · `ledger.md` |
 
+## `worksheets/` — bảng điền tay của chủ dự án
+
+Bảng cần người quyết nội dung, xuất từ dữ liệu thật để điền rồi nạp lại — không phải tài liệu sống, không phải bản ghi lịch sử. Mục lục và cách dùng: [`worksheets/README.md`](worksheets/README.md).
+
+| File | Việc |
+|---|---|
+| `industry-map-worksheet.csv` | **37 dòng ICB cấp 3** phủ 100% 1.550 doanh nghiệp — điền mã ngành để lấp `market.industry_icb_map` |
+| `all-securities.csv` | 2.015 mã đang có trong kho, kèm ICB — tra cứu |
+
 ## `surveys/` — hồ sơ khảo sát
 
 Mỗi thư mục là một đợt khảo sát, có README riêng làm mục lục chi tiết. Ở đây chỉ liệt kê đợt.
