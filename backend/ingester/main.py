@@ -315,7 +315,12 @@ async def drain_writer(writer, budget_s: float = DRAIN_BUDGET_S,
             log.error("hết %.0fs ngân sách xả mà buffer chưa sạch — phán quyết "
                       "reconcile bên dưới có thể sai lệch (thiếu đuôi phiên)", budget_s)
             return False
-        await sleep_fn(0.1)
+        # >= 1s giữa các nhịp CHƯA sạch: 0,1s cũ (đúng cho vòng xả bản v1, tick rồi mới
+        # xả) giờ nghĩa khác — mỗi nhịp ở đây gọi thẳng `write_once`, nên một server đang
+        # lỗi nhanh (transient tức thời) sẽ bị bắn ~600 lần insert trong ngân sách 75s thay
+        # vì ~7 lần như backoff cũ (review Opus Finding 2). Nhịp sạch (return True ở trên)
+        # không đi qua đường này nên không mất tốc độ phát hiện sạch.
+        await sleep_fn(1.0)
 
 
 # Mặc định `send_receive_timeout` của clickhouse_connect là 300 s — gấp 5 lần cả ngân

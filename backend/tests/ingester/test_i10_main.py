@@ -406,6 +406,24 @@ def test_drain_writer_gives_up_and_reports_when_never_drains():
     assert clock.now - 1000.0 <= main_mod.DRAIN_BUDGET_S + 1.0
 
 
+def test_drain_writer_backs_off_at_least_1s_between_failed_write_once_calls():
+    """Review Opus, Finding 2 — trước fix, `drain_writer` ngủ 0,1 s giữa các nhịp CHƯA
+    sạch rồi gọi thẳng `write_once`: với một server lỗi nhanh (transient trả về ngay,
+    không tự ngủ bên trong `write_once`), đó là ~750 lần insert trong ngân sách 75 s thay
+    vì ~7 lần như backoff mũ cũ (1->2->4->8->16 s). `stuck.calls` đếm số lần `write_once`
+    được gọi — phải bị chặn dưới xấp xỉ một lần/giây, không phải gấp mười lần đó.
+    """
+    clock = _FakeClock()
+    stuck = _StuckWriter(clock, clears_after_s=float("inf"))    # không bao giờ sạch
+
+    ok = asyncio.run(main_mod.drain_writer(stuck, sleep_fn=clock.sleep, clock=clock))
+
+    assert ok is False
+    # sleep_fn giả nhảy đúng d khi được gọi -> số lần gọi write_once phải xấp xỉ số giây
+    # trong ngân sách (nhịp >= 1s), không phải gấp mười (nhịp 0,1s cũ).
+    assert stuck.calls <= main_mod.DRAIN_BUDGET_S + 2
+
+
 def test_run_mode_returns_exit_3_when_clickhouse_unreachable(tmp_path, monkeypatch, capsys):
     """get_client nối ngay (autoconnect); nó phải nằm TRONG hợp đồng exit 3."""
     from clickhouse_connect.driver.exceptions import OperationalError

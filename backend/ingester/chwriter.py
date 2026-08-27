@@ -101,7 +101,10 @@ class ChWriter:
         self.head_rows = 0
         self.disk_mode = False                 # Task 6: bật khi RAM vượt trần
         self.insert_s: deque[float] = deque(maxlen=4096)
-        self._last_exc: Exception | None = None
+        # (mã, repr) của lỗi insert gần nhất — KHÔNG giữ nguyên exception: nó mang
+        # `__traceback__` ghim cả block lỗi (~2,5 MB) sống tới lần lỗi kế tiếp, trong khi
+        # log chỉ cần đúng mã + mô tả.
+        self._last_err: tuple[int | None, str] | None = None
         # add() chạy trên event-loop thread, manage_once()/write_once() chạy trong thread
         # khác qua asyncio.to_thread — pha cắt buffer (copy+clear) phải atomic với add()
         # (§CRITICAL 1 review wave 2), nếu không có thể mất dòng vừa append đúng lúc buffer
@@ -166,7 +169,16 @@ class ChWriter:
                     continue
                 if status == "transient":
                     if p.first_try is None:
+                        # Tính từ TRƯỚC lúc gọi insert (t0), không phải sau — bài học
+                        # send_receive_timeout: một lần thử treo có thể tự ăn hết ngân
+                        # sách retry ngay từ lần đầu, hạn chót phải tính cả thời gian NẰM
+                        # TRONG lần thử đó, không chỉ thời gian chờ giữa các lần thử.
                         p.first_try = t0
+                        # Chỉ log MỘT lần cho mỗi block khi lần đầu thấy transient — một
+                        # block có thể còn nằm ở đầu hàng đợi qua rất nhiều nhịp gọi trước
+                        # khi hết hạn hoặc thành công, log mỗi nhịp sẽ spam WARNING vô ích.
+                        code, rep = self._last_err
+                        log.warning("insert %s lỗi transient: code=%s %s", p.table, code, rep)
                     if self.clock() - p.first_try >= RETRY_BUDGET_S:
                         # TASK 5: giữ hành vi cũ — hết hạn thì bỏ block. Task 6 sẽ đổi
                         # nhánh này thành tràn xuống đĩa (spill) thay vì vứt bỏ.
@@ -174,22 +186,23 @@ class ChWriter:
                             self.queue.popleft()
                             self.queue_rows -= len(p.block)
                         self.metrics.inc(f"dropped_block.{p.table}", len(p.block))
-                        # In cả MÃ lỗi: khi server tắt show_clickhouse_errors thì `%r` rút
+                        # In cả MÃ lỗi: khi server tắt show_clickhouse_errors thì repr rút
                         # gọn còn câu chung chung, mã là thứ duy nhất còn dùng để lần ra
                         # nguyên nhân và quyết định có bổ sung vào _DETERMINISTIC_CODES không.
-                        log.error("bỏ block %s (%d dòng) — quá hạn retry %ds: code=%s %r",
-                                  p.table, len(p.block), RETRY_BUDGET_S,
-                                  getattr(self._last_exc, "code", None), self._last_exc)
+                        code, rep = self._last_err
+                        log.error("bỏ block %s (%d dòng) — quá hạn retry %ds: code=%s %s",
+                                  p.table, len(p.block), RETRY_BUDGET_S, code, rep)
                         continue
                     return                      # chưa hết hạn — thử lại nhịp sau, không ngủ
                 # "poison": lỗi tất định — cô lập dòng hỏng (§5.8)
                 with self._lock:
                     self.queue.popleft()
+                    if len(p.block) == 1:
+                        self.queue_rows -= 1   # mọi thay đổi queue_rows phải nằm trong _lock
                 if len(p.block) == 1:
-                    self.queue_rows -= 1
                     self.metrics.inc(f"poison_row.{p.table}")
-                    log.error("dòng độc %s: code=%s %r — %r", p.table,
-                              getattr(self._last_exc, "code", None), p.block[0], self._last_exc)
+                    code, rep = self._last_err
+                    log.error("dòng độc %s: code=%s %r — %s", p.table, code, p.block[0], rep)
                     continue
                 mid = len(p.block) // 2
                 first = _Pending(table=p.table, block=p.block[:mid])
@@ -206,16 +219,16 @@ class ChWriter:
 
     def _insert(self, table: str, block: list) -> str:
         """MỘT lần thử `client.insert`. Không sleep, không đệ quy — phân loại kết quả rồi
-        trả về ngay cho `write_once` quyết định tiếp. `"done"` | `"transient"` | `"poison"`."""
+        trả về ngay cho `write_once` quyết định tiếp. `"done"` | `"transient"` | `"poison"`.
+        Log transient/drop là việc của `write_once` (chỉ log lần đầu mỗi block, không mỗi
+        lần thử) — ở đây chỉ phân loại và ghi lại (mã, repr) vào `_last_err`."""
         t0 = self.clock()
         try:
             self.client.insert(f"rt.{table}", block, column_names=COLUMNS[table])
         except Exception as e:  # noqa: BLE001 — phân loại rồi xử lý theo hợp đồng
             self.insert_s.append(self.clock() - t0)
-            self._last_exc = e
+            self._last_err = (getattr(e, "code", None), repr(e))
             if not _is_deterministic(e):
-                log.warning("insert %s lỗi transient: code=%s %r",
-                            table, getattr(e, "code", None), e)
                 return "transient"
             return "poison"
         else:
