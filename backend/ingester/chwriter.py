@@ -1,11 +1,17 @@
-"""Batch writer ClickHouse — hợp đồng spec CH §5: flush 1 s cố định (vòng lặp ở main),
-retry NGUYÊN block, chia đôi block độc, trần BLOCK_CAP không flush sớm."""
+"""Batch writer ClickHouse — hợp đồng spec CH §5 + spec spill §2: vòng QUẢN (manage_once,
+cắt buffer/gauge, không bao giờ chạm ClickHouse) tách khỏi vòng GHI (write_once, một hạn
+mức thời gian mỗi lần gọi) — vòng quản không bao giờ bị một insert treo chặn lại (spec
+spill §2.1). Hàng đợi là MỘT deque toàn cục (không còn dict theo bảng); mỗi phần tử một
+block chờ ghi. Task này CHƯA có chế độ đĩa (spill) — giữ nguyên ngữ nghĩa cũ: retry
+NGUYÊN block, chia đôi block độc, hết RETRY_BUDGET_S thì bỏ block (Task 6 sẽ đổi chỗ này
+thành tràn xuống đĩa)."""
 from __future__ import annotations
 
 import logging
 import threading
 import time
 from collections import deque
+from dataclasses import dataclass
 
 from clickhouse_connect.driver.exceptions import DataError
 
@@ -16,6 +22,7 @@ BLOCK_CAP = 5000
 RETRY_BUDGET_S = 60          # < tuổi thọ cửa sổ dedup ~100 s (spec CH §5.5)
 ROW_BYTES_EST = 497          # đo brief §3.2 — KHÔNG getsizeof trên đường chạy
 WARN_DEPTH_ROWS = 50_000     # brief §5.1 đòi ngưỡng cảnh báo kèm metric
+WRITE_CALL_BUDGET_S = 5.0    # hạn mức MỘT LẦN GỌI write_once — vòng lặp ở main gọi lại mỗi nhịp
 
 # Mã lỗi DỮ LIỆU của ClickHouse — chỉ những mã này mới là lỗi tất định (chia đôi block
 # để cô lập dòng hỏng). Danh sách kín có chủ đích: luật cũ dò "timeout|connection|
@@ -70,103 +77,163 @@ def _is_deterministic(e: Exception) -> bool:
     return any(m in text for m in _DETERMINISTIC_MARKERS)
 
 
+@dataclass
+class _Pending:
+    """Một block đang chờ ghi trong hàng đợi toàn cục. `first_try` = thời điểm (theo
+    `clock`) lần đầu gặp lỗi transient — hạn chót retry tính từ đây, không cấp lại mỗi
+    nhịp gọi (giữ đúng bài học "hạn chót tuyệt đối" của bản v1)."""
+    table: str
+    block: list
+    first_try: float | None = None
+
+
 class ChWriter:
-    def __init__(self, client, sleep_fn=time.sleep, clock=time.monotonic):
+    def __init__(self, client, spill=None, sleep_fn=time.sleep, clock=time.monotonic):
         self.client = client
+        self.spill = spill                     # Task 6+: chế độ đĩa. Task này chỉ giữ tham chiếu.
         self.sleep = sleep_fn
         self.clock = clock
         self.metrics = Metrics()
         self.buffers: dict[str, list[list]] = {t: [] for t in COLUMNS}
-        self.pending: dict[str, deque] = {t: deque() for t in COLUMNS}
+        self.queue: deque[_Pending] = deque()  # RAM: block đã cắt khỏi buffer, chờ ghi
+        self.queue_rows = 0
+        self.head: deque[_Pending] = deque()   # Task 6: block đọc lại từ đĩa, ghi trước queue
+        self.head_rows = 0
+        self.disk_mode = False                 # Task 6: bật khi RAM vượt trần
         self.insert_s: deque[float] = deque(maxlen=4096)
-        # add() chạy trên event-loop thread, flush_once() chạy trong thread khác qua
-        # asyncio.to_thread — pha cắt buffer (copy+clear) phải atomic với add() (§CRITICAL 1
-        # review wave 2), nếu không có thể mất dòng vừa append đúng lúc buffer bị cắt.
+        self._last_exc: Exception | None = None
+        # add() chạy trên event-loop thread, manage_once()/write_once() chạy trong thread
+        # khác qua asyncio.to_thread — pha cắt buffer (copy+clear) phải atomic với add()
+        # (§CRITICAL 1 review wave 2), nếu không có thể mất dòng vừa append đúng lúc buffer
+        # bị cắt. `_lock` CHỈ bảo vệ các pha ngắn (cắt buffer, peek/pop hàng đợi) — KHÔNG
+        # bao giờ giữ trong lúc gọi `client.insert` (đó là điều làm vòng quản Task 5 khác
+        # bản cũ: một insert treo không còn chặn được manage_once — spec spill §2.1, test
+        # `test_manage_runs_while_insert_hangs`).
         self._lock = threading.Lock()
-        # Mutex riêng cho CẢ PHA XẢ: lúc tắt, task flush bị cancel() nhưng thread
-        # `flush_once` vẫn chạy tiếp trong khi code khởi flush cuối cùng — hai thread
-        # cùng duyệt `pending` thì `_write_block(q[0])` rồi `q.popleft()` (ngoài lock dữ
-        # liệu) làm một block bị ghi đôi và block kế bị popleft mà chưa từng ghi
-        # (review cuối IMPORTANT 4). Không lấy được thì về ngay — nhịp sau xả tiếp.
-        # Thứ tự lấy khoá luôn là _flush_lock → _lock (add() chỉ lấy _lock) ⇒ không deadlock.
-        self._flush_lock = threading.Lock()
+        # Mutex riêng cho PHA GHI: lúc tắt, task write bị cancel() nhưng thread `write_once`
+        # vẫn có thể đang chạy trong khi code khởi ghi cuối cùng gọi lại — hai thread cùng
+        # đọc/pop đầu hàng đợi thì một block có thể bị ghi đôi hoặc bị bỏ qua (review cuối
+        # IMPORTANT 4, kế thừa từ `_flush_lock` bản v1). Không lấy được thì về ngay — nhịp
+        # sau ghi tiếp. `manage_once()` KHÔNG dùng khoá này — nó chỉ cần `_lock`.
+        self._write_lock = threading.Lock()
 
     def add(self, n: Normalized) -> None:
         with self._lock:
             buf = self.buffers[n.table]
             buf.append([n.row.get(c) for c in COLUMNS[n.table]])
             if len(buf) >= BLOCK_CAP:
-                self.pending[n.table].append(buf[:])
+                self.queue.append(_Pending(table=n.table, block=buf[:]))
+                self.queue_rows += len(buf)
                 buf.clear()
                 self.metrics.inc(f"block_cap.{n.table}")
                 log.warning("bảng %s chạm trần block %d — tải cao bất thường", n.table, BLOCK_CAP)
 
-    def flush_once(self) -> None:
-        if not self._flush_lock.acquire(blocking=False):
-            return                             # đã có thread khác đang xả — nhịp sau xả tiếp
-        try:
-            with self._lock:                   # chỉ pha cắt buffer — KHÔNG giữ lock khi I/O
-                for table, buf in self.buffers.items():
-                    if buf:
-                        self.pending[table].append(buf[:])
-                        buf.clear()
-            depth = sum(len(b) for q in self.pending.values() for b in q)
+    def manage_once(self) -> None:
+        """Vòng QUẢN: cắt buffer → hàng đợi, cập nhật gauge. KHÔNG BAO GIỜ chạm
+        ClickHouse — đây là điều làm nó không thể bị một insert treo chặn lại
+        (Task 6 sẽ thêm cửa vào chế độ đĩa + quét spill tại đây)."""
+        with self._lock:
+            for table, buf in self.buffers.items():
+                if buf:
+                    self.queue.append(_Pending(table=table, block=buf[:]))
+                    self.queue_rows += len(buf)
+                    buf.clear()
+            depth = self.head_rows + self.queue_rows
             self.metrics.set("pending_depth_rows", depth)
             self.metrics.set("pending_depth_bytes", depth * ROW_BYTES_EST)
-            if depth > WARN_DEPTH_ROWS:
-                log.warning("pending sâu %d dòng (> %d)", depth, WARN_DEPTH_ROWS)
-            for table, q in self.pending.items():
-                while q:
-                    self._write_block(table, q[0])
-                    q.popleft()
-        finally:
-            self._flush_lock.release()
+        if depth > WARN_DEPTH_ROWS:
+            log.warning("pending sâu %d dòng (> %d)", depth, WARN_DEPTH_ROWS)
 
-    def _write_block(self, table: str, block: list, deadline: float | None = None) -> None:
-        # HẠN CHÓT TUYỆT ĐỐI, không phải "khoảng ngân sách". Bản trước truyền xuống một
-        # KHOẢNG, nên mỗi tầng chia đôi được cấp lại trọn 60 s: một dòng độc gặp đúng lúc
-        # server trục trặc nhân ngân sách lên theo độ sâu cây đệ quy (đo được 778 s cho
-        # một lần xả). Hạn chót chung làm cả cây đệ quy nằm gọn trong một ngân sách.
-        if deadline is None:
-            deadline = self.clock() + RETRY_BUDGET_S
-        # Đếm THỜI GIAN THỰC, không phải tổng thời gian ngủ. Bản cũ chỉ cộng `delay` nên
-        # thời gian nằm trong `client.insert` không vào sổ — mà driver mặc định
-        # `send_receive_timeout=300`, nên một server treo cho ra 8 lần thử × 300 s = 40
-        # PHÚT trong khi bộ đếm mới tới 63 s. Vượt xa cửa sổ dedup ~100 s mà hằng số này
-        # tự khai là phải nằm dưới, và làm ngân sách xả cuối phiên (suy ra từ đây) mất căn cứ.
-        delay = 1.0
-        while True:
-            t0 = self.clock()
-            try:
-                self.client.insert(f"rt.{table}", block, column_names=COLUMNS[table])
-            except Exception as e:  # noqa: BLE001 — phân loại rồi xử lý theo hợp đồng
-                self.insert_s.append(self.clock() - t0)
-                if not _is_deterministic(e):
-                    if self.clock() >= deadline:
-                        self.metrics.inc(f"dropped_block.{table}", len(block))
+    def write_once(self, budget_s: float = WRITE_CALL_BUDGET_S) -> None:
+        """Vòng GHI: xử lý đầu hàng đợi trong một hạn mức thời gian mỗi lần gọi. Chỉ giữ
+        `_lock` để peek/pop — KHÔNG BAO GIỜ trong lúc `client.insert` (RAM mode, Task này;
+        Task 6 sẽ thêm nhánh đọc `head`/đĩa khi `disk_mode`)."""
+        if not self._write_lock.acquire(blocking=False):
+            return                             # đã có thread khác đang ghi — nhịp sau ghi tiếp
+        try:
+            end = self.clock() + budget_s
+            while self.clock() < end:
+                with self._lock:
+                    if not self.queue:
+                        return
+                    p = self.queue[0]
+                t0 = self.clock()
+                status = self._insert(p.table, p.block)
+                if status == "done":
+                    with self._lock:
+                        self.queue.popleft()
+                        self.queue_rows -= len(p.block)
+                    continue
+                if status == "transient":
+                    if p.first_try is None:
+                        p.first_try = t0
+                    if self.clock() - p.first_try >= RETRY_BUDGET_S:
+                        # TASK 5: giữ hành vi cũ — hết hạn thì bỏ block. Task 6 sẽ đổi
+                        # nhánh này thành tràn xuống đĩa (spill) thay vì vứt bỏ.
+                        with self._lock:
+                            self.queue.popleft()
+                            self.queue_rows -= len(p.block)
+                        self.metrics.inc(f"dropped_block.{p.table}", len(p.block))
                         # In cả MÃ lỗi: khi server tắt show_clickhouse_errors thì `%r` rút
                         # gọn còn câu chung chung, mã là thứ duy nhất còn dùng để lần ra
                         # nguyên nhân và quyết định có bổ sung vào _DETERMINISTIC_CODES không.
-                        log.error("bỏ block %s (%d dòng) — quá hạn chung %ds thêm %.1fs: code=%s %r",
-                                  table, len(block), RETRY_BUDGET_S, self.clock() - deadline,
-                                  getattr(e, "code", None), e)
-                        return
-                    self.sleep(delay)
-                    delay = min(delay * 2, 16.0)
-                    continue                      # retry NGUYÊN block — không gộp dòng mới
-                if len(block) == 1:
-                    self.metrics.inc(f"poison_row.{table}")
-                    log.error("dòng độc %s: code=%s %r — %r",
-                              table, getattr(e, "code", None), block[0], e)
-                    return
-                mid = len(block) // 2             # lỗi tất định → cô lập dòng hỏng (§5.8)
-                self._write_block(table, block[:mid], deadline)   # hạn chót CHUNG
-                self._write_block(table, block[mid:], deadline)
-                return
-            else:
-                self.insert_s.append(self.clock() - t0)
-                self.metrics.inc(f"rows.{table}", len(block))
-                return
+                        log.error("bỏ block %s (%d dòng) — quá hạn retry %ds: code=%s %r",
+                                  p.table, len(p.block), RETRY_BUDGET_S,
+                                  getattr(self._last_exc, "code", None), self._last_exc)
+                        continue
+                    return                      # chưa hết hạn — thử lại nhịp sau, không ngủ
+                # "poison": lỗi tất định — cô lập dòng hỏng (§5.8)
+                with self._lock:
+                    self.queue.popleft()
+                if len(p.block) == 1:
+                    self.queue_rows -= 1
+                    self.metrics.inc(f"poison_row.{p.table}")
+                    log.error("dòng độc %s: code=%s %r — %r", p.table,
+                              getattr(self._last_exc, "code", None), p.block[0], self._last_exc)
+                    continue
+                mid = len(p.block) // 2
+                first = _Pending(table=p.table, block=p.block[:mid])
+                second = _Pending(table=p.table, block=p.block[mid:])
+                with self._lock:
+                    # appendleft nửa SAU rồi nửa TRƯỚC → nửa TRƯỚC nằm đúng đầu hàng đợi
+                    # (giữ vị trí đầu — trần tự nhiên theo độ sâu chia, không đệ quy, không
+                    # cấp lại ngân sách thời gian cho từng tầng chia).
+                    self.queue.appendleft(second)
+                    self.queue.appendleft(first)
+                continue
+        finally:
+            self._write_lock.release()
+
+    def _insert(self, table: str, block: list) -> str:
+        """MỘT lần thử `client.insert`. Không sleep, không đệ quy — phân loại kết quả rồi
+        trả về ngay cho `write_once` quyết định tiếp. `"done"` | `"transient"` | `"poison"`."""
+        t0 = self.clock()
+        try:
+            self.client.insert(f"rt.{table}", block, column_names=COLUMNS[table])
+        except Exception as e:  # noqa: BLE001 — phân loại rồi xử lý theo hợp đồng
+            self.insert_s.append(self.clock() - t0)
+            self._last_exc = e
+            if not _is_deterministic(e):
+                log.warning("insert %s lỗi transient: code=%s %r",
+                            table, getattr(e, "code", None), e)
+                return "transient"
+            return "poison"
+        else:
+            self.insert_s.append(self.clock() - t0)
+            self.metrics.inc(f"rows.{table}", len(block))
+            return "done"
+
+    def flush_once(self) -> None:
+        """Tương thích với đường gọi cũ/test cũ: một lượt quản rồi ghi với ngân sách đủ
+        rộng để xả hết những gì vừa cắt (không phải vòng lặp thật — main.py dùng
+        `manage_once`/`write_once` riêng, xem `manage_loop`/`write_loop`)."""
+        self.manage_once()
+        self.write_once(budget_s=RETRY_BUDGET_S + 30)
+
+    def clean(self) -> bool:
+        """Buffer + hàng đợi RAM đã rỗng (Task 8 sẽ thêm điều kiện `spill.empty()` khi
+        chế độ đĩa tồn tại thật)."""
+        return not any(self.buffers.values()) and not self.queue and not self.head
 
     def insert_percentiles(self) -> dict:
         xs = sorted(self.insert_s)

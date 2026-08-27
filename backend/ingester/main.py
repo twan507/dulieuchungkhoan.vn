@@ -291,8 +291,8 @@ async def _run_reconcile(cfg: config.Config, d) -> int:
 
 
 # Ngân sách xả cuối phiên phải DÀI HƠN ngân sách retry của ChWriter: lúc đóng phiên,
-# thread `flush_once` cũ có thể còn kẹt trong backoff transient tới `RETRY_BUDGET_S`
-# giây, mà mutex xả làm mọi lời gọi mới về ngay nên vòng dưới chỉ quay rỗng chờ nó.
+# thread `write_once` cũ có thể còn kẹt trong nhịp retry transient tới `RETRY_BUDGET_S`
+# giây, mà `_write_lock` làm mọi lời gọi mới về ngay nên vòng dưới chỉ quay rỗng chờ nó.
 # Trần cũ 3 s (30 vòng x 0,1 s) cạn trước ⇒ `reconcile()` đọc kho khi đuôi phiên chưa
 # ghi xong ⇒ P2 giả + exit code 1 (M-new-3). Suy từ hằng số kia để hai bên không trôi lệch.
 DRAIN_BUDGET_S = RETRY_BUDGET_S + 15.0
@@ -300,15 +300,16 @@ DRAIN_BUDGET_S = RETRY_BUDGET_S + 15.0
 
 async def drain_writer(writer, budget_s: float = DRAIN_BUDGET_S,
                        sleep_fn=asyncio.sleep, clock=time.monotonic) -> bool:
-    """Xả nốt đuôi phiên trước khi reconcile. True nếu buffer/pending đã sạch.
+    """Xả nốt đuôi phiên trước khi reconcile. True nếu `writer.clean()`.
 
-    `flush_loop` bị cancel ở tầng await nhưng THREAD `flush_once` của nó vẫn chạy tiếp;
-    mutex xả (review cuối IMPORTANT 4) làm lời gọi ở đây về ngay thay vì giẫm lên nó.
+    `write_loop` bị cancel ở tầng await nhưng THREAD `write_once` của nó vẫn chạy tiếp;
+    `_write_lock` (review cuối IMPORTANT 4) làm lời gọi ở đây về ngay thay vì giẫm lên nó.
     """
     end = clock() + budget_s
     while True:
-        await asyncio.to_thread(writer.flush_once)
-        if not any(writer.buffers.values()) and not any(writer.pending.values()):
+        await asyncio.to_thread(writer.manage_once)
+        await asyncio.to_thread(writer.write_once)
+        if writer.clean():
             return True
         if clock() >= end:
             log.error("hết %.0fs ngân sách xả mà buffer chưa sạch — phán quyết "
@@ -381,14 +382,29 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
             finally:
                 redis_queue.task_done()
 
-    async def flush_loop():
-        # Chỉ leader flush ClickHouse. Không còn cơ chế "standby xả bỏ block quá 120 s":
-        # standby không tích dòng nào nữa (on_packet chỉ add khi là leader), nên buffer
-        # standby luôn rỗng — review cuối CRITICAL 3.
+    async def manage_loop():
+        # Vòng QUẢN chạy vô điều kiện (không chờ is_leader): standby không tích dòng nào
+        # (on_packet chỉ add khi là leader — review cuối CRITICAL 3) nên buffer/queue của
+        # nó luôn rỗng, cắt/gauge trên buffer rỗng vô hại. Quan trọng hơn: vòng quản KHÔNG
+        # BAO GIỜ được chết vì nó không chạm ClickHouse (spec spill §2.1).
+        while not stop.is_set():
+            await asyncio.sleep(1.0)
+            try:
+                await asyncio.to_thread(writer.manage_once)
+            except Exception:   # noqa: BLE001 — bất biến spec §2.1: vòng quản không được chết
+                log.exception("manage_once lỗi không lường")
+                writer.metrics.inc("spill_io_error")
+
+    async def write_loop():
+        # Chỉ leader ghi ClickHouse.
         while not stop.is_set():
             await asyncio.sleep(1.0)
             if is_leader.is_set():
-                await asyncio.to_thread(writer.flush_once)
+                try:
+                    await asyncio.to_thread(writer.write_once)
+                except Exception:   # noqa: BLE001
+                    log.exception("write_once lỗi không lường")
+                    writer.metrics.inc("spill_io_error")
 
     async def log_loop():
         while not stop.is_set():
@@ -400,7 +416,8 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
         asyncio.create_task(leader_lock.run(is_leader)),
         asyncio.create_task(socket_loop(eio.WSS_URL, topics, on_packet, stop,
                                         on_reconnect=on_reconnect)),
-        asyncio.create_task(flush_loop()),
+        asyncio.create_task(manage_loop()),
+        asyncio.create_task(write_loop()),
         asyncio.create_task(log_loop()),
         asyncio.create_task(session_timer()),
         asyncio.create_task(redis_consumer()),

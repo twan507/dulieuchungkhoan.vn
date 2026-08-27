@@ -301,7 +301,7 @@ def test_on_packet_standby_does_not_buffer_rows():
     writer, metrics, on_packet = _make_on_packet(leader=False)
     on_packet(T_PACKET)
     assert all(len(b) == 0 for b in writer.buffers.values())
-    assert all(len(q) == 0 for q in writer.pending.values())
+    assert len(writer.queue) == 0
     on_packet(T_PACKET)                              # seen-set vẫn ấm: frame lặp bị dedup
     assert metrics.counters.get("dup_dropped") == 1
 
@@ -332,29 +332,36 @@ def test_merge_base_state_fresh_wins_boot_survives_outsiders_dropped():
 
 # --- M-new-3: cửa sổ xả cuối phiên phải dài hơn ngân sách retry của ChWriter ---------
 #
-# Lúc đóng phiên, `flush_loop` bị cancel nhưng THREAD `flush_once` của nó có thể vẫn
-# đang kẹt trong backoff transient — tối đa `RETRY_BUDGET_S` giây. Mutex xả làm mọi lời
-# gọi `flush_once` mới về NGAY (không chờ), nên vòng xả cuối phiên chỉ quay rỗng. Nếu
-# ngân sách của nó ngắn hơn ngân sách retry thì nó bỏ cuộc trước khi đuôi phiên kịp ghi,
-# và `reconcile()` chạy sau đó đọc kho thiếu dữ liệu ⇒ P2 giả + exit code 1.
+# Lúc đóng phiên, `write_loop` bị cancel nhưng THREAD `write_once` của nó có thể vẫn
+# đang kẹt trong nhịp retry transient — tối đa `RETRY_BUDGET_S` giây. `_write_lock` làm
+# mọi lời gọi `write_once` mới về NGAY (không chờ), nên vòng xả cuối phiên chỉ quay rỗng.
+# Nếu ngân sách của nó ngắn hơn ngân sách retry thì nó bỏ cuộc trước khi đuôi phiên kịp
+# ghi, và `reconcile()` chạy sau đó đọc kho thiếu dữ liệu ⇒ P2 giả + exit code 1.
 #
 # Mốc so sánh là hằng số của hợp đồng ChWriter, KHÔNG phải số của chính vòng xả.
 
 
 class _StuckWriter:
-    """Giả lập thread flush cũ còn kẹt: `flush_once` về ngay, buffer chỉ sạch sau
-    `clears_after_s` giây (theo đồng hồ giả)."""
+    """Giả lập thread ghi cũ còn kẹt: `write_once` về ngay không làm gì, buffer chỉ sạch
+    sau `clears_after_s` giây (theo đồng hồ giả)."""
 
     def __init__(self, clock, clears_after_s: float):
         self._clock, self._at = clock, clock() + clears_after_s
         self.buffers = {"trade": [["giữ chỗ"]]}
-        self.pending = {"trade": []}
+        self.queue = []
+        self.head = []
         self.calls = 0
 
-    def flush_once(self) -> None:
+    def manage_once(self) -> None:
+        pass
+
+    def write_once(self, budget_s: float = 0) -> None:
         self.calls += 1
         if self._clock() >= self._at:
             self.buffers["trade"].clear()
+
+    def clean(self) -> bool:
+        return not any(self.buffers.values()) and not self.queue and not self.head
 
 
 class _FakeClock:

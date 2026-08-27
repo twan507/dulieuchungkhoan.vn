@@ -9,7 +9,7 @@ from decimal import Decimal
 
 from clickhouse_connect.driver.exceptions import DatabaseError as ChDatabaseError
 
-from ingester.chwriter import COLUMNS, ChWriter
+from ingester.chwriter import COLUMNS, ChWriter, RETRY_BUDGET_S
 from ingester.normalize import Metrics, Normalized, normalize
 
 RECV = 1786342136000
@@ -61,9 +61,13 @@ class FlakyClient:
 
 
 def test_transient_retries_same_block(migrated):
+    # v2: write_once không còn tự lặp trong một lần gọi (retry theo nhịp, không sleep) —
+    # mỗi lần gọi flush_once() là MỘT nhịp. fail_times=2 nên cần 3 nhịp mới thành công.
     flaky = FlakyClient(migrated, fail_times=2)
-    w = ChWriter(flaky, sleep_fn=lambda s: None)
+    w = ChWriter(flaky)
     w.add(_n(SM="90001"))
+    w.flush_once()
+    w.flush_once()
     w.flush_once()
     assert len(flaky.blocks) == 1 and len(flaky.blocks[0]) == 1   # block nguyên vẹn, không gộp thêm
     migrated.command("ALTER TABLE rt.trade DELETE WHERE symbol='ACV'")
@@ -119,7 +123,7 @@ def _run_concurrent_add_flush_check():
                     self.written.append(list(data))
 
         client = _StubClient()
-        w = ChWriter(client, sleep_fn=lambda s: None)
+        w = ChWriter(client)
         stop_flush = threading.Event()
 
         def flusher():
@@ -145,7 +149,7 @@ def _run_concurrent_add_flush_check():
         seq_col = COLUMNS["trade"].index("seq")
         inserted_seqs = [row[seq_col] for block in client.written for row in block]
         remaining_seqs = [row[seq_col] for buf in w.buffers.values() for row in buf]
-        remaining_seqs += [row[seq_col] for q in w.pending.values() for block in q for row in block]
+        remaining_seqs += [row[seq_col] for p in w.queue for row in p.block]
 
         all_seqs = inserted_seqs + remaining_seqs
         assert len(all_seqs) == 20_000                 # không mất dòng
@@ -174,12 +178,16 @@ def test_backpressure_error_retries_whole_block():
     xếp nhầm là TẤT ĐỊNH → chia đôi đệ quy thành 5.000 INSERT một dòng (làm vấn đề parts
     tệ hơn) rồi vứt sạch dữ liệu. Phải retry NGUYÊN block theo ngân sách cũ.
     """
+    # v2: write_once không còn tự lặp trong một lần gọi (retry theo nhịp, không sleep) —
+    # mỗi lần gọi flush_once() là MỘT nhịp. fail_times=2 nên cần 3 nhịp mới thành công.
     exc = Exception("Code: 252. DB::Exception: Too many parts (300). "
                     "Merges are processing significantly slower than inserts")
     client = _FailNTimesClient(fail_times=2, exc=exc)
-    w = ChWriter(client, sleep_fn=lambda s: None)
+    w = ChWriter(client)
     for i in range(4):
         w.add(_trade_normalized(70_000 + i))
+    w.flush_once()
+    w.flush_once()
     w.flush_once()
     assert [len(b) for b in client.blocks] == [4]          # một block nguyên, không chia đôi
     assert w.metrics.counters.get("rows.trade") == 4       # không mất dòng nào
@@ -188,12 +196,14 @@ def test_backpressure_error_retries_whole_block():
 
 
 def test_memory_limit_error_retries_whole_block():
+    # v2: fail_times=1 nên cần 2 nhịp (2 lần gọi flush_once()) để thành công.
     exc = Exception("Code: 241. DB::Exception: Memory limit (total) exceeded: "
                     "would use 56.00 GiB (MEMORY_LIMIT_EXCEEDED)")
     client = _FailNTimesClient(fail_times=1, exc=exc)
-    w = ChWriter(client, sleep_fn=lambda s: None)
+    w = ChWriter(client)
     for i in range(4):
         w.add(_trade_normalized(71_000 + i))
+    w.flush_once()
     w.flush_once()
     assert [len(b) for b in client.blocks] == [4]
     assert w.metrics.counters.get("rows.trade") == 4
@@ -213,7 +223,7 @@ def test_data_error_marker_splits_to_isolate_bad_row():
             self.blocks.append(list(data))
 
     client = _OneBadRowClient(bad_seq=72_002)
-    w = ChWriter(client, sleep_fn=lambda s: None)
+    w = ChWriter(client)
     for i in range(4):
         w.add(_trade_normalized(72_000 + i))
     w.flush_once()
@@ -224,11 +234,10 @@ def test_data_error_marker_splits_to_isolate_bad_row():
 
 
 def test_two_flush_threads_do_not_lose_a_block():
-    """IMPORTANT 4 review cuối — lúc tắt, task flush đang chạy bị cancel() nhưng THREAD
-    `flush_once` vẫn chạy tiếp, rồi code khởi flush cuối cùng ⇒ hai thread cùng xả
-    `pending`. Vòng `self._write_block(table, q[0]); q.popleft()` nằm NGOÀI lock nên cả
-    hai popleft: một block được ghi hai lần, block kế bị popleft mà chưa từng ghi — mất
-    nguyên một block (tới 5.000 dòng).
+    """IMPORTANT 4 review cuối — lúc tắt, task ghi đang chạy bị cancel() nhưng THREAD
+    `write_once` vẫn chạy tiếp, rồi code khởi ghi cuối cùng ⇒ hai thread cùng xả hàng đợi
+    toàn cục. `_write_lock` (v2 — kế thừa `_flush_lock` bản v1) chặn đúng việc này: không
+    lấy được thì về ngay, không cùng peek/pop một block.
 
     Ở đây nạp sẵn 20.003 dòng (4 block đầy do BLOCK_CAP + phần dư), rồi cho HAI thread
     cùng gọi flush_once() liên tục. `insert` giả ngủ 1 ms để mở rộng đúng khe hở giữa
@@ -246,7 +255,7 @@ def test_two_flush_threads_do_not_lose_a_block():
                     self.written.append(list(data))
 
         client = _SlowRecordingClient()
-        w = ChWriter(client, sleep_fn=lambda s: None)
+        w = ChWriter(client)
         for i in range(20_003):
             w.add(_trade_normalized(i))
 
@@ -264,7 +273,7 @@ def test_two_flush_threads_do_not_lose_a_block():
         threads = [threading.Thread(target=flusher) for _ in range(2)]
         for t in threads:
             t.start()
-        while any(w.pending[t] for t in w.pending) or any(w.buffers.values()):
+        while w.queue or any(w.buffers.values()):
             time.sleep(0.005)
         stop.set()
         for t in threads:
@@ -273,7 +282,7 @@ def test_two_flush_threads_do_not_lose_a_block():
         seq_col = COLUMNS["trade"].index("seq")
         all_seqs = [row[seq_col] for block in client.written for row in block]
         all_seqs += [row[seq_col] for buf in w.buffers.values() for row in buf]
-        all_seqs += [row[seq_col] for q in w.pending.values() for blk in q for row in blk]
+        all_seqs += [row[seq_col] for p in w.queue for row in p.block]
         assert errors == []                            # hai thread giẫm nhau -> popleft rỗng
         assert set(all_seqs) == set(range(20_003))     # không dòng nào biến mất
         assert len(all_seqs) == 20_003                 # cũng không block nào bị ghi hai lần
@@ -341,11 +350,11 @@ class _RejectingClient:
 
 
 def _run_with(exc):
+    # Dùng cho lỗi TẤT ĐỊNH (poison) — chia đôi cô lập xong ngay trong một nhịp gọi, không
+    # cần đồng hồ trôi qua nhiều nhịp như nhánh transient bên dưới.
     client = _RejectingClient(exc, poison_seq=70002)
-    # Đồng hồ giả: ngân sách retry nay tính THỜI GIAN THỰC, nên `sleep` vô hiệu mà đồng hồ
-    # thật vẫn chạy sẽ làm nhánh transient quay tròn đủ 60 giây đồng hồ tường.
     clock = _FakeClock()
-    w = ChWriter(client, sleep_fn=clock.sleep, clock=clock)
+    w = ChWriter(client, clock=clock)
     for seq in (70001, 70002, 70003):
         w.add(_n(SM=str(seq)))
     w.flush_once()
@@ -376,8 +385,21 @@ def test_data_error_still_classified_when_server_detail_suppressed():
 
 
 def test_backpressure_code_stays_transient():
-    """Ranh giới ngược: TOO_MANY_PARTS là quá tải, KHÔNG được chia đôi block."""
-    w, client = _run_with(_server_error(252))
+    """Ranh giới ngược: TOO_MANY_PARTS là quá tải, KHÔNG được chia đôi block.
+
+    v2: transient không tự lặp trong một lần gọi (retry theo nhịp, không sleep) — nhịp 1
+    chỉ đặt `first_try`; tự advance đồng hồ giả qua khỏi RETRY_BUDGET_S rồi gọi nhịp 2 mới
+    chạm hạn chót và bỏ block.
+    """
+    client = _RejectingClient(_server_error(252), poison_seq=70002)
+    clock = _FakeClock()
+    w = ChWriter(client, clock=clock)
+    for seq in (70001, 70002, 70003):
+        w.add(_n(SM=str(seq)))
+    w.flush_once()                                  # nhịp 1: transient, chưa hết hạn
+    assert w.metrics.counters.get("dropped_block.trade") is None
+    clock.advance(RETRY_BUDGET_S + 1)                # mô phỏng nhịp sau, đã hết hạn
+    w.flush_once()                                   # nhịp 2: hết hạn -> bỏ nguyên block
     assert w.metrics.counters.get("poison_row.trade") is None
     assert w.metrics.counters.get("dropped_block.trade") == 3   # giữ nguyên block rồi bỏ
     assert client.written == []
@@ -405,10 +427,13 @@ class _HangingClient:
 
 
 def test_retry_budget_counts_wall_clock_not_sleep_time():
+    # TASK 5: hết ngân sách retry vẫn BỎ block (dropped_block) — hành vi giữ nguyên từ v1.
+    # Task 6 sẽ đổi nhánh này thành tràn xuống đĩa (spill) thay vì vứt bỏ; test này sẽ
+    # phải sửa lại lần nữa khi đó.
     clock = _FakeClock()
     # 300 s = mặc định `send_receive_timeout` của clickhouse_connect.
     client = _HangingClient(clock, cost_s=300.0)
-    w = ChWriter(client, sleep_fn=clock.sleep, clock=clock)
+    w = ChWriter(client, clock=clock)
     w.add(_n(SM="60001"))
     w.flush_once()
 
@@ -418,13 +443,12 @@ def test_retry_budget_counts_wall_clock_not_sleep_time():
     assert clock.now - 1000.0 == 300.0            # không kéo dài thêm bằng backoff
 
 
-def test_retry_budget_is_shared_across_bisect_recursion():
-    """Ngân sách phải là HẠN CHÓT chung, không phải khoảng thời gian cấp lại mỗi tầng.
-
-    `_write_block` chia đôi đệ quy khi gặp lỗi dữ liệu. Nếu mỗi tầng được cấp lại trọn
-    ngân sách thì một dòng độc GẶP ĐÚNG LÚC ClickHouse trục trặc sẽ nhân ngân sách lên
-    theo độ sâu cây đệ quy — đo được 778 s cho một `flush_once` với ngân sách 60 s, vượt
-    xa cửa sổ dedup ~100 s và vượt cả ngân sách xả cuối phiên suy ra từ hằng số này.
+def test_bisect_does_not_consume_time_budget():
+    """v2: chia đôi block độc không còn ĐỆ QUY (`_write_block` cũ) mà là vòng lặp trong
+    `write_once` — mỗi lần chia chỉ gọi `client.insert` thêm một lần, không sleep, nên
+    không tự cộng dồn thời gian. Bài học cũ (778 s cho một lần xả vì mỗi tầng đệ quy được
+    cấp lại trọn ngân sách) không còn cách tái hiện được ở kiến trúc này; giữ lại phép
+    kiểm dưới dạng bất biến biên trên — bisect không được ngốn quá 2 lần ngân sách.
     """
     clock = _FakeClock()
 
@@ -444,7 +468,7 @@ def test_retry_budget_is_shared_across_bisect_recursion():
                 raise ChDatabaseError("hỏng", code=407, name="DECIMAL_OVERFLOW")
 
     client = _PoisonThenOutage(die_after=3)
-    w = ChWriter(client, sleep_fn=clock.sleep, clock=clock)
+    w = ChWriter(client, clock=clock)
     for seq in range(80001, 80001 + 1000):
         w.add(_n(SM=str(seq)))
     w.add(_n(SM="80500"))
@@ -468,7 +492,11 @@ def test_fallback_markers_cover_the_two_codes_when_exception_has_no_code():
 
 
 def test_drop_log_carries_error_code_when_message_is_scrubbed(caplog):
-    """show_clickhouse_errors=False ⇒ `str(e)` mất hết dấu vết, mã là thứ duy nhất còn lại."""
+    """show_clickhouse_errors=False ⇒ `str(e)` mất hết dấu vết, mã là thứ duy nhất còn lại.
+
+    v2: nhịp 1 chỉ đặt `first_try` (chưa hết hạn nên chưa log ERROR); tự advance đồng hồ
+    giả qua khỏi RETRY_BUDGET_S rồi gọi nhịp 2 mới chạm hạn chót và log.
+    """
     clock = _FakeClock()
     scrubbed = ChDatabaseError("The ClickHouse server returned an error", code=252, name=None)
 
@@ -477,8 +505,10 @@ def test_drop_log_carries_error_code_when_message_is_scrubbed(caplog):
             clock.advance(1.0)
             raise scrubbed
 
-    w = ChWriter(_AlwaysFails(), sleep_fn=clock.sleep, clock=clock)
+    w = ChWriter(_AlwaysFails(), clock=clock)
     w.add(_n(SM="90501"))
+    w.flush_once()                       # nhịp 1: transient, đặt first_try
+    clock.advance(RETRY_BUDGET_S)        # mô phỏng nhịp sau, đã hết hạn
     with caplog.at_level("ERROR"):
-        w.flush_once()
+        w.flush_once()                   # nhịp 2: hết hạn -> log ERROR kèm mã lỗi
     assert "code=252" in caplog.text
