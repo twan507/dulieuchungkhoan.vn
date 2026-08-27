@@ -232,13 +232,16 @@ def test_vanished_icb_codes_kept_and_counted(db):
         "SELECT count(*) FROM market.icb_industry WHERE icb_code='8350'")).scalar_one() == 1
 
 
-BCTC_PROBE = (
+BCTC_PROBE = (                                   # dò cả hai chiều, KHÔNG bỏ sót dòng NULL
     "SELECT iss.com_type_code, i.code FROM market.issuer iss"
-    " JOIN market.v_issuer_industry v ON v.issuer_id = iss.issuer_id"
-    " JOIN market.industry i ON i.industry_id = v.industry_id"
-    " WHERE (iss.com_type_code = 'NH') <> (i.code = 'NGANHANG')"
-    "    OR (iss.com_type_code = 'CK') <> (i.code = 'CHUNGKHOAN')"
-    "    OR (iss.com_type_code = 'BH') <> (i.code = 'BAOHIEM')"
+    " LEFT JOIN market.v_issuer_industry v ON v.issuer_id = iss.issuer_id"
+    " LEFT JOIN market.industry i ON i.industry_id = v.industry_id"
+    " WHERE (coalesce(iss.com_type_code, '') = 'NH')"
+    "        IS DISTINCT FROM (coalesce(i.code, '') = 'NGANHANG')"
+    "    OR (coalesce(iss.com_type_code, '') = 'CK')"
+    "        IS DISTINCT FROM (coalesce(i.code, '') = 'CHUNGKHOAN')"
+    "    OR (coalesce(iss.com_type_code, '') = 'BH')"
+    "        IS DISTINCT FROM (coalesce(i.code, '') = 'BAOHIEM')"
 )
 
 
@@ -256,3 +259,12 @@ def test_bctc_rule_is_bidirectional_on_view(db):
     _seed_map(db, icb, "DANDUNG")                 # trả về đúng
     refdata_store.apply(db, t, [])
     assert db.execute(sa.text(BCTC_PROBE)).all() == []
+
+
+def test_bctc_probe_catches_bank_without_industry(db):
+    """Ngân hàng không tra được ngành là vi phạm nặng nhất — INNER JOIN từng làm nó tàng hình."""
+    _as_etl(db)
+    _synthetic(db, "9994", "9994", com="NH")      # mã ICB không tổ tiên nào nằm trong map
+    refdata_store.apply(db, _target(), [])
+    bad = db.execute(sa.text(BCTC_PROBE)).all()
+    assert ("NH", None) in bad
