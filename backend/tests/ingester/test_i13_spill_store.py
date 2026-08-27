@@ -3,8 +3,10 @@ import os
 import pickle
 import subprocess
 import sys
+import threading
 from datetime import datetime
 from decimal import Decimal
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from ingester.spill import SpillStore
@@ -139,6 +141,96 @@ def test_tmp_cleaned_up_on_write_io_error(tmp_path, monkeypatch):
     monkeypatch.setattr(os, "fdopen", _boom_fdopen)
     assert s.write("trade", _block(1), "n") is False
     assert list(tmp_path.glob("*.tmp")) == []        # tmp không được để sót lại
+    # Spec §8 phân loại: `write` trả False vì HAI lý do khác hẳn nhau — chạm trần đĩa
+    # (bình thường, có `spill_drop_newest`) và lỗi I/O (bão ENOSPC, đĩa hỏng). Không có
+    # counter riêng thì hai chuyện đó trông y hệt nhau trên bảng đếm.
+    assert s.counters["spill_io_error"] == 1
+
+
+def test_read_io_error_keeps_the_file_and_stops_the_batch(tmp_path, monkeypatch):
+    """`except Exception` gộp lỗi ĐỌC (AV/indexer giữ handle — trigger sản xuất đã nêu)
+    với pickle hỏng. Hệ quả: một file HOÀN TOÀN LÀNH bị đổi tên `.corrupt` = vứt dòng chưa
+    bao giờ hỏng. Lỗi đọc phải: giữ nguyên file, đếm riêng, và DỪNG lô này — không nhảy
+    qua file đó (nhảy là phá thứ tự FIFO của hàng đợi đĩa)."""
+    s = _store(tmp_path)
+    assert s.write("trade", _block(1), "n")
+    assert s.write("trade", _block(1, seq0=50), "n")
+    before = sorted(p.name for p in tmp_path.iterdir())
+
+    def _boom(self):
+        raise PermissionError("AV giữ handle file")
+
+    monkeypatch.setattr(Path, "read_bytes", _boom)
+    assert s.next_batch(max_rows=100) is None            # dừng, KHÔNG nhảy qua
+    assert sorted(p.name for p in tmp_path.iterdir()) == before   # file còn NGUYÊN
+    assert s.counters["spill_io_error"] == 1
+    assert s.counters["replay_corrupt"] == 0             # không phải hỏng — đừng đếm nhầm
+
+
+def test_corrupt_rename_failure_holds_the_file_without_inflating_replay_corrupt(
+        tmp_path, monkeypatch):
+    """Vế hai: file hỏng THẬT nhưng `rename` cũng hỏng. Bản cũ đã kịp `replay_corrupt += 1`
+    trước khi `rename` ném, nên mỗi nhịp `next_batch` bốc lại đúng file đó lại cộng thêm
+    một — bộ đếm mất dòng phồng lên vô hạn trong khi KHÔNG dòng nào thật sự bị vứt."""
+    s = _store(tmp_path)
+    assert s.write("trade", _block(1), "n")
+    f = next(p for p in tmp_path.iterdir() if p.suffix == ".blk")
+    f.write_bytes(b"khong phai pickle")
+
+    def _boom(self, target):
+        raise PermissionError("AV giữ handle file")
+
+    monkeypatch.setattr(Path, "rename", _boom)
+    assert s.next_batch(max_rows=100) is None
+    assert s.next_batch(max_rows=100) is None            # nhịp thứ hai bốc lại đúng file đó
+    assert f.exists()                                    # chưa cách ly được thì file ở lại
+    assert s.counters["replay_corrupt"] == 0             # ...nên chưa được đếm là mất dòng
+    assert s.counters["spill_io_error"] == 2
+
+
+# --- Ghi từ HAI thread: vòng quản (`_spill_tail`) và vòng ghi (cửa 2, chia đôi) -------
+
+
+def test_concurrent_writes_from_two_threads_never_collide(tmp_path):
+    """`write()` được gọi từ CẢ HAI thread của ChWriter — vòng quản (`_spill_tail`) và vòng
+    ghi (cửa 2 ghi '-r', `_split_disk_item` ghi hai file con) — mà `self.seq`/`bytes_used`
+    không có gì bảo vệ. Đua cùng `seq`: kẻ thua thấy `final.exists()` rồi gọi
+    `tmp.unlink()` — mà `tmp` là ĐÚNG tên file tạm kẻ THẮNG đang ghi dở, nên xoá mất bản
+    của người khác và cả hai block cùng rơi.
+
+    Hạ `switchinterval` theo đúng kỹ thuật của `test_i08` để GIL nhường quyền dày hơn."""
+    old_interval = sys.getswitchinterval()
+    sys.setswitchinterval(0.00001)
+    try:
+        _run_concurrent_write_check(tmp_path)
+    finally:
+        sys.setswitchinterval(old_interval)
+
+
+def _run_concurrent_write_check(tmp_path):
+    n = 80
+    s = _store(tmp_path)
+    results: list[bool] = []
+    lock = threading.Lock()
+
+    def writer(seq0: int):
+        oks = [s.write("trade", _block(1, seq0=seq0 + i), "n") for i in range(n)]
+        with lock:
+            results.extend(oks)
+
+    ts = [threading.Thread(target=writer, args=(base,)) for base in (0, 1000)]
+    for t in ts:
+        t.start()
+    for t in ts:
+        t.join()
+
+    assert all(results) and len(results) == 2 * n     # không lời gọi nào bị từ chối
+    blks = [p for p in tmp_path.iterdir() if p.suffix == ".blk"]
+    assert len(blks) == 2 * n                          # ...và không file nào bốc hơi
+    assert sorted(int(p.name[:10]) for p in blks) == list(range(1, 2 * n + 1))
+    assert s.counters["seq_collision"] == 0
+    assert s.bytes_used == sum(p.stat().st_size for p in blks)   # đo lại độc lập từ đĩa
+    assert list(tmp_path.glob("*.tmp")) == []
 
 
 def test_lock_excludes_second_process(tmp_path):

@@ -191,7 +191,11 @@ def make_on_packet(writer: ChWriter, metrics: Metrics, dedup: FrameDedup, stampe
                 writer.add(n)
                 redis_queue.put_nowait(n)
             else:
-                metrics.inc("not_leader_dropped")
+                # Tách theo BẢNG như mọi counter mất-dòng khác (`spill_drop_newest.<bảng>`,
+                # `no_spill_dropped.<bảng>`): đối chứng `d[]` so TỪNG bảng (spec §11), nên
+                # một con số gộp không trừ được vào đúng vế nào. `n` đã có ở đây — nhánh
+                # này nằm SAU `process_record`, dòng đã biết thuộc bảng nào.
+                metrics.inc(f"not_leader_dropped.{n.table}")
     return on_packet
 
 
@@ -256,8 +260,9 @@ def _print_count_report(counts: dict[str, int], actuals: dict[str, int] | None,
     print()
     print("metrics (bộ đếm, cùng bộ luật process_record với mode run):",
          dict(sorted(metrics.counters.items())))
-    print("Lưu ý: not_leader_dropped, replay_blocks và các counter PHIÊN khác KHÔNG nằm "
-         "trong bộ đếm offline này — đọc từ log phiên chạy thật của ngày này (spec §11).")
+    print("Lưu ý: not_leader_dropped.<bảng>, replay_blocks/replay_rows và các counter "
+         "PHIÊN khác KHÔNG nằm trong bộ đếm offline này — đọc từ log phiên chạy thật "
+         "của ngày này (spec §11).")
 
 
 async def _run_count(count_arg: str, t_from: str | None, t_to: str | None,
@@ -439,17 +444,31 @@ async def _drain_for_verdict(writer, is_leader: bool) -> bool:
     Không-leader thì KHÔNG được insert (spec §3.6) nên cũng KHÔNG được xả — nhưng phải
     KHAI THẬT: một tiến trình MẤT leadership giữa phiên vẫn tiếp tục spill xuống đĩa (spec
     §4 bắt buộc, đầu RAM không bị vứt), nên nợ của nó có thật và phán quyết dưới đây không
-    phản ánh nó. `drained = True` vô điều kiện như bản cũ là in ra một lời bảo đảm rỗng."""
-    if is_leader:
-        return await drain_writer(writer)
-    return writer.clean()
+    phản ánh nó. `drained = True` vô điều kiện như bản cũ là in ra một lời bảo đảm rỗng.
+
+    🔴 KHÔNG lỗi nào được thoát ra khỏi hàm này. Cả HAI nhánh đều đi qua đường đĩa —
+    `drain_writer` gọi `manage_once`/`write_once`/`pending_files`, còn `clean()` gọi
+    `spill.empty()` tức `iterdir` — nên một sự cố I/O ở vài giây cuối phiên (AV/indexer
+    giữ handle) ném được ở cả hai. Mà lời gọi này nằm SAU khi mọi task đã bị huỷ: ném ở
+    đây là exit 1 với traceback trần, KHÔNG chạy đối chứng, KHÔNG in phán quyết nào — mất
+    cả báo cáo lẫn hợp đồng exit code, đúng họ lỗi ACCESS_DENIED 26/08. Nuốt rồi khai
+    `False` thì đối chứng vẫn chạy và in ra kèm nhãn "KHÔNG ĐÁNG TIN" — đúng sự thật."""
+    try:
+        if is_leader:
+            return await drain_writer(writer)
+        return writer.clean()
+    except Exception:   # noqa: BLE001 — xem docstring: đuôi phiên không được chết
+        log.exception("xả cuối phiên lỗi không lường — phán quyết đối chứng bên dưới "
+                      "KHÔNG ĐÁNG TIN")
+        return False
 
 
 async def _replay_startup_debt(writer, store, rc_client_factory) -> list:
     """Trả nợ đĩa TRƯỚC PHIÊN rồi chạy lại đối chứng cho từng ngày nợ (spec §5.3).
 
-    Trả về danh sách ngày ĐÃ chạy lại đối chứng (tăng dần). Ngày HÔM NAY không nằm trong
-    đó: đối chứng cuối phiên hôm nay sẽ lo, chạy sớm lúc 8h chỉ ra một phán quyết rỗng.
+    Trả về danh sách ngày ĐÃ chạy lại đối chứng (tăng dần) — rỗng khi nợ chưa xả sạch.
+    Ngày HÔM NAY không nằm trong đó: đối chứng cuối phiên hôm nay sẽ lo, chạy sớm lúc 8h
+    chỉ ra một phán quyết rỗng.
 
     🔴 Chỗ này insert vào ClickHouse mà KHÔNG giữ khoá leader Redis, có chủ đích: đây là
     đường khởi động một tiến trình (`manage_loop`/`write_loop`/`leader.run` đều chưa
@@ -464,6 +483,24 @@ async def _replay_startup_debt(writer, store, rc_client_factory) -> list:
                     "(spec §4): cạn ngân sách retry sẽ bỏ block CÓ SỔ, không xuống đĩa")
         return []
     debt_days = await asyncio.to_thread(writer.replay_debt)
+    # 🔴 Đối chứng CHỈ sau khi nợ xả SẠCH (spec §5.3). `replay_debt` có ba lối ra sớm —
+    # transient, dòng độc giữ file cha, lỗi I/O — và cả ba vẫn trả về tập ngày đã phát lại
+    # MỘT PHẦN. Chạy đối chứng trên tập đó là in một phán quyết tự tin ĐÈ LÊN phán quyết
+    # "KHÔNG ĐÁNG TIN" trung thực của đêm qua, trong khi kho vẫn thiếu đúng phần nợ chưa
+    # xả: P2 giả, hoặc tệ hơn, một dòng "ok" cho ngày thật sự đang thủng.
+    try:
+        cleared = store.empty()
+    except OSError:
+        # Cùng luật với `finally` của `replay_debt`: không đọc được thư mục thì mặc định là
+        # CÒN nợ — hoãn đối chứng chỉ tốn một ngày chờ, in nhầm thì mất dấu vết vụ thủng.
+        log.exception("không đọc được thư mục spill sau khi phát lại — coi như CÒN nợ")
+        cleared = False
+    if not cleared:
+        log.warning("nợ đĩa CHƯA xả sạch — KHÔNG chạy lại đối chứng cho ngày nợ %s; phán "
+                    "quyết 'KHÔNG ĐÁNG TIN' của phiên trước đứng nguyên, vòng ghi trong "
+                    "phiên xả tiếp (gauge `spill_bytes` cho khối nợ còn lại)",
+                    sorted(str(d) for d in debt_days))
+        return []
     days = sorted(d for d in debt_days if d < datetime.now(TZ).date())
     for dd in days:
         log.info("nợ đĩa ngày %s đã phát lại — chạy lại đối chứng thay cho phán quyết "

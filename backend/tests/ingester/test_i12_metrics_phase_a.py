@@ -81,4 +81,8 @@ def test_frames_topic_counter_and_not_leader_dropped():
     raw = "42" + json.dumps(["t", {"a": "i", "d": [t_rec]}])
     on_packet(raw)
     assert metrics.counters["frames.t"] == 1
-    assert metrics.counters["not_leader_dropped"] == 1
+    # Tách theo BẢNG như mọi counter mất-dòng khác (`spill_drop_newest.<bảng>`,
+    # `no_spill_dropped.<bảng>`): một con số gộp không nói được standby bỏ dòng của bảng
+    # nào, mà đối chứng `d[]` (spec §11) so từng bảng một.
+    assert metrics.counters["not_leader_dropped.trade"] == 1
+    assert "not_leader_dropped" not in metrics.counters      # không giữ bản gộp song song

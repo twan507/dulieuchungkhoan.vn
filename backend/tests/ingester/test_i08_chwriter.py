@@ -1,6 +1,12 @@
-"""Test cho ChWriter — buffer/flush/retry nguyên block/chia đôi block độc/block cap.
-Spec CH §5: transient retry nguyên block backoff 1->16s tổng <=60s rồi bỏ block;
-tất định -> chia đôi đệ quy, cô lập dòng hỏng; chạm BLOCK_CAP -> cắt block chờ nhịp sau.
+"""Test cho ChWriter — buffer/cắt block/retry nguyên block/cô lập dòng độc/block cap.
+
+Hợp đồng hiện hành (spec CH §5 + spec spill §2.3, thay hẳn hợp đồng "backoff 1->16s rồi
+bỏ block" của bản v1): lỗi transient KHÔNG ngủ và KHÔNG lặp trong một lần gọi — block ở
+lại đầu hàng đợi, nhịp sau thử tiếp, hạn chót `RETRY_BUDGET_S` đếm bằng THỜI GIAN THỰC từ
+lần thử đầu. Cạn hạn chót là CỬA 2 vào chế độ đĩa: block xuống đĩa nguyên văn dạng '-r',
+chỉ khi KHÔNG có lưới đĩa mới bỏ, và bỏ thì có sổ `no_spill_dropped.<bảng>`. Lỗi tất định
+-> chia đôi (vòng lặp, không đệ quy) để cô lập đúng dòng hỏng; chạm BLOCK_CAP -> cắt block
+chờ nhịp sau.
 """
 import sys
 import threading

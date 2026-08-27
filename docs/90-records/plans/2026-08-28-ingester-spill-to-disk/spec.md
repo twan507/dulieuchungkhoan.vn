@@ -88,7 +88,7 @@ Nhịp đến thật ở chế độ đĩa là **~5–6 block/s** (mỗi bảng 
 
 - `N_CAP_ROWS = 100_000` — 49,7 MB @ 497 B/dòng ≤ ngân sách ~50 MB; ≈ 15 s ATO đỉnh ≈ 5 s × hệ số 3.
 - `K_REPLAY_ROWS = 20_000` — > 6.496 × 3 = 19.488; chi phí xả 4 insert gộp × p95 88 ms ≈ 0,35 s < 1 nhịp.
-- **Điều kiện khả thi §2.4: ĐẠT, dư ~8,7×** — 6.496 dòng/s × (88 ms ÷ 5.000 dòng) ≈ 0,114 < 1. p95 hồ sơ VPS hẹp ≈ hồ sơ dev (88,2 vs 87,5 ms) nên K không cần hiệu chỉnh theo môi trường.
+- **Điều kiện khả thi §2.4: ĐẠT, nhưng biên ~2,8× chứ không phải ~8,7×** *(đính chính 2026-08-27, review cuối)*. Con số 8,7× lấy p95 88 ms của một insert **5.000 dòng** rồi chia đều — chỉ đúng nếu phát lại toàn block đầy. Đo lại theo đúng **interleave 5 bảng** của dòng thật thì gộp gần như không ăn: các file `-n` liền kề hiếm khi cùng bảng nên run cùng-bảng dài đúng **1 file**, và chi phí thực tế bám theo **p95 block nhỏ ≈ 55 µs/dòng** ⇒ 6.496 × 55 µs ≈ 0,36 < 1, tức biên **≈ 2,8×**. Vẫn ĐẠT, và K không cần đổi. 🔴 **AC2 không thấy chuyện này vì nó chỉ feed `trade`** (một bảng ⇒ gộp ăn hết cỡ) — đây là số **suy ra** từ p95 block nhỏ, **chưa đo interleave thật**; phiên đo thật là chỗ chốt lại. p95 hồ sơ VPS hẹp ≈ hồ sơ dev (88,2 vs 87,5 ms) nên K không cần hiệu chỉnh theo môi trường.
 
 ## 3. Vòng đời file trên đĩa
 
@@ -144,7 +144,7 @@ Chạm trần → bỏ block **mới đến** (quyết định #3): hàng đợi
 ## 8. Quan trắc
 
 **Gauge:** `pending_depth` (dòng + byte = dòng × 497) mỗi nhịp vòng quản; WARNING khi > 50 % N.
-**Counter mới:** `spill_blocks` · `spill_bytes` · `replay_blocks` · `spill_drop_newest.<table>` · `orphan_tmp` · `spill_io_error` · `replay_corrupt` · `seq_collision` · **`not_leader_dropped`** (đường `if is_leader: writer.add(n)` hiện bỏ dòng im lặng khi chưa/mất leader — chưa từng có counter, mà AC3 cần mọi khoản trừ đếm được) · **đếm frame theo topic trong mode `run`** (để đối chứng được với bộ đếm frame của `--measure` — tách phần chênh do hai socket rớt lệch nhau).
+**Counter mới:** `spill_blocks` · `spill_bytes` · `replay_blocks` · **`replay_rows`** *(số DÒNG phát lại — `replay_blocks` đếm file nên số hạng trùng_replay của §11.4 chỉ chặn trên được, không tính được; thêm ở review cuối 2026-08-27)* · `spill_drop_newest.<table>` · `orphan_tmp` · `spill_io_error` · `replay_corrupt` · `seq_collision` · **`not_leader_dropped.<table>`** (đường `if is_leader: writer.add(n)` hiện bỏ dòng im lặng khi chưa/mất leader — chưa từng có counter, mà AC3 cần mọi khoản trừ đếm được) · **đếm frame theo topic trong mode `run`** (để đối chứng được với bộ đếm frame của `--measure` — tách phần chênh do hai socket rớt lệch nhau).
 **Đồng hồ:** p50/p95/p99 thời gian insert (bọc `_write_block`).
 **Log:** một dòng rõ khi vào/ra chế độ đĩa (kèm cửa vào nào, thời lượng, tổng block qua đĩa); log cấu trúc cho block bị bỏ (§6).
 
@@ -180,7 +180,7 @@ Công cụ offline (lệnh trong họ `python -m ingester`, tên chốt ở plan
 1. **Đồng hồ bơm từ dữ liệu:** `FrameDedup.seen(key, now)` và `Stamper` nhận `now = r/1000` từ chính file đo — truyền đồng hồ tường khi đọc cả ngày trong một phút sẽ coi mọi frame trùng nội dung cả ngày là dup, `expected` hụt giả. Kéo theo: `make_on_packet` bẻ thành hàm nhận `now` từ ngoài (nếu không thì "dùng lại pipeline" bất khả thi).
 2. Đọc cả `frames-*.jsonl` **trần chưa gzip** (tiến trình đo bị giết để lại file chưa xoay).
 3. Cửa sổ chung cắt theo **`received_at`** (cùng họ đồng hồ với `r`), không theo `ts` sự kiện sàn; công cụ nhận `--from/--to`.
-4. Khoản trừ đầy đủ: `dup_dropped` · `normalize_error` · `no_symbol_dropped` · `not_leader_dropped` · nợ đĩa còn lại (nếu có) · trùng do replay (dấu `replay_blocks`).
+4. Khoản trừ đầy đủ: `dup_dropped` · `normalize_error` · `no_symbol_dropped` · `not_leader_dropped.<table>` · nợ đĩa còn lại (nếu có) · trùng do replay (**`replay_rows`** — đếm bằng DÒNG nên số hạng này TÍNH được, không chỉ chặn trên như `replay_blocks`).
 
 Đầu ra: bảng per-table `expected / actual / từng khoản trừ / dư`.
 
@@ -229,6 +229,7 @@ Công cụ offline (lệnh trong họ `python -m ingester`, tên chốt ở plan
 | Giới hạn số kết nối BVSC (2 socket song song) | Chưa đo được | Roadmap §2.1 đã ghi — không thuộc lát này |
 | Standby khác máy nhận nuôi spill | Loại có chủ đích | Topology hiện tại một máy; file spill là đĩa cục bộ — khi nào tách máy thì thiết kế lại §4 |
 | Sửa đường đọc/API trên `rt.*` | Loại có chủ đích | Không liên quan chế độ hỏng đang vá |
+| **Gộp xuyên-interleave khi phát lại** (hàng đợi con theo bảng, để file `-n` cùng bảng gộp được dù không liền kề) | Loại có chủ đích | Biên khả thi §2.5 đã là ~2,8× — đủ. Chỉ xét lại **nếu số đo phiên thật cho thấy 2,8× không đủ**; đổi lại là phá thứ tự FIFO toàn cục, thứ §2.3.6 giữ chỉ để dễ suy luận |
 
 ## 15. Checklist tài liệu khi lát xong
 

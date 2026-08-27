@@ -31,7 +31,14 @@ def load(need_db: bool) -> Config:
     log_dir = Path(os.environ.get("INGESTER_LOG_DIR") or runtime / "logs")
     measure_dir = Path(os.environ.get("INGESTER_MEASURE_DIR") or runtime / "measure")
     spill_dir = Path(os.environ.get("INGESTER_SPILL_DIR") or runtime / "spill")
-    log_dir.mkdir(parents=True, exist_ok=True)
-    measure_dir.mkdir(parents=True, exist_ok=True)
-    spill_dir.mkdir(parents=True, exist_ok=True)
+    # Ba `mkdir` này ném `OSError` được (ổ chỉ đọc, quyền sai, biến env trỏ vào chỗ không
+    # tạo được) và chạy TRƯỚC mọi thứ khác — để nó thoát ra thì thành traceback trần exit
+    # 1, đi vòng đúng hợp đồng "thiếu điều kiện khởi động ⇒ exit 2" mà chính hàm này dựng
+    # ra ở nhánh thiếu env bên trên.
+    for d in (log_dir, measure_dir, spill_dir):
+        try:
+            d.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            print(f"ingester: không tạo được thư mục {d}: {e}", file=sys.stderr)
+            raise SystemExit(2) from e
     return Config(ch, rd, log_dir, measure_dir, spill_dir)

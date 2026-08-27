@@ -357,13 +357,17 @@ def test_default_budget_is_clean_budget_when_no_spill_and_no_disk_mode():
 
 
 class _FakeStore:
-    def __init__(self, acquired: bool):
+    def __init__(self, acquired: bool, drained: bool = True):
         self._acquired = acquired
+        self._drained = drained
         self.owned = False
 
     def try_acquire(self) -> bool:
         self.owned = self._acquired
         return self._acquired
+
+    def empty(self) -> bool:
+        return self._drained
 
 
 class _FakeWriter:
@@ -489,6 +493,91 @@ def test_try_acquire_releases_the_lock_when_scan_fails(tmp_path, monkeypatch):
     assert s.try_acquire() is True            # khoá đã được nhả THẬT
     assert s.owned and s.seq == 1
     assert ei.value is not None
+
+
+def test_startup_debt_does_not_reconcile_when_the_debt_did_not_fully_drain(monkeypatch,
+                                                                           caplog):
+    """Spec §5.3: đối chứng lại ngày nợ CHỈ "sau khi nợ xả sạch". `replay_debt` có ba lối
+    ra sớm (transient, dòng độc giữ file cha, lỗi I/O) và cả ba đều trả về tập ngày ĐÃ phát
+    lại MỘT PHẦN — chạy đối chứng trên tập đó là in một phán quyết tự tin ĐÈ LÊN phán quyết
+    "KHÔNG ĐÁNG TIN" trung thực của đêm qua, trong khi kho vẫn còn thiếu đúng phần nợ chưa
+    xả. Nợ chưa sạch ⇒ không đối chứng, phán quyết cũ đứng nguyên."""
+    monkeypatch.setattr(main_mod, "datetime", _FrozenNow)
+    seen = []
+
+    def _fake_reconcile(client, d):
+        seen.append(d)
+        return ReconcileResult([], [], 7)
+
+    monkeypatch.setattr(main_mod, "reconcile", _fake_reconcile)
+    w = _FakeWriter({date(2026, 8, 26)})              # đã phát lại được một phần ngày 26
+    store = _FakeStore(acquired=True, drained=False)  # ...nhưng đĩa CHƯA rỗng
+    with caplog.at_level(logging.WARNING):
+        days = asyncio.run(_replay_startup_debt(w, store, _FakeCHClient))
+    assert w.calls == 1                               # vẫn thử phát lại
+    assert days == [] and seen == []                  # ...nhưng KHÔNG đối chứng ngày nào
+    assert "CHƯA xả sạch" in caplog.text
+
+
+class _DiskBoomWriter:
+    """Writer giả: mọi đường xả đều ném `OSError` — đúng hình dạng của một sự cố đường đĩa
+    (AV/indexer giữ handle) rơi vào đúng vài giây cuối phiên."""
+
+    def __init__(self):
+        self.spill = None
+        self.disk_mode = False
+
+    def manage_once(self) -> None:
+        raise OSError("ổ đĩa lỗi ở giây cuối phiên")
+
+    def write_once(self, budget_s: float = 0) -> None:
+        raise OSError("ổ đĩa lỗi ở giây cuối phiên")
+
+    def clean(self) -> bool:
+        raise OSError("iterdir hỏng")
+
+
+def test_drain_for_verdict_survives_a_disk_error_at_the_session_tail(caplog):
+    """Đuôi phiên là chỗ ĐẮT NHẤT để một `OSError` thoát ra: lời gọi này nằm sau khi mọi
+    task đã bị huỷ, nên ném ở đây nghĩa là exit 1 với traceback trần, KHÔNG chạy đối chứng,
+    KHÔNG in phán quyết nào — mất luôn cả báo cáo lẫn hợp đồng exit code. Nuốt + khai
+    `drained = False` thì đối chứng vẫn chạy và in ra kèm nhãn "KHÔNG ĐÁNG TIN"."""
+    with caplog.at_level(logging.ERROR):
+        assert asyncio.run(_drain_for_verdict(_DiskBoomWriter(), is_leader=True)) is False
+        # Nhánh KHÔNG-leader cũng đi qua đĩa: `clean()` gọi `spill.empty()` → `iterdir`.
+        assert asyncio.run(_drain_for_verdict(_DiskBoomWriter(), is_leader=False)) is False
+    assert "ổ đĩa lỗi" in caplog.text or "iterdir hỏng" in caplog.text
+
+
+# --- AC3: `replay_rows` — số DÒNG phát lại, để trùng_replay tính được ---------------
+
+
+def test_replay_rows_counts_rows_not_files_on_the_startup_path(tmp_path):
+    """`replay_blocks` đếm FILE nên trùng_replay của AC3 chỉ CHẶN TRÊN được, không tính
+    được. Số dòng ở đây là literal độc lập: 3 + 2 + 4 đếm tay từ ba lần `write`."""
+    s = SpillStore(tmp_path, cap_bytes=10**9)
+    assert s.try_acquire()
+    assert s.write("trade", _trade_rows(day=26, n=3), "n")
+    assert s.write("trade", _trade_rows(day=26, n=2), "n")
+    assert s.write("trade", _trade_rows(day=27, n=4), "r")
+    w = ChWriter(_ok_client(), spill=s)
+    w.replay_debt()
+    assert s.empty()
+    assert w.metrics.counters["replay_blocks"] == 3    # 3 FILE (hai '-n' gộp một insert)
+    assert w.metrics.counters["replay_rows"] == 9      # 3 + 2 + 4 DÒNG
+
+
+def test_replay_rows_counted_on_the_in_session_drain_path_too(tmp_path):
+    """Hai đường phát lại, hai chỗ đếm — bỏ sót đường trong phiên thì con số chỉ đúng vào
+    những ngày nợ được xả lúc khởi động."""
+    s = SpillStore(tmp_path, cap_bytes=10**9)
+    assert s.try_acquire()
+    w = ChWriter(_ok_client(), spill=s)
+    w._enter_disk("test")
+    assert s.write("trade", _trade_rows(day=27, n=6), "n")
+    w.write_once()
+    assert s.empty()
+    assert w.metrics.counters["replay_rows"] == 6
 
 
 def test_startup_without_lock_skips_replay_and_warns(caplog):

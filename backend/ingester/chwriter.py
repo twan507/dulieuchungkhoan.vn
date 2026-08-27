@@ -36,10 +36,16 @@ WRITE_CALL_BUDGET_S = 5.0    # hạn mức MỘT LẦN GỌI write_once — vòn
 N_CAP_ROWS = 100_000      # 100.000 × 497 B = 49,7 MB ≤ ngân sách hàng đợi ~50 MB
                           # (200 − 97 writer nền − 13 tiến trình đo − ~12 buffers);
                           # ≈ 15 s ATO đỉnh (6.496 dòng/s) ≈ 5 s × hệ số 3.
-K_REPLAY_ROWS = 20_000    # > 6.496 dòng/s × hệ số 3 = 19.488; chi phí xả 4 insert gộp
-                          # × p95 88 ms ≈ 0,35 s < 1 nhịp. Điều kiện khả thi spec §2.4
-                          # ĐẠT dư ~8,7× (6.496 × 88 ms ÷ 5.000 ≈ 0,114 < 1); p95 hồ sơ
-                          # VPS hẹp ≈ hồ sơ dev (88,2 vs 87,5 ms) nên không hiệu chỉnh.
+K_REPLAY_ROWS = 20_000    # > 6.496 dòng/s × hệ số 3 = 19.488. Điều kiện khả thi spec §2.4
+                          # ĐẠT với biên ≈2,8× — KHÔNG phải 8,7× như bản đầu ghi (đính
+                          # chính review cuối 2026-08-27, spec §2.5): 8,7× lấy p95 88 ms
+                          # của insert 5.000 DÒNG rồi chia đều, chỉ đúng nếu phát lại toàn
+                          # block đầy. Với interleave 5 bảng thật, file '-n' liền kề hiếm
+                          # khi cùng bảng ⇒ run cùng-bảng dài 1, gộp gần như không ăn, chi
+                          # phí bám p95 block NHỎ ≈ 55 µs/dòng ⇒ 6.496 × 55 µs ≈ 0,36 < 1.
+                          # Vẫn đạt nên K giữ nguyên; đây là số SUY từ p95 block nhỏ, chưa
+                          # đo interleave thật (AC2 chỉ feed trade nên không thấy). p95 hồ
+                          # sơ VPS hẹp ≈ hồ sơ dev (88,2 vs 87,5 ms) nên không hiệu chỉnh.
 SPILL_CAP_BYTES = 10 * 2**30   # 10 GiB — pickle đo 65 B/dòng (§9.2): 6.496 dòng/s ×
                                # 7.200 s × 65 B × 3 ≈ 9,1 GB ≤ 10 GiB (≥ 2 giờ sự cố ở
                                # tải đỉnh × hệ số 3).
@@ -143,6 +149,9 @@ class ChWriter:
         self.disk_mode = False
         self._disk_since = 0.0                 # mốc `clock()` lúc vào chế độ đĩa (cho log ra)
         self._disk_blocks = 0                  # số block đã xuống đĩa trong LƯỢT đĩa này
+        # Giá trị counter store đã chép sang `metrics` lần gần nhất — để chép tiếp bằng
+        # DELTA thay vì ghi đè (xem `manage_once`).
+        self._mirrored: dict[str, int] = {}
         self.insert_s: deque[float] = deque(maxlen=4096)
         # (mã, repr) của lỗi insert gần nhất — KHÔNG giữ nguyên exception: nó mang
         # `__traceback__` ghim cả block lỗi (~2,5 MB) sống tới lần lỗi kế tiếp, trong khi
@@ -183,9 +192,16 @@ class ChWriter:
             # Sao chép MỖI NHỊP, không chỉ lúc nhận nuôi: `replay_corrupt` là một sự kiện
             # MẤT DÒNG và nó xảy ra trong lúc chạy: chỉ chép một lần lúc khởi động thì mọi
             # file hỏng về sau không bao giờ lên metric (spec §6 — mọi mất mát phải đếm
-            # được). Chép dict 3 khoá, rẻ (review M3).
+            # được). Chép dict 4 khoá, rẻ (review M3).
+            #
+            # 🔴 Chép bằng DELTA + `inc`, không phải `set`: đây đều là counter đơn điệu chứ
+            # không phải gauge, và `spill_io_error` có HAI nguồn — store tự đếm lỗi đọc/ghi
+            # bên trong nó, còn `replay_debt`/`manage_loop`/`write_loop` `inc` thêm cho lỗi
+            # I/O bắt được ở tầng ngoài. `set` sẽ NUỐT phần tầng ngoài mỗi nhịp. Delta 0
+            # vẫn gọi `inc` để khoá luôn có mặt trên bảng đếm ngay từ nhịp đầu.
             for key, val in self.spill.counters.items():
-                self.metrics.set(key, val)     # orphan_tmp/replay_corrupt/seq_collision
+                self.metrics.inc(key, val - self._mirrored.get(key, 0))
+                self._mirrored[key] = val
             # Gauge `spill_bytes` (spec §8) — miễn phí: `bytes_used` là biến đếm store đã
             # duy trì sẵn. KHÔNG kèm `spill_files` ở đây: đếm file là một lần liệt kê thư
             # mục trên đường nóng mỗi nhịp, mà `spill_blocks`/`replay_blocks` đã nói đủ về
@@ -415,6 +431,10 @@ class ChWriter:
             if status == "done":
                 self.spill.delete(item)        # XOÁ CHỈ SAU insert thành công (spec §3)
                 self.metrics.inc("replay_blocks", len(item.paths))
+                # Đếm cả DÒNG, không chỉ file: số hạng `trùng_replay` của AC3 tính theo
+                # dòng, mà một file chứa từ 1 tới BLOCK_CAP dòng — chỉ có `replay_blocks`
+                # thì trùng_replay chỉ CHẶN TRÊN được chứ không tính được.
+                self.metrics.inc("replay_rows", item.n_rows)
                 budget -= item.n_rows
                 continue
             if status == "transient":
@@ -606,6 +626,7 @@ class ChWriter:
                     days |= _block_days(item.table, item.block)
                     self.spill.delete(item)   # XOÁ CHỈ SAU insert thành công (spec §3)
                     self.metrics.inc("replay_blocks", len(item.paths))
+                    self.metrics.inc("replay_rows", item.n_rows)   # xem `_drain_disk_step`
                     continue
                 if status == "transient":
                     code, rep = self._last_err
