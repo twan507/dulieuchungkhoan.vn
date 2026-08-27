@@ -1,6 +1,6 @@
 # Spec — Lát ngành hai lớp: ICB tự gán + gán tay đè lên
 
-**Trạng thái:** 🟡 **chờ thực thi.** Khung do chủ dự án đặt ra 2026-08-27; nội dung mapping đã dựng xong và nằm ở [`worksheets/industry-mapping.xlsx`](../../worksheets/industry-mapping.xlsx). Phần code **chưa động tới** — chủ dự án đang chạy ghi dữ liệu realtime, hoãn có chủ đích.
+**Trạng thái:** ✅ **thực thi xong, nghiệm thu trên DB thật 2026-08-28** — xem [`ledger.md`](ledger.md). Khung do chủ dự án đặt ra 2026-08-27; nội dung mapping đã dựng xong và nằm ở [`worksheets/industry-mapping.xlsx`](../../worksheets/industry-mapping.xlsx).
 
 **Việc [6] của lộ trình** đã thông phần danh bạ; đây là phần NGÀNH còn hoãn (`industry_icb_map` + `issuer.industry_id` đang rỗng).
 

@@ -13,7 +13,7 @@ Tầng này ghi **lựa chọn của dulieuchungkhoan.vn** — cái gì xây th�
 | [chatbot-semantic-layer.md](chatbot-semantic-layer.md) | Luật phân định bốn tầng · 8 function · ba quy tắc nối dữ liệu vào skill · điều chưa biết | 🟡 **đề xuất, chưa duyệt** |
 | [market-field-selection.md](market-field-selection.md) | Luật chọn nguồn · bảng lấy/bỏ từng mã trường của BVSC, Screener, Snapshot · bảng đối soát số đếm · danh sách cần kiểm API. Bản máy đọc: [market-field-selection.json](market-field-selection.json) | ✅ đã chốt (trải từ quyết định 2026-08-14) |
 | [industry-tree.md](industry-tree.md) | **Cây ngành riêng 6 nhóm × 24 ngành** — chủ sở hữu nội dung duy nhất · quy tắc đặt tên · nguyên tắc gán mã | ✅ chốt 2026-08-25, rà lại code và tên 2026-08-27 |
-| [industry-mapping.md](industry-mapping.md) | **Bảng map ICB → 24 ngành** — chủ sở hữu duy nhất · lớp 1 56 dòng (trộn cấp 3 và cấp 4) · lớp 2 161 dòng gán tay kèm lý do từng mã · luật BCTC · luật không-issuer. Bản máy đọc: [industry-mapping.json](industry-mapping.json) | ✅ chốt 2026-08-27, chưa nạp vào DB |
+| [industry-mapping.md](industry-mapping.md) | **Bảng map ICB → 24 ngành** — chủ sở hữu duy nhất · lớp 1 56 dòng (trộn cấp 3 và cấp 4) · lớp 2 161 dòng gán tay kèm lý do từng mã · luật BCTC · luật không-issuer. Bản máy đọc: [industry-mapping.json](industry-mapping.json) | ✅ chốt 2026-08-27 · **đã nạp DB** (migration `0013`: 55 dòng lớp 1 + 161 dòng lớp 2) |
 
 ⚠️ **Bốn file sinh tự động, cấm sửa tay** — sửa nội dung thì sửa trong script rồi chạy lại:
 `market-field-selection.md` + `.json` ← [`gen_field_selection.py`](gen_field_selection.py) · `industry-mapping.md` + `.json` ← [`gen_industry_mapping.py`](gen_industry_mapping.py)

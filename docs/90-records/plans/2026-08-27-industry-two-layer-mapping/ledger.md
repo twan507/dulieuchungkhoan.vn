@@ -234,3 +234,53 @@ Số đúng, đo trên DB thật sau khi migration 0013 + job `etl refdata` đã
 ## Kết luận
 
 Migration 0013 lên DB thật thành công, seed lớp 2 đúng 161/161. Job `etl refdata` chạy dưới role `dlck_etl` idempotent qua nhiều lượt. Năm bất biến A/B/C/D/E đều đạt trên DB thật. Phép thử động spec §9 xác nhận luật phân giải hai lớp (override thắng ICB map) hoạt động đúng trên dữ liệu thật, và hệ thống phục hồi chính xác sau khi trả cấu hình về. Không phát hiện sai lệch cần dừng. Không sửa file code/migration nào trong task này.
+
+## Task 7 — Đồng bộ tài liệu sống
+
+Nguồn số liệu: mục "Kết luận" và Bước 3–4 ở trên (đo trên DB thật 2026-08-28). Không lấy số từ `plan.md` — xem đính chính ở mục trên (`plan.md:51` sai, số đúng 1.526/1.550).
+
+### File đã sửa
+
+| File | Sửa gì |
+|---|---|
+| `docs/20-design/industry-tree.md` §4 | Thêm gạch đầu dòng "Ai ghi cột nào" — lớp 1/lớp 2/view `v_issuer_industry` |
+| `docs/20-design/README.md` | Dòng `industry-mapping.md`: bỏ "chưa nạp vào DB", ghi "đã nạp DB (migration `0013`: 55 dòng lớp 1 + 161 dòng lớp 2)" |
+| `docs/00-overview/roadmap.md` mục [6] | Thay đoạn "⚠️ CHƯA NẠP" bằng trạng thái thật 2026-08-28, số đo từ ledger (1.526/1.550, A=0·B=0·C=161·D=55·E=none), nêu rõ [10] và khung ngành skill hết bị chặn |
+| `database/README.md` | Thêm migration `0011`/`0012`/`0013` vào danh sách (10→13 migration, 37→49 test, 9→10 file); thêm mô tả `issuer_industry_override` + `v_issuer_industry`; thêm luật "đọc qua view, không đọc thẳng cột"; cập nhật dòng "Dữ liệu thật" với số ngành đã nạp |
+| `docs/90-records/plans/2026-08-27-industry-two-layer-mapping/spec.md` | Chỉ dòng trạng thái đầu file: 🟡 chờ thực thi → ✅ thực thi xong, nghiệm thu 2026-08-28. Không đụng nội dung spec |
+| `backend/README.md` | (a) Bỏ câu sai "Không bao giờ ghi `issuer.industry_id`" — thay bằng đoạn "Ngành hai lớp — luật đã đảo" giải thích ETL sở hữu lớp 1, đọc qua view `v_issuer_industry`. (b) Thêm đoạn giải thích cảnh báo `issuers_without_industry = 24` là trạng thái ổn định bình thường (24 quỹ/ETF `com_type_code='QU'`) |
+| `docs/00-overview/architecture.md:95` *(ngoài brief, phát hiện qua quét chéo)* | Câu "ngành … CHƯA NẠP … tầng lọc ngành của tin vẫn chặn" — thay bằng "đã nạp DB 2026-08-28 … hết bị chặn" |
+| `docs/90-records/README.md:28` *(ngoài brief, phát hiện qua quét chéo)* | Dòng trạng thái của hàng `2026-08-27-industry-two-layer-mapping/` trong index sống — 🟡 "code chờ thực thi" → ✅ "thực thi xong, nghiệm thu trên DB thật 2026-08-28", số đo cập nhật theo. Đây là index sống (§1.6), không phải nội dung bản ghi tại-thời-điểm, nên được cập nhật (khác với `spec.md`/`plan.md`/`layer2-review.md` bên trong cùng thư mục — giữ nguyên) |
+
+### Phép kiểm chéo toàn repo (CLAUDE.md §1.7)
+
+Lệnh chạy đúng nguyên văn brief:
+```bash
+git grep -n "chưa nạp\|CHƯA NẠP\|industry_icb_map\|YTEGD\|DIENNUOC\|TAINGUYEN\|VLXD" -- docs backend database
+git grep -nw "BDS\|KCN" -- docs backend database
+```
+Tổng **94 dòng hit** (69 + thêm ở query BDS/KCN, nhiều dòng trùng giữa hai truy vấn). Phán quyết từng nhóm:
+
+| Nhóm hit | Số dòng | Phán quyết | Vì sao |
+|---|---|---|---|
+| `backend/etl/refdata_store.py`, `backend/tests/etl/test_e09_refdata_store.py`, `backend/tests/schema/test_s02_identity.py`, `backend/tests/schema/test_s11_industry_override.py` | 9 | **Đã đúng** | Code/test thật, phản ánh đúng hành vi hiện tại (ETL sở hữu lớp 1 qua `industry_icb_map`). Task 7 không sửa code |
+| `database/README.md:90` (cảnh báo downgrade 0003) | 1 | **Đã đúng** | Vẫn đúng kỹ thuật — downgrade qua `0003` vẫn xoá bảng `industry_icb_map` |
+| `database/migrations/versions/0002_*.py`, `0003_seed_industry.py`, `0010_*.py`, `0011_industry_rename.py`, `0013_seed_industry_map.py` | 21 | **Đã đúng** | Migration đã chạy, không sửa lại (luật `database/README.md` §Luật: không sửa migration cũ). `0003`/`0011` cố ý giữ code cũ `BDS`/`KCN`/`VLXD`/`YTEGD`/`DIENNUOC`/`TAINGUYEN` để downgrade khôi phục đúng |
+| `docs/10-sources/macro/verify_wichart.py:253`, `docs/10-sources/macro/wichart.md:185` | 2 | **Đã đúng — trùng chữ ngẫu nhiên** | `VLXD` ở đây là nhóm dữ liệu WiChart (vật liệu xây dựng vĩ mô), không liên quan mã ngành `industry.code` cũ |
+| `docs/10-sources/market/field-dictionary.json:5990` | 1 | **Đã đúng — trùng chữ ngẫu nhiên** | `BDS` là viết tắt "bất động sản" trong công thức kế toán, không phải mã ngành |
+| `docs/30-skills/corpus/.../Tra Chieu 2026-03-26.md:93` | 1 | **Đã đúng — trùng chữ ngẫu nhiên** | `BDS` = "bất động sản" trong hội thoại chat corpus, không phải mã ngành; corpus là bản ghi hội thoại tại-thời-điểm |
+| `docs/20-design/gen_industry_mapping.py`, `docs/20-design/industry-mapping.json`, `docs/20-design/industry-mapping.md` | 21 | **Đã đúng — cấm sửa tay** | File sinh tự động, chủ là `gen_industry_mapping.py` (CLAUDE.md luật cứng). Nội dung `KCN`/`VLXD` ở đây là chuỗi lý do (`reason`) mô tả nghiệp vụ ("cả hai cùng KCN"), không phải mã ngành cũ — đúng như thiết kế |
+| `docs/20-design/industry-tree.md:7,63-65,79,94,105` | 7 | **Đã đúng** | Đoạn "Rà lại 2026-08-27" và "Đổi so với bộ 24 tên gốc" **cố ý** ghi mã cũ để truy vết lịch sử đổi tên, đã tự gắn nhãn "để truy vết, không phải để dùng". Dòng 94 (`industry_icb_map`) là mô tả thiết kế đúng hiện trạng |
+| `docs/20-design/README.md:16` (industry-mapping.md) | 1 | **Đã sửa** | Task 7 bước 2 |
+| `docs/00-overview/roadmap.md:102` | 1 | **Đã sửa** | Task 7 bước 3 |
+| `docs/00-overview/architecture.md:95,101` | 2 | **1 đã sửa (dòng 95), 1 đã đúng (dòng 101)** | Dòng 95 nêu "CHƯA NẠP" — sai, đã sửa. Dòng 101 mô tả vai trò ICB "tham khảo" — vẫn đúng, không sửa |
+| `docs/90-records/plans/2026-08-25-postgres-data-schema/*` (ledger, plan, review, step-02, step-05) | 10 | **Thuộc vùng lịch sử** | `90-records/` là bản ghi tại-thời-điểm (CLAUDE.md §1.7) — không sửa nội dung. Không có href chết |
+| `docs/90-records/plans/2026-08-26-reference-data-etl/ledger.md:54`, `spec.md:14,228` | 3 | **Thuộc vùng lịch sử** | nt — mô tả đúng quyết định "hoãn có chủ đích" tại thời điểm viết |
+| `docs/90-records/plans/2026-08-27-industry-two-layer-mapping/layer2-review.md`, `plan.md` (toàn bộ, trừ mục tiêu sửa) | 27 | **Thuộc vùng lịch sử** | Nội dung `plan.md`/`layer2-review.md` không sửa (bản ghi tại-thời-điểm); chỉ `spec.md` được sửa đúng **dòng trạng thái** theo brief |
+| `docs/90-records/plans/2026-08-27-industry-two-layer-mapping/spec.md` (thân bài, không phải dòng trạng thái) | 7 | **Thuộc vùng lịch sử** | Giữ nguyên — chỉ dòng trạng thái đầu file được sửa |
+| `docs/90-records/plans/2026-08-27-industry-two-layer-mapping/ledger.md` | 5 | **Đã đúng** | Chính sổ ghi này — số liệu mô tả đúng lệnh/kết quả đã chạy |
+| `docs/90-records/worksheets/README.md:31,78` | 2 | **Đã đúng** | Mô tả cách nạp (qua migration seed) — vẫn đúng nguyên xi sau khi migration `0013` đã chạy |
+| `docs/90-records/README.md:28` | 1 | **Đã sửa** | Ngoài brief — phát hiện qua quét chéo, xem bảng "File đã sửa" ở trên |
+| `backend/README.md` | 0 (không khớp pattern grep, brief chỉ ra tay) | **Đã sửa** | (a) + (b) theo chỉ dẫn brief, không qua grep |
+
+**Kết luận phép kiểm:** không còn hit nào mang tuyên bố sai về trạng thái "chưa nạp/CHƯA NẠP" ngoài vùng lịch sử hoặc trùng chữ ngẫu nhiên (đã kiểm lại bằng `git grep -n "chưa nạp\|CHƯA NẠP" -- docs backend database` sau khi sửa — 2 hit còn lại đều thuộc chủ đề khác, `vai_cotton_my`/đơn vị dữ liệu, không liên quan ngành). Không có link chết cần sửa href trong vùng lịch sử.

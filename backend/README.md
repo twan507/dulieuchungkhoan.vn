@@ -50,7 +50,11 @@ uv run python -m etl refdata                  # một lần chạy, ghi rồi th
 uv run python -m etl refdata --accept-drop    # mở khoá MỘT lượt khi chốt chặn từ chối đúng
 ```
 
-Cần `ETL_DATABASE_URL` (user thuộc role `dlck_etl`). Idempotent: lượt hai không đổi gì, `updated_at` không bị đụng. Chốt chặn sụt hai tầng — mốc là `ops.etl_run.stats` của lượt success gần nhất; bị từ chối thì rollback trọn, payload bằng chứng vào `staging.raw_payload` (`refdata:*`), và cần `--accept-drop` nếu cú sụt là thật (huỷ niêm yết hàng loạt). **Không bao giờ ghi `issuer.industry_id`** — cột đó gán tay, tay thắng máy.
+Cần `ETL_DATABASE_URL` (user thuộc role `dlck_etl`). Idempotent: lượt hai không đổi gì, `updated_at` không bị đụng. Chốt chặn sụt hai tầng — mốc là `ops.etl_run.stats` của lượt success gần nhất; bị từ chối thì rollback trọn, payload bằng chứng vào `staging.raw_payload` (`refdata:*`), và cần `--accept-drop` nếu cú sụt là thật (huỷ niêm yết hàng loạt).
+
+**Ngành hai lớp — luật đã đảo (2026-08-28):** trước đây ETL bị cấm đụng `issuer.industry_id`. Nay ETL **sở hữu** cột đó — mỗi lượt ghi đè theo `market.industry_icb_map` (khớp `icb_code` chính xác trước, không có thì leo `icb_code_path` lấy tổ tiên gần nhất). Lớp tay nằm ở bảng riêng `market.issuer_industry_override`, mà ETL **không đọc, không ghi** — DB đã `REVOKE` cả `SELECT`/`INSERT`/`UPDATE`/`DELETE` của role `dlck_etl` trên bảng đó (migration `0012`). **Đường đọc hợp nhất duy nhất là view `market.v_issuer_industry`** = `COALESCE(override.industry_id, issuer.industry_id)` kèm cột `source` ∈ `manual` | `icb` | `NULL` — đọc thẳng `issuer.industry_id` là bỏ qua lớp tay, đọc thẳng `issuer_industry_override` là chỉ thấy lớp tay.
+
+**Cảnh báo `%d doanh nghiệp không tra được ngành` mỗi lượt là bình thường, không phải hỏng.** Log phát dòng `WARNING etl.refdata_store 24 doanh nghiệp không tra được ngành từ industry_icb_map — để NULL, không chặn job` và stats mang khoá `issuers_without_industry = 24` **ở mọi lượt chạy** *(đo 2026-08-28, [ledger](../docs/90-records/plans/2026-08-27-industry-two-layer-mapping/ledger.md))* — đây là trạng thái ổn định: cả 24 đều là chứng chỉ quỹ/ETF (`com_type_code = 'QU'`, `icb_code = '8985'`), mà ETF và quỹ không có ngành theo thiết kế (dòng ICB `8980` "Quỹ đầu tư" cố ý không nạp vào `industry_icb_map`). Con số vượt 24 đáng kể mới là dấu hiệu có gì đó đổi.
 
 ## Lịch chạy (Windows Task Scheduler)
 

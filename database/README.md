@@ -13,9 +13,11 @@ Thiết kế chi tiết phần Postgres/REST ở [`docs/20-design/market-data-st
 
 ## Trạng thái
 
-**Dữ liệu thật (2026-08-26 đêm):** 5 bảng tham chiếu đã nạp qua job `etl refdata` — `market.security` 2.015 · `market.issuer` 1.550 · `security_external_id` 2.014 · `issuer_external_id` 1.550 · `icb_industry` 176. `industry_icb_map` rỗng **có chủ đích** (lát ngành sau).
+**Dữ liệu thật (2026-08-26 đêm, ngành cập nhật 2026-08-28):** 5 bảng tham chiếu đã nạp qua job `etl refdata` — `market.security` 2.015 · `market.issuer` 1.550 · `security_external_id` 2.014 · `issuer_external_id` 1.550 · `icb_industry` 176. Ngành đã nạp qua migration `0013`: `market.industry_icb_map` **55 dòng** (lớp 1, máy gán) · `market.issuer_industry_override` **161 dòng** (lớp 2, tay gán). Nghiệm thu trên DB thật dưới role `dlck_etl`: **1.526/1.550 issuer có ngành**, 24 quỹ/ETF không có ngành theo đúng thiết kế *(hồ sơ: [ledger](../docs/90-records/plans/2026-08-27-industry-two-layer-mapping/ledger.md))*.
 
-Schema `postgres-data` đã dựng: **10 migration** Alembic (`0001` schemas/extensions … `0010` registry ingested_at), **37 test** seam chạy trên Postgres thật (`backend/tests/schema/test_sNN_*.py` — 9 file, không 1-1 với 10 migration: test seed `0003` gộp vào `test_s02_identity.py`, `test_s03_market_data.py` test migration `0004`; từ `test_s05_macro.py` trở đi NN khớp đúng số migration).
+Schema `postgres-data` đã dựng: **13 migration** Alembic (`0001` schemas/extensions … `0010` registry ingested_at · `0011` đổi 6 code + 7 tên ngành · `0012` bảng `market.issuer_industry_override` + view `market.v_issuer_industry` · `0013` seed ngành hai lớp), **49 test** seam chạy trên Postgres thật (`backend/tests/schema/test_sNN_*.py` — 10 file, không 1-1 với 13 migration: test seed `0003` gộp vào `test_s02_identity.py`, `test_s03_market_data.py` test migration `0004`; từ `test_s05_macro.py` trở đi NN khớp đúng số migration, kể cả `test_s10_registry_ts.py` cho `0010`; `test_s11_industry_override.py` phủ cả `0012` lẫn nội dung seed `0013`).
+
+**Đọc ngành qua view, không đọc thẳng cột:** `market.issuer.industry_id` (lớp 1, máy — ETL ghi đè mỗi lượt) và `market.issuer_industry_override` (lớp 2, tay — `dlck_etl` đã bị `REVOKE` cả đọc lẫn ghi trên bảng này ở migration `0012`) không phải là nguồn đọc cuối. Đường đọc duy nhất là view `market.v_issuer_industry` = `COALESCE(override.industry_id, issuer.industry_id)` kèm cột `source` ∈ `manual` | `icb` | `NULL`.
 
 Spec: [`docs/90-records/plans/2026-08-25-postgres-data-schema/`](../docs/90-records/plans/2026-08-25-postgres-data-schema/) — `README.md` (mục tiêu G1–G5, quyết định xuyên suốt), `step-01`…`step-07` (thiết kế từng miền), `plan.md` (11 task TDD), `ledger.md` (nhật ký thực thi).
 
