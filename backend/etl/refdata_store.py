@@ -240,13 +240,15 @@ def apply(conn, target: TargetState, delist: list[str]) -> dict:
             "   AND iss.industry_id IS DISTINCT FROM r.industry_id"
         )
     )
-    stats["industry_unmapped"] = conn.execute(
+    # Số đo TRẠNG THÁI toàn bảng sau lượt gán (gauge), không phải số phát sinh trong lượt
+    # như các counter khác cùng dict — đặt tên theo đúng nghĩa đó.
+    stats["issuers_without_industry"] = conn.execute(
         sa.text("SELECT count(*) FROM market.issuer WHERE industry_id IS NULL")
     ).scalar_one()
-    if stats["industry_unmapped"]:
+    if stats["issuers_without_industry"]:
         log.warning(
             "%d doanh nghiệp không tra được ngành từ industry_icb_map — để NULL, không chặn job",
-            stats["industry_unmapped"],
+            stats["issuers_without_industry"],
         )
 
     # 5. delist — không bao giờ xoá dòng

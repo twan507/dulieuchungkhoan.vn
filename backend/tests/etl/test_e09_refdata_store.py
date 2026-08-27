@@ -151,7 +151,7 @@ def test_layer1_unknown_icb_stays_null_and_counts(db):       # ca sai: không ch
     iid = _synthetic(db, "9993", "9993")                      # không tổ tiên nào trong map
     stats = refdata_store.apply(db, _target(), [])
     assert _industry_code_of(db, iid) is None
-    assert stats["industry_unmapped"] >= 1
+    assert stats["issuers_without_industry"] >= 1
 
 
 def test_manual_override_survives_while_layer1_refreshes(db):    # spec §8.5 — tay thắng máy
