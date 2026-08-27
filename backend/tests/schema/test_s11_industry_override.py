@@ -73,6 +73,27 @@ def test_etl_role_cannot_write_override(db):             # seam 4: luật một 
     assert denied
 
 
+def test_etl_role_cannot_read_override_table_but_view_still_works(db):   # seam 4d
+    """Bảng nền cấm đọc; view vẫn đọc được vì chạy bằng quyền chủ view."""
+    iid, ind = _issuer(db), _ind(db, "DANDUNG")
+    db.execute(sa.text(
+        "INSERT INTO market.issuer_industry_override (issuer_id, industry_id, note) "
+        "VALUES (:i,:d,'đè tay')"), {"i": iid, "d": ind})
+    db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
+    nested = db.begin_nested()
+    try:
+        db.execute(sa.text("SELECT count(*) FROM market.issuer_industry_override"))
+        nested.commit()
+        denied = False
+    except sa.exc.ProgrammingError as e:
+        nested.rollback()
+        denied = "permission denied" in str(e).lower()
+    assert denied
+    assert db.execute(sa.text(
+        "SELECT industry_id FROM market.v_issuer_industry WHERE issuer_id=:i"),
+        {"i": iid}).scalar_one() == ind      # view vẫn trả đúng giá trị đè tay
+
+
 def test_etl_role_can_read_view(db):                     # seam 4b: đường ĐỌC của production
     db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
     db.execute(sa.text("SELECT count(*) FROM market.v_issuer_industry")).scalar_one()

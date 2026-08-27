@@ -18,7 +18,10 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.execute(
         """
-        -- LỚP 2 — gán tay, người ghi, ETL KHÔNG đọc KHÔNG ghi (spec §2).
+        -- LỚP 2 — gán tay, người ghi. Bảng này là của NGƯỜI: ETL KHÔNG đọc, KHÔNG ghi
+        -- (spec §2) — luật do DB gác, không do comment gác. ETL và API đọc ngành qua
+        -- view market.v_issuer_industry; view chạy bằng quyền chủ view (security_invoker
+        -- mặc định false) nên không cần quyền trên bảng nền để đọc qua view.
         CREATE TABLE market.issuer_industry_override (
           issuer_id   bigint PRIMARY KEY REFERENCES market.issuer,
           industry_id bigint NOT NULL REFERENCES market.industry,  -- luôn level 2
@@ -38,9 +41,9 @@ def upgrade() -> None:
         FROM market.issuer i
         LEFT JOIN market.issuer_industry_override o USING (issuer_id);
 
-        -- 0009 cấp quyền ghi cho dlck_etl trên MỌI bảng market (kèm default privileges).
-        -- Bảng này là của NGƯỜI: thu hồi để luật "ETL không ghi" do DB gác, không do comment gác.
-        REVOKE INSERT, UPDATE, DELETE ON market.issuer_industry_override FROM dlck_etl;
+        -- 0009 cấp SELECT, INSERT, UPDATE, DELETE cho dlck_etl trên MỌI bảng market
+        -- (kèm default privileges) — thu hồi cả đọc lẫn ghi để khớp spec §2.
+        REVOKE SELECT, INSERT, UPDATE, DELETE ON market.issuer_industry_override FROM dlck_etl;
         GRANT SELECT ON market.v_issuer_industry TO dlck_etl, dlck_api;
         """
     )
