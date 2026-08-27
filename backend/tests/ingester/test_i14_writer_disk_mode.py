@@ -404,3 +404,50 @@ def test_exit_disk_only_when_all_empty(tmp_path):
     w.write_once()                                         # xả đầu RAM + đĩa
     w.manage_once()                                        # kiểm điều kiện ra
     assert not w.disk_mode and w.clean()
+
+
+# --- Task 7: phát lại có tiết lưu K + FIFO xuyên RAM–đĩa (spec §2.3.4/§2.3.6) ---------
+
+
+def test_k_caps_total_rows_per_tick_head_included(tmp_path, monkeypatch):
+    """`K_REPLAY_ROWS` là trần TỔNG dòng insert cho CẢ lần gọi `write_once`, tính cả phần
+    lấy từ đầu RAM — không phải trần riêng cho đĩa. `_drain_disk_step` đọc hằng số này qua
+    tên module-level (`K_REPLAY_ROWS`, không phải `self.K_REPLAY_ROWS`) nên tra cứu là
+    GLOBAL LOOKUP TẠI THỜI ĐIỂM GỌI: `monkeypatch.setattr(m, "K_REPLAY_ROWS", 5)` sửa đúng
+    ô nhớ mà hàm sẽ đọc khi chạy — không cần bind lại default nào."""
+    import ingester.chwriter as m
+    ok_calls = []
+    ok = type("_Ok", (), {"insert": lambda self, t, d, column_names: ok_calls.append(len(d))})()
+    w = _writer_with_spill(tmp_path, ok)
+    monkeypatch.setattr(m, "K_REPLAY_ROWS", 5)
+    w._enter_disk("test")
+    w.head.append(_Pending("trade", [[None] * len(COLUMNS["trade"])] * 3))
+    w.head_rows = 3
+    for i in range(4):                             # 4 file '-n', 2 dòng mỗi file trên đĩa
+        w.spill.write("trade", [[None] * len(COLUMNS["trade"])] * 2, "n")
+    w.write_once()
+    # K=5: đầu RAM 3 dòng (1 insert) + đĩa CHỈ được 2 dòng nữa (next_batch gộp file '-n'
+    # tới đa min(BLOCK_CAP, ngân sách còn lại)=2 → đúng MỘT file) — KHÔNG phải cả 8 dòng.
+    assert ok_calls == [3, 2]
+    assert sum(ok_calls) == 5
+
+
+def test_fifo_across_ram_and_disk(tmp_path):
+    """FIFO toàn cục (spec §2.3.4): đầu RAM đông cứng lúc vào chế độ đĩa đi TRƯỚC, phần
+    xuống đĩa sau đó đi theo đúng thứ tự seq file — dù bị gộp nhiều file trong một
+    `next_batch`, thứ tự trong khối gộp vẫn giữ nguyên."""
+    seen = []
+    seq_i = COLUMNS["trade"].index("seq")
+    ok = type("_Ok", (), {"insert": lambda self, t, d, column_names:
+                          seen.extend(r[seq_i] for r in d)})()
+    w = _writer_with_spill(tmp_path, ok)
+    w.add(_n(1)); w.manage_once()
+    w._enter_disk("test")                          # dòng 1 đông cứng vào head
+    w.add(_n(2)); w.manage_once()                  # dòng 2 xuống đĩa (file '-n' seq 1)
+    w.add(_n(3)); w.manage_once()                  # dòng 3 xuống đĩa (file '-n' seq 2)
+    guard = 0
+    while w.disk_mode:
+        guard += 1
+        assert guard <= 50, "livelock: chế độ đĩa không thoát sau 50 nhịp quản+ghi"
+        w.write_once(); w.manage_once()
+    assert seen == [1, 2, 3]                        # đầu RAM trước, đĩa theo seq sau
