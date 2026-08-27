@@ -292,3 +292,94 @@ Tổng **94 dòng hit** (69 + thêm ở query BDS/KCN, nhiều dòng trùng gi�
 3. **[Minor] Neo số đo thiết kế trong `industry-tree.md` §4** — câu "24 ngành phủ 1.526/1.526 cổ phiếu có doanh nghiệp (đo 2026-08-27)" giữ nguyên số và ngày (đúng luật §1.2 — sửa số mà không đo là nói dối), thêm câu ngay sau xác nhận đã tái đo trên DB thật 2026-08-28 với hai bất biến `A=0` và `E=none`, kèm link ledger này.
 
 Phép kiểm chéo chạy lại sau vòng sửa 1 (hai lệnh grep §1.7 nguyên văn) — không sinh hit mới, không có tuyên bố nào mâu thuẫn với ba chỗ vừa sửa.
+
+## Vòng sửa 2 — đợt sửa duy nhất sau review toàn nhánh (2026-08-28)
+
+Review toàn nhánh (không phải review Task 7 đơn lẻ như vòng sửa 1) sinh 8 finding, giao xử lý
+trong một loạt, mỗi việc một commit hoặc gộp theo nhóm hợp lý. Bốn commit:
+
+| Hash | Message | Việc phủ |
+|---|---|---|
+| `bd8865b` | docs(database): document layer-2 bootstrap order and downgrade warning | 1, 2 |
+| `b7acf12` | fix(etl): runtime BCTC gate, correct gauge source, close two test gaps | 3, 4, 5, 6 |
+| `3358a07` | fix(etl): strip whitespace from source icbCodePath | 7 |
+| `640af10` | docs(industry-tree): clarify design vs measured row counts | 8 |
+
+### Tám việc
+
+1. **[Critical] Thứ tự bootstrap DB mới** — `database/README.md` §Luật thêm mục "Bootstrap DB mới":
+   `upgrade head` → `etl refdata` một lượt → `downgrade 0012` rồi `upgrade head` (seed lại lớp 2) →
+   kiểm `count(*) from market.issuer_industry_override` = 161. Lý do: migration `0013` seed lớp 2
+   bằng `JOIN market.security` — DB dựng mới có `market.security` rỗng khi `0013` chạy ở bước 1 ⇒
+   nạp 0 dòng, không exception, không có gì báo động.
+2. **[Minor] Cảnh báo downgrade lạc hậu** — bổ sung câu cảnh báo downgrade qua `0012` (`DROP TABLE
+   market.issuer_industry_override`, xoá cả bảng) bên cạnh câu cũ về downgrade qua `0003`.
+3. **[Important] Chốt chặn luật BCTC lúc chạy** — `backend/etl/refdata_store.py` `apply()` chạy
+   đúng câu `BCTC_PROBE` đã chuẩn hoá ở test (`test_e09_refdata_store.py`), ghi
+   `stats["bctc_violations"]`, `log.warning` khi khác 0, không chặn job. Sửa
+   `test_bctc_rule_is_bidirectional_on_view` khoá luôn giá trị `stats["bctc_violations"]` (không
+   chỉ dò lại độc lập bằng `BCTC_PROBE` như trước).
+4. **[Minor] Gauge đếm nhầm tầng** — `stats["issuers_without_industry"]` đổi từ đếm
+   `market.issuer.industry_id IS NULL` (chỉ lớp 1) sang đếm qua `market.v_issuer_industry` (tay +
+   máy). Đo lại trên DB thật (chỉ đọc): vẫn ra **24**, đều `com_type_code='QU'`, `icb_code='8985'`
+   — khớp kỳ vọng, không dừng.
+5. **[Important] Test "khớp chính xác thắng tổ tiên" không khoá được điều nó tuyên bố** — path thử
+   của `test_layer1_exact_icb_match_wins_over_ancestor` đổi từ `'9000/9900/9990/9991'` (chứa chính
+   mã lá) sang `'9000/9900/9990'` (không chứa) để chỉ nhánh khớp-chính-xác mới ra `DANDUNG`.
+6. **[Important] Phép kiểm idempotency của `updated_at` không thể đỏ** — thêm chụp `xmin` của
+   `market.issuer` trước/sau lượt hai. **Phát hiện thêm khi mutation-test:** `xmin` một mình KHÔNG
+   đủ phân biệt trong fixture `db` (một transaction top-level cho cả test, không savepoint) — kiểm
+   tay bằng psql xác nhận Postgres gán CÙNG một `xmin` cho mọi lần ghi trong cùng transaction bất
+   kể ghi mấy lần. Đã tự sửa bằng `db.begin_nested()` (khuôn `expect_violation` sẵn có ở
+   `tests/schema/conftest.py`) bọc quanh lượt `apply()` thứ hai, cho nó một subxact riêng —
+   `re-review` xác nhận lập luận này đúng ngữ nghĩa MVCC.
+7. **[Minor] `icb_code_path` có rác nguồn** — đo trên DB thật: dòng `icb_code='0580'` có
+   `icb_code_path = '0001/0500/0580\r\n'` (1/176 dòng). Thêm `.strip()` khi chuẩn hoá
+   `icbCodePath` trong `backend/etl/refdata_normalize.py`; thêm test
+   `test_icb_code_path_strips_source_whitespace`. Dữ liệu cũ tự lành ở lượt refdata kế tiếp nhờ
+   đuôi `IS DISTINCT FROM` của câu upsert `icb_industry`.
+8. **[Minor] "40 dòng cấp 3" trong `industry-tree.md`** — làm rõ đó là con số THIẾT KẾ ở worksheet
+   `industry-mapping.md`; DB thật (đo 2026-08-28, `market.industry_icb_map JOIN
+   market.icb_industry`) là 39 dòng cấp 3 + 16 dòng cấp 4 = 55 dòng, vì `8980` "Quỹ đầu tư" cố ý
+   không nạp. Không sửa file sinh tự động `industry-mapping.md`/`.json` — chỉ trỏ tới.
+
+### Hai thí nghiệm đột biến (bắt buộc, việc 5 và 6)
+
+**Việc 5** — tạm bỏ đối số thứ nhất của `COALESCE` trong khối 4c (nhánh khớp-chính-xác luôn
+`NULL`):
+```
+tests/etl/test_e09_refdata_store.py::test_layer1_exact_icb_match_wins_over_ancestor FAILED
+E   AssertionError: assert 'XAYDUNG' == 'DANDUNG'
+1 failed in 0.77s
+```
+Trả lại nguyên trạng: `1 passed in 0.67s`.
+
+**Việc 6** — tạm bỏ đuôi `AND iss.industry_id IS DISTINCT FROM r.industry_id` (UPDATE ghi lại mọi
+dòng vô điều kiện):
+```
+tests/etl/test_e09_refdata_store.py::test_apply_twice_is_idempotent_including_timestamps FAILED
+E   AssertionError: assert [(1, '5729'), ...] == [(1, '5728'), ...]
+1 failed in 0.90s
+```
+Trả lại nguyên trạng: `1 passed in 0.82s`. `git diff` sau khi trả lại cả hai đột biến: không còn
+dấu vết.
+
+Test suite sau đợt sửa: `tests/etl` 58 passed, `tests/schema` 49 passed.
+
+### Cố ý không sửa — ghi rõ để người sau khỏi tưởng bỏ sót
+
+- **`database/migrations/versions/0013_seed_industry_map.py`** — không thêm
+  `AND s.status = 'listed'` vào câu `JOIN market.security s ON s.ticker = l.ticker AND
+  s.issuer_id IS NOT NULL` dù về lý thuyết một ticker delisted trùng tên với ticker listed có thể
+  làm `DISTINCT ON (s.issuer_id) ... ORDER BY s.issuer_id, s.security_id` chọn nhầm dòng. Migration
+  đã chạy trên DB thật — cấm sửa (`database/README.md` §Luật). Đo lại hôm nay (2026-08-28, chỉ
+  đọc): 0 ticker trong danh sách seed 161 dòng bị trùng giữa security listed/delisted khác
+  issuer_id, nên kết quả seed thực tế y hệt dù có thêm điều kiện hay không — không phải lỗi đang
+  hoạt động sai, chỉ là rủi ro lý thuyết không đáng viết migration mới để vá.
+- **Lưới `xmin` (việc 6) chỉ phủ `market.issuer`** — hai assert timestamp còn lại trong cùng test
+  (`market.security.updated_at`, `market.security_external_id.ingested_at`) vẫn dùng
+  `transaction_timestamp()` trần, không có `xmin` đi kèm, nên vẫn "không bao giờ đỏ vì lý do
+  timestamp" y hệt lỗ hổng đã tả ở việc 6 — chỉ là nợ có sẵn của test này từ trước đợt sửa, không
+  thuộc phạm vi tám việc được giao. Không mở rộng sửa quá phạm vi.
+
+Re-review xác nhận: 8/8 finding ADDRESSED, không chặn merge.
