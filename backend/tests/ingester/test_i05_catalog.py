@@ -13,7 +13,12 @@ INSTR = {"s": "ok", "d": [
     {"symbol": "ACB", "open": 22500, "low": 22300, "ceiling": 23950, "floor": 20850,
      "reference": 22400, "FloorCode": "10"},
     {"symbol": "41I1G8000", "open": 1300, "low": 1290, "ceiling": 1400, "floor": 1200,
-     "reference": 1310, "FloorCode": "03"},
+     "reference": 1310, "FloorCode": "03", "tradingdate": "27/08/2026", "Status": "00",
+     "MaturityDate": "18/09/2026", "underlyingSymbol": "VN30"},
+    # Hợp đồng ĐÃ HẾT HẠN — endpoint vẫn trả, chỉ còn ceiling/floor/reference, không
+    # tradingdate/Status (đo 2026-08-26: 61 bản ghi FloorCode=03, chỉ 14 còn sống).
+    {"symbol": "VN30F2509", "ceiling": 2004.8, "floor": 1742.6, "reference": 1873.7,
+     "FloorCode": "03", "underlyingSymbol": "VN30"},
 ]}
 
 
@@ -29,7 +34,8 @@ def _client():
 
 def test_catalog_merges_and_filters():
     cat = build_catalog(client=_client())
-    assert cat.symbols == ["ACB", "FUEVFVND", "VFMVF1"]  # CP+ETF; không CW/TP/phái sinh
+    # CP + ETF + phái sinh CÒN SỐNG; không CW/trái phiếu/hợp đồng hết hạn
+    assert cat.symbols == ["41I1G8000", "ACB", "FUEVFVND", "VFMVF1"]
     assert cat.base_state["ACB"]["open"] == "22500"      # nền từ instruments
     assert cat.base_state["VFMVF1"] == {"ceiling": "0", "floor": "0", "reference": "12000"}
 
@@ -45,3 +51,20 @@ def test_topics_shape():
 
 def test_fetch_derivative_symbols():
     assert fetch_derivative_symbols(client=_client()) == ["41I1G8000"]
+
+
+def test_expired_derivative_contracts_are_excluded():
+    """Đo 2026-08-26: `/datafeed/instruments` trả 61 bản ghi FloorCode=03 nhưng chỉ
+    **14 còn sống** — 47 hợp đồng hết hạn vẫn nằm đó, mất `tradingdate`/`Status`,
+    chỉ còn giá tham chiếu cũ. Đăng ký chúng là 47×20 topic vô ích."""
+    syms = fetch_derivative_symbols(client=_client())
+    assert syms == ["41I1G8000"]                 # VN30F2509 (hết hạn) bị loại
+
+
+def test_catalog_includes_live_derivatives():
+    """Run mode phải đăng ký phái sinh thì tick mới được GHI — chúng đi chung ba topic
+    `i`/`o10`/`t` với cổ phiếu, cấu trúc trường giống hệt (đo 2026-08-26, 2,3 triệu frame)."""
+    cat = build_catalog(client=_client())
+    assert "41I1G8000" in cat.symbols
+    assert "VN30F2509" not in cat.symbols        # hết hạn thì không
+    assert cat.base_state["41I1G8000"]["reference"] == "1310"

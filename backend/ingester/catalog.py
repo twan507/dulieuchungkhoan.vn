@@ -37,24 +37,38 @@ def _instruments(client: httpx.Client) -> list[dict]:
     return _get(client, "/datafeed/instruments")
 
 
+def _base_of(r: dict) -> dict[str, str]:
+    return {k: str(r[k]) for k in _BASE_FIELDS if r.get(k) not in (None, "")}
+
+
 def fetch_base_state(client: httpx.Client | None = None) -> dict[str, dict[str, str]]:
     own = client is None
     client = client or httpx.Client(base_url=BASE)
     try:
-        rows = _instruments(client)
-        return {r["symbol"]: {k: str(r[k]) for k in _BASE_FIELDS if r.get(k) not in (None, "")}
-                for r in rows}
+        return {r["symbol"]: _base_of(r) for r in _instruments(client)}
     finally:
         if own:
             client.close()
 
 
+def _is_live_derivative(r: dict) -> bool:
+    """Hợp đồng phái sinh CÒN HIỆU LỰC.
+
+    Đo 2026-08-26: `/datafeed/instruments` trả **61** bản ghi `FloorCode='03'` nhưng chỉ
+    **14 còn sống**; 47 hợp đồng đã đáo hạn vẫn nằm nguyên trong response, mất
+    `tradingdate`/`Status`/`MaturityDate`, chỉ còn giá tham chiếu cũ (ví dụ `VN30F2509`
+    = "HDTL VN30 9/2025"). Nhận bừa cả 61 là đăng ký thừa 47×20 topic và nạp danh mục rác.
+    """
+    return bool(r.get("tradingdate")) and bool(r.get("Status"))
+
+
 def fetch_derivative_symbols(client: httpx.Client | None = None) -> list[str]:
-    """Mã phái sinh (FloorCode == '03') — CHỈ dùng cho chế độ đo (spec §3.5)."""
+    """Mã phái sinh CÒN SỐNG (FloorCode == '03' + còn hiệu lực)."""
     own = client is None
     client = client or httpx.Client(base_url=BASE)
     try:
-        return sorted(r["symbol"] for r in _instruments(client) if r.get("FloorCode") == "03")
+        return sorted(r["symbol"] for r in _instruments(client)
+                      if r.get("FloorCode") == "03" and _is_live_derivative(r))
     finally:
         if own:
             client.close()
@@ -65,7 +79,8 @@ def build_catalog(client: httpx.Client | None = None) -> Catalog:
     client = client or httpx.Client(base_url=BASE)
     try:
         quotes = _get(client, "/quotes", symbols="ALL")
-        inst = fetch_base_state(client)
+        instruments = _instruments(client)
+        inst = {r["symbol"]: _base_of(r) for r in instruments}
         symbols, base_state = [], {}
         for q in quotes:
             if q.get("StockType") not in ("2", "3"):
@@ -75,6 +90,13 @@ def build_catalog(client: httpx.Client | None = None) -> Catalog:
             base_state[sym] = inst.get(sym) or {
                 k: str(q[k]) for k in ("ceiling", "floor", "reference") if q.get(k) is not None
             }
+        # Phái sinh CÒN SỐNG: không có trong `/quotes` nên phải lấy từ instruments. Tick
+        # của chúng đi chung ba topic `i`/`o10`/`t` với cổ phiếu, cấu trúc trường giống
+        # hệt (đo 2026-08-26, 2,3 triệu frame) — không đăng ký thì không ghi được.
+        for r in instruments:
+            if r.get("FloorCode") == "03" and _is_live_derivative(r):
+                symbols.append(r["symbol"])
+                base_state[r["symbol"]] = inst[r["symbol"]]
         return Catalog(sorted(set(symbols)), base_state)
     finally:
         if own:
