@@ -439,10 +439,10 @@ class _HangingClient:
 
 def test_retry_budget_counts_wall_clock_not_sleep_time():
     # TASK 6 (spec spill §2.3): cạn ngân sách retry → block xuống đĩa, không bỏ. Writer này
-    # KHÔNG có spill (spill=None — ca "chạy không có lưới đĩa") nên rơi vào đường thoát
-    # cuối spec §6: bỏ block MỚI, có sổ sách `spill_drop_newest.<bảng>` theo DÒNG.
-    # Điều test này canh vẫn không đổi: ngân sách đếm bằng THỜI GIAN THỰC, một lần thử
-    # treo 300 s tự nó cạn ngân sách 60 s ⇒ không có lần thử thứ hai.
+    # KHÔNG có spill (spill=None — cấu hình suy giảm "chạy không có lưới đĩa") nên cửa 2
+    # không mở: bỏ block cạn hạn chót có sổ `no_spill_dropped.<bảng>` theo DÒNG và Ở LẠI
+    # chế độ RAM (ruling C-1). Điều test này canh vẫn không đổi: ngân sách đếm bằng THỜI
+    # GIAN THỰC, một lần thử treo 300 s tự nó cạn ngân sách 60 s ⇒ không có lần thử thứ hai.
     clock = _FakeClock()
     # 300 s = mặc định `send_receive_timeout` của clickhouse_connect.
     client = _HangingClient(clock, cost_s=300.0)
@@ -451,8 +451,9 @@ def test_retry_budget_counts_wall_clock_not_sleep_time():
     w.flush_once()
 
     assert client.attempts == 1
-    assert w.metrics.counters.get("dropped_block.trade") is None   # đường drop đã chết
-    assert w.metrics.counters.get("spill_drop_newest.trade") == 1
+    assert w.metrics.counters.get("dropped_block.trade") is None   # tên cũ đã chết
+    assert w.metrics.counters.get("no_spill_dropped.trade") == 1
+    assert not w.disk_mode                        # không có đĩa thì không vào chế độ đĩa
     assert clock.now - 1000.0 == 300.0            # không kéo dài thêm bằng backoff
 
 

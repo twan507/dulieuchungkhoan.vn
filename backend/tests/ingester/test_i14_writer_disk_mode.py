@@ -194,8 +194,11 @@ def test_door2_retry_budget_spills_as_r_not_drop(tmp_path):
     assert item.kind == "r" and item.n_rows == 1                      # thành file -r
 
 
-def test_no_spill_available_drops_newest_with_ledger(tmp_path, caplog):
-    """spill=None (không sở hữu đĩa) — đường thoát cuối thống nhất spec §6."""
+def test_no_spill_transient_expiry_drops_with_ledger_and_stays_in_ram(caplog):
+    """spill=None (không có lưới đĩa) — cửa 2 KHÔNG mở: vào chế độ đĩa mà không có đĩa thì
+    mọi block mới bị bỏ suốt sự cố, tệ hơn hẳn bỏ đúng block cạn hạn chót. Ruling C-1:
+    bỏ block CŨ NHẤT có sổ (`no_spill_dropped`), ở lại chế độ RAM, xả tiếp block sau.
+    Trần RAM vẫn do cửa 1 canh."""
     clock = _Clock()
 
     class _Down:
@@ -203,11 +206,38 @@ def test_no_spill_available_drops_newest_with_ledger(tmp_path, caplog):
             clock.advance(61.0); raise ConnectionError("treo")
 
     w = ChWriter(_Down(), spill=None, clock=clock)
-    w.add(_n(1)); w.manage_once()
+    w.add(_n(1)); w.add(_n(2, "quote")); w.manage_once()  # hai block, hai bảng
     with caplog.at_level(logging.ERROR):
-        w.write_once(); w.write_once()
+        w.write_once()                                   # nhịp 1: block trade cạn hạn chót
+    assert w.metrics.counters["no_spill_dropped.trade"] == 1
+    assert w.metrics.counters.get("spill_drop_newest.trade") is None   # đường khác, đừng lẫn
+    assert w.metrics.counters.get("dropped_block.trade") is None       # tên cũ đã chết
+    assert "BỎ block trade" in caplog.text
+    assert not w.disk_mode                          # KHÔNG vào chế độ đĩa khi không có đĩa
+    # ...và hàng đợi vẫn xả tiếp: block sau tới lượt ở nhịp sau, không bị kẹt sau block đã bỏ
+    w.write_once()
+    assert w.metrics.counters["no_spill_dropped.quote"] == 1
+    assert not w.disk_mode
+    assert w.queue_rows == 0 and w.queue_rows == sum(len(p.block) for p in w.queue)
+
+
+def test_no_spill_door1_enters_disk_then_exits_after_drain(caplog):
+    """Cửa 1 thì NGƯỢC LẠI: trần RAM vỡ mà không có đĩa vẫn phải vào chế độ đĩa — đông cứng
+    đầu, bỏ block MỚI có sổ (`spill_drop_newest`, spec §6). Và phải RA được: điều kiện ra
+    coi `spill=None` là đĩa rỗng, không nổ AttributeError."""
+    ok = type("_Ok", (), {"insert": lambda self, *a, **k: None})()
+    w = ChWriter(ok, spill=None)
+    w.queue.append(_Pending("trade", [[None] * len(COLUMNS["trade"])] * (N_CAP_ROWS + 1)))
+    w.queue_rows = N_CAP_ROWS + 1
+    w.manage_once()
+    assert w.disk_mode and w.head_rows == N_CAP_ROWS + 1
+    with caplog.at_level(logging.ERROR):
+        w.add(_n(9)); w.manage_once()                   # block mới: không có đĩa → bỏ có sổ
     assert w.metrics.counters["spill_drop_newest.trade"] == 1
     assert "BỎ block trade" in caplog.text
+    w.write_once()                                      # xả đầu đông cứng
+    w.manage_once()                                     # kiểm điều kiện ra (spill=None)
+    assert not w.disk_mode and w.clean() and w.head_rows == 0
 
 
 def test_enter_disk_during_insert_removes_the_right_block(tmp_path):

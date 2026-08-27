@@ -240,18 +240,27 @@ class ChWriter:
         → đường thoát cuối duy nhất còn lại của mode run: bỏ block MỚI đến, kèm sổ sách đủ
         để dựng lại thủ công từ bản đo (spec §6) — counter tách theo bảng + một dòng log
         cấu trúc chỉ đúng khoảng `received_at` bị thủng."""
-        n_rows = len(p.block)
         if self.spill is not None and self.spill.write(p.table, p.block, kind):
             self.metrics.inc("spill_blocks")
-            self.metrics.inc("spill_rows", n_rows)
+            self.metrics.inc("spill_rows", len(p.block))
             self._disk_blocks += 1
             return
-        self.metrics.inc(f"spill_drop_newest.{p.table}", n_rows)
+        self._drop_ledger(p, "spill_drop_newest", "không ghi được xuống đĩa")
+
+    def _drop_ledger(self, p: _Pending, counter: str, reason: str) -> None:
+        """Bỏ một block KÈM SỔ SÁCH — nguyên tắc spec §6: mọi mất mát phải đếm được và
+        định vị được. Counter tách theo bảng, đếm theo DÒNG; một dòng log cấu trúc chỉ đúng
+        khoảng `received_at` bị thủng để người dựng lại thủ công từ bản đo biết tìm ở đâu.
+        Hai đường gọi, hai counter — đừng gộp làm một vì chúng nói hai chuyện khác nhau:
+        `spill_drop_newest` = có đĩa nhưng đĩa từ chối (đầy/lỗi I/O) hoặc đang ở chế độ đĩa
+        mà không có đĩa; `no_spill_dropped` = cấu hình suy giảm, chạy không có lưới đĩa."""
+        n_rows = len(p.block)
+        self.metrics.inc(f"{counter}.{p.table}", n_rows)
         ra = RA_IDX[p.table]
         stamps = [r[ra] for r in p.block if r[ra] is not None]
-        log.error("BỎ block %s — n_rows=%d received_at_min=%s received_at_max=%s "
-                  "(không ghi được xuống đĩa)", p.table, n_rows,
-                  min(stamps, default=None), max(stamps, default=None))
+        log.error("BỎ block %s — n_rows=%d received_at_min=%s received_at_max=%s (%s)",
+                  p.table, n_rows, min(stamps, default=None),
+                  max(stamps, default=None), reason)
 
     def write_once(self, budget_s: float = WRITE_CALL_BUDGET_S) -> None:
         """Vòng GHI: một hạn mức thời gian mỗi lần gọi. Chỉ giữ `_lock` để peek/pop —
@@ -304,6 +313,18 @@ class ChWriter:
                     if self._detach_front(p) is None:
                         return
                     code, rep = self._last_err
+                    if self.spill is None or not self.spill.owned:
+                        # CẤU HÌNH SUY GIẢM — chạy KHÔNG có lưới đĩa (chưa dựng spill, hoặc
+                        # thư mục đang bị tiến trình khác giữ, spec §4). Cửa 2 KHÔNG mở ở
+                        # đây: vào chế độ đĩa mà không có đĩa thì mọi block MỚI bị bỏ suốt
+                        # sự cố, tệ hơn hẳn bỏ đúng một block cạn hạn chót rồi xả tiếp. Bỏ
+                        # block cũ nhất, có sổ đầy đủ (spec §6), ở lại chế độ RAM — trần RAM
+                        # vẫn do CỬA 1 canh, nên không quay lại được bệnh phình vô hạn.
+                        self._drop_ledger(
+                            p, "no_spill_dropped",
+                            f"cạn ngân sách retry {RETRY_BUDGET_S}s, không có lưới đĩa: "
+                            f"code={code} {rep}")
+                        continue                # hàng đợi xả tiếp block sau, không kẹt
                     log.warning("block %s (%d dòng) cạn ngân sách retry %ds → xuống đĩa: "
                                 "code=%s %s", p.table, len(p.block), RETRY_BUDGET_S, code, rep)
                     self._spill_block(p, "r")
