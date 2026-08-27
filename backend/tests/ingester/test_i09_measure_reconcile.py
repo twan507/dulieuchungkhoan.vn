@@ -4,7 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
-from ingester.measure import MeasureWriter
+from ingester.measure import MeasureWriter, prune_old
 from ingester.reconcile import _classify, reconcile
 
 
@@ -34,6 +34,39 @@ def test_measure_rotates_by_hour(tmp_path):
     names = sorted(p.name for p in tmp_path.iterdir())
     assert len(names) == 2
     assert all(n.endswith(".jsonl.gz") for n in names)
+
+
+def test_prune_old_removes_only_old_date_dirs(tmp_path):
+    """Chính sách giữ 30 ngày (roadmap §2.1): chỉ xoá thư mục tên YYYYMMDD quá hạn,
+    không đụng thư mục khác tên hay file rời."""
+    old = tmp_path / "20260601"
+    old.mkdir()
+    (old / "frames-20260601-09.jsonl.gz").write_bytes(b"x")
+    fresh = tmp_path / "20260826"
+    fresh.mkdir()
+    notes = tmp_path / "notes"
+    notes.mkdir()
+    stray = tmp_path / "frames-stray.jsonl"
+    stray.write_text("x", encoding="utf-8")
+
+    removed = prune_old(tmp_path, keep_days=30, today=date(2026, 8, 27))
+
+    assert removed == ["20260601"]
+    assert not old.exists()
+    assert fresh.exists() and notes.exists() and stray.exists()
+
+
+def test_prune_old_boundary_keeps_exactly_30_days(tmp_path):
+    # 2026-08-27 − 30 ngày = 2026-07-28 (tính tay): ngày đó GIỮ, trước đó một ngày XOÁ
+    keep = tmp_path / "20260728"
+    keep.mkdir()
+    drop = tmp_path / "20260727"
+    drop.mkdir()
+
+    removed = prune_old(tmp_path, keep_days=30, today=date(2026, 8, 27))
+
+    assert removed == ["20260727"]
+    assert keep.exists() and not drop.exists()
 
 
 def test_reconcile_classifies(migrated):

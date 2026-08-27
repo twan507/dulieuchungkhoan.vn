@@ -27,7 +27,7 @@ from ingester import leader as leader_mod
 from ingester import state as state_mod
 from ingester.chwriter import RETRY_BUDGET_S, ChWriter
 from ingester.dedup import FrameDedup, Stamper, frame_key
-from ingester.measure import MeasureWriter
+from ingester.measure import MeasureWriter, prune_old
 from ingester.normalize import (
     Metrics,
     NormalizeError,
@@ -123,6 +123,9 @@ def _measure_deadline(minutes: float | None) -> datetime:
 
 async def _run_measure(minutes: float | None, out: str | None) -> int:
     cfg = config.load(need_db=False)
+    removed = prune_old(cfg.measure_dir)
+    if removed:
+        log.info("measure: dọn %d thư mục đo quá 30 ngày: %s", len(removed), removed)
     out_dir = Path(out) if out else cfg.measure_dir / datetime.now(TZ).strftime("%Y%m%d")
     catalog = await asyncio.to_thread(cat.build_catalog)
     deriv = await asyncio.to_thread(cat.fetch_derivative_symbols)

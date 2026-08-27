@@ -3,13 +3,35 @@ from __future__ import annotations
 
 import gzip
 import json
+import re
 import shutil
 import time
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 TZ = ZoneInfo("Asia/Ho_Chi_Minh")
+
+# Chính sách giữ bản đo thô (roadmap §2.1, đo 2026-08-27): ~93 MB gzip/ngày,
+# giữ 30 ngày ≈ 2,8 GB — đĩa VPS 60 GB không gánh nổi vô thời hạn.
+KEEP_DAYS = 30
+
+
+def prune_old(root: Path, keep_days: int = KEEP_DAYS, today: date | None = None) -> list[str]:
+    """Xoá thư mục đo tên YYYYMMDD quá `keep_days` ngày; trả về tên đã xoá (sorted)."""
+    cutoff = (today or datetime.now(TZ).date()) - timedelta(days=keep_days)
+    removed: list[str] = []
+    for p in sorted(Path(root).iterdir()):
+        if not (p.is_dir() and re.fullmatch(r"\d{8}", p.name)):
+            continue
+        try:
+            d = datetime.strptime(p.name, "%Y%m%d").date()
+        except ValueError:
+            continue
+        if d < cutoff:
+            shutil.rmtree(p)
+            removed.append(p.name)
+    return removed
 
 
 class MeasureWriter:
