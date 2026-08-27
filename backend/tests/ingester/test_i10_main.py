@@ -143,7 +143,7 @@ def test_on_packet_unknown_event_dropped():
 
 def _fake_reconcile_config(tmp_path):
     return IngesterConfig(clickhouse_url="fake://", redis_url="", log_dir=tmp_path,
-                          measure_dir=tmp_path)
+                          measure_dir=tmp_path, spill_dir=tmp_path)
 
 
 def test_run_reconcile_mode_returns_0_when_no_p1_p2(tmp_path, monkeypatch):
@@ -404,7 +404,7 @@ def test_run_mode_returns_exit_3_when_clickhouse_unreachable(tmp_path, monkeypat
     from clickhouse_connect.driver.exceptions import OperationalError
 
     cfg = IngesterConfig(clickhouse_url="fake://", redis_url="redis://x",
-                         log_dir=tmp_path, measure_dir=tmp_path)
+                         log_dir=tmp_path, measure_dir=tmp_path, spill_dir=tmp_path)
     monkeypatch.setattr(main_mod.config, "load", lambda need_db: cfg)
 
     def _boom(**kw):

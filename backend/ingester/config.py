@@ -15,6 +15,7 @@ class Config:
     redis_url: str
     log_dir: Path
     measure_dir: Path
+    spill_dir: Path
 
 
 def load(need_db: bool) -> Config:
@@ -29,6 +30,8 @@ def load(need_db: bool) -> Config:
     runtime = REPO_ROOT.parent / "dlck-runtime"
     log_dir = Path(os.environ.get("INGESTER_LOG_DIR") or runtime / "logs")
     measure_dir = Path(os.environ.get("INGESTER_MEASURE_DIR") or runtime / "measure")
+    spill_dir = Path(os.environ.get("INGESTER_SPILL_DIR") or runtime / "spill")
     log_dir.mkdir(parents=True, exist_ok=True)
     measure_dir.mkdir(parents=True, exist_ok=True)
-    return Config(ch, rd, log_dir, measure_dir)
+    spill_dir.mkdir(parents=True, exist_ok=True)
+    return Config(ch, rd, log_dir, measure_dir, spill_dir)
