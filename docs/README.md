@@ -51,15 +51,11 @@ Mục lục chi tiết từng file: [10-sources/README.md](10-sources/README.md)
 
 ### 20 · Thiết kế — *explanation*
 
-| File | Nội dung | Trạng thái |
-|---|---|---|
-| [service-topology.md](20-design/service-topology.md) | Ranh giới process backend · ba tiến trình `ingester`/`etl`/`api` · ai ghi miền nào · rate limiter Redis · lát cắt writer trước | ✅ chốt trước khi viết code |
-| [test-strategy.md](20-design/test-strategy.md) | Công cụ test theo stack · cấm gọi thật nguồn ngoài trong CI · DB test thật · chống test giả | ✅ chốt định hướng |
-| [market-data-store.md](20-design/market-data-store.md) | Cách ly hoàn toàn · Ingester + SSE · **hợp đồng ghi ClickHouse §3.7** · ETL · giám sát hợp đồng · lược đồ Timescale §5 giữ làm bối cảnh lịch sử | ✅ đã duyệt · cập nhật theo ClickHouse 2026-08-26 (ba banner đầu trang nói rõ phần nào đã bị thay) |
-| [news-pipeline.md](20-design/news-pipeline.md) | Lưới AI không đường tắt · taxonomy 20 sub · gắn mã 3 tầng · kho toàn văn | ✅ đã duyệt |
-| [chatbot-semantic-layer.md](20-design/chatbot-semantic-layer.md) | Luật phân định 4 tầng · 8 function · ba quy tắc nối dữ liệu vào skill | 🟡 **đề xuất, chưa duyệt** |
-| [market-field-selection.md](20-design/market-field-selection.md) | Bảng lấy/bỏ từng trường cho ETL thị trường — 213 dòng, lý do tại chỗ, kèm [bản JSON máy đọc](20-design/market-field-selection.json). Cả hai sinh tự động từ [`gen_field_selection.py`](20-design/gen_field_selection.py), cấm sửa tay | ✅ đã chốt |
-| [industry-tree.md](20-design/industry-tree.md) | **Cây ngành riêng 6 nhóm × 24 ngành** — chủ sở hữu nội dung cây · quy tắc đặt tên · nguyên tắc gán mã · điểm mở cấp mã | ✅ chốt 2026-08-25 |
+**Danh sách file do [`20-design/README.md`](20-design/README.md) sở hữu** — không chép lại ở đây, hai bản sẽ trôi lệch (§1.6). Bản chép cũ đã thiếu `industry-mapping.md` và còn tả `industry-tree.md` bằng một mục §5 đã bị xoá.
+
+Vào đó nếu muốn biết: ranh giới process · chiến lược test · kho dữ liệu thị trường · pipeline tin · tầng ngữ nghĩa chatbot · chọn trường ETL · **cây ngành** và **bảng map ngành**.
+
+⚠️ Bốn file trong đó **sinh tự động, cấm sửa tay** — `market-field-selection.*` và `industry-mapping.*`.
 
 ### 30 · Tri thức chuyên môn
 

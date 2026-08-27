@@ -73,7 +73,7 @@ Ba việc 1b–3 đều **phụ thuộc bên ngoài**, không tự làm được
                     └─→ [14] Test lại vòng 6 CÓ function calling
 ```
 
-**[6] là nút thắt thật của cả hệ** — và **đã thông 2026-08-26 đêm**: job `python -m etl refdata` chạy thật 2 lượt (idempotent), 2.015 security · 1.550 issuer · 176 mã ICB vào kho, task `dlck-refdata` 08:00/ngày; hồ sơ: [plans/2026-08-26-reference-data-etl/](../90-records/plans/2026-08-26-reference-data-etl/). ⚠️ **Phần NGÀNH hoãn có chủ đích** (quyết định chủ dự án): `industry_icb_map` + `issuer.industry_id` còn rỗng ⇒ [7] ETL giá mở khoá NGAY, nhưng tầng lọc tin theo ngành của [10] và khung ngành cho skill **vẫn chờ lát ngành**.
+**[6] là nút thắt thật của cả hệ** — và **đã thông 2026-08-26 đêm**: job `python -m etl refdata` chạy thật 2 lượt (idempotent), 2.015 security · 1.550 issuer · 176 mã ICB vào kho, task `dlck-refdata` 08:00/ngày; hồ sơ: [plans/2026-08-26-reference-data-etl/](../90-records/plans/2026-08-26-reference-data-etl/). ⚠️ **Phần NGÀNH: nội dung ĐÃ THIẾT KẾ XONG 2026-08-27** — map hai lớp (56 dòng ICB + 161 dòng gán tay), chủ sở hữu [industry-mapping.md](../20-design/industry-mapping.md) + bản máy đọc `.json`. **Nhưng CHƯA NẠP vào DB** *(kiểm 2026-08-27 15:20: `industry_icb_map` 0 dòng · `issuer.industry_id` 0 · bảng `issuer_industry_override` chưa tồn tại · migration dừng ở `0010`)*. Còn thiếu: migration seed + cột/bảng override + đường đọc `COALESCE(lớp 2, lớp 1)`. Cho tới khi nạp: [7] ETL giá mở khoá NGAY, còn tầng lọc tin theo ngành của [10] và khung ngành cho skill **vẫn chặn**.
 
 ## 4. Việc đã có đáp án, chỉ cần áp dụng
 
