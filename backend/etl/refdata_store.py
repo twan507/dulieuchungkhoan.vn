@@ -241,14 +241,46 @@ def apply(conn, target: TargetState, delist: list[str]) -> dict:
         )
     )
     # Số đo TRẠNG THÁI toàn bảng sau lượt gán (gauge), không phải số phát sinh trong lượt
-    # như các counter khác cùng dict — đặt tên theo đúng nghĩa đó.
+    # như các counter khác cùng dict — đặt tên theo đúng nghĩa đó. Đếm trên
+    # market.v_issuer_industry (COALESCE tay + máy), KHÔNG trên cột issuer.industry_id
+    # thẳng — issuer.industry_id chỉ là lớp 1, một issuer có override tay mà mã ICB
+    # chưa vào map vẫn CÓ ngành qua view dù cột lớp 1 NULL.
     stats["issuers_without_industry"] = conn.execute(
-        sa.text("SELECT count(*) FROM market.issuer WHERE industry_id IS NULL")
+        sa.text(
+            "SELECT count(*) FROM market.issuer iss"
+            " LEFT JOIN market.v_issuer_industry v ON v.issuer_id = iss.issuer_id"
+            " WHERE v.industry_id IS NULL"
+        )
     ).scalar_one()
     if stats["issuers_without_industry"]:
         log.warning(
-            "%d doanh nghiệp không tra được ngành từ industry_icb_map — để NULL, không chặn job",
+            "%d doanh nghiệp không tra được ngành (cả tay lẫn máy) — để NULL, không chặn job",
             stats["issuers_without_industry"],
+        )
+
+    # Chốt chặn luật BCTC (spec §2b): com_type_code NH|CK|BH ⟺ ngành NGANHANG|
+    # CHUNGKHOAN|BAOHIEM, không ngoại lệ. Ba ngành đó là ba MẪU BÁO CÁO TÀI CHÍNH
+    # khác nhau — trộn một doanh nghiệp thường vào là hỏng mọi phép tính trên nhóm.
+    # Đếm, cảnh báo, KHÔNG chặn job: một mã mới niêm yết gán lệch không đáng để mất
+    # cả lượt danh bạ.
+    stats["bctc_violations"] = conn.execute(
+        sa.text(
+            "SELECT count(*) FROM market.issuer iss"
+            " LEFT JOIN market.v_issuer_industry v ON v.issuer_id = iss.issuer_id"
+            " LEFT JOIN market.industry i ON i.industry_id = v.industry_id"
+            " WHERE (coalesce(iss.com_type_code, '') = 'NH')"
+            "        IS DISTINCT FROM (coalesce(i.code, '') = 'NGANHANG')"
+            "    OR (coalesce(iss.com_type_code, '') = 'CK')"
+            "        IS DISTINCT FROM (coalesce(i.code, '') = 'CHUNGKHOAN')"
+            "    OR (coalesce(iss.com_type_code, '') = 'BH')"
+            "        IS DISTINCT FROM (coalesce(i.code, '') = 'BAOHIEM')"
+        )
+    ).scalar_one()
+    if stats["bctc_violations"]:
+        log.warning(
+            "%d doanh nghiệp vi phạm luật BCTC (com_type_code ⟺ ngành tài chính)"
+            " — xem market.v_issuer_industry",
+            stats["bctc_violations"],
         )
 
     # 5. delist — không bao giờ xoá dòng

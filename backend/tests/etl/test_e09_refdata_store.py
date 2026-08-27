@@ -18,6 +18,18 @@ def _as_etl(db):
 
 
 def test_apply_twice_is_idempotent_including_timestamps(db):
+    """`now()` trong Postgres là transaction_timestamp() — fixture `db` mở MỘT
+    transaction cho cả test nên updated_at không đổi trong cùng transaction dù dòng
+    có bị ghi lại hay không (không bao giờ đỏ vì lý do timestamp). Chụp thêm `xmin`
+    — đổi khi và chỉ khi dòng thật sự được ghi lại, độc lập với `now()` — để phép
+    kiểm bắt được đúng thứ nó tuyên bố (final-fix việc 6).
+
+    `xmin` tự nó CŨNG không phân biệt được nếu lượt hai chạy trong CÙNG transaction
+    top-level với lượt một — Postgres gán lại y hệt một xmin cho mọi lần ghi trong
+    cùng transaction (đã kiểm tay bằng psql: hai UPDATE liên tiếp không SAVEPOINT
+    ra CÙNG một xmin). Bọc lượt hai trong SAVEPOINT (`begin_nested`, khuôn
+    `expect_violation` ở conftest) để nó có subxact riêng — chỉ khi đó xmin mới đổi
+    đúng lúc dòng thật sự bị ghi lại."""
     _as_etl(db)
     t = _target()
     delist, _, _ = refdata_store.plan_delist(db, t)
@@ -28,13 +40,19 @@ def test_apply_twice_is_idempotent_including_timestamps(db):
     ing1 = db.execute(sa.text(
         "SELECT source, external_code, ingested_at FROM market.security_external_id ORDER BY 1,2"
     )).all()
+    snap_issuer = db.execute(sa.text(
+        "SELECT issuer_id, xmin::text FROM market.issuer ORDER BY issuer_id")).all()
+    nested = db.begin_nested()                          # subxact riêng cho lượt hai
     stats2 = refdata_store.apply(db, t, [])
+    nested.commit()
     assert db.execute(sa.text(
         "SELECT ticker, exchange, security_type, status, updated_at FROM market.security ORDER BY ticker"
     )).all() == snap1                                   # updated_at KHÔNG đổi lượt hai
     assert db.execute(sa.text(
         "SELECT source, external_code, ingested_at FROM market.security_external_id ORDER BY 1,2"
     )).all() == ing1                                    # ingested_at KHÔNG đổi
+    assert db.execute(sa.text(
+        "SELECT issuer_id, xmin::text FROM market.issuer ORDER BY issuer_id")).all() == snap_issuer
     assert stats2["sec_inserted"] == 0 and stats2["sec_updated"] == 0
 
 
@@ -130,7 +148,10 @@ def _icb_of(db, organ_code):
 
 def test_layer1_exact_icb_match_wins_over_ancestor(db):      # seam: luật phân giải
     _as_etl(db)
-    iid = _synthetic(db, "9991", "9000/9900/9990/9991")
+    # path KHÔNG chứa chính mã lá "9991" — nếu path có chứa nó thì nhánh leo path
+    # MỘT MÌNH cũng trả về "9991", nên xoá hẳn nhánh khớp-chính-xác vẫn xanh (lỗ hổng
+    # đã bắt được ở final review: final-fix việc 5).
+    iid = _synthetic(db, "9991", "9000/9900/9990")
     _seed_map(db, "9990", "XAYDUNG")                          # tổ tiên trực tiếp
     _seed_map(db, "9991", "DANDUNG")                          # khớp chính xác
     refdata_store.apply(db, _target(), [])
@@ -246,19 +267,25 @@ BCTC_PROBE = (                                   # dò cả hai chiều, KHÔNG 
 
 
 def test_bctc_rule_is_bidirectional_on_view(db):
-    """com_type_code NH|CK|BH ⟺ ngành NGANHANG|CHUNGKHOAN|BAOHIEM, không ngoại lệ."""
+    """com_type_code NH|CK|BH ⟺ ngành NGANHANG|CHUNGKHOAN|BAOHIEM, không ngoại lệ.
+
+    Khoá luôn stats["bctc_violations"] trả về từ apply() — chốt chặn chạy lúc
+    apply() dùng đúng câu BCTC_PROBE này (spec §2b), không phải chỉ có ở test.
+    """
     _as_etl(db)
     t = _target()
     refdata_store.apply(db, t, [])
     icb = _icb_of(db, "NHN")                      # NHN là com_type_code 'CT'
     _seed_map(db, icb, "NGANHANG")                # cố tình đẩy một DN 'CT' vào ngành ngân hàng
-    refdata_store.apply(db, t, [])
+    stats_bad = refdata_store.apply(db, t, [])
     assert db.execute(sa.text(BCTC_PROBE)).all(), \
         "câu dò vi phạm phải BẮT được ca dựng sẵn — nếu rỗng thì chính nó hỏng"
+    assert stats_bad["bctc_violations"] >= 1
 
     _seed_map(db, icb, "DANDUNG")                 # trả về đúng
-    refdata_store.apply(db, t, [])
+    stats_clean = refdata_store.apply(db, t, [])
     assert db.execute(sa.text(BCTC_PROBE)).all() == []
+    assert stats_clean["bctc_violations"] == 0
 
 
 def test_bctc_probe_catches_bank_without_industry(db):
