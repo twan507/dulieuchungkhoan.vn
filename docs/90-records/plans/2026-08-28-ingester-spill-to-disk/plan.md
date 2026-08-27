@@ -41,7 +41,7 @@
 
 ---
 
-# PHASE A — đo trước (merge riêng, chạy một phiên thật, rồi mới Phase B)
+# PHASE A — đo trước (quyết định chủ dự án 2026-08-27 tối: KHÔNG chờ phiên mới — probe + số phiên 27/08 đủ điền hằng số; phiên 28/08 là phiên KIỂM CHỨNG)
 
 ### Task 1: Metrics nền — gauge độ sâu, timing insert, hai counter còn thiếu
 
@@ -294,11 +294,14 @@ def test_probe_dedup_and_pickle_size(migrated):
 
 ### Task 3 🔴 GATE — controller + chủ dự án, KHÔNG giao subagent
 
-- [ ] Merge nhánh Phase A vào `main` (đủ suite xanh), để phiên giao dịch kế tiếp chạy với metrics mới.
-- [ ] Sau phiên: đọc log lấy `pending_depth` p99 nền, `insert percentiles` (dev), nhịp block/dòng đến đỉnh (từ gauge + counters, KHÔNG dùng ước lượng 1,3 block/s — spec §10.2).
-- [ ] Điền hằng số theo công thức spec §2.5: `N_CAP_ROWS` (≥ 10× p99 nền, × 497 B ≤ ~50 MB) · `K_REPLAY_ROWS` (> nhịp dòng đỉnh × 3, và × p95 < 1 s — dùng p95 hồ sơ VPS hẹp từ Task 2b) · `SPILL_CAP_BYTES` (≥ 2 giờ tải đỉnh × 3, theo byte/dòng đo ở PROBE 2).
+*(Điều chỉnh 2026-08-27 tối, quyết định chủ dự án: điền hằng số NGAY từ probe Task 2 + số phiên thật 27/08 đã nằm trong brief — không chờ phiên mới. Phiên 28/08 chạy code mới + `--measure` song song trở thành phiên KIỂM CHỨNG: xác nhận gauge/percentiles dưới tải thật và chạy AC3. Nếu số phiên 28/08 lệch đáng kể số điền, cập nhật hằng số như một follow-up có số đo — không phải mở lại gate.)*
+
+- [ ] **Thêm vào probe Task 2 một phép đo p95 insert:** insert lặp 200 block tổng hợp 5.000 dòng `rt.trade` + 200 block nhỏ 50 dòng, lấy p50/p95/p99 mỗi cỡ — chạy trên CẢ hồ sơ dev lẫn hồ sơ VPS hẹp. Dán số vào ledger.
+- [ ] Nhịp đến đỉnh lấy từ brief §3.1 (phiên thật 27/08): **6.496 dòng/s** · block-arrival ≈ 5–6 block/s (mỗi bảng một block/nhịp + cap-cut) — KHÔNG dùng ước lượng 1,3 block/s (spec §10.2).
+- [ ] Điền hằng số theo công thức spec §2.5: `N_CAP_ROWS` (× 497 B ≤ ~50 MB, và ≥ vài giây ATO đỉnh × 3) · `K_REPLAY_ROWS` (> nhịp dòng đỉnh × 3, và × p95_per_dòng < 1 s — dùng p95 hồ sơ VPS hẹp) · `SPILL_CAP_BYTES` (≥ 2 giờ tải đỉnh × 3, theo byte/block đo PROBE 2).
 - [ ] **Kiểm điều kiện khả thi spec §2.4** — `nhịp_dòng_đỉnh × p95_per_dòng < 1`. Vỡ ⇒ DỪNG, báo chủ dự án, không tự chọn K.
-- [ ] Cập nhật giá trị tạm trong Global Constraints của plan này + ghi số vào spec §2.5 (kèm ngày đo). Báo chủ dự án số chốt trước khi mở Phase B.
+- [ ] Cập nhật giá trị tạm trong Global Constraints của plan này + ghi số vào spec §2.5 (kèm ngày đo, nguồn "probe tổng hợp + phiên 27/08"). Báo chủ dự án số chốt trước khi mở Phase B.
+- [ ] **Sau phiên 28/08** (mục kiểm chứng, không chặn Phase B): đối chiếu `pending_depth` p99 + `insert percentiles` log phiên thật với số probe; lệch >2× thì cập nhật hằng số + ghi ledger.
 
 ---
 
