@@ -48,6 +48,25 @@ def test_unknown_stocktype_skipped_and_counted():
     assert not any(q.symbol == "ZZZ" for q in n.quotes)
 
 
+def test_icb_code_path_strips_source_whitespace():
+    """Đo trên DB thật: dòng '0580' có icbCodePath = '0001/0500/0580\\r\\n' (1/176
+    dòng nguồn). Luật leo path so khớp từng phần tử ĐÚNG TỪNG BYTE — rác ở cuối path
+    làm mã lá mới rơi NULL âm thầm. .strip() phải cắt sạch (final-fix việc 7)."""
+    raw = _raw()
+    d = json.loads(raw["icb"])
+    items = d["items"] if isinstance(d, dict) else d
+    for r in items:
+        if r["icbCode"] == "0580":
+            r["icbCodePath"] = "0001/0500/0580\r\n"
+            break
+    else:
+        raise AssertionError("fixture không còn dòng icbCode=0580")
+    raw["icb"] = json.dumps({"items": items} if isinstance(d, dict) else items)
+    n = normalize(raw)
+    rec = next(r for r in n.icb if r.icb_code == "0580")
+    assert rec.icb_code_path == "0001/0500/0580"
+
+
 def test_junk_row_disappearing_still_passes():
     """Seam 3 (bổ sung final review): indexsnaps mất một DÒNG RÁC (20→19 thô)
     vẫn đủ 18 mã thật — không được làm chốt chặn nổ oan."""

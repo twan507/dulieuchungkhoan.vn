@@ -150,7 +150,10 @@ def normalize(raw: dict[str, str]) -> NormResult:
             icb_name=r.get("icbName"),
             parent_icb_code=r.get("parentIcbCode"),
             icb_level=r.get("icbLevel"),
-            icb_code_path=r.get("icbCodePath"),
+            # Rác nguồn ĐO THẬT: dòng '0580' có icbCodePath = "0001/0500/0580\r\n"
+            # (1/176 dòng). Luật leo path so sánh phần tử ĐÚNG TỪNG BYTE (refdata_store
+            # 4c) nên rác ở CUỐI path làm mã lá mới rơi NULL âm thầm — .strip() ở đây.
+            icb_code_path=(p.strip() if (p := r.get("icbCodePath")) is not None else None),
         )
         for r in _unwrap_items(raw["icb"])
     ]
