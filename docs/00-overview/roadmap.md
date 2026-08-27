@@ -48,9 +48,32 @@ Ba việc 1b–3 đều **phụ thuộc bên ngoài**, không tự làm được
 | # | Việc | Vì sao không hoãn được |
 |---|---|---|
 | **4** | **Ingester realtime + tích luỹ `bar_1m`** — 🟡 *code đã dựng xong 2026-08-26 ([hồ sơ lát cắt](../90-records/plans/2026-08-26-ingester-omo-first-slice/)); đã bắt được **một phiên chiều** bằng chế độ `--measure` (2,3 triệu frame). Phiên đo trọn trong giờ giao dịch (SM + phái sinh §5.1 + giờ đẩy idx — spec ClickHouse §4.1/§10) **vẫn cần**, nhưng không còn chặn: ✅ **GATE MỞ 2026-08-26 tối (quyết định chủ dự án).** Hai minor M-new-1 (phân loại lỗi ghi theo mã số) và M-new-3 (ngân sách xả cuối phiên) đã sửa; điều kiện thứ ba — phiên đo trọn ngày — chuyển thành **chạy song song** thay vì chạy trước: `dlck-ingester` ghi thật, `dlck-ingester-measure` bắt frame thô cùng lúc làm lưới an toàn và đồng thời trả lời câu hỏi `SM` mà [spec ClickHouse §4.1](../90-records/plans/2026-08-25-clickhouse-realtime-store/spec.md) đòi. Phiên ghi đầu tiên: **27/08**. Chạy thử đường ghi dưới quyền production trước khi bật đã lộ một bug chặn hẳn (`assert_migrated` đòi DDL) — xem [ledger](../90-records/plans/2026-08-26-ingester-omo-first-slice/ledger.md)* | Nến intraday **không tồn tại ở bất kỳ nguồn nào**. Mọi dữ liệu khác crawl lại lúc nào cũng được, riêng cái này không |
+| **4b** | **Cho `--measure` chạy thường trực song song phiên ghi** — task một-lần `dlck-ingester-measure` đổi thành hằng ngày. *Việc nhỏ, độc lập, làm được ngay — không phải chờ [lát tràn-ra-đĩa](../90-records/plans/2026-08-28-ingester-spill-to-disk/brief.md)* | Mỗi phiên chạy không có bản thô là một phiên **không thể dựng lại và không thể nghiệm thu**. Chi tiết ở §2.1 dưới |
 | **5** | **Backfill lịch sử tin** từ sitemap TinnhanhCK / BNews / NguoiQuanSat | Dữ liệu chỉ còn chừng nào họ còn giữ sitemap |
 
 **Ingester chờ hạ tầng DB — quyết định chủ dự án 2026-08-15.** Nó không còn chạy song song ngay từ đầu nữa mà xếp sau [1]. Lý do gấp thì **không mất đi**: mỗi ngày chưa có Ingester vẫn là một ngày nến 1 phút mất vĩnh viễn, không nguồn nào backfill lại được. Đó chính là **lý do dựng hạ tầng DB là việc kế tiếp** — làm xong hạ tầng là đồng hồ mất dữ liệu dừng lại. *(Cập nhật 2026-08-26: hạ tầng đã xong — điều kiện chờ đã hết.)*
+
+### 2.1 Vì sao `--measure` nên chạy thường trực
+
+*(Ghi 2026-08-27 sau phiên ghi thật đầu tiên — hôm đó nó chạy song song đúng một lần, và tự chứng minh giá trị.)*
+
+Nó làm **hai việc** mà không cơ chế nào khác đang làm:
+
+**1 · Lưới an toàn dựng lại được.** Đường ghi có một chỗ hở đã biết: hàng đợi `pending` không trần, nên ATO mạnh trùng lúc ClickHouse trục trặc có thể làm tiến trình OOM và **mất sạch dữ liệu trong bộ nhớ, im lặng** *(phân tích đầy đủ ở [brief tràn-ra-đĩa](../90-records/plans/2026-08-28-ingester-spill-to-disk/brief.md) §2)*. Có bản thô thì mất là **dựng lại được**; không có thì mất vĩnh viễn. Lát tràn-ra-đĩa sẽ vá chỗ hở, nhưng **chưa làm xong ngày nào thì ngày đó vẫn hở** — mà việc này làm được ngay.
+
+**2 · Đường nghiệm thu *"không mất dòng nào"* bằng SỐ.** Bản thô là **đếm độc lập** với kho, cùng một phiên, hai tiến trình không dùng chung gì ngoài socket. Đó là cách duy nhất chứng minh tính toàn vẹn bằng con số thay vì bằng lập luận — và là tiêu chí nghiệm thu mà lát tràn-ra-đĩa sẽ cần.
+
+Phiên 2026-08-27 chạy cả hai: `t` khớp **205.130 = 205.130** và `ptm` khớp **2.298 = 2.298** tuyệt đối. *(Các topic khác chênh ~0,09%, phần lớn do `dup_dropped = 1.953` và 5 phút đuôi. ⚠️ Chưa phải bằng chứng: measure đếm **frame**, kho đếm **dòng** — một frame mang nhiều bản ghi trong mảng `d[]`. Muốn thành phép nghiệm thu thật thì phải đếm bản ghi trong `d[]`, không đếm frame.)*
+
+**Chi phí:** **93 MB gzip một ngày** *(đo 2026-08-27, trọn phiên)* ≈ 23 GB/năm nếu giữ hết — nên **phải kèm chính sách xoá**, không giữ vô hạn. Gợi ý: giữ ~30 ngày rồi xoá, hoặc giữ tới khi lát tràn-ra-đĩa xong thì rút xuống vài ngày. Đĩa VPS 60 GB không gánh nổi bản thô vô thời hạn.
+
+**Việc phải làm** *(nhỏ, rời nhau)*:
+
+1. `scripts/register-tasks.ps1`: `dlck-ingester-measure` từ `-Once` chuyển thành hằng ngày *(bỏ chốt chặn "đã tồn tại thì giữ nguyên" — chốt đó dựng cho task một-lần)*.
+2. Thêm chính sách xoá file đo cũ — một task dọn, hoặc một dòng trong job sẵn có.
+3. Kiểm ngân sách RAM: hai tiến trình cùng chạy tốn **97 + 13 MB** *(đo 2026-08-27)*, vẫn nằm trong ngân sách 200 MB của [service-topology §7b](../20-design/service-topology.md) — nhưng ghi lại để không quên khi lên VPS 6 GiB.
+
+⚠️ **Một điều chưa đo:** hai tiến trình mở **hai socket riêng** tới BVSC. Hôm nay chạy song song trọn phiên không gặp vấn đề gì, nhưng chưa ai kiểm nguồn có giới hạn số kết nối không. Không chặn việc này, nhưng đừng suy ra là "chắc chắn an toàn với N kết nối".
 
 ## 3. Việc theo thứ tự phụ thuộc
 
