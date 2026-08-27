@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import sys
 import time
 from datetime import datetime, timedelta
@@ -27,15 +28,10 @@ from ingester import leader as leader_mod
 from ingester import spill as spill_mod
 from ingester import state as state_mod
 from ingester.chwriter import SPILL_CAP_BYTES, ChWriter
-from ingester.dedup import FrameDedup, Stamper, frame_key
+from ingester.dedup import FrameDedup, Stamper
 from ingester.measure import MeasureWriter, prune_old
-from ingester.normalize import (
-    Metrics,
-    NormalizeError,
-    normalize,
-    records_of,
-    symbol_of,
-)
+from ingester.normalize import COLUMNS, Metrics, records_of
+from ingester.pipeline import process_record
 from ingester.reconcile import reconcile
 
 log = logging.getLogger("ingester")
@@ -168,10 +164,11 @@ def make_on_packet(writer: ChWriter, metrics: Metrics, dedup: FrameDedup, stampe
                    is_leader: asyncio.Event, redis_queue: asyncio.Queue):
     """Đường xử lý một packet mode run (docstring — plan Task 16 §Interfaces):
 
-    raw → parse_packet → Event? name trong 5 topic? → frame_key + dedup.seen? bỏ
-        → symbol_of → None? bỏ → stamper.stamp → normalize
-        → NormalizeError? log+metric, bỏ
-        → is_leader? writer.add + đẩy vào queue cho task redis_consumer gọi RedisSink.apply
+    raw → parse_packet → Event? name trong 5 topic? → frame counter →
+        mỗi record trong `d`: `pipeline.process_record` (dedup → symbol_of → stamp →
+        normalize, spec §11 — CHUNG với bộ đếm `d[]` offline `measure_count.py`) →
+        None? bỏ → is_leader? writer.add + đẩy vào queue cho task redis_consumer gọi
+        RedisSink.apply
 
     Standby KHÔNG tích dòng vào ChWriter (review cuối CRITICAL 3): buffer standby mà
     được thăng cấp giữa chừng sẽ flush lại đúng những dòng leader cũ đã ghi — ghi đôi,
@@ -187,19 +184,8 @@ def make_on_packet(writer: ChWriter, metrics: Metrics, dedup: FrameDedup, stampe
         now = time.time()
         # Frame thật có vỏ sails.io: mỗi bản ghi trong `d` là MỘT dòng (đo 2026-08-26).
         for record in records_of(pkt.payload):
-            if dedup.seen(frame_key(event, record), now):
-                metrics.inc("dup_dropped")
-                continue
-            symbol = symbol_of(event, record)
-            if symbol is None:
-                metrics.inc("no_symbol_dropped")
-                continue
-            stamped_ms = stamper.stamp(symbol, int(now * 1000))
-            try:
-                n = normalize(event, record, stamped_ms, metrics)
-            except NormalizeError as e:
-                log.warning("normalize lỗi %s %s: %r", event, symbol, e)
-                metrics.inc("normalize_error")
+            n = process_record(event, record, now, dedup, stamper, metrics)
+            if n is None:
                 continue
             if is_leader.is_set():
                 writer.add(n)
@@ -207,6 +193,105 @@ def make_on_packet(writer: ChWriter, metrics: Metrics, dedup: FrameDedup, stampe
             else:
                 metrics.inc("not_leader_dropped")
     return on_packet
+
+
+def _resolve_count_dir(cfg: config.Config, count_arg: str) -> Path:
+    """`--count` nhận `YYYYMMDD` (dưới `measure_dir`) hoặc một đường dẫn thư mục thẳng."""
+    p = Path(count_arg)
+    return p if p.is_dir() else cfg.measure_dir / count_arg
+
+
+def _default_day_window(day_dir: Path) -> tuple[int, int]:
+    """Trọn ngày suy từ TÊN thư mục `YYYYMMDD` (mặc định khi thiếu `--from`/`--to`).
+
+    Tên không đúng dạng (đường `--out` tuỳ ý của mode measure) thì không suy được ngày —
+    không giới hạn, để `--from`/`--to` tự quyết định."""
+    try:
+        day = datetime.strptime(day_dir.name, "%Y%m%d").date()
+    except ValueError:
+        return 0, 2 ** 62
+    start = datetime(day.year, day.month, day.day, tzinfo=TZ)
+    end = start + timedelta(days=1) - timedelta(milliseconds=1)
+    return int(start.timestamp() * 1000), int(end.timestamp() * 1000)
+
+
+def _iso_to_ms(iso: str) -> int:
+    return int(datetime.fromisoformat(iso).replace(tzinfo=TZ).timestamp() * 1000)
+
+
+def _count_window(day_dir: Path, t_from: str | None, t_to: str | None) -> tuple[int, int]:
+    def_from_ms, def_to_ms = _default_day_window(day_dir)
+    from_ms = _iso_to_ms(t_from) if t_from else def_from_ms
+    to_ms = _iso_to_ms(t_to) if t_to else def_to_ms
+    return from_ms, to_ms
+
+
+def _query_actual_counts(client, t_from_ms: int, t_to_ms: int) -> dict[str, int]:
+    """count() rt.* cùng cửa sổ `received_at` — bằng `fromUnixTimestamp64Milli` trên
+    đúng hai mốc ms đã dùng phía đo, để hai vế so cùng một họ đồng hồ (spec §11.3:
+    so `received_at`, KHÔNG so `ts`; bảng cố định trong code, không phải input người
+    dùng, ghép thẳng tên bảng vào SQL là an toàn)."""
+    out: dict[str, int] = {}
+    for table in COLUMNS:
+        sql = (f"SELECT count() FROM rt.{table} WHERE received_at BETWEEN "
+              "fromUnixTimestamp64Milli({f:Int64}) AND fromUnixTimestamp64Milli({t:Int64})")
+        rows = client.query(sql, parameters={"f": t_from_ms, "t": t_to_ms}).result_rows
+        out[table] = int(rows[0][0])
+    return out
+
+
+def _print_count_report(counts: dict[str, int], actuals: dict[str, int] | None,
+                        metrics: Metrics) -> None:
+    header = f"{'bảng':<16}{'expected':>10}"
+    if actuals is not None:
+        header += f"{'actual':>10}{'diff':>10}"
+    print(header)
+    for table in COLUMNS:
+        exp = counts.get(table, 0)
+        line = f"{table:<16}{exp:>10}"
+        if actuals is not None:
+            act = actuals.get(table, 0)
+            line += f"{act:>10}{act - exp:>10}"
+        print(line)
+    print()
+    print("metrics (bộ đếm, cùng bộ luật process_record với mode run):",
+         dict(sorted(metrics.counters.items())))
+    print("Lưu ý: not_leader_dropped, replay_blocks và các counter PHIÊN khác KHÔNG nằm "
+         "trong bộ đếm offline này — đọc từ log phiên chạy thật của ngày này (spec §11).")
+
+
+async def _run_count(count_arg: str, t_from: str | None, t_to: str | None,
+                     use_db: bool) -> int:
+    """Bộ đếm `d[]` (spec spill §11) — replay bản đo qua ĐÚNG `process_record` của mode
+    run (dry-run, không chạm ClickHouse) rồi in bảng expected mỗi bảng; `--db` so thêm
+    actual/diff với count() rt.* cùng cửa sổ."""
+    cfg = config.load(need_db=False)
+    day_dir = _resolve_count_dir(cfg, count_arg)
+    if not day_dir.is_dir():
+        print(f"ingester: không thấy thư mục đo {day_dir}", file=sys.stderr)
+        return 2
+    t_from_ms, t_to_ms = _count_window(day_dir, t_from, t_to)
+    log.info("count: %s, cửa sổ [%d, %d] ms", day_dir, t_from_ms, t_to_ms)
+
+    # Import trễ: measure_count.py import EVENTS ngược lại từ module này (một nguồn sự
+    # thật duy nhất cho 5 topic có normalize) — import ở đỉnh file sẽ thành vòng.
+    from ingester.measure_count import count_measure
+    counts, metrics = await asyncio.to_thread(count_measure, day_dir, t_from_ms, t_to_ms)
+
+    actuals: dict[str, int] | None = None
+    if use_db:
+        ch_url = os.environ.get("CLICKHOUSE_INGESTER_URL", "")
+        if not ch_url:
+            print("ingester: --db cần biến môi trường CLICKHOUSE_INGESTER_URL", file=sys.stderr)
+            return 2
+        client = clickhouse_connect.get_client(dsn=ch_url)
+        try:
+            actuals = await asyncio.to_thread(_query_actual_counts, client, t_from_ms, t_to_ms)
+        finally:
+            client.close()
+
+    _print_count_report(counts, actuals, metrics)
+    return 0
 
 
 def _run_deadline(minutes: float | None, end_hm: tuple[int, int]) -> datetime:
@@ -557,11 +642,15 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
     return 1 if (result.p1 or result.p2) else 0
 
 
-async def run(mode: str, minutes: float | None = None, out: str | None = None, d=None) -> int:
+async def run(mode: str, minutes: float | None = None, out: str | None = None, d=None,
+             count: str | None = None, t_from: str | None = None, t_to: str | None = None,
+             use_db: bool = False) -> int:
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
     if mode == "measure":
         return await _run_measure(minutes, out)
+    if mode == "count":
+        return await _run_count(count, t_from, t_to, use_db)
 
     cfg = config.load(need_db=True)
     file_handler = logging.FileHandler(
