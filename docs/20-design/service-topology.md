@@ -136,6 +136,41 @@ hạ tầng (docker-compose: PG + ClickHouse + Redis)
 
 > **Lát cắt này đã dựng xong và merge `main` 2026-08-26** — `ingester` chạy theo phiên (3 chế độ: đo · ghi thật · đối chứng) và job `etl omo` chạy 4 mốc/ngày. Hồ sơ: [plans/2026-08-26-ingester-omo-first-slice/](../90-records/plans/2026-08-26-ingester-omo-first-slice/).
 
+## 7b. Ngân sách tài nguyên VPS — 6 GiB / 4 core / 60 GB
+
+*(Đo 2026-08-27 trên máy dev đang chạy phiên ghi thật 2.021 mã. Máy đích: 4 core · 6 GiB RAM · 60 GB đĩa.)*
+
+**Con số hiển thị KHÔNG phải nhu cầu.** ClickHouse tự cấp cache theo RAM nó nhìn thấy: trên dev (container thấy 31 GiB) nó lấy trần 18,74 GiB và mark cache 5 GiB, RSS 1,41 GB — trong khi **nhu cầu thật `MemoryTracking` chỉ 427 MB**. Đọc RSS rồi kết luận "ClickHouse cần 1,4 GB" là đọc nhầm cache thành nhu cầu.
+
+| Thành phần | Cần thật *(đo)* | Cấp trên VPS | Biên |
+|---|---|---|---|
+| ClickHouse | 427 MB | 1,5 GiB mềm · 2 GiB cứng | ~3,5× |
+| Postgres | 74 MB | 1 GiB | |
+| Redis | 11 MB | 256 MiB (trần 192 MB) | |
+| Ingester (ghi) | **97 MB** | 200 MB | |
+| OS + Docker · API · ETL · pipeline tin | — | ~1,6 GB | |
+| **Cộng** | | **~4,5 GB** | **dư ~1,5 GB** |
+
+**Hai lớp trần, lớp mềm chạm trước.** ClickHouse có `max_server_memory_usage` (mềm — ném `MEMORY_LIMIT_EXCEEDED`, hỏng có kiểm soát) thấp hơn `mem_limit` của Docker (cứng — OOM-kill). Thứ tự này là chủ đích: lỗi có dấu vết trong log ứng dụng dễ chẩn đoán hơn một tiến trình biến mất.
+
+`memswap_limit` đặt **bằng** `mem_limit` ở cả ba service = **cấm swap**. Swap trên VPS biến một sự cố bộ nhớ thành cả máy đứng, khó chẩn hơn nhiều so với một service chết dứt khoát.
+
+🔴 **Ràng buộc RAM đổi bản chất quyết định mô hình embedding.** Tài liệu trước chỉ ràng buộc theo **đĩa** (`halfvec(768)` vì 50 GB — [news-pipeline §9.5](news-pipeline.md)). Trên máy 6 GiB, **chạy model cục bộ ngốn 1–2 GB thường trú, tức ăn hết phần dư 1,5 GB**. Hệ quả: **embedding phải gọi qua API, không chạy cục bộ** — trừ khi nâng máy. Đây là ràng buộc RAM, không phải ràng buộc đĩa, và nó phải nằm trong quyết định chọn model.
+
+**50 người dùng đồng thời không phải ràng buộc.** Gánh nặng là ingester ghi liên tục 2.021 mã (2,3 triệu frame một phiên chiều — [hồ sơ đo](../90-records/surveys/2026-08-26-bvsc-realtime-session/README.md)) và ClickHouse nuốt chúng; vài chục người đọc API là chuyện nhỏ bên cạnh.
+
+**Cách chạy hồ sơ VPS:**
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.vps.yml --profile realtime up -d
+```
+
+Overlay [`deploy/infra/docker-compose.vps.yml`](../../deploy/infra/docker-compose.vps.yml) + [`clickhouse/memory-vps.xml`](../../deploy/infra/clickhouse/memory-vps.xml). Không sửa file gốc: máy dev 64 GB ép xuống hồ sơ VPS chỉ làm test chậm mà không lộ thêm điều gì.
+
+⚠️ **Ngân sách trên là TÍNH TOÁN, chưa phải đo trên máy nhỏ thật.** Điểm chưa biết: **đỉnh ATO/ATC** — lưu lượng dồn vào một giây, cũng là lúc ETL dễ chồng ingester. Phải chạy một phiên dưới trần cứng rồi mới được nói "đủ".
+
+---
+
 ## 8. Quyết định mềm — ghi rõ để không chọn ngầm
 
 Hai điểm dưới đây chốt theo mặc định hợp lý, **có thể đảo** khi có lý do, và phải sửa thẳng vào tài liệu này *(luật tầng 20-design)*:

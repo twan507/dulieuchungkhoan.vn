@@ -1,0 +1,38 @@
+<!--
+  Hồ sơ RAM cho VPS 6 GiB / 4 core (thay memory.xml của dev).
+
+  VÌ SAO PHẢI GHIM SỐ TUYỆT ĐỐI, không dùng tỷ lệ như dev:
+  `max_server_memory_usage_to_ram_ratio` tính theo RAM mà container NHÌN THẤY. Trên
+  máy dev nó thấy 31 GiB nên tự cấp 18,74 GiB trần và mark cache 5 GiB — đo 2026-08-27.
+  Trên VPS 6 GiB, tỷ lệ 0.6 cho ra 3,6 GiB, vẫn quá nhiều: cả Postgres, Redis,
+  ingester, API và pipeline tin phải chia nhau 6 GiB đó. Ghim số tuyệt đối là cách
+  duy nhất nói được "ClickHouse chỉ được lấy chừng này".
+
+  Nhu cầu THẬT đo trên dev khi đang ghi 2.021 mã: `MemoryTracking` = 427 MB.
+  1,5 GiB cho gấp ~3,5 lần biên — đủ cho đỉnh ATO/ATC chưa đo trên máy nhỏ.
+-->
+<clickhouse>
+  <!-- Trần cứng. Vượt là ClickHouse ném MEMORY_LIMIT_EXCEEDED chứ không để OOM
+       killer của kernel giết cả tiến trình — hỏng có kiểm soát, dễ chẩn đoán. -->
+  <max_server_memory_usage>1610612736</max_server_memory_usage>   <!-- 1,5 GiB -->
+
+  <!-- Cache mark: mặc định 5 GiB, gần bằng cả máy. Kho `rt` hiện vài MB nên
+       256 MiB thừa sức; đây là cache, thiếu thì chậm chứ không sai. -->
+  <mark_cache_size>268435456</mark_cache_size>                    <!-- 256 MiB -->
+  <uncompressed_cache_size>134217728</uncompressed_cache_size>    <!-- 128 MiB -->
+
+  <!-- 4 core, mà ingester + Postgres + API cũng cần CPU. Mặc định 16 luồng nền
+       (đo dev: 816 thread) là quá tải rõ trên máy này. -->
+  <background_pool_size>4</background_pool_size>
+  <background_schedule_pool_size>4</background_schedule_pool_size>
+  <background_merges_mutations_concurrency_ratio>2</background_merges_mutations_concurrency_ratio>
+
+  <!-- Trần mỗi truy vấn: một câu hỏi lỡ tay của API không được kéo sập server. -->
+  <max_concurrent_queries>32</max_concurrent_queries>
+  <profiles>
+    <default>
+      <max_memory_usage>536870912</max_memory_usage>              <!-- 512 MiB/truy vấn -->
+      <max_threads>2</max_threads>
+    </default>
+  </profiles>
+</clickhouse>

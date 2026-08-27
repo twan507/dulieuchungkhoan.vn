@@ -1,0 +1,72 @@
+# Overlay hồ sơ VPS — 6 GiB RAM / 4 core / 60 GB đĩa.
+#
+# Dùng CỘNG THÊM vào compose gốc, không thay thế:
+#   docker compose -f docker-compose.yml -f docker-compose.vps.yml --profile realtime up -d
+#
+# Vì sao là overlay chứ không sửa file gốc: máy dev có 64 GB, ép nó xuống hồ sơ VPS
+# chỉ làm test chậm đi mà không phát hiện thêm điều gì. Hai môi trường, hai hồ sơ,
+# một file gốc chung — cùng nguyên tắc "một nguồn sự thật" áp cho cấu hình.
+#
+# Ngân sách RAM (đo 2026-08-27 trên dev, cột "cần thật" là MemoryTracking/RSS thật):
+#   OS + Docker      0,5 GB
+#   ClickHouse       1,5 GB   (cần thật 427 MB — biên ~3,5×)
+#   Postgres         1,0 GB   (cần thật 74 MB — biên cho shared_buffers + connection)
+#   Redis            0,2 GB   (cần thật 11 MB)
+#   Ingester         0,2 GB   (đo thật 97 MB)
+#   API + ETL + tin  1,1 GB
+#   ------------------------
+#   Cộng            ~4,5 GB   dư ~1,5 GB
+#
+# 🔴 Giới hạn dưới đây là TRẦN CỨNG của Docker: chạm trần là container bị OOM-kill.
+# Đó là chủ đích — thà một service chết có dấu vết trong `docker events` còn hơn cả
+# máy đứng vì swap. ClickHouse còn có trần mềm riêng (memory-vps.xml) chạm TRƯỚC,
+# ném MEMORY_LIMIT_EXCEEDED thay vì bị giết — hai lớp, lớp mềm bắt trước.
+
+services:
+  postgres:
+    mem_limit: 1g
+    memswap_limit: 1g          # bằng mem_limit = cấm swap; swap trên VPS giết hiệu năng
+    cpus: 1.0
+    command:
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=768MB
+      - -c
+      - work_mem=8MB           # × max_connections trong trường hợp xấu nhất
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - max_connections=40     # ingester 1 + etl vài + api ~20 + dư
+      - -c
+      - max_worker_processes=4
+      - -c
+      - max_parallel_workers=2
+      - -c
+      - max_parallel_workers_per_gather=1
+
+  redis:
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 0.5
+    # Redis giữ state của 2.021 mã + pub/sub. Không đặt trần thì lúc bất thường
+    # nó ăn tới đâu không ai chặn. `noeviction`: state thị trường không phải cache —
+    # thà báo lỗi ghi còn hơn âm thầm vứt mã nào đó khỏi bảng giá.
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - 192mb
+      - --maxmemory-policy
+      - noeviction
+
+  clickhouse:
+    mem_limit: 2g              # > trần mềm 1,5 GiB: chừa chỗ cho jemalloc + thread stack
+    memswap_limit: 2g
+    cpus: 2.0
+    volumes:
+      # Đè memory.xml của dev bằng hồ sơ VPS. Cùng đường dẫn đích nên bản dev
+      # không được nạp — không có chuyện hai file cùng khai một tham số.
+      - ./clickhouse/memory-vps.xml:/etc/clickhouse-server/config.d/memory.xml:ro
