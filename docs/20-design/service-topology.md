@@ -147,10 +147,13 @@ hạ tầng (docker-compose: PG + ClickHouse + Redis)
 | ClickHouse | trung bình 373 MB · **đỉnh 1,18 GiB** (RSS đỉnh 1,80 GiB) | 2,0 GiB mềm · **2,6 GiB cứng** |
 | Postgres | 74 MB | 1 GiB |
 | Redis | 11 MB | 256 MiB (trần 192 MB) |
-| Ingester (ghi) | **97 MB** | 200 MB *(chung với phiên đo)* |
+| Ingester (ghi, nền — KHÔNG gồm hàng đợi spill) | **97 MB** | 200 MB *(chung với phiên đo)* |
 | Ingester (đo `--measure`, chạy thường trực cạnh phiên ghi từ 2026-08-27) | **13 MB** | — nằm trong 200 MB trên |
+| ↳ Hàng đợi ghi RAM `pending` *(lát [tràn-ra-đĩa](../90-records/plans/2026-08-28-ingester-spill-to-disk/spec.md), Task 6)* | tách riêng khỏi dòng "97 MB" — trần `N_CAP_ROWS = 100.000` dòng × 497 B ≈ **49,7 MB** | ≤ ~50 MB *(200 − 97 nền − 13 đo − ~12 `buffers` 5 bảng × 5.000 dòng, spec §2.5)* — **97/200 KHÔNG còn dư nguyên**, phần dư đã cấp cho hàng đợi này |
 | OS + Docker · API · ETL · pipeline tin | — | ~1,6 GB |
 | **Cộng** | | **~5,6 GB — dư ~0,4 GB** |
+
+> **Đĩa — vùng spill** *(lát tràn-ra-đĩa, spec §2.5/§3, code `backend/ingester/spill.py`)*: trần **`SPILL_CAP_BYTES = 10 GiB`**, căn cứ pickle đo thật **65 B/dòng** (`rt.trade`, block 5.000 dòng = 323.657 B — probe §9.2 spec) — đích chịu **≥ 2 giờ sự cố ở tải đỉnh × hệ số an toàn 3**: 6.496 dòng/s × 7.200 s × 65 B × 3 ≈ 9,1 GB ≤ 10 GiB. Thư mục spill (mặc định `dlck-runtime/spill`, biến `INGESTER_SPILL_DIR`) **không nằm trong RAM** ở trên — nó cộng vào cột đĩa 60 GB cùng kho CH ~5 GB + bản đo 30 ngày ~2,8 GB, vẫn thoải mái trong ngân sách.
 
 🔴 **Đính chính bản đầu (viết sáng 2026-08-27, trước khi có phiên trọn):** bản đầu ghi *"ClickHouse cần thật 427 MB, biên ~3,5×"* và kết luận dư 1,5 GB. **Sai** — 427 MB là số đo lúc 09:00, tức **đầu phiên chứ không phải đỉnh**. Đo trọn phiên cho đỉnh **1,18 GiB**, gần gấp ba. Trần mềm 1,5 GiB của bản đầu sẽ bị tải thật chạm 79%; nay nâng lên 2,0 / 2,6 GiB.
 

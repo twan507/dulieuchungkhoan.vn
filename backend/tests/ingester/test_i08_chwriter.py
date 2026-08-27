@@ -418,11 +418,11 @@ def test_backpressure_code_stays_transient(tmp_path):
 
 # --- Ngân sách retry phải là THỜI GIAN THỰC, không phải tổng thời gian ngủ -----------
 #
-# `RETRY_BUDGET_S` tự khai là "< tuổi thọ cửa sổ dedup ~100 s". Nhưng nó chỉ cộng
-# `delay` của mỗi lần ngủ, còn thời gian nằm TRONG `client.insert` thì không đếm — mà
-# driver mặc định `send_receive_timeout=300`, nên một server treo làm mỗi lần thử ăn tới
-# 300 s thời gian thực trong khi bộ đếm vẫn gần 0. Hệ quả: block treo hàng chục phút,
-# vượt xa cửa sổ dedup, và ngân sách xả cuối phiên (suy ra từ hằng số này) mất căn cứ.
+# `RETRY_BUDGET_S` phải là hạn CỬA 2 tính bằng THỜI GIAN THỰC (spec spill §2.3), không
+# phải tổng thời gian ngủ. Nếu chỉ cộng `delay` của mỗi lần ngủ, thời gian nằm TRONG
+# `client.insert` không vào sổ — mà driver mặc định `send_receive_timeout=300`, nên một
+# server treo làm mỗi lần thử ăn tới 300 s thời gian thực trong khi bộ đếm vẫn gần 0.
+# Hệ quả: block treo hàng chục phút trước khi cửa 2 mở (market-data-store §3.7 luật 3).
 
 
 class _HangingClient:

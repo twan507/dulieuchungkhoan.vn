@@ -23,7 +23,9 @@ from ingester.normalize import COLUMNS, Metrics, Normalized
 
 log = logging.getLogger("ingester.chwriter")
 BLOCK_CAP = 5000
-RETRY_BUDGET_S = 60          # < tuổi thọ cửa sổ dedup ~100 s (spec CH §5.5)
+RETRY_BUDGET_S = 60          # hạn CỬA 2 (spec spill §2.3) — cửa sổ dedup CH đếm bằng
+                              # BLOCK (100/bảng, spec spill §7), KHÔNG bằng giây; "< ~100 s"
+                              # là hằng số giả đã sửa 2026-08-27, xem market-data-store §3.7
 ROW_BYTES_EST = 497          # đo brief §3.2 — KHÔNG getsizeof trên đường chạy
 WARN_DEPTH_ROWS = 50_000     # brief §5.1 đòi ngưỡng cảnh báo kèm metric
 WRITE_CALL_BUDGET_S = 5.0    # hạn mức MỘT LẦN GỌI write_once — vòng lặp ở main gọi lại mỗi nhịp

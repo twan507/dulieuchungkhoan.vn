@@ -23,11 +23,15 @@ cd backend                          # luôn đặt PYTHONIOENCODING=utf-8
 uv run python -m ingester --measure --minutes 5   # ĐO: ghi frame thô ra file, KHÔNG đụng DB
 uv run python -m ingester                          # GHI THẬT: Redis + ClickHouse, tự thoát ~15:05
 uv run python -m ingester --reconcile [--date 2026-08-26]   # chỉ đối chứng cuối phiên
+uv run python -m ingester --count 20260827 --db    # bộ đếm d[]: replay bản đo dry-run,
+                                                    # so expected với count() rt.* thật
 ```
 
 🔴 **Gate trước khi bật ghi thật:** phải có **một phiên đo trọn trong giờ giao dịch** (08:40–15:05) và chủ dự án duyệt luật `SM`/dedup — [spec §3.5](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/spec.md). Trước khi qua gate, chỉ chạy `--measure`.
 
-Ba chế độ đều nối cùng một socket; `--measure` thêm 20 topic × mã phái sinh + `pth` (câu hỏi đo còn treo — [roadmap §5.1](../docs/00-overview/roadmap.md)). File đo là JSONL gzip theo giờ trong `INGESTER_MEASURE_DIR`.
+**Bốn chế độ** (`run` mặc định · `measure` · `reconcile` · `count`, `ingester/__main__.py`) đều nối cùng một socket khi có socket; `--measure` thêm 20 topic × mã phái sinh + `pth` (câu hỏi đo còn treo — [roadmap §5.1](../docs/00-overview/roadmap.md)). File đo là JSONL gzip theo giờ trong `INGESTER_MEASURE_DIR`. `--count` là công cụ **offline, không nối socket** — replay lại `frames-*.jsonl[.gz]` của một ngày đo qua đúng `process_record` mà `run` dùng (dry-run, không ghi DB) để tính số dòng kỳ vọng mỗi bảng, đối chứng bằng số với kho thật khi thêm `--db` ([spec tràn-ra-đĩa §11](../docs/90-records/plans/2026-08-28-ingester-spill-to-disk/spec.md)); nhận `--from`/`--to` để cắt cửa sổ theo `received_at`, mặc định trọn ngày suy từ đối số đầu.
+
+Chế độ `run` (chạy ghi thật) còn dùng **`INGESTER_SPILL_DIR`** (mặc định `dlck-runtime/spill`, cùng họ `INGESTER_MEASURE_DIR`) — thư mục hàng đợi tràn-ra-đĩa khi RAM chạm trần hoặc ClickHouse trục trặc kéo dài; xem [market-data-store §3.7](../docs/20-design/market-data-store.md) và [spec tràn-ra-đĩa](../docs/90-records/plans/2026-08-28-ingester-spill-to-disk/spec.md).
 
 ## Chạy job crawl OMO
 
