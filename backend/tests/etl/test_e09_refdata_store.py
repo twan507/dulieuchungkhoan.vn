@@ -79,30 +79,108 @@ def test_seam2b_vnindex_dual_external_ids_one_security(db):
     assert len(rows) == 1                               # cùng một security_id
 
 
-def test_manual_industry_assignment_survives_rerun(db):
+def _seed_map(db, icb_code, industry_code):
+    """Thêm/đổi một dòng map bằng quyền owner (bảng seed, ETL không ghi)."""
+    db.execute(sa.text("RESET ROLE"))
+    db.execute(sa.text(
+        "INSERT INTO market.industry_icb_map (icb_code, industry_id) "
+        "SELECT :c, industry_id FROM market.industry WHERE code = :i "
+        "ON CONFLICT (icb_code) DO UPDATE SET industry_id = EXCLUDED.industry_id"),
+        {"c": icb_code, "i": industry_code})
+    db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
+
+
+def _synthetic(db, icb_leaf, path, com="CT"):
+    """Issuer + nút ICB lá dựng riêng cho test — độc lập với nội dung seed 0013."""
+    db.execute(sa.text("RESET ROLE"))
+    db.execute(sa.text(
+        "INSERT INTO market.icb_industry (icb_code, icb_name, parent_icb_code, icb_level, icb_code_path)"
+        " VALUES (:c, 'nút thử', :p, 4, :path) ON CONFLICT (icb_code) DO UPDATE"
+        " SET icb_code_path = EXCLUDED.icb_code_path"),
+        {"c": icb_leaf, "p": path.split("/")[-2] if "/" in path else None, "path": path})
+    iid = db.execute(sa.text(
+        "INSERT INTO market.issuer (name, com_type_code, icb_code)"
+        " VALUES ('DN thử', :com, :c) RETURNING issuer_id"),
+        {"com": com, "c": icb_leaf}).scalar_one()
+    db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
+    return iid
+
+
+def _industry_code_of(db, issuer_id):
+    return db.execute(sa.text(
+        "SELECT i.code FROM market.issuer iss"
+        " LEFT JOIN market.industry i ON i.industry_id = iss.industry_id"
+        " WHERE iss.issuer_id = :i"), {"i": issuer_id}).scalar_one()
+
+
+def _industry_of(db, organ_code):
+    return db.execute(sa.text(
+        "SELECT i.code FROM market.issuer iss "
+        " JOIN market.issuer_external_id e ON e.issuer_id = iss.issuer_id"
+        " LEFT JOIN market.industry i ON i.industry_id = iss.industry_id"
+        " WHERE e.source='fiintrade' AND e.external_code=:o"), {"o": organ_code}).scalar_one()
+
+
+def _icb_of(db, organ_code):
+    return db.execute(sa.text(
+        "SELECT iss.icb_code FROM market.issuer iss JOIN market.issuer_external_id e"
+        " USING (issuer_id) WHERE e.source='fiintrade' AND e.external_code=:o"),
+        {"o": organ_code}).scalar_one()
+
+
+def test_layer1_exact_icb_match_wins_over_ancestor(db):      # seam: luật phân giải
+    _as_etl(db)
+    iid = _synthetic(db, "9991", "9000/9900/9990/9991")
+    _seed_map(db, "9990", "XAYDUNG")                          # tổ tiên trực tiếp
+    _seed_map(db, "9991", "DANDUNG")                          # khớp chính xác
+    refdata_store.apply(db, _target(), [])
+    assert _industry_code_of(db, iid) == "DANDUNG"
+
+
+def test_layer1_climbs_path_to_nearest_ancestor(db):         # seam: leo path
+    _as_etl(db)
+    iid = _synthetic(db, "9992", "9000/9900/9990/9992")       # mã lá KHÔNG có trong map
+    _seed_map(db, "9000", "XAYDUNG")                          # tổ tiên xa
+    _seed_map(db, "9990", "TIENICH")                          # tổ tiên GẦN NHẤT
+    refdata_store.apply(db, _target(), [])
+    assert _industry_code_of(db, iid) == "TIENICH"
+
+
+def test_layer1_unknown_icb_stays_null_and_counts(db):       # ca sai: không chặn job
+    _as_etl(db)
+    iid = _synthetic(db, "9993", "9993")                      # không tổ tiên nào trong map
+    stats = refdata_store.apply(db, _target(), [])
+    assert _industry_code_of(db, iid) is None
+    assert stats["industry_unmapped"] >= 1
+
+
+def test_manual_override_survives_while_layer1_refreshes(db):    # spec §8.5 — tay thắng máy
     _as_etl(db)
     t = _target()
     refdata_store.apply(db, t, [])
+    icb = _icb_of(db, "NHN")
     iid = db.execute(sa.text(
-        "SELECT i.issuer_id FROM market.issuer i JOIN market.issuer_external_id e USING (issuer_id)"
-        " WHERE e.source='fiintrade' AND e.external_code='NHN'")).scalar_one()
-    ind = db.execute(sa.text(
-        "SELECT industry_id FROM market.industry WHERE level=2 ORDER BY industry_id LIMIT 1")).scalar_one()
-    db.execute(sa.text("RESET ROLE"))                   # gán tay bằng quyền owner
-    db.execute(sa.text("UPDATE market.issuer SET industry_id=:d WHERE issuer_id=:i"),
-               {"d": ind, "i": iid})
+        "SELECT issuer_id FROM market.issuer_external_id"
+        " WHERE source='fiintrade' AND external_code='NHN'")).scalar_one()
+    _seed_map(db, icb, "XAYDUNG")
+    refdata_store.apply(db, t, [])
+    assert _industry_of(db, "NHN") == "XAYDUNG"
+
+    db.execute(sa.text("RESET ROLE"))                             # người đè tay
+    db.execute(sa.text(
+        "INSERT INTO market.issuer_industry_override (issuer_id, industry_id, note)"
+        " SELECT :i, industry_id, 'đè tay trong test' FROM market.industry WHERE code='DANDUNG'"),
+        {"i": iid})
     db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
-    # Đích lượt sau phải THẬT SỰ đổi một trường issuer — không thì câu UPDATE bị đuôi
-    # IS DISTINCT FROM lọc, dòng SET không bao giờ chạy, và test xanh cả với mutant
-    # `SET industry_id = NULL` (final review I2, kiểm bằng thí nghiệm đột biến).
-    from dataclasses import replace
-    t2 = type(t)(securities=t.securities,
-                 issuers=[replace(x, name=x.name + " (đổi tên)") if x.organ_code == "NHN" else x
-                          for x in t.issuers],
-                 icb=t.icb, counters=t.counters)
-    refdata_store.apply(db, t2, [])                     # job chạy lại, UPDATE thật sự nổ
-    assert db.execute(sa.text("SELECT industry_id FROM market.issuer WHERE issuer_id=:i"),
-                      {"i": iid}).scalar_one() == ind   # tay THẮNG máy
+
+    _seed_map(db, icb, "TIENICH")                                 # sửa map ICB
+    refdata_store.apply(db, t, [])
+    row = db.execute(sa.text(
+        "SELECT i.code, v.source FROM market.v_issuer_industry v"
+        " JOIN market.industry i ON i.industry_id = v.industry_id"
+        " WHERE v.issuer_id = :i"), {"i": iid}).one()
+    assert row == ("DANDUNG", "manual")                           # tay THẮNG máy
+    assert _industry_of(db, "NHN") == "TIENICH"                   # mà lớp 1 VẪN refresh
 
 
 def test_plan_delist_counts(db):

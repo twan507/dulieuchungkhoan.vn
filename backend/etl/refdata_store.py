@@ -6,7 +6,9 @@
 
 Ngữ nghĩa ghi (spec §5) — bám sát, không suy diễn:
 - `issuer` nhận diện qua `issuer_external_id('fiintrade', organ_code)`, KHÔNG qua tên.
-  `industry_id` KHÔNG BAO GIỜ nằm trong UPDATE — tay thắng máy.
+  `industry_id` do ETL SỞ HỮU (bước 4c, lớp 1 theo `industry_icb_map`); lớp tay nằm ở
+  `market.issuer_industry_override`, ETL không đọc không ghi. Đường đọc:
+  `market.v_issuer_industry` = COALESCE(tay, máy).
 - `security` khớp theo TICKER một mình — đổi sàn giữ nguyên `security_id`.
 - `updated_at` chỉ đổi khi có trường thật đổi (`IS DISTINCT FROM`); `ingested_at`
   chỉ ghi lúc INSERT, không bao giờ UPDATE.
@@ -104,7 +106,7 @@ def apply(conn, target: TargetState, delist: list[str]) -> dict:
             stats["issuers_inserted"] += 1
         else:
             issuer_id = row[0]
-            # industry_id KHÔNG có mặt ở đây — tay thắng máy (spec §5).
+            # industry_id gán ở bước 4c (lớp 1) — không nhét vào câu này để updated_at không nhảy oan.
             conn.execute(
                 sa.text(
                     "UPDATE market.issuer SET name = :n, short_name = :s,"
@@ -211,6 +213,41 @@ def apply(conn, target: TargetState, delist: list[str]) -> dict:
             log.warning("%d mã ICB trong kho không còn ở nguồn — giữ nguyên, không xoá", orphaned)
     else:
         stats["icb_orphaned"] = 0
+
+    # 4c. LỚP 1 — gán industry_id theo industry_icb_map (spec lát ngành hai lớp §2).
+    # ETL SỞ HỮU cột này: sửa map ICB rồi chạy lại job là toàn bộ doanh nghiệp cập nhật
+    # theo. Lớp tay nằm ở market.issuer_industry_override, ETL không đọc không ghi.
+    # Luật phân giải: khớp icb_code chính xác trước; không có thì leo icb_code_path lấy
+    # TỔ TIÊN GẦN NHẤT — gần nhất = ở VỊ TRÍ cuối nhất trong path (mọi mã ICB đều 4 ký
+    # tự nên sắp theo độ dài là tie-break rỗng nghĩa).
+    conn.execute(
+        sa.text(
+            "UPDATE market.issuer iss SET industry_id = r.industry_id, updated_at = now()"
+            " FROM ("
+            "   SELECT i.issuer_id, COALESCE("
+            "     (SELECT m.industry_id FROM market.industry_icb_map m"
+            "       WHERE m.icb_code = i.icb_code),"
+            "     (SELECT m.industry_id FROM market.icb_industry t"
+            "        JOIN market.industry_icb_map m"
+            "          ON m.icb_code = ANY(string_to_array(t.icb_code_path, '/'))"
+            "       WHERE t.icb_code = i.icb_code"
+            "       ORDER BY array_position(string_to_array(t.icb_code_path, '/'), m.icb_code)"
+            "         DESC LIMIT 1)"
+            "   ) AS industry_id"
+            "   FROM market.issuer i"
+            " ) AS r"
+            " WHERE iss.issuer_id = r.issuer_id"
+            "   AND iss.industry_id IS DISTINCT FROM r.industry_id"
+        )
+    )
+    stats["industry_unmapped"] = conn.execute(
+        sa.text("SELECT count(*) FROM market.issuer WHERE industry_id IS NULL")
+    ).scalar_one()
+    if stats["industry_unmapped"]:
+        log.warning(
+            "%d doanh nghiệp không tra được ngành từ industry_icb_map — để NULL, không chặn job",
+            stats["industry_unmapped"],
+        )
 
     # 5. delist — không bao giờ xoá dòng
     if delist:
