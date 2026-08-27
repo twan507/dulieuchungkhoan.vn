@@ -29,9 +29,9 @@ Cột ngành ở cả hai sheet đều là **dropdown 24 giá trị** — sửa 
 | Lớp | Chỗ ở trong kho | Ai ghi |
 |---|---|---|
 | **1 · máy** | `market.industry_icb_map` → `market.issuer.industry_id` | job `etl refdata`, mỗi lượt |
-| **2 · tay** | `market.issuer_industry_override` *(bảng chưa tồn tại — xem spec)* | người, qua migration seed |
+| **2 · tay** | `market.issuer_industry_override` — **đã nạp qua migration `0012` (tạo bảng) + `0013` (seed 161 dòng)**, đo trên DB thật 2026-08-28 | người, qua migration seed |
 
-Đọc ra là `COALESCE(lớp 2, lớp 1)`: mã mới niêm yết tự có ngành qua lớp 1; ai đã đè tay thì tay thắng.
+Đọc ra là `COALESCE(lớp 2, lớp 1)` qua view `market.v_issuer_industry` (migration `0012`, cột `source` ∈ `manual` | `icb` | `NULL`): mã mới niêm yết tự có ngành qua lớp 1; ai đã đè tay thì tay thắng.
 
 🔴 **Vì sao lớp 1 trộn hai cấp ICB:** luật phân giải ở [DDL 0002](../../../database/migrations/versions/0002_market_identity.py) là *khớp `icb_code` chính xác trước, không có thì leo `icb_code_path` lấy tổ tiên gần nhất*. Nên dòng cấp 4 **thắng** dòng cấp 3 cùng nhánh, còn dòng cấp 3 làm **nền** để mã ICB lá mới chưa từng thấy vẫn leo lên được thay vì rơi NULL. Đây là lý do không dùng bảng cấp-4-thuần.
 
@@ -75,7 +75,7 @@ Toàn bộ 295 quyết định, kèm lý do từng mã và dấu *độ tin cậ
 
 ### Nạp thế nào
 
-Nạp từ [`20-design/industry-mapping.json`](../../20-design/industry-mapping.json), **không phải từ file Excel này** — qua **migration seed**, giống `0003_seed_industry`. Cả `industry_icb_map` lẫn `issuer_industry_override` **không có đường ghi runtime** nên seed ở migration là đúng chỗ *(khác `market.security`, nơi ETL ghi hằng ngày — một bảng một người ghi)*. Các bước còn lại ở [§8 của spec](../plans/2026-08-27-industry-two-layer-mapping/spec.md).
+Nạp từ [`20-design/industry-mapping.json`](../../20-design/industry-mapping.json), **không phải từ file Excel này** — qua **migration seed `0013`** (đã chạy trên DB thật 2026-08-28), giống `0003_seed_industry`. Cả `industry_icb_map` lẫn `issuer_industry_override` **không có đường ghi runtime** nên seed ở migration là đúng chỗ *(khác `market.security`, nơi ETL ghi hằng ngày — một bảng một người ghi)*. Nghiệm thu trên DB thật: [ledger](../plans/2026-08-27-industry-two-layer-mapping/ledger.md).
 
 ---
 
