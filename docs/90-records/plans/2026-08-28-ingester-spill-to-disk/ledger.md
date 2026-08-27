@@ -25,3 +25,5 @@ Tự-nhất-quán từng task: T5 test dùng `WRITE_CALL_BUDGET_S`, `_Clock` —
 ## Tiến trình
 
 *(cập nhật sau mỗi task)*
+
+- Task 1: implementer DONE_WITH_CONCERNS (commit 3f2cc33, 105 pass/73s). Concern đúng: test gauge trong plan thiếu fake clock → tự đốt 60s thật mỗi lần chạy suite. **Ruling T1-1:** lỗi do plan viết test verbatim thiếu fake clock — sửa trước khi review (resume implementer, thay riêng test đó bằng bản fake clock, assert giữ nguyên). Chi phí nếu sai: không — assert không đổi.

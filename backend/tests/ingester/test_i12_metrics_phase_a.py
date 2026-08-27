@@ -44,10 +44,19 @@ def test_insert_duration_recorded_per_call():
 
 
 def test_pending_depth_gauge_and_warning(caplog):
+    class _FakeClock:
+        def __init__(self): self.now = 1000.0
+        def __call__(self): return self.now
+        def sleep(self, d): self.now += d
+
     class _Null:
+        def __init__(self, clock): self.clock = clock
         def insert(self, *a, **k):
+            self.clock.now += 5.0          # mỗi lần thử "ăn" 5s đồng hồ giả
             raise ConnectionError("chết")
-    w = ChWriter(_Null(), sleep_fn=lambda s: None)
+
+    clock = _FakeClock()
+    w = ChWriter(_Null(clock), sleep_fn=clock.sleep, clock=clock)
     for i in range(3):
         w.add(_n(i))
     with caplog.at_level("WARNING"):
