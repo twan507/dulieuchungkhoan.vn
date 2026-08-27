@@ -1,4 +1,4 @@
-ticker,exchange,security_type,status,ten_doanh_nghiep,loai_hinh,icb_l4,ten_icb_l4,icb_l3
+﻿ticker,exchange,security_type,status,ten_doanh_nghiep,loai_hinh,icb_l4,ten_icb_l4,icb_l3
 ASIAGF,HOSE,etf,listed,,,,,
 E1SSHN30,HNX,etf,listed,,,,,
 E1VFVN30,HOSE,etf,listed,Quỹ ETF DCVFMVN30,QU,8985,Quỹ đầu tư,8980
