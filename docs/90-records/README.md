@@ -32,9 +32,8 @@ Bảng cần người quyết nội dung, xuất từ dữ liệu thật để �
 
 | File | Việc |
 |---|---|
-| **`phan-nganh.xlsx`** | **File để điền** — 37 dòng ICB cấp 3 phủ 100% 1.550 doanh nghiệp, dropdown 24 mã ngành, kèm sheet hướng dẫn |
-| `tat-ca-ma.xlsx` | 2.015 mã đang có trong kho, kèm ICB — tra cứu, có auto-filter |
-| `*.csv` | Cùng dữ liệu, giữ để `git diff` — **không điền vào đây** (xem README: bản CSV vỡ font và bị Excel ăn số 0 đầu) |
+| **`industry-mapping.xlsx`** | **File để điền** — 37 dòng ICB cấp 3 phủ 100% 1.550 doanh nghiệp, dropdown 24 mã ngành, kèm sheet hướng dẫn |
+| `all-securities.xlsx` | 2.015 mã đang có trong kho, kèm ICB — tra cứu, có auto-filter |
 
 ## `surveys/` — hồ sơ khảo sát
 
