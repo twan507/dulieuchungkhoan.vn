@@ -124,6 +124,24 @@ Không thay được tràn-ra-đĩa (bản thô chưa chuẩn hoá, dựng lại
 
 ---
 
+## 6b. Đối chứng hai đường — cơ chế sẵn có, chưa khai thác
+
+Phiên 2026-08-27 chạy **song song** `run` (ghi kho) và `--measure` (ghi frame thô JSONL gzip, 93 MB trọn ngày). So counter cuối phiên:
+
+| Topic | measure đếm | kho ghi | chênh |
+|---|---|---|---|
+| `t` → `trade` | 205.130 | **205.130** | **0** |
+| `ptm` → `pt_match` | 2.298 | **2.298** | **0** |
+| `idx` → `index_delta` | 56.167 | 56.136 | 31 |
+| `i` → `snapshot_delta` | 890.600 | 890.301 | 299 |
+| `o` → `quote` | 3.124.284 | 3.121.472 | 2.812 |
+
+`dup_dropped = 1.953` giải thích phần lớn chênh; cộng 5 phút đuôi (đo tới 15:10, ghi dừng 15:05).
+
+⚠️ **Chưa phải bằng chứng:** measure đếm **frame**, kho đếm **dòng** — một frame mang nhiều bản ghi trong mảng `d[]`. Hai đơn vị khác nhau.
+
+🔴 **Nhưng đây là hạt giống của một phép nghiệm thu thật cho lát này:** nếu `--measure` chạy thường trực (§5.2), ta có **bản sao độc lập** để đối chứng chính xác — đếm bản ghi trong `d[]` thay vì đếm frame, rồi so với kho. Đó là cách duy nhất chứng minh *"không mất dòng nào"* bằng số thay vì bằng lập luận. **Đề nghị đưa vào spec làm tiêu chí nghiệm thu.**
+
 ## 7. Liên quan
 
 - [service-topology §7b](../../../20-design/service-topology.md) — ngân sách VPS, và đính chính "427 MB là đầu phiên không phải đỉnh"
