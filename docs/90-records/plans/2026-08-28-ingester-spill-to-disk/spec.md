@@ -1,6 +1,10 @@
 # Spec — Hàng đợi ghi có trần, tràn ra đĩa, không mất dòng nào
 
-**Ngày:** 2026-08-27 · **Trạng thái:** 🟡 chờ duyệt · **Brief nền:** [brief.md](brief.md) *(số đo phiên 2026-08-27 + phân tích chế độ hỏng — đọc trước)* · **Hướng:** A (tràn ra đĩa), chủ dự án chốt 2026-08-27.
+**Ngày:** 2026-08-27 · **Trạng thái:** 🟡 chờ duyệt (bản v2) · **Brief nền:** [brief.md](brief.md) *(số đo phiên 2026-08-27 + phân tích chế độ hỏng — đọc trước)* · **Hướng:** A (tràn ra đĩa), chủ dự án chốt 2026-08-27.
+
+*Thư mục đặt tên theo ngày dự kiến thực thi (2026-08-28); spec viết 2026-08-27 — không phải gõ nhầm.*
+
+**Bản v2 sau hai review Opus độc lập 2026-08-27** (trục kỹ thuật đối kháng + trục chuẩn repo — disposition: [review-2026-08-27.md](review-2026-08-27.md)). Các thay đổi lớn so với v1: tách vòng quản-hàng-đợi khỏi vòng ghi CH; hai cửa vào chế độ đĩa (bỏ hẳn drop-theo-hạn-chót); trần theo DÒNG không theo block; hai loại file spill (giữ-hash / được-gộp); cửa sổ dedup viết đúng đơn vị BLOCK; định nghĩa kết thúc phiên có nợ đĩa; AC3 thành hằng đẳng thức sổ sách.
 
 **Quyết định chính sách đã chốt trong brainstorm 2026-08-27** *(không mở lại)*:
 
@@ -9,7 +13,7 @@
 | 1 | Tiêu chí nghiệm thu | Bộ đếm bản ghi `d[]` từ bản đo thô, đối chứng với kho — **trong phạm vi lát này** |
 | 2 | Thời điểm phát lại | **Trong phiên, có tiết lưu** — không chờ hết phiên |
 | 3 | Khi trần đĩa cũng chạm | **Bỏ block MỚI đến, có đếm** — hàng đợi đĩa đã ghi giữ nguyên |
-| 4 | Ack thất lạc | **Thà trùng hơn mất** — trùng phát hiện được qua đối chứng, mất thì không |
+| 4 | Ack thất lạc | **Thà trùng hơn mất** — trùng phát hiện được qua đối chứng, mất thì không. ⚠️ Đây là **đảo** luật 3 của [market-data-store §3.7](../../../20-design/market-data-store.md) ("đếm đôi tệ hơn mất dòng") trong điều kiện có spill + có bộ đếm `d[]` — xem §15 |
 
 ---
 
@@ -17,117 +21,206 @@
 
 **Mục tiêu:** đóng chế độ hỏng brief §2 — ATO mạnh trùng lúc ClickHouse trục trặc làm `pending` không trần phình tới OOM, mất sạch dữ liệu trong RAM không dấu vết. Sau lát này: RAM có trần cứng, phần vượt trần nằm trên đĩa, tiến trình chết kiểu gì thì phần đã xuống đĩa cũng tự hồi, và *"không mất dòng nào"* chứng minh bằng **số đếm độc lập**, không bằng lập luận.
 
-**Trong phạm vi:** `ChWriter` (chế độ đĩa + phát lại + trần) · metric độ sâu và tốc độ xả · bộ đếm `d[]` offline · các phép kiểm trên ClickHouse thật.
+**Trong phạm vi:** `ChWriter` + vòng flush của `main.py` (tách vòng, chế độ đĩa, phát lại, trần) · `drain_writer` cuối phiên · metric độ sâu và tốc độ xả · bộ đếm `d[]` offline · các phép kiểm trên ClickHouse thật · counter mới cho các đường bỏ dòng chưa đếm (`not_leader_dropped`).
 
-**Ngoài phạm vi:** xem §8.
+**Ngoài phạm vi:** xem §14.
 
-## 2. Thiết kế — máy trạng thái hai chế độ
+## 2. Máy trạng thái hai chế độ
 
-Bổ sung vào `ChWriter` ([chwriter.py](../../../../backend/ingester/chwriter.py)); đường `add()` trên event-loop **không bao giờ đụng đĩa**.
+### 2.1 Bất biến nền: tách vòng quản-hàng-đợi khỏi vòng ghi CH
 
-### 2.1 Chế độ RAM (bình thường)
+Kiến trúc hiện hành có một điểm chết đã được review chỉ ra: `flush_once` giữ `_flush_lock` suốt lúc insert, nhịp gọi 1 s trả về ngay khi lock bận, và một server treo (không chết hẳn) giam thread flush tới hàng chục giây **mỗi block** — trong suốt thời gian đó không dòng code nào kiểm trần hay chuyển chế độ, RAM phình đúng như chế độ hỏng brief §2 (~200 MB cho 63 s treo ở đỉnh ATO).
+
+Vì vậy lát này **tách hai vòng**, và đây là bất biến số một của spec:
+
+> **Vòng QUẢN (mỗi nhịp 1 s, luôn chạy, KHÔNG bao giờ làm I/O ClickHouse):** cắt buffer → `pending`, ghi gauge độ sâu, kiểm hai cửa vào chế độ đĩa, ghi block xuống đĩa khi ở chế độ đĩa, chuyển chế độ. Chạy được ngay cả khi vòng ghi đang kẹt trong một insert.
+>
+> **Vòng GHI (tách riêng):** lấy block theo FIFO, insert với **ngân sách thời gian cho cả lời gọi** (không phải cho từng block), trả về còn/hết. Hợp đồng `_write_block` đổi: trả `DONE | RETRY_LATER | POISONED` — vòng retry + backoff nằm ở tầng gọi; nhánh chia đôi dòng độc giữ **trần số lần thử**, không phải trần thời gian (tránh tái diễn ca 778 s đã trả giá).
+
+Lỗi đường đĩa (ENOSPC, PermissionError, file cụt, pickle hỏng) **không bao giờ thoát ra khỏi hai vòng** — mỗi loại có counter (`spill_io_error`, `replay_corrupt`) + log, nhịp sau chạy tiếp. Vòng flush hiện tại không có `try` nên một exception I/O sẽ giết task im lặng cả phiên — seam test riêng cho bất biến này (§13.11).
+
+`add()` trên event-loop **không bao giờ đụng đĩa** — như v1, đã kiểm khả thi (chỉ chạm `buffers`/`pending` dưới `_lock` hiện có, không cần khoá mới).
+
+### 2.2 Chế độ RAM (bình thường)
 
 Như hiện hành, thêm:
 
-- `pending` có **trần N block toàn cục** (đếm chung mọi bảng — thứ phải bảo vệ là RAM tổng, không phải từng bảng).
-- Gauge `pending_depth` (block + byte ước lượng) ghi metric **mỗi nhịp flush**, kể cả khi mọi thứ khoẻ.
-- Hạn chót retry 60 s (`RETRY_BUDGET_S`) và luật chia đôi cô lập dòng độc **giữ nguyên**.
+- `pending` có **trần N tính theo DÒNG toàn cục** (đếm chung mọi bảng). ⚠️ Không đếm theo block: `flush_once` cắt block theo nhịp chứ không theo độ đầy — 99,99 % block trong phiên thường là block vài chục dòng (brief §3.3 cả phiên chỉ một lần `block_cap`), trần theo block vừa bật nhầm sau vài giây hiccup vừa không chặn được RAM lúc ATO. Gauge byte = dòng × 497 B (hằng số đo brief §3.2) — **không** `getsizeof` đệ quy trên đường chạy.
+- Gauge `pending_depth` ghi metric mỗi nhịp vòng quản, kể cả khi mọi thứ khoẻ; vượt 50 % N → log WARNING (brief §5.1 đòi metric **+ ngưỡng cảnh báo**).
+- Luật chia đôi cô lập dòng độc giữ nguyên (theo mã lỗi tất định).
 
-### 2.2 Chế độ ĐĨA (sự cố) — bất biến "dính"
+### 2.3 Chế độ ĐĨA — hai cửa vào, bất biến "dính"
 
-**Vào:** tổng block trong `pending` vượt N (chỉ xảy ra khi ClickHouse trục trặc — brief §2: khi khoẻ, `flush_once` xả sạch trong một nhịp).
+**Cửa vào (một trong hai):**
 
-Từ thời điểm vào:
+1. **Trần RAM:** tổng dòng trong `pending` vượt N.
+2. **Hạn chót transient:** một block cạn ngân sách retry 60 s ở chế độ RAM → block đó **ghi xuống đĩa**, không bỏ. Đường `dropped_block` (bỏ theo hạn chót) **xoá khỏi mode run** — nếu giữ, kịch bản dễ nhất của AC2 (`docker stop` vài phút ở tải nhẹ, ~4 MB/60 s không bao giờ chạm N) chắc chắn mất dòng, mâu thuẫn "0 dòng mất". Đường thoát cuối duy nhất còn lại là trần đĩa (§6).
 
-1. Phần `pending` hiện có trở thành **đầu hàng đợi** đông cứng trong RAM.
-2. **Mọi block cắt mới** (từ `flush_once` lẫn từ `add()` chạm `BLOCK_CAP`) được chuyển xuống đĩa ở nhịp flush kế tiếp — giữa hai nhịp chúng nằm RAM tối đa ~1 s (đỉnh ATO đo được ~6.500 dòng/s ≈ 3,2 MB — tính vào hệ số an toàn của N, không cần cơ chế riêng).
-3. Xả theo **FIFO toàn cục**: đầu RAM (cũ nhất) trước → rồi hàng đợi đĩa theo thứ tự tên file. Mỗi nhịp flush insert tối đa **K block** từ đĩa — tiết lưu để ClickHouse vừa gượng dậy không bị dồn cục.
-4. **Ra:** chỉ khi đĩa rỗng. Chừng nào đĩa còn file, block mới vẫn xuống đĩa kể cả khi ClickHouse đã hồi — thứ tự tuyệt đối không bao giờ đảo. Hàng đợi rút với tốc độ (K − nhịp đến); K chọn > nhịp đến đỉnh × hệ số an toàn nên luôn rút được.
-5. **Không drop theo thời gian** trong chế độ đĩa: vùng đệm là đĩa, không phải thời gian. Block chỉ rời hàng đợi khi (a) insert thành công, hoặc (b) là dòng độc đã cô lập. Transient kéo dài → file nằm đó, backoff, nhịp sau thử tiếp. `dropped_block` (drop theo hạn chót 60 s) chỉ còn tồn tại ở chế độ RAM.
+**Trong chế độ đĩa:**
 
-### 2.3 Hằng số N, K, trần đĩa — công thức trước, số sau
+3. Phần `pending` hiện có thành **đầu hàng đợi** trong RAM; mọi block cắt mới xuống đĩa ở nhịp vòng quản kế tiếp (giữa hai nhịp nằm RAM ≤ ~1 s tải đến — nay đúng thật vì vòng quản không bị insert chặn).
+4. Xả theo **FIFO toàn cục**: đầu RAM (cũ nhất) trước → rồi đĩa theo thứ tự tên file. Tiết lưu: **K là trần TỔNG số dòng insert mỗi nhịp của vòng ghi, tính cả block lấy từ đầu RAM** — không có nhịp "xả dồn N block" nào khi CH vừa gượng dậy.
+5. **Không drop theo thời gian.** Block chỉ rời hàng đợi khi (a) insert thành công, hoặc (b) dòng độc đã cô lập. Transient kéo dài → file nằm đó, vòng ghi backoff, nhịp sau thử tiếp.
+6. **Ra:** chỉ khi đĩa rỗng (và đầu RAM rỗng). *Ghi chú tỉnh táo từ review: FIFO toàn cục là ràng buộc **tự đặt** cho dễ suy luận — không bất biến đọc nào đòi nó (MV nến khoá theo giá trị cột `(event_ts, seq, received_at)`, không theo thứ tự insert). Giá của nó là kéo dài chế độ đĩa. Nếu số đo cho thấy chế độ đĩa dai quá mức, lối thoát đã biết là hạ xuống FIFO theo bảng — nhưng đó là quyết định đổi spec, không phải quyết định của plan.*
 
-🔴 **Không số nào được bốc thuốc.** Task đầu của plan là đo (§7); hằng số điền theo công thức, ghi kèm căn cứ đo ngay tại định nghĩa trong code:
+### 2.4 Phát lại: hai loại file, gộp có điều kiện
+
+Nhịp đến thật ở chế độ đĩa là **~5–6 block/s** (mỗi bảng một block mỗi nhịp + cap-cut lúc ATO), phần lớn là block nhỏ — phát lại từng file nhỏ một insert sẽ không bao giờ rút kịp. Đòn bẩy duy nhất là **gộp**, nhưng gộp đổi hash block ⇒ mất lưới dedup cho block đã từng gửi. Giải: phân hai loại file từ lúc ghi, bằng hậu tố tên:
+
+| Loại | Sinh từ | Phát lại |
+|---|---|---|
+| **`-r.blk`** (retry) | Block cạn hạn chót transient (§2.3 cửa 2) — **có thể đã gửi, ack có thể đã mất** | **Nguyên văn, không gộp** — giữ đúng hash để lưới dedup còn cơ hội bắt |
+| **`-n.blk`** (new) | Block cắt mới trong chế độ đĩa — **chưa từng gửi**, không có ack nào để mất | **Được gộp** các file cùng bảng liền kề tới ≤ `BLOCK_CAP` dòng một insert — hash mới vô hại |
+
+**Điều kiện khả thi của K** (ghi tường minh, không phải lời hứa): `nhịp_dòng_đến_đỉnh × p95_insert_per_dòng < 1`. Nếu phép đo §10 cho thấy điều kiện vỡ (ClickHouse không nuốt kịp ngay cả khi đã gộp) thì **không K nào cứu được** — plan phải dừng ở điểm đo và báo chủ dự án, không được chọn đại một K rồi đi tiếp.
+
+### 2.5 Hằng số — công thức trước, số sau
+
+🔴 Không số nào được bốc thuốc; task đo (§10) chạy trước, hằng số điền theo công thức, căn cứ đo ghi ngay tại định nghĩa trong code:
 
 | Hằng số | Công thức | Ràng buộc |
 |---|---|---|
-| **N** (trần pending) | RAM ngân sách cho hàng đợi ÷ 497 byte/dòng ÷ `BLOCK_CAP`, với RAM ngân sách ≤ ~50 MB (ingester tổng 200 MB — [service-topology §7b](../../../20-design/service-topology.md), đã dùng 97 MB lúc thường) | Chịu được ≥ 1 phút ATO đỉnh × hệ số an toàn ≥ 3 trước khi tràn |
-| **K** (block/nhịp phát lại) | > nhịp block đến đỉnh × hệ số an toàn, và × p95 thời gian insert phải < 1 nhịp flush | Hàng đợi đĩa phải rút được ngay cả trong ATO |
-| **Trần đĩa** | ~10 GB (chốt sau khi đo kích thước file block thật) | Ghi kèm phép tính "chịu được bao nhiêu giờ sự cố ở tải đỉnh"; cộng với kho CH + bản đo 30 ngày vẫn nằm trong 60 GB |
+| **N** (trần `pending`, đơn vị DÒNG) | Ngân sách RAM hàng đợi ÷ 497 B/dòng. Ngân sách RAM hàng đợi = 200 − 97 (writer thường) − 13 (tiến trình đo) − ~12 (`buffers` 5 bảng × 5.000 dòng) ⇒ **≤ ~50 MB ≈ 100.000 dòng** | N chỉ cần **đủ để chế độ đĩa không kích ở vận hành bình thường**: ≥ 10× `pending_depth` p99 đo được (§10.1) và ≥ vài giây ATO đỉnh. Khả năng "chịu 1 phút đỉnh × 3" **thuộc trần đĩa, không thuộc N** — RAM không phải vùng chịu sự cố trong hướng A |
+| **K** (trần dòng insert/nhịp khi phát lại) | > nhịp dòng đến đỉnh (~6.500 dòng/s) × hệ số an toàn ≥ 3, và K × p95_insert_per_dòng < 1 nhịp | Kèm điều kiện khả thi §2.4; hệ quả phụ: cửa sổ dedup co còn ~100/(block-per-nhịp) — xem §7 |
+| **Trần đĩa** | Chưa đo — chốt sau §9.2 (kích thước pickle block thật). Đích: chịu được **≥ 2 giờ sự cố ở tải đỉnh × hệ số 3** | Cộng kho CH ~5 GB + bản đo 30 ngày ~2,8 GB + Postgres/OS/Docker vẫn nằm trong 60 GB |
 
 ## 3. Vòng đời file trên đĩa
 
 ```
-serialize (pickle protocol 5) → spill/YYYYMMDD/<seq>-<table>.blk.tmp → fsync
-→ rename thành <seq>-<table>.blk → (tới lượt) đọc → insert → THÀNH CÔNG → xoá file
+serialize (pickle protocol 5) → spill/<seq>-<table>-<loại>.blk.tmp (O_EXCL)
+→ rename thành .blk (đích PHẢI chưa tồn tại — va chạm = counter + ERROR, không đè)
+→ (tới lượt) đọc → insert → THÀNH CÔNG → xoá file
 ```
 
-- **Mỗi block một file pickle.** Pickle giữ nguyên Decimal/datetime từng byte — phát lại là đúng block cũ, không đi qua tầng chuyển kiểu JSON. File do chính tiến trình ghi và đọc, rủi ro pickle-từ-nguồn-lạ không áp dụng. `<seq>` đơn điệu tăng, zero-pad, để FIFO = thứ tự tên file, không cần index.
-- **Temp + atomic rename:** chỉ file `.blk` mới tồn tại với hàng đợi. Crash giữa lúc ghi để lại `.tmp` → quét thấy thì bỏ + counter `orphan_tmp`, không bao giờ phát lại nửa block.
-- **Xoá file CHỈ SAU insert thành công** — hợp đồng "không mất dòng nào" thu về một câu. Insert thất bại transient → file còn nguyên.
-- **Dòng độc trong chế độ đĩa:** giữ luật chia đôi theo mã lỗi tất định hiện có; cô lập xong (counter `poison_row`), phần lành vào kho rồi file mới được xoá.
-- **Dọn:** phiên kết thúc với đĩa rỗng → xoá thư mục ngày rỗng. File sót **không bao giờ** bị xoá theo tuổi — chúng là dữ liệu chưa vào kho, chỉ đường insert-thành-công được xoá.
+- **Một thư mục phẳng, `seq` toàn cục** — không chia thư mục ngày (v1 chia theo ngày nhưng cấm xoá theo tuổi nên phân vùng không phục vụ gì, lại đẻ bài toán FIFO xuyên thư mục). FIFO = thứ tự `seq` zero-pad (10 chữ số — tràn là ~10¹⁰ block, không xảy ra trong đời VPS).
+- 🔴 **`seq` bền qua restart:** khởi tạo = max(`seq` quét được trên đĩa) + 1, trong cùng lần quét khởi động. Không có luật này thì tiến trình mới đè đúng file mà nó vừa hứa phát lại (`rename` thay thế đích im lặng trên cả POSIX lẫn Windows) — mất 5.000 dòng không dấu vết. `.tmp` mở bằng `O_EXCL`; đích `.blk` kiểm chưa-tồn-tại trước rename.
+- **Mỗi block một file pickle.** Pickle giữ Decimal/datetime từng byte — phát lại loại `-r` là đúng block cũ, đúng hash cũ (đã kiểm: `received_at` do writer cấp, nằm trong `COLUMNS`, không dựa DEFAULT của DDL — nội dung block tất định).
+- **Xoá file CHỈ SAU insert thành công** — hợp đồng "không mất dòng nào" thu về một câu.
+- **Chia đôi dòng độc ở chế độ đĩa:** ghi **hai file con rồi xoá file cha TRƯỚC khi insert** — biến một block không-nguyên-tử thành hai block nguyên tử, đóng ca "insert nửa block rồi chết → phát lại trùng nửa đầu" mà v1 bỏ sót.
+- **Không `fsync`** — quyết định tường minh: mô hình đe doạ của lát này là **tiến trình chết** (OOM/crash), với ca đó dữ liệu đã nằm trong page cache của OS và sống sót; `fsync` chỉ cứu ca **mất điện cả máy**, mà ca đó bản đo thô cùng máy cũng mất — chi phí không mua được gì.
+- **Dọn:** đĩa rỗng khi thoát → không còn gì để dọn (thư mục phẳng giữ nguyên). File sót không bao giờ bị xoá theo tuổi — chỉ đường insert-thành-công được xoá.
+- `spill_bytes` (phục vụ trần đĩa) khởi tạo từ lần quét khởi động, không từ 0.
 
-## 4. Hồi phục sau crash và chuyển leader
+## 4. Sở hữu thư mục spill — lock file, không suy đoán leadership
 
-- **Lúc khởi động** (mode `run`): quét thư mục spill. Còn `.blk` sót → vào thẳng chế độ đĩa, phát lại theo FIFO trước khi nhận trạng thái bình thường. OOM/crash giờ chỉ mất phần chưa kịp xuống đĩa.
-- **Lúc TRỞ THÀNH leader giữa phiên** (standby tiếp quản không qua restart): quét lại thư mục spill ngay tại thời điểm nhận leadership — file của leader cũ để lại phải được phát lại, không chờ restart. Đường spill (ghi lẫn phát lại) chỉ hoạt động trên leader, cùng ranh giới với đường ghi CH hiện hành.
-- **Ack thất lạc** (insert thành công nhưng chết trước khi xoá file): lần sau insert lại. Trong cửa sổ dedup ~100 s ([spec CH §5.5](../2026-08-25-clickhouse-realtime-store/spec.md)) server tự nuốt; ngoài cửa sổ **có thể trùng** — chấp nhận theo quyết định #4 (thà trùng hơn mất; trùng lộ ra ở đối chứng `d[]` dưới dạng số dương). ⚠️ Hành vi block trùng ngoài cửa sổ trên bảng `rt.*` thật phải **kiểm, không suy** — phép kiểm §6.
+Thư mục spill là **tài sản của đúng một tiến trình tại một thời điểm**, chứng minh bằng **OS exclusive lock** trên một file khoá trong thư mục (giữ suốt đời tiến trình, OS tự nhả khi tiến trình chết — kể cả OOM-kill):
 
-## 5. Trần đĩa
+- **Khởi động (mode `run`):** acquire lock → quét: `.tmp` mồ côi bỏ + đếm; `.blk` sót → khởi tạo `seq`, vào thẳng chế độ đĩa, phát lại theo FIFO (chờ tới khi giành leadership mới insert).
+- **Nhận leadership giữa phiên (standby tiếp quản):** chỉ được nhận nuôi thư mục spill **nếu acquire được lock** — lấy được nghĩa là chủ cũ đã chết thật; không lấy được nghĩa là chủ cũ còn sống (dù đã mất Redis lease, thread insert của nó có thể còn đang cầm file) → **không đụng thư mục**, chỉ ghi log + counter. Không bao giờ có hai tiến trình cùng đọc/xoá một file.
+- **Mất leadership giữa phiên:** ngừng insert CH (như hiện hành qua `is_leader`), nhưng **tiếp tục spill xuống đĩa** — spill là I/O cục bộ, không cần leadership; dữ liệu nằm đĩa chờ lấy lại leadership hoặc chờ tiến trình sau nhận nuôi. Đầu RAM không bị vứt.
+- **Standby khác máy:** thư mục spill là đĩa cục bộ — file của máy chết chỉ phát lại được khi máy đó sống lại. Topology hiện tại (một máy, Task Scheduler) chưa có ca này — ghi ở §14.
 
-Vùng spill có trần dung lượng (§2.3). Chạm trần → **bỏ block mới đến**: counter `spill_drop_newest` (đếm theo dòng), log ERROR mỗi lần, hàng đợi đĩa đã ghi nguyên vẹn. Ranh giới mất là một mốc thời gian duy nhất, thuật lại được từ log + counter. Bản đo thô của tiến trình `--measure` (chạy hằng ngày từ 2026-08-27) vẫn là đường dựng lại thủ công cho phần bị bỏ.
+**Ack thất lạc** (insert thành công nhưng chết trước khi xoá file): lần sau insert lại. Lưới dedup của ClickHouse bắt được **chỉ khi** block còn trong cửa sổ — mà cửa sổ đếm bằng block, không bằng giây (§7), nên sau một lần restart (khởi động lại hàng chục giây, leader khác vẫn bơm block mới cùng bảng) **trùng là kết quả mong đợi, không phải ngoại lệ**. Chấp nhận theo quyết định #4; số trùng lộ ở đối chứng `d[]` dưới dạng dương và tách được nhờ `replay_blocks`.
 
-## 6. Quan trắc và các phép kiểm đo
+## 5. Kết thúc phiên khi đĩa chưa rỗng — định nghĩa tường minh
 
-**Metric mới:** `pending_depth` (gauge) · `spill_blocks` · `spill_bytes` · `replay_blocks` · `spill_drop_newest` · `orphan_tmp` · thời gian insert p50/p95/p99. **Log:** một dòng rõ khi vào/ra chế độ đĩa kèm thời lượng và số block đã qua đĩa.
+Chế độ đĩa xoá hạn chót thời gian, nên `DRAIN_BUDGET_S = RETRY_BUDGET_S + 15` hiện hành **mất căn cứ** ([market-data-store §3.7](../../../20-design/market-data-store.md) luật 4 — phải viết lại, §15):
 
-**Phép kiểm một-lần trên ClickHouse thật** (kết quả ghi vào spec này, mục §9):
+1. `drain_writer` đổi điều kiện "sạch": buffers rỗng **và** pending rỗng **và** đĩa rỗng. Ngân sách xả cuối phiên = min(độ sâu còn lại ÷ K, trần cứng **10 phút**) — số 10 phút chốt trong plan theo K đo được.
+2. Hết ngân sách mà đĩa còn file → **để lại** (không vứt), log rõ `"còn X block / Y dòng trên đĩa"`, `drained = False` → cảnh báo *"PHÁN QUYẾT KHÔNG ĐÁNG TIN"* hiện hành **giữ nguyên ngữ nghĩa** — nó đang nói đúng sự thật; exit code khác 0 như hiện tại.
+3. **Sáng hôm sau lúc khởi động:** phát lại nợ trước khi vào phiên (dòng hôm qua mang `ts`/`received_at` hôm qua — vào đúng partition cũ, không ảnh hưởng reconcile hôm nay). Sau khi nợ xả sạch, chạy `reconcile --date <ngày nợ>` cho ngày đó để có phán quyết thật thay cho phán quyết "không đáng tin" tối qua — tự động trong đường khởi động, không chờ tay.
 
-1. **Trùng ngoài cửa sổ dedup:** insert một block vào `rt.quote`/`rt.trade` thật, chờ quá cửa sổ, insert lại đúng block → đo xem dòng nhân đôi hay bị nuốt (theo engine từng bảng). Quyết định #4 đứng trên kết quả đo này, không trên suy luận.
-2. **Kích thước file block thật:** pickle một block 5.000 dòng `rt.quote` thật → số cho công thức trần đĩa.
+## 6. Trần đĩa — bỏ block mới, đủ sổ sách để dựng lại
 
-## 7. Việc phải ĐO trước khi điền hằng số *(task đầu của plan)*
+Chạm trần → bỏ block **mới đến** (quyết định #3): hàng đợi đã ghi nguyên vẹn. Sổ sách phải đủ dựng lại từ bản đo — một counter tổng không đủ vì drop **chớp tắt** quanh mức trần (hàng đợi rút xuống rồi lại chạm), không phải "một mốc duy nhất":
 
-Đúng danh sách brief §4, nay thành yêu cầu spec:
+- Counter `spill_drop_newest.<table>` theo dòng, **tách theo bảng**.
+- Mỗi block bị bỏ một dòng log có cấu trúc: `(table, n_rows, received_at_min, received_at_max)` — người dựng lại thủ công từ bản đo biết chính xác bảng nào thủng khoảng nào.
 
-1. Gauge `pending_depth` + đồng hồ `_write_block` (p50/p95/p99) chạy ít nhất **một phiên thật** → tốc độ xả nền.
-2. Nhịp block đến đỉnh (suy từ số đo ATO đã có: 6.496 dòng/s ⇒ ~1,3 block/s ở `BLOCK_CAP` 5.000 — kiểm lại bằng gauge).
-3. Điền N, K, trần đĩa theo công thức §2.3, hệ số an toàn ≥ 3 trên số đo (nguyên tắc chủ dự án: phiên đo được là phiên nhẹ — brief §6).
+## 7. Cửa sổ dedup ClickHouse — đơn vị là BLOCK, và thiết kế này làm nó co lại
 
-Trình tự này nghĩa là plan có một **điểm dừng giữa chừng**: task đo merge và chạy một phiên trước, rồi mới tới task cơ chế tràn. Không gộp làm một đợt.
+🔴 Sửa một hằng số giả đã lan vào tài liệu sống: `non_replicated_deduplication_window = 100` (DDL `0002_rt_schema.sql`) đếm **100 block gần nhất mỗi bảng**, không phải ~100 giây — "~100 s" chỉ đúng ở nhịp 1 block/giây. Hệ quả xuyên spec:
 
-## 8. Bộ đếm `d[]` — đường nghiệm thu bằng số
+- Ở chế độ phát lại, vòng ghi bắn nhiều block/nhịp ⇒ cửa sổ thời gian co còn ~100 ÷ (block/nhịp) giây — **mỏng nhất đúng lúc cần nhất**. Đó là lý do §4 coi trùng-khi-replay là kết quả mong đợi.
+- `RETRY_BUDGET_S = 60 < "cửa sổ ~100 s"` trong comment `chwriter.py:16` và luật 3 [market-data-store §3.7](../../../20-design/market-data-store.md) mang cùng hằng số giả — sửa cùng lượt (§15, kèm `git grep` "~100 giây" / "tệ hơn mất dòng").
+- Hai phép kiểm §9 đo theo **số block chen giữa**, không theo thời gian — "chờ quá cửa sổ" theo đồng hồ sẽ xanh mà trả lời sai câu hỏi (đúng họ lỗi §1.3 CLAUDE.md).
 
-Công cụ offline (lệnh trong họ `python -m ingester`, tên chốt ở plan), **dùng lại chính pipeline của ingester ở chế độ khô**: đọc bản đo JSONL gzip của một ngày → parse frame → lọc topic → dedup frame (`frame_key`) → normalize → **đếm dòng kỳ vọng theo bảng**, không ghi DB. Không viết bộ đếm luật riêng — hai bộ luật sẽ lệch nhau lúc nào không biết (bẫy hai-nguồn-sự-thật).
+## 8. Quan trắc
 
-Đối chứng: so số kỳ vọng với `count()` trong `rt.*` cùng phiên, **cắt hai phía về cửa sổ thời gian chung** (measure chạy tới 15:10, writer dừng 15:05 — so ngoài cửa sổ chung là so lệch giả; công cụ nhận mốc cắt, quy trình AC3 ghi cách lấy mốc từ log writer). Đầu ra: bảng per-table `expected / actual / chênh`, kèm các khoản trừ đếm được (`dup_dropped`, `normalize_error`).
+**Gauge:** `pending_depth` (dòng + byte = dòng × 497) mỗi nhịp vòng quản; WARNING khi > 50 % N.
+**Counter mới:** `spill_blocks` · `spill_bytes` · `replay_blocks` · `spill_drop_newest.<table>` · `orphan_tmp` · `spill_io_error` · `replay_corrupt` · `seq_collision` · **`not_leader_dropped`** (đường `if is_leader: writer.add(n)` hiện bỏ dòng im lặng khi chưa/mất leader — chưa từng có counter, mà AC3 cần mọi khoản trừ đếm được) · **đếm frame theo topic trong mode `run`** (để đối chứng được với bộ đếm frame của `--measure` — tách phần chênh do hai socket rớt lệch nhau).
+**Đồng hồ:** p50/p95/p99 thời gian insert (bọc `_write_block`).
+**Log:** một dòng rõ khi vào/ra chế độ đĩa (kèm cửa vào nào, thời lượng, tổng block qua đĩa); log cấu trúc cho block bị bỏ (§6).
 
-## 9. Tiêu chí nghiệm thu
+## 9. Phép kiểm một-lần trên ClickHouse thật *(kết quả ghi vào NGAY MỤC NÀY sau khi đo)*
+
+1. **Dedup qua đường đĩa, đơn vị block:**
+   - *(1a — trong cửa sổ)* insert block X → pickle → file → load → insert lại ngay: kỳ vọng bị nuốt ⇒ chứng minh vòng qua đĩa **không đổi hash** (điều seam test so-object-Python không chứng minh được).
+   - *(1b — ngoài cửa sổ)* insert X → chen ≥ 100 block khác vào **cùng bảng** → insert lại X: đo nhân đôi hay nuốt. Đo thêm chiều thời gian (biến thể `_window_seconds` có tồn tại không — chưa kiểm, đo luôn, không suy). Kết quả ghi bằng đơn vị **block**.
+2. **Kích thước pickle của một block 5.000 dòng `rt.quote` thật** → số cho công thức trần đĩa §2.5.
+
+## 10. Việc phải ĐO trước khi điền hằng số *(task đầu của plan — điểm dừng cứng)*
+
+1. Gauge `pending_depth` + đồng hồ `_write_block` chạy ít nhất **một phiên thật** → độ sâu p99 nền + tốc độ xả.
+2. Nhịp block/dòng đến đỉnh — đo bằng gauge, **không suy từ 1,3 block/s** (con số đó chỉ đếm cap-cut; nhịp thật ≈ 5–6 block/s vì mỗi bảng cắt một block mỗi nhịp).
+3. **Đo p95 insert dưới hồ sơ VPS hẹp** (overlay `docker-compose.vps.yml`, cache 256 MiB — brief §4 đòi, v1 làm rơi): K điền theo số đo hồ sơ hẹp, không theo dev thả cửa.
+4. Điền N, K, trần đĩa theo công thức §2.5, hệ số ≥ 3; **kiểm điều kiện khả thi §2.4** — vỡ thì dừng plan, báo chủ dự án.
+
+Plan có **điểm dừng giữa chừng**: task đo merge và chạy phiên thật trước, rồi mới tới task cơ chế tràn. Không gộp một đợt.
+
+## 11. Bộ đếm `d[]` — đường nghiệm thu bằng số
+
+Công cụ offline (lệnh trong họ `python -m ingester`, tên chốt ở plan), **dùng lại chính pipeline của ingester ở chế độ khô**: đọc bản đo của một ngày → parse frame → lọc topic → dedup frame → normalize → đếm dòng kỳ vọng theo bảng, không ghi DB. Không viết bộ đếm luật riêng (bẫy hai-nguồn-sự-thật). Bốn điều kiện để "chạy khô" đúng nghĩa:
+
+1. **Đồng hồ bơm từ dữ liệu:** `FrameDedup.seen(key, now)` và `Stamper` nhận `now = r/1000` từ chính file đo — truyền đồng hồ tường khi đọc cả ngày trong một phút sẽ coi mọi frame trùng nội dung cả ngày là dup, `expected` hụt giả. Kéo theo: `make_on_packet` bẻ thành hàm nhận `now` từ ngoài (nếu không thì "dùng lại pipeline" bất khả thi).
+2. Đọc cả `frames-*.jsonl` **trần chưa gzip** (tiến trình đo bị giết để lại file chưa xoay).
+3. Cửa sổ chung cắt theo **`received_at`** (cùng họ đồng hồ với `r`), không theo `ts` sự kiện sàn; công cụ nhận `--from/--to`.
+4. Khoản trừ đầy đủ: `dup_dropped` · `normalize_error` · `no_symbol_dropped` · `not_leader_dropped` · nợ đĩa còn lại (nếu có) · trùng do replay (dấu `replay_blocks`).
+
+Đầu ra: bảng per-table `expected / actual / từng khoản trừ / dư`.
+
+## 12. Tiêu chí nghiệm thu
 
 | AC | Nội dung |
 |---|---|
-| **AC1** | Toàn bộ seam test (danh sách chốt trong plan, phác ở dưới) xanh trên ClickHouse thật |
-| **AC2** | Kịch bản sự cố dàn dựng: nạp tải tổng hợp, `docker stop` ClickHouse giữa chừng, bật lại → **0 dòng mất** (số nạp = số trong kho), RAM tiến trình không vượt ngân sách trong suốt sự cố |
-| **AC3** | Một phiên thật với `--measure` song song: đối chứng `d[]` khớp **tuyệt đối** mọi bảng trong cửa sổ chung; mọi khoản trừ là số đếm được, không có "chênh nhỏ chấp nhận được" |
-| **AC4** | N, K, trần đĩa nằm trong code kèm căn cứ đo; hai phép kiểm §6 có kết quả ghi lại |
+| **AC1** | Toàn bộ seam test (§13, chốt cuối trong plan) xanh trên ClickHouse thật |
+| **AC2** | Kịch bản sự cố dàn dựng, chạy được thành lệnh: nguồn tải = phát frame từ một file đo thật qua `on_packet` (harness test, số dòng nạp biết trước) → `docker stop` ClickHouse ≥ 2 phút giữa chừng → `docker start` → chờ xả hết. Đối chứng: `count()` trong kho + trùng-đếm-được = số nạp (đẳng thức, cho phép vế trùng > 0 có sổ). RAM: RSS lấy mẫu 1 s suốt kịch bản, **đỉnh ≤ 200 MB** (ngân sách [service-topology §7b](../../../20-design/service-topology.md); chưa có cgroup nào ép nên phải đo bằng tay) |
+| **AC3** | Một phiên thật với `--measure` song song: **hằng đẳng thức sổ sách** `expected − (dup_dropped + normalize_error + no_symbol_dropped + not_leader_dropped + nợ_đĩa + chênh_hai_socket) + trùng_replay_đếm_được = actual`, **dư = 0**; trong đó `chênh_hai_socket` đo tách bằng bộ đếm frame theo topic của mode `run` (§8) đối chiếu bộ đếm của `--measure` theo khoảng rớt trong log. Mọi số hạng là counter/log có thật — không có "chênh nhỏ chấp nhận được", và cũng không đòi "khớp tuyệt đối" kiểu phủ nhận quyết định #4 (trùng hợp lệ nằm ở vế `trùng_replay`) |
+| **AC4** | N, K, trần đĩa nằm trong code kèm căn cứ đo; điều kiện khả thi §2.4 đã kiểm; hai phép kiểm §9 có kết quả ghi tại §9 |
 
-**Phác seam test cho plan** *(chốt cùng plan theo §4.5 CLAUDE.md; client CH là tham số inject sẵn — giả lập sự cố không cần vá code)*: (1) block → file → load → bằng tuyệt đối, Decimal/datetime giữ nguyên · (2) `.tmp` mồ côi bỏ + đếm · (3) vượt N khi client hỏng → file xuất hiện; client hồi mà đĩa chưa rỗng → block mới vẫn xuống đĩa · (4) thứ tự insert cuối = thứ tự sinh (FIFO xuyên RAM–đĩa) · (5) ≤ K block đĩa/nhịp · (6) insert fail → file còn nguyên · (7) dòng độc chế độ đĩa: cô lập, phần lành vào kho, file mới biến mất · (8) khởi động có `.blk` sót → tự phát lại, thư mục sạch · (9) chạm trần đĩa → bỏ mới có đếm, file cũ nguyên · (10) golden test `d[]`: file đo cố định nhỏ → số kỳ vọng **giải tay** (literal độc lập, không tính lại bằng code — luật chống tautological §4.5).
+## 13. Phác seam test cho plan *(chốt cùng plan; client CH inject sẵn — giả lập sự cố không cần vá code)*
 
-## 10. Ngoài phạm vi *(phân loại theo CLAUDE.md §1.4)*
+1. Block → file → load → bằng tuyệt đối (Decimal/datetime).
+2. `.tmp` mồ côi: bỏ + đếm, không phát lại nửa block.
+3. Vượt N (theo DÒNG) khi client hỏng → file xuất hiện; client hồi mà đĩa chưa rỗng → block mới vẫn xuống đĩa.
+4. Cửa vào 2: block cạn hạn chót transient → thành file `-r`, không thành `dropped_block`.
+5. FIFO xuyên RAM–đĩa: thứ tự insert cuối = thứ tự sinh.
+6. K là trần TỔNG: đầu RAM có M > K dòng → nhịp đó insert đúng K.
+7. Gộp chỉ áp cho `-n`, không bao giờ cho `-r`.
+8. Insert fail → file còn nguyên; chỉ thành công mới xoá.
+9. Dòng độc chế độ đĩa: hai file con thay file cha **trước** insert; phần lành vào kho.
+10. Khởi động có `.blk` sót: `seq` = max + 1 (không đè — `O_EXCL`/kiểm đích), phát lại hết, `spill_bytes` khởi tạo từ quét.
+11. Lỗi I/O đĩa (inject) → vòng quản/ghi vẫn sống, counter tăng, nhịp sau chạy.
+12. Chạm trần đĩa → bỏ mới: counter theo bảng + log cấu trúc `(table, n_rows, received_at_min/max)`, file cũ nguyên.
+13. Lock thư mục: tiến trình hai không acquire được → không đụng file (kể cả đọc).
+14. Mất leadership giữa chừng → ngừng insert, spill vẫn chạy, không mất đầu RAM.
+15. Gauge `pending_depth` đúng số dòng thật (literal độc lập).
+16. `add()` không đụng đĩa: inject lớp ghi đĩa ném exception → `add()` vẫn sạch.
+17. `drain_writer` với đĩa còn file → `False` + log "còn X/Y".
+18. Cắt cửa sổ `--from/--to` của bộ đếm `d[]` (frame ngoài cửa sổ không vào expected).
+19. Golden test `d[]`: file đo cố định nhỏ → số kỳ vọng **giải tay** (literal độc lập — chống tautological §4.5.3), gồm ca dup cần đồng hồ `r` mới bắt đúng.
+
+## 14. Ngoài phạm vi *(phân loại theo CLAUDE.md §1.4)*
 
 | Mục | Loại | Lý do |
 |---|---|---|
-| Nén biểu diễn hàng đợi RAM (brief §5-C) | Loại có chủ đích | Nhân thêm biên chứ không đặt trần — chỉ cân nhắc nếu số đo N cho thấy ngân sách RAM quá chật |
-| WAL toàn phần (mọi block qua đĩa trước) | Loại có chủ đích | Nhịp flush 1 s × 5 bảng sinh hàng chục nghìn file nhỏ/ngày, thêm I/O hot path suốt phiên cho một sự cố hiếm — brainstorm 2026-08-27 |
+| Nén biểu diễn hàng đợi RAM (brief §5-C) | Loại có chủ đích | Nhân thêm biên chứ không đặt trần — chỉ cân nhắc nếu số đo N cho thấy ngân sách quá chật |
+| Nén file spill (gzip như `MeasureWriter`) | Loại có chủ đích | CPU trên đường nóng đổi lấy đĩa — mà đĩa có trần riêng đã tính đủ; xét lại nếu §9.2 đo ra block pickle lớn bất ngờ |
+| WAL toàn phần | Loại có chủ đích | Hàng chục nghìn file nhỏ/ngày + I/O hot path suốt phiên cho sự cố hiếm — brainstorm 2026-08-27 |
 | Trần cứng + bỏ dòng cũ (brief §5-B) | Loại có chủ đích | Chủ dự án loại: không đạt "không mất dòng nào" |
-| Backpressure lên nguồn BVSC | Đã kiểm — không có | Socket đẩy một chiều, nguồn không chậm lại vì ta |
-| Giới hạn số kết nối BVSC (2 socket song song) | Chưa đo, không chặn | Roadmap §2.1 đã ghi — không thuộc lát này |
+| **Công cụ nạp lại bản đo `--measure` vào kho** | Loại có chủ đích — **công cụ chưa tồn tại** (kiểm 2026-08-27: `backend/` không có đường replay; spec 2026-08-26 quyết định #10 để "tuỳ chọn", chưa làm) | "Dựng lại từ bản đo" trong spec này nghĩa là **thủ công**, với bộ đếm `d[]` + log §6 định vị vùng thủng. Tự động hoá là lát riêng nếu ca mất thật sự xảy ra |
+| Chuông báo động (email/telegram) khi vào chế độ đĩa/chạm trần | Loại có chủ đích | Cùng lý do tiền lệ spec 2026-08-26 §8 — log + counter trước, kênh báo là lát vận hành riêng |
+| Backpressure lên nguồn BVSC | Loại có chủ đích | EIO3/sails.io không có kênh điều khiển luồng phía client trong các loại packet đã đo ([11-bvsc-realtime](../../../10-sources/market/11-bvsc-realtime.md)); chưa dò bundle JS để kết luận toàn nguồn — không cần cho lát này *(v1 ghi "đã kiểm — không có" là quá tay: chưa có phép đo chống lưng)* |
+| Giới hạn số kết nối BVSC (2 socket song song) | Chưa đo được | Roadmap §2.1 đã ghi — không thuộc lát này |
+| Standby khác máy nhận nuôi spill | Loại có chủ đích | Topology hiện tại một máy; file spill là đĩa cục bộ — khi nào tách máy thì thiết kế lại §4 |
 | Sửa đường đọc/API trên `rt.*` | Loại có chủ đích | Không liên quan chế độ hỏng đang vá |
 
-## 11. Checklist tài liệu khi lát xong
+## 15. Checklist tài liệu khi lát xong
 
-- [ ] [market-data-store §3.7](../../../20-design/market-data-store.md) — hợp đồng ghi: bổ sung chế độ đĩa (retry không hạn chót thời gian khi có spill, FIFO, tiết lưu K).
-- [ ] [service-topology §7b](../../../20-design/service-topology.md) — ngân sách đĩa: dòng vùng spill (trần + con số đo).
-- [ ] [roadmap](../../../00-overview/roadmap.md) — mục lát này + gỡ ⚠️ "chưa làm xong ngày nào thì ngày đó vẫn hở" ở §2.1.
-- [ ] Ghi kết quả hai phép kiểm một-lần vào ngay §6 spec này (ranh giới sửa spec sau khi duyệt: chỉ thêm kết quả đo, không đổi thiết kế).
+- [ ] [`docs/90-records/README.md`](../../README.md) — thêm dòng plan này vào index (§1.6 luật cứng — đúng ra phải làm ngay khi thư mục có spec, cùng lượt commit spec).
+- [ ] [market-data-store §3.7](../../../20-design/market-data-store.md) — **viết lại luật 3 và luật 4**, không chỉ bổ sung: (luật 3) sửa hằng số giả "~100 giây" thành 100 block/bảng, và nêu điều kiện đảo của quyết định #4 — khi có spill + bộ đếm `d[]`, trùng-có-đếm ưu tiên hơn mất; luật cũ giữ cho chế độ RAM; (luật 4) ngân sách xả cuối phiên không còn suy từ `RETRY_BUDGET_S`, thay bằng công thức §5. Chạy `git grep` "~100 giây" và "tệ hơn mất dòng" toàn repo (gồm comment `chwriter.py:16`) — phép kiểm §1.7.
+- [ ] [service-topology §7b](../../../20-design/service-topology.md) — **cả hai dòng**: đĩa (vùng spill: trần + số đo) và RAM (ngân sách hàng đợi tách khỏi 97 MB nền, kẻo người sau đọc "97/200" tưởng còn dư nguyên).
+- [ ] [`backend/README.md`](../../../../backend/README.md) — chế độ chạy mới của `python -m ingester` (bộ đếm `d[]`) + câu "ba chế độ" sửa thành bốn.
+- [ ] [`.env.example`](../../../../.env.example) + `ingester/config.py` — biến `INGESTER_SPILL_DIR` (mặc định `dlck-runtime/spill`, cùng họ `INGESTER_MEASURE_DIR`).
+- [ ] [roadmap](../../../00-overview/roadmap.md) — mục lát này ở §2; gỡ ⚠️ "chưa làm xong ngày nào thì ngày đó vẫn hở" ở §2.1; **đính chính** câu "khi lát tràn-ra-đĩa xong có thể rút bản đo xuống vài ngày" — AC3 biến bản đo thành hạ tầng nghiệm thu thường trực, chính sách giữ 30 ngày đứng nguyên.
+- [ ] Ghi kết quả hai phép kiểm một-lần vào ngay §9 spec này *(ranh giới sửa spec sau khi duyệt: chỉ thêm kết quả đo, không đổi thiết kế)*.
