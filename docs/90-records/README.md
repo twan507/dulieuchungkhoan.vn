@@ -25,6 +25,7 @@ Mỗi thư mục là một task, đặt tên `YYYY-MM-DD-<tên>`. File bên tron
 | [`2026-08-25-clickhouse-realtime-store/`](plans/2026-08-25-clickhouse-realtime-store/) | Kho realtime ClickHouse — 5 bảng frame thô TTL 3 tháng + 2 bảng nến vĩnh viễn + materialized view, runner migration SQL thuần, role/profile, backup theo partition | ✅ **xong 2026-08-26** — 2 migration + 29 test seam trên CH thật (26.3.22.7), 15 phép kiểm §12 của spec |
 | [`2026-08-26-ingester-omo-first-slice/`](plans/2026-08-26-ingester-omo-first-slice/) | **Lát cắt dọc đầu tiên** — `ingester` realtime (socket BVSC → Redis → ClickHouse) + job `etl omo` (crawl OMO của SBV → Postgres) — `spec.md` · `plan.md` · `ledger.md` | ✅ **merge `main` 2026-08-26** — 2 vòng review + review toàn nhánh; OMO chạy thật 4 mốc/ngày. **Ghi tick bật 2026-08-26 tối**, phiên ghi đầu 27/08 chạy song song một phiên `--measure`; **194 test xanh** *(cập nhật 2026-08-26 tối)* |
 | [`2026-08-26-reference-data-etl/`](plans/2026-08-26-reference-data-etl/) | **ETL dữ liệu tham chiếu** — danh bạ doanh nghiệp, danh mục mã (hợp nhất 2 endpoint BVSC), 18 chỉ số thị trường, cây ICB. Việc [6] của lộ trình — nút thắt mở khoá cả ETL thị trường lẫn pipeline tin — `spec.md` | ✅ **thực thi xong 2026-08-26 đêm** — spec 2 vòng review + 6 task subagent TDD + chạy thật 2 lượt idempotent (2.015 mã vào kho, task 08:00/ngày); 217 test toàn backend; ngành hoãn có chủ đích (`industry_id` rỗng) — `spec.md` · `plan.md` · `ledger.md` |
+| [`2026-08-27-industry-two-layer-mapping/`](plans/2026-08-27-industry-two-layer-mapping/) | **Lát ngành hai lớp** — ICB tự gán (`industry_icb_map` → `issuer.industry_id`) + bảng `issuer_industry_override` gán tay đè lên. Đảo luật *tay thắng máy* từ "ETL không ghi cột" sang "ETL sở hữu cột máy, tay ở bảng khác"; rà 295 mã theo 9 nhóm chủ đề — `spec.md` · `layer2-review.md` | 🟡 **nội dung chốt xong 2026-08-27, code chờ thực thi** — bảng map chuyển thành tài liệu sống [`20-design/industry-mapping.md`](../20-design/industry-mapping.md). Kèm 3 luật cứng mới: BCTC, không-issuer, thương mại-theo-mặt-hàng |
 
 ## `worksheets/` — bảng điền tay của chủ dự án
 
@@ -32,7 +33,7 @@ Bảng cần người quyết nội dung, xuất từ dữ liệu thật để �
 
 | File | Việc |
 |---|---|
-| **`industry-mapping.xlsx`** | **File để điền** — 37 dòng ICB cấp 3 phủ 100% 1.550 doanh nghiệp, dropdown 24 mã ngành, kèm sheet hướng dẫn |
+| `industry-mapping.xlsx` | **Ảnh chụp để xem tay** — mapping ngành hai lớp đã chốt 2026-08-27. Nguồn sự thật là [`20-design/industry-mapping.md`](../20-design/industry-mapping.md), không phải file này |
 | `all-securities.xlsx` | 2.015 mã đang có trong kho, kèm ICB — tra cứu, có auto-filter |
 
 ## `surveys/` — hồ sơ khảo sát

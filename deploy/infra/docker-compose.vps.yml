@@ -9,13 +9,18 @@
 #
 # Ngân sách RAM (đo 2026-08-27 trên dev, cột "cần thật" là MemoryTracking/RSS thật):
 #   OS + Docker      0,5 GB
-#   ClickHouse       1,5 GB   (cần thật 427 MB — biên ~3,5×)
+#   ClickHouse       2,6 GB   (ĐỈNH đo trọn phiên 27/08: tracking 1,18 GiB · RSS 1,80 GiB)
 #   Postgres         1,0 GB   (cần thật 74 MB — biên cho shared_buffers + connection)
 #   Redis            0,2 GB   (cần thật 11 MB)
 #   Ingester         0,2 GB   (đo thật 97 MB)
 #   API + ETL + tin  1,1 GB
 #   ------------------------
-#   Cộng            ~4,5 GB   dư ~1,5 GB
+#   Cộng            ~5,6 GB   dư ~0,4 GB  ← MỎNG, xem ghi chú dưới
+#
+# 🔴 DƯ CHỈ CÒN ~0,4 GB nếu chạy đồng thời cả API + ETL + pipeline tin. Hai đường
+# giảm áp, chọn khi dựng tới đó: (a) ETL nặng chạy NGOÀI giờ ingester — lịch hiện tại
+# đã tách (refdata 08:00, OMO 11:30+), giữ nguyên nguyên tắc đó; (b) pipeline tin
+# chạy ban đêm. Nếu vẫn chật thì nâng RAM là rẻ hơn mọi cách lách.
 #
 # 🔴 Giới hạn dưới đây là TRẦN CỨNG của Docker: chạm trần là container bị OOM-kill.
 # Đó là chủ đích — thà một service chết có dấu vết trong `docker events` còn hơn cả
@@ -63,8 +68,11 @@ services:
       - noeviction
 
   clickhouse:
-    mem_limit: 2g              # > trần mềm 1,5 GiB: chừa chỗ cho jemalloc + thread stack
-    memswap_limit: 2g
+    # Đỉnh RSS đo trọn phiên 27/08 là 1,80 GiB (trên dev, nơi cache được cấp rộng).
+    # 2,6 GiB = trần mềm 2,0 + chỗ cho jemalloc/thread stack + biên cho đỉnh chưa đo
+    # dưới hồ sơ hẹp. Trần mềm chạm TRƯỚC nên lỗi có log thay vì bị OOM-kill.
+    mem_limit: 2600m
+    memswap_limit: 2600m
     cpus: 2.0
     volumes:
       # Đè memory.xml của dev bằng hồ sơ VPS. Cùng đường dẫn đích nên bản dev

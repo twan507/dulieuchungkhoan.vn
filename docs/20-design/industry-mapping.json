@@ -1,0 +1,1302 @@
+{
+  "do_ngay": "2026-08-27",
+  "industries": [
+    {
+      "code": "NGANHANG",
+      "name_vi": "Ngân hàng và Tín dụng"
+    },
+    {
+      "code": "CHUNGKHOAN",
+      "name_vi": "Công ty Chứng khoán"
+    },
+    {
+      "code": "BAOHIEM",
+      "name_vi": "Kinh doanh Bảo hiểm"
+    },
+    {
+      "code": "DANDUNG",
+      "name_vi": "Bất động sản Dân dụng"
+    },
+    {
+      "code": "KHUCONGNGHIEP",
+      "name_vi": "Bất động sản Khu công nghiệp"
+    },
+    {
+      "code": "XAYDUNG",
+      "name_vi": "Thi công Xây dựng"
+    },
+    {
+      "code": "VATLIEU",
+      "name_vi": "Vật liệu Xây dựng"
+    },
+    {
+      "code": "KIMLOAI",
+      "name_vi": "Kim loại Công nghiệp"
+    },
+    {
+      "code": "KHOANGSAN",
+      "name_vi": "Than và Khoáng sản"
+    },
+    {
+      "code": "HOACHAT",
+      "name_vi": "Hóa chất và Phân bón"
+    },
+    {
+      "code": "NHUA",
+      "name_vi": "Nhựa, Bao bì và Giấy"
+    },
+    {
+      "code": "THIETBI",
+      "name_vi": "Thiết bị Điện và Máy móc"
+    },
+    {
+      "code": "NONGNGHIEP",
+      "name_vi": "Nông nghiệp và Chăn nuôi"
+    },
+    {
+      "code": "THUYSAN",
+      "name_vi": "Chế biến Thủy sản"
+    },
+    {
+      "code": "DETMAY",
+      "name_vi": "Dệt may, Gỗ và Gia dụng"
+    },
+    {
+      "code": "CAOSU",
+      "name_vi": "Cao su và Săm lốp"
+    },
+    {
+      "code": "BANLE",
+      "name_vi": "Bán buôn và Bán lẻ"
+    },
+    {
+      "code": "THUCPHAM",
+      "name_vi": "Thực phẩm và Đồ uống"
+    },
+    {
+      "code": "DULICH",
+      "name_vi": "Hàng không, Du lịch và Truyền thông"
+    },
+    {
+      "code": "YTE",
+      "name_vi": "Y tế, Giáo dục và Xuất bản"
+    },
+    {
+      "code": "TIENICH",
+      "name_vi": "Điện, Nước và Môi trường"
+    },
+    {
+      "code": "DAUKHI",
+      "name_vi": "Dầu mỏ và Khí đốt"
+    },
+    {
+      "code": "VANTAI",
+      "name_vi": "Vận tải, Cảng biển và Kho bãi"
+    },
+    {
+      "code": "CONGNGHE",
+      "name_vi": "Công nghệ Thông tin và Viễn thông"
+    }
+  ],
+  "layer1": [
+    {
+      "icb_code": "0530",
+      "icb_level": 3,
+      "icb_name": "Sản xuất Dầu khí",
+      "industry_code": "DAUKHI",
+      "note": "lọc dầu + phân phối (BSR, OIL, PLX)"
+    },
+    {
+      "icb_code": "0570",
+      "icb_level": 3,
+      "icb_name": "Thiết bị, Dịch vụ và Phân phối Dầu khí",
+      "industry_code": "DAUKHI",
+      "note": "thiết bị và dịch vụ dầu khí"
+    },
+    {
+      "icb_code": "0580",
+      "icb_level": 3,
+      "icb_name": "Năng lượng thay thế",
+      "industry_code": "TIENICH",
+      "note": "Năng lượng thay thế — chưa có DN; ở VN là nhà phát điện tái tạo"
+    },
+    {
+      "icb_code": "1350",
+      "icb_level": 3,
+      "icb_name": "Hóa chất",
+      "industry_code": "HOACHAT",
+      "note": "nền là hóa dầu/nông dược 1357; nhựa-cao su tách ở 1353"
+    },
+    {
+      "icb_code": "1353",
+      "icb_level": 4,
+      "icb_name": "Nhựa, cao su & sợi",
+      "industry_code": "NHUA",
+      "note": "tách khỏi 1350 — nhựa/sợi; cao su thiên nhiên bóc ở lớp 2"
+    },
+    {
+      "icb_code": "1730",
+      "icb_level": 3,
+      "icb_name": "Lâm nghiệp và Giấy",
+      "industry_code": "DETMAY",
+      "note": "nền là gỗ nội thất 1733 — giải luôn ca TTF/ACG/SAV; giấy tách ở 1737"
+    },
+    {
+      "icb_code": "1737",
+      "icb_level": 4,
+      "icb_name": "Sản xuất giấy",
+      "industry_code": "NHUA",
+      "note": "tách khỏi 1730 — giấy & bao bì giấy (DHC, HHP)"
+    },
+    {
+      "icb_code": "1750",
+      "icb_level": 3,
+      "icb_name": "Kim loại",
+      "industry_code": "KIMLOAI",
+      "note": "thép + nhôm + kim loại màu"
+    },
+    {
+      "icb_code": "1770",
+      "icb_level": 3,
+      "icb_name": "Khai khoáng",
+      "industry_code": "KHOANGSAN",
+      "note": "khai khoáng + than + vàng"
+    },
+    {
+      "icb_code": "2350",
+      "icb_level": 3,
+      "icb_name": "Xây dựng và Vật liệu",
+      "industry_code": "XAYDUNG",
+      "note": "nền của nhánh; vật liệu tách ở dòng 2353"
+    },
+    {
+      "icb_code": "2353",
+      "icb_level": 4,
+      "icb_name": "Vật liệu xây dựng & Nội thất",
+      "industry_code": "VATLIEU",
+      "note": "tách khỏi 2350 — vật liệu & nội thất"
+    },
+    {
+      "icb_code": "2710",
+      "icb_level": 3,
+      "icb_name": "Hàng không & Quốc phòng",
+      "industry_code": "THIETBI",
+      "note": "Hàng không & Quốc phòng — chưa có DN; là CHẾ TẠO máy bay, không phải hãng bay"
+    },
+    {
+      "icb_code": "2720",
+      "icb_level": 3,
+      "icb_name": "Hàng công nghiệp",
+      "industry_code": "NHUA",
+      "note": "nền là bao bì 2723; phức hợp tách ở 2727"
+    },
+    {
+      "icb_code": "2727",
+      "icb_level": 4,
+      "icb_name": "Công nghiệp phức hợp",
+      "industry_code": "THIETBI",
+      "note": "tách khỏi 2720 — công nghiệp phức hợp"
+    },
+    {
+      "icb_code": "2730",
+      "icb_level": 3,
+      "icb_name": "Điện tử & Thiết bị điện",
+      "industry_code": "THIETBI",
+      "note": "thiết bị điện + hàng điện tử"
+    },
+    {
+      "icb_code": "2750",
+      "icb_level": 3,
+      "icb_name": "Công nghiệp nặng",
+      "industry_code": "THIETBI",
+      "note": "máy công nghiệp + đóng tàu"
+    },
+    {
+      "icb_code": "2770",
+      "icb_level": 3,
+      "icb_name": "Vận tải",
+      "industry_code": "VANTAI",
+      "note": "cả 5 nhánh con đều là vận tải/kho bãi"
+    },
+    {
+      "icb_code": "2790",
+      "icb_level": 3,
+      "icb_name": "Tư vấn & Hỗ trợ Kinh doanh",
+      "industry_code": "TIENICH",
+      "note": "nền là môi trường đô thị 2799 — chủ dự án chốt 2026-08-27"
+    },
+    {
+      "icb_code": "2791",
+      "icb_level": 4,
+      "icb_name": "Tư vấn & Hỗ trợ KD",
+      "industry_code": "XAYDUNG",
+      "note": "tách khỏi 2790 — tư vấn xây lắp điện (TV1-TV4, PPE, VNC)"
+    },
+    {
+      "icb_code": "2793",
+      "icb_level": 4,
+      "icb_name": "Đào tạo & Việc làm",
+      "industry_code": "YTE",
+      "note": "tách khỏi 2790 — đào tạo & việc làm"
+    },
+    {
+      "icb_code": "2797",
+      "icb_level": 4,
+      "icb_name": "Nhà cung cấp thiết bị",
+      "industry_code": "THIETBI",
+      "note": "tách khỏi 2790 — nhà cung cấp thiết bị"
+    },
+    {
+      "icb_code": "3350",
+      "icb_level": 3,
+      "icb_name": "Ô tô và phụ tùng",
+      "industry_code": "BANLE",
+      "note": "nền là đại lý ô tô 3353, 6/7 mã HOSE là đại lý — chốt 2026-08-27; lốp tách ở 3357"
+    },
+    {
+      "icb_code": "3355",
+      "icb_level": 4,
+      "icb_name": "Phụ tùng ô tô",
+      "industry_code": "THIETBI",
+      "note": "tách khỏi 3350 — phụ tùng ô tô"
+    },
+    {
+      "icb_code": "3357",
+      "icb_level": 4,
+      "icb_name": "Lốp xe",
+      "industry_code": "CAOSU",
+      "note": "tách khỏi 3350 — săm lốp (CSM, DRC, SRC)"
+    },
+    {
+      "icb_code": "3530",
+      "icb_level": 3,
+      "icb_name": "Bia và đồ uống",
+      "industry_code": "THUCPHAM",
+      "note": "bia + đồ uống + rượu"
+    },
+    {
+      "icb_code": "3570",
+      "icb_level": 3,
+      "icb_name": "Sản xuất thực phẩm",
+      "industry_code": "THUCPHAM",
+      "note": "nền là chế biến 3577; nuôi trồng tách ở dòng 3573"
+    },
+    {
+      "icb_code": "3573",
+      "icb_level": 4,
+      "icb_name": "Nuôi trồng nông & hải sản",
+      "industry_code": "THUYSAN",
+      "note": "tách khỏi 3570 — thủy sản là đa số 29/45; 16 mã nông nghiệp bóc ở lớp 2"
+    },
+    {
+      "icb_code": "3720",
+      "icb_level": 3,
+      "icb_name": "Hàng gia dụng",
+      "industry_code": "DETMAY",
+      "note": "hàng gia dụng — giải luôn ca GDT"
+    },
+    {
+      "icb_code": "3740",
+      "icb_level": 3,
+      "icb_name": "Hàng hóa giải trí",
+      "industry_code": "DETMAY",
+      "note": "hàng hóa giải trí; điện tử tiêu dùng tách ở 3743"
+    },
+    {
+      "icb_code": "3743",
+      "icb_level": 4,
+      "icb_name": "Điện tử tiêu dùng",
+      "industry_code": "THIETBI",
+      "note": "tách khỏi 3740 — điện tử tiêu dùng"
+    },
+    {
+      "icb_code": "3760",
+      "icb_level": 3,
+      "icb_name": "Hàng cá nhân",
+      "industry_code": "DETMAY",
+      "note": "may mặc 47 + hàng cá nhân 8 + giày dép 2"
+    },
+    {
+      "icb_code": "3780",
+      "icb_level": 3,
+      "icb_name": "Thuốc lá",
+      "industry_code": "THUCPHAM",
+      "note": "thuốc lá"
+    },
+    {
+      "icb_code": "4530",
+      "icb_level": 3,
+      "icb_name": "Thiết bị và Dịch vụ Y tế",
+      "industry_code": "YTE",
+      "note": "thiết bị + dụng cụ + chăm sóc y tế"
+    },
+    {
+      "icb_code": "4570",
+      "icb_level": 3,
+      "icb_name": "Dược phẩm",
+      "industry_code": "YTE",
+      "note": "dược phẩm + công nghệ sinh học"
+    },
+    {
+      "icb_code": "5330",
+      "icb_level": 3,
+      "icb_name": "Phân phối thực phẩm & dược phẩm",
+      "industry_code": "BANLE",
+      "note": "phân phối thực phẩm & dược phẩm"
+    },
+    {
+      "icb_code": "5370",
+      "icb_level": 3,
+      "icb_name": "Bán lẻ",
+      "industry_code": "BANLE",
+      "note": "bán lẻ phức hợp + phân phối chuyên dụng"
+    },
+    {
+      "icb_code": "5550",
+      "icb_level": 3,
+      "icb_name": "Truyền thông",
+      "industry_code": "YTE",
+      "note": "nền là sách/ấn bản giáo dục 5557 — chốt 2026-08-27"
+    },
+    {
+      "icb_code": "5553",
+      "icb_level": 4,
+      "icb_name": "Giải trí & Truyền thông",
+      "industry_code": "DULICH",
+      "note": "tách khỏi 5550 — giải trí & truyền thông (YEG, VNZ)"
+    },
+    {
+      "icb_code": "5555",
+      "icb_level": 4,
+      "icb_name": "Dịch vụ truyền thông",
+      "industry_code": "DULICH",
+      "note": "tách khỏi 5550 — dịch vụ truyền thông"
+    },
+    {
+      "icb_code": "5750",
+      "icb_level": 3,
+      "icb_name": "Du lịch & Giải trí",
+      "industry_code": "DULICH",
+      "note": "gồm 5751 dịch vụ hàng không — tên ngành đã có \"Hàng không\""
+    },
+    {
+      "icb_code": "6530",
+      "icb_level": 3,
+      "icb_name": "Viễn thông cố định",
+      "industry_code": "CONGNGHE",
+      "note": "viễn thông cố định"
+    },
+    {
+      "icb_code": "6570",
+      "icb_level": 3,
+      "icb_name": "Viễn thông di động",
+      "industry_code": "CONGNGHE",
+      "note": "viễn thông di động"
+    },
+    {
+      "icb_code": "7530",
+      "icb_level": 3,
+      "icb_name": "Sản xuất & Phân phối Điện",
+      "industry_code": "TIENICH",
+      "note": "sản xuất & phân phối điện"
+    },
+    {
+      "icb_code": "7570",
+      "icb_level": 3,
+      "icb_name": "Nước & Khí đốt",
+      "industry_code": "TIENICH",
+      "note": "nền là nước 7577; xăng dầu-khí tách ở dòng 7573"
+    },
+    {
+      "icb_code": "7573",
+      "icb_level": 4,
+      "icb_name": "Phân phối xăng dầu & khí đốt",
+      "industry_code": "DAUKHI",
+      "note": "tách khỏi 7570 — xăng dầu & LPG, theo giá dầu (chốt 2026-08-27)"
+    },
+    {
+      "icb_code": "8350",
+      "icb_level": 3,
+      "icb_name": "Ngân hàng",
+      "industry_code": "NGANHANG",
+      "note": ""
+    },
+    {
+      "icb_code": "8530",
+      "icb_level": 3,
+      "icb_name": "Bảo hiểm phi nhân thọ",
+      "industry_code": "BAOHIEM",
+      "note": "phi nhân thọ + tái bảo hiểm"
+    },
+    {
+      "icb_code": "8570",
+      "icb_level": 3,
+      "icb_name": "Bảo hiểm nhân thọ",
+      "industry_code": "BAOHIEM",
+      "note": "bảo hiểm nhân thọ (BVH)"
+    },
+    {
+      "icb_code": "8630",
+      "icb_level": 3,
+      "icb_name": "Bất động sản",
+      "industry_code": "DANDUNG",
+      "note": "gồm cả tư vấn/môi giới 8637; KCN ICB không tách → lớp 2"
+    },
+    {
+      "icb_code": "8670",
+      "icb_level": 3,
+      "icb_name": "Quỹ ủy thác BĐS",
+      "industry_code": "DANDUNG",
+      "note": "Quỹ ủy thác BĐS — chưa có DN"
+    },
+    {
+      "icb_code": "8770",
+      "icb_level": 3,
+      "icb_name": "Dịch vụ tài chính",
+      "industry_code": "CHUNGKHOAN",
+      "note": "nền là môi giới 8777; tín dụng tách ở 8775/8773"
+    },
+    {
+      "icb_code": "8773",
+      "icb_level": 4,
+      "icb_name": "Tài chính cá nhân",
+      "industry_code": "NGANHANG",
+      "note": "tách khỏi 8770 — tài chính tiêu dùng (EVF, F88)"
+    },
+    {
+      "icb_code": "8775",
+      "icb_level": 4,
+      "icb_name": "Tài chính đặc biệt",
+      "industry_code": "NGANHANG",
+      "note": "tách khỏi 8770 — tài chính đặc biệt"
+    },
+    {
+      "icb_code": "8980",
+      "icb_level": 3,
+      "icb_name": "Quỹ đầu tư",
+      "industry_code": null,
+      "note": "KHÔNG NẠP — 24 chứng chỉ quỹ; ETF/quỹ không có ngành"
+    },
+    {
+      "icb_code": "9530",
+      "icb_level": 3,
+      "icb_name": "Phần mềm & Dịch vụ Máy tính",
+      "industry_code": "CONGNGHE",
+      "note": "phần mềm + dịch vụ máy tính + internet"
+    },
+    {
+      "icb_code": "9570",
+      "icb_level": 3,
+      "icb_name": "Thiết bị và Phần cứng",
+      "industry_code": "CONGNGHE",
+      "note": "thiết bị viễn thông + phần cứng"
+    }
+  ],
+  "layer2": [
+    {
+      "ticker": "AAN",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a nông nghiệp bóc khỏi 3573 sau khi đảo"
+    },
+    {
+      "ticker": "ACC",
+      "industry_code": "XAYDUNG",
+      "reason": "G5a xây lắp Bình Dương"
+    },
+    {
+      "ticker": "ACV",
+      "industry_code": "DULICH",
+      "reason": "G6 cảng hàng không tên ngành đã có Hàng không"
+    },
+    {
+      "ticker": "AFX",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3b B1"
+    },
+    {
+      "ticker": "AGM",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3b B1 lợi nhuận chạy theo giá nông sản"
+    },
+    {
+      "ticker": "AMS",
+      "industry_code": "XAYDUNG",
+      "reason": "G5d AMECC kết cấu thép công trình"
+    },
+    {
+      "ticker": "APC",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G7 chiếu xạ nông sản thủy sản xuất khẩu CAN XAC NHAN"
+    },
+    {
+      "ticker": "AST",
+      "industry_code": "DULICH",
+      "reason": "G7 bán lẻ trong sân bay cùng luật với SCS"
+    },
+    {
+      "ticker": "BAF",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a nông nghiệp bóc khỏi 3573 sau khi đảo"
+    },
+    {
+      "ticker": "BAX",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "chủ KCN Bàu Xéo"
+    },
+    {
+      "ticker": "BCM",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "1a cả hai cùng KCN"
+    },
+    {
+      "ticker": "BDT",
+      "industry_code": "XAYDUNG",
+      "reason": "G5a xây lắp Đồng Tháp"
+    },
+    {
+      "ticker": "BIG",
+      "industry_code": "XAYDUNG",
+      "reason": "G3a BIG Invest Group đầu tư xây dựng ICB xếp sai"
+    },
+    {
+      "ticker": "BMP",
+      "industry_code": "NHUA",
+      "reason": "G5d Nhựa Bình Minh chạy theo giá hạt nhựa PVC"
+    },
+    {
+      "ticker": "BRC",
+      "industry_code": "CAOSU",
+      "reason": "G2 cao su thiên nhiên ICB xếp nhầm 1353"
+    },
+    {
+      "ticker": "BRR",
+      "industry_code": "CAOSU",
+      "reason": "G2 cao su thiên nhiên ICB xếp nhầm 1353"
+    },
+    {
+      "ticker": "CCL",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "1b theo chủ dự án"
+    },
+    {
+      "ticker": "CET",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3b B2"
+    },
+    {
+      "ticker": "CIA",
+      "industry_code": "DULICH",
+      "reason": "G6 dịch vụ sân bay Cam Ranh"
+    },
+    {
+      "ticker": "CIG",
+      "industry_code": "DANDUNG",
+      "reason": "G5b theo chủ dự án BĐS"
+    },
+    {
+      "ticker": "CMM",
+      "industry_code": "THUYSAN",
+      "reason": "G3a Camimex nằm ở 3577 nên vẫn cần đè"
+    },
+    {
+      "ticker": "CNA",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a nông nghiệp bóc khỏi 3573 sau khi đảo"
+    },
+    {
+      "ticker": "CRE",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "nguồn uy tín"
+    },
+    {
+      "ticker": "CSC",
+      "industry_code": "DANDUNG",
+      "reason": "G5b COTANA BĐS"
+    },
+    {
+      "ticker": "CTR",
+      "industry_code": "CONGNGHE",
+      "reason": "G5d Viettel Construction hạ tầng viễn thông và towerco"
+    },
+    {
+      "ticker": "CVN",
+      "industry_code": "XAYDUNG",
+      "reason": "G5d Vinam xây dựng dân dụng ICB xếp thiết bị y tế là sai"
+    },
+    {
+      "ticker": "D2D",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "1a cả hai cùng KCN"
+    },
+    {
+      "ticker": "DBC",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a nông nghiệp bóc khỏi 3573 sau khi đảo"
+    },
+    {
+      "ticker": "DCV",
+      "industry_code": "DANDUNG",
+      "reason": "luật BCTC CT công ty quản lý quỹ không dùng mẫu BCTC CK"
+    },
+    {
+      "ticker": "DDB",
+      "industry_code": "DETMAY",
+      "reason": "G5d Đông Dương sản xuất sản phẩm từ gỗ"
+    },
+    {
+      "ticker": "DDG",
+      "industry_code": "TIENICH",
+      "reason": "G6 tra web cung cấp hơi nhiệt điện công nghiệp và nhiên liệu biomass"
+    },
+    {
+      "ticker": "DGT",
+      "industry_code": "XAYDUNG",
+      "reason": "G5a công trình giao thông"
+    },
+    {
+      "ticker": "DID",
+      "industry_code": "XAYDUNG",
+      "reason": "G5a xây lắp họ DIC"
+    },
+    {
+      "ticker": "DLG",
+      "industry_code": "DANDUNG",
+      "reason": "G5b Đức Long Gia Lai holding BĐS BOT"
+    },
+    {
+      "ticker": "DMN",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a nông nghiệp bóc khỏi 3573 sau khi đảo"
+    },
+    {
+      "ticker": "DPR",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "1d ăn sóng BĐS KCN do chuyển đổi đất"
+    },
+    {
+      "ticker": "DQC",
+      "industry_code": "THIETBI",
+      "reason": "G7 Điện Quang sản xuất bóng đèn thiết bị chiếu sáng cùng luật với MBG"
+    },
+    {
+      "ticker": "DRG",
+      "industry_code": "CAOSU",
+      "reason": "G2 cao su thiên nhiên ICB xếp nhầm 1353"
+    },
+    {
+      "ticker": "DRH",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "nguồn uy tín"
+    },
+    {
+      "ticker": "DRI",
+      "industry_code": "CAOSU",
+      "reason": "G2 cao su thiên nhiên ICB xếp nhầm 1353"
+    },
+    {
+      "ticker": "DTD",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "1b theo chủ dự án"
+    },
+    {
+      "ticker": "DTI",
+      "industry_code": "DANDUNG",
+      "reason": "G8 theo chủ dự án độ tin cậy thấp"
+    },
+    {
+      "ticker": "EIN",
+      "industry_code": "DANDUNG",
+      "reason": "G8 theo chủ dự án độ tin cậy thấp"
+    },
+    {
+      "ticker": "F88",
+      "industry_code": "BANLE",
+      "reason": "luật BCTC CT chuỗi cửa hàng cầm đồ"
+    },
+    {
+      "ticker": "FID",
+      "industry_code": "DANDUNG",
+      "reason": "luật BCTC com_type=CT không được vào CHUNGKHOAN holding có sàn BĐS"
+    },
+    {
+      "ticker": "FIT",
+      "industry_code": "DANDUNG",
+      "reason": "G8 F.I.T Group holding dược nước khoáng BĐS nông nghiệp"
+    },
+    {
+      "ticker": "FOC",
+      "industry_code": "CONGNGHE",
+      "reason": "G8 FPT Online quảng cáo trực tuyến và nội dung số"
+    },
+    {
+      "ticker": "GEL",
+      "industry_code": "DANDUNG",
+      "reason": "G5d chủ dự án chốt BĐS không xếp KCN"
+    },
+    {
+      "ticker": "GPC",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3b B2"
+    },
+    {
+      "ticker": "GSP",
+      "industry_code": "DAUKHI",
+      "reason": "G6 vận tải sản phẩm khí theo luật tên dầu khí"
+    },
+    {
+      "ticker": "GVR",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "1d ăn sóng BĐS KCN do chuyển đổi đất"
+    },
+    {
+      "ticker": "HAG",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a nông nghiệp bóc khỏi 3573 sau khi đảo"
+    },
+    {
+      "ticker": "HAR",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "1b theo chủ dự án"
+    },
+    {
+      "ticker": "HHG",
+      "industry_code": "VANTAI",
+      "reason": "G7 Hoàng Hà xe khách tuyến cố định cùng luật với VNS"
+    },
+    {
+      "ticker": "HHS",
+      "industry_code": "DANDUNG",
+      "reason": "G7 Hoàng Huy nay là BĐS Hải Phòng"
+    },
+    {
+      "ticker": "HKB",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3b B1"
+    },
+    {
+      "ticker": "HMR",
+      "industry_code": "KHOANGSAN",
+      "reason": "G5a khai thác mỏ đá cùng luật với KSB và TTZ"
+    },
+    {
+      "ticker": "HNG",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a nông nghiệp bóc khỏi 3573 sau khi đảo"
+    },
+    {
+      "ticker": "HPA",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a nông nghiệp bóc khỏi 3573 sau khi đảo"
+    },
+    {
+      "ticker": "HPI",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "nguồn uy tín"
+    },
+    {
+      "ticker": "HRC",
+      "industry_code": "CAOSU",
+      "reason": "G2 cao su thiên nhiên ICB xếp nhầm 1353"
+    },
+    {
+      "ticker": "HSL",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3b B1"
+    },
+    {
+      "ticker": "HVA",
+      "industry_code": "CONGNGHE",
+      "reason": "luật BCTC CT fintech cho vay ngang hàng"
+    },
+    {
+      "ticker": "IDC",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "1a cả hai cùng KCN"
+    },
+    {
+      "ticker": "IDV",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "nguồn uy tín"
+    },
+    {
+      "ticker": "ILA",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3b B2"
+    },
+    {
+      "ticker": "IPA",
+      "industry_code": "DANDUNG",
+      "reason": "G5d luật BCTC com_type=CT holding mẹ của VND"
+    },
+    {
+      "ticker": "IRC",
+      "industry_code": "CAOSU",
+      "reason": "G2 cao su thiên nhiên ICB xếp nhầm 1353"
+    },
+    {
+      "ticker": "ITA",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "nguồn uy tín"
+    },
+    {
+      "ticker": "KBC",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "1a cả hai cùng KCN"
+    },
+    {
+      "ticker": "KGM",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3b B1"
+    },
+    {
+      "ticker": "KOS",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "1b theo chủ dự án"
+    },
+    {
+      "ticker": "KPF",
+      "industry_code": "DANDUNG",
+      "reason": "luật BCTC com_type=CT holding đầu tư tài sản"
+    },
+    {
+      "ticker": "KSB",
+      "industry_code": "KHOANGSAN",
+      "reason": "G4 B mỏ đá thật"
+    },
+    {
+      "ticker": "L14",
+      "industry_code": "DANDUNG",
+      "reason": "G5b Licogi 14 BĐS và đầu tư"
+    },
+    {
+      "ticker": "LAI",
+      "industry_code": "DANDUNG",
+      "reason": "G5b theo chủ dự án"
+    },
+    {
+      "ticker": "LHG",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "1a cả hai cùng KCN"
+    },
+    {
+      "ticker": "LIX",
+      "industry_code": "HOACHAT",
+      "reason": "G7 bột giặt thực chất là hóa chất chủ dự án chốt"
+    },
+    {
+      "ticker": "MAC",
+      "industry_code": "VANTAI",
+      "reason": "G6 Macstar tiền thân cung ứng dịch vụ kỹ thuật hàng hải"
+    },
+    {
+      "ticker": "MBG",
+      "industry_code": "THIETBI",
+      "reason": "G5d sản xuất thiết bị chiếu sáng và thiết bị điện"
+    },
+    {
+      "ticker": "MH3",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "tên là KCN"
+    },
+    {
+      "ticker": "MLS",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a nông nghiệp bóc khỏi 3573 sau khi đảo"
+    },
+    {
+      "ticker": "NCG",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a Anova Agri là thức ăn chăn nuôi và thú y"
+    },
+    {
+      "ticker": "NDF",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3b B1"
+    },
+    {
+      "ticker": "NET",
+      "industry_code": "HOACHAT",
+      "reason": "G7 bột giặt Net cùng luật với LIX"
+    },
+    {
+      "ticker": "NHA",
+      "industry_code": "DANDUNG",
+      "reason": "G5b Nhà và Đô thị Nam Hà Nội"
+    },
+    {
+      "ticker": "NHV",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3b B3"
+    },
+    {
+      "ticker": "NSC",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a nông nghiệp bóc khỏi 3573 sau khi đảo"
+    },
+    {
+      "ticker": "NSS",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a nông nghiệp bóc khỏi 3573 sau khi đảo"
+    },
+    {
+      "ticker": "NTC",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "nguồn uy tín"
+    },
+    {
+      "ticker": "NTL",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "nguồn uy tín"
+    },
+    {
+      "ticker": "NTP",
+      "industry_code": "NHUA",
+      "reason": "G5d Nhựa Tiền Phong"
+    },
+    {
+      "ticker": "OCH",
+      "industry_code": "DULICH",
+      "reason": "G3b chủ dự án chốt One Capital Hospitality đã xoay sang khách sạn"
+    },
+    {
+      "ticker": "OGC",
+      "industry_code": "DANDUNG",
+      "reason": "luật BCTC CT Đại Dương BĐS và khách sạn qua OCH"
+    },
+    {
+      "ticker": "PC1",
+      "industry_code": "TIENICH",
+      "reason": "G5c lợi nhuận chính từ thủy điện và điện gió"
+    },
+    {
+      "ticker": "PFL",
+      "industry_code": "DANDUNG",
+      "reason": "G5b Dầu khí Đông Đô BĐS"
+    },
+    {
+      "ticker": "PGN",
+      "industry_code": "HOACHAT",
+      "reason": "G7 phụ gia nhựa là hóa chất không phải nhựa"
+    },
+    {
+      "ticker": "PGT",
+      "industry_code": "DANDUNG",
+      "reason": "G6 tra web nay là holding M&A BĐS khách sạn không còn taxi"
+    },
+    {
+      "ticker": "PHR",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "1d ăn sóng BĐS KCN do chuyển đổi đất"
+    },
+    {
+      "ticker": "PLC",
+      "industry_code": "DAUKHI",
+      "reason": "G6 hóa dầu Petrolimex dầu nhờn nhựa đường"
+    },
+    {
+      "ticker": "PNJ",
+      "industry_code": "BANLE",
+      "reason": "G7 bán lẻ trang sức cả hai nguồn đồng ý"
+    },
+    {
+      "ticker": "PSL",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a nông nghiệp bóc khỏi 3573 sau khi đảo"
+    },
+    {
+      "ticker": "PSP",
+      "industry_code": "DAUKHI",
+      "reason": "G6 cảng dịch vụ dầu khí"
+    },
+    {
+      "ticker": "PTB",
+      "industry_code": "VATLIEU",
+      "reason": "G5d Phú Tài đá granite theo chủ dự án"
+    },
+    {
+      "ticker": "PVM",
+      "industry_code": "DAUKHI",
+      "reason": "G6 máy thiết bị dầu khí"
+    },
+    {
+      "ticker": "PVO",
+      "industry_code": "DAUKHI",
+      "reason": "G6 dầu nhờn PV Oil"
+    },
+    {
+      "ticker": "PVP",
+      "industry_code": "DAUKHI",
+      "reason": "G6 nt"
+    },
+    {
+      "ticker": "PVT",
+      "industry_code": "DAUKHI",
+      "reason": "G6 nt lưu ý PVT là đội tàu chở dầu lớn nhất VN"
+    },
+    {
+      "ticker": "PVV",
+      "industry_code": "DAUKHI",
+      "reason": "G5d chủ dự án chốt theo tên Dầu khí"
+    },
+    {
+      "ticker": "PVX",
+      "industry_code": "DAUKHI",
+      "reason": "G5d chủ dự án chốt theo tên Dầu khí"
+    },
+    {
+      "ticker": "PXL",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "tên là KCN"
+    },
+    {
+      "ticker": "RBC",
+      "industry_code": "CAOSU",
+      "reason": "G2 cao su thiên nhiên ICB xếp nhầm 1353"
+    },
+    {
+      "ticker": "RTB",
+      "industry_code": "CAOSU",
+      "reason": "G2 cao su thiên nhiên ICB xếp nhầm 1353"
+    },
+    {
+      "ticker": "SAS",
+      "industry_code": "DULICH",
+      "reason": "G7 SASCO bán lẻ sân bay Tân Sơn Nhất"
+    },
+    {
+      "ticker": "SBB",
+      "industry_code": "DETMAY",
+      "reason": "G3b chủ dự án chốt giữ phân loại cũ"
+    },
+    {
+      "ticker": "SBR",
+      "industry_code": "CAOSU",
+      "reason": "G2 cao su thiên nhiên ICB xếp nhầm 1353"
+    },
+    {
+      "ticker": "SBV",
+      "industry_code": "NHUA",
+      "reason": "G7 Siam Brothers dây thừng lưới đánh cá từ nhựa PP PE"
+    },
+    {
+      "ticker": "SGI",
+      "industry_code": "DANDUNG",
+      "reason": "G7 tra web holding sản xuất tài chính BĐS độ tin cậy thấp"
+    },
+    {
+      "ticker": "SHN",
+      "industry_code": "BANLE",
+      "reason": "G4 C HANIC thương mại VLXD và XNK mã than của ICB đã lỗi thời"
+    },
+    {
+      "ticker": "SIP",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "1a cả hai cùng KCN"
+    },
+    {
+      "ticker": "SKG",
+      "industry_code": "VANTAI",
+      "reason": "G6 tàu cao tốc chở khách"
+    },
+    {
+      "ticker": "SNZ",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "nguồn uy tín"
+    },
+    {
+      "ticker": "SSC",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a nông nghiệp bóc khỏi 3573 sau khi đảo"
+    },
+    {
+      "ticker": "STH",
+      "industry_code": "BANLE",
+      "reason": "G7 theo chủ dự án độ tin cậy thấp"
+    },
+    {
+      "ticker": "SVT",
+      "industry_code": "THIETBI",
+      "reason": "G4 B Savitech cơ khí chế tạo xe đạp xe máy phụ tùng"
+    },
+    {
+      "ticker": "SZB",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "cùng họ Sonadezi"
+    },
+    {
+      "ticker": "SZC",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "1a cả hai cùng KCN"
+    },
+    {
+      "ticker": "SZG",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "cùng họ Sonadezi"
+    },
+    {
+      "ticker": "SZL",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "nguồn uy tín"
+    },
+    {
+      "ticker": "TAR",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a nông nghiệp bóc khỏi 3573 sau khi đảo"
+    },
+    {
+      "ticker": "TCJ",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a nông nghiệp bóc khỏi 3573 sau khi đảo"
+    },
+    {
+      "ticker": "TCO",
+      "industry_code": "VANTAI",
+      "reason": "G3a Janus Group tiền thân Vận tải Duyên Hải ICB xếp sai"
+    },
+    {
+      "ticker": "THG",
+      "industry_code": "XAYDUNG",
+      "reason": "G5a xây dựng Tiền Giang"
+    },
+    {
+      "ticker": "TID",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "holding mẹ của TIP"
+    },
+    {
+      "ticker": "TIN",
+      "industry_code": "NGANHANG",
+      "reason": "luật BCTC com_type=NH lớp 1 đưa nhầm sang CHUNGKHOAN"
+    },
+    {
+      "ticker": "TIP",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "1a cả hai cùng KCN"
+    },
+    {
+      "ticker": "TIX",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "nguồn uy tín"
+    },
+    {
+      "ticker": "TLD",
+      "industry_code": "XAYDUNG",
+      "reason": "G5a xây dựng đô thị Thăng Long"
+    },
+    {
+      "ticker": "TLG",
+      "industry_code": "YTE",
+      "reason": "G7 Thiên Long văn phòng phẩm giáo dục cùng mùa khai giảng CAN XAC NHAN"
+    },
+    {
+      "ticker": "TNC",
+      "industry_code": "CAOSU",
+      "reason": "G2 cao su thiên nhiên ICB xếp nhầm 1353"
+    },
+    {
+      "ticker": "TRC",
+      "industry_code": "CAOSU",
+      "reason": "G2 cao su thiên nhiên ICB xếp nhầm 1353"
+    },
+    {
+      "ticker": "TT6",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3b B1"
+    },
+    {
+      "ticker": "TTH",
+      "industry_code": "BANLE",
+      "reason": "G4 D thời trang Valentino và khoáng sản ICB xếp thép là sai"
+    },
+    {
+      "ticker": "TTZ",
+      "industry_code": "KHOANGSAN",
+      "reason": "G5d tra web khai thác cát đá sỏi Thái Bình"
+    },
+    {
+      "ticker": "TV1",
+      "industry_code": "TIENICH",
+      "reason": "G5c tư vấn thiết kế công trình điện theo chu kỳ đầu tư ngành điện"
+    },
+    {
+      "ticker": "TV2",
+      "industry_code": "TIENICH",
+      "reason": "G5c nt"
+    },
+    {
+      "ticker": "TV3",
+      "industry_code": "TIENICH",
+      "reason": "G5c nt danh sách cũ ghi THIETBI có vẻ nhầm"
+    },
+    {
+      "ticker": "TVC",
+      "industry_code": "DANDUNG",
+      "reason": "luật BCTC CT holding T Corp"
+    },
+    {
+      "ticker": "VC3",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "nguồn uy tín"
+    },
+    {
+      "ticker": "VGC",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "1a cả hai cùng KCN dù ICB xếp vật liệu"
+    },
+    {
+      "ticker": "VHG",
+      "industry_code": "DANDUNG",
+      "reason": "G7 theo chủ dự án độ tin cậy thấp"
+    },
+    {
+      "ticker": "VIW",
+      "industry_code": "TIENICH",
+      "reason": "G5c VIWASEEN cấp nước"
+    },
+    {
+      "ticker": "VKC",
+      "industry_code": "NHUA",
+      "reason": "G2 thực chất cáp và ống nhựa không phải lốp"
+    },
+    {
+      "ticker": "VLC",
+      "industry_code": "NONGNGHIEP",
+      "reason": "G3a nông nghiệp bóc khỏi 3573 sau khi đảo"
+    },
+    {
+      "ticker": "VNS",
+      "industry_code": "VANTAI",
+      "reason": "G6 Vinasun taxi"
+    },
+    {
+      "ticker": "VRG",
+      "industry_code": "KHUCONGNGHIEP",
+      "reason": "tên là KCN"
+    },
+    {
+      "ticker": "VTK",
+      "industry_code": "CONGNGHE",
+      "reason": "G5d Tư vấn và Dịch vụ Viettel"
+    },
+    {
+      "ticker": "VTV",
+      "industry_code": "KHOANGSAN",
+      "reason": "G5a VICEM EE cấp 100% than cho 4 nhà máy xi măng thương mại theo mặt hàng"
+    },
+    {
+      "ticker": "VVS",
+      "industry_code": "THIETBI",
+      "reason": "G7 Đầu tư Phát triển Máy Việt Nam"
+    },
+    {
+      "ticker": "XMC",
+      "industry_code": "XAYDUNG",
+      "reason": "G5a xây dựng Xuân Mai"
+    },
+    {
+      "ticker": "XPH",
+      "industry_code": "HOACHAT",
+      "reason": "G7 Xà phòng Hà Nội cùng nhánh 3767 cùng luật"
+    }
+  ]
+}
