@@ -15,6 +15,7 @@ import threading
 import time
 from collections import deque
 from dataclasses import dataclass
+from datetime import date
 
 from clickhouse_connect.driver.exceptions import DataError
 
@@ -85,6 +86,20 @@ _DETERMINISTIC_CODES = frozenset({
     321,  # VALUE_IS_OUT_OF_RANGE_OF_DATA_TYPE
     407,  # DECIMAL_OVERFLOW
 })
+
+
+def _block_days(table: str, block: list) -> set[date]:
+    """Tập ngày (giờ VN — `received_at` do writer cấp, đã tz-aware) mà một block chạm tới,
+    đọc từ dòng ĐẦU và CUỐI. Dòng thiếu `received_at` bỏ qua, không đoán."""
+    out: set[date] = set()
+    if not block:
+        return out
+    ra = RA_IDX[table]
+    for row in (block[0], block[-1]):
+        ts = row[ra]
+        if ts is not None:
+            out.add(ts.date())
+    return out
 
 
 def _is_deterministic(e: Exception) -> bool:
@@ -169,6 +184,11 @@ class ChWriter:
             # được). Chép dict 3 khoá, rẻ (review M3).
             for key, val in self.spill.counters.items():
                 self.metrics.set(key, val)     # orphan_tmp/replay_corrupt/seq_collision
+            # Gauge `spill_bytes` (spec §8) — miễn phí: `bytes_used` là biến đếm store đã
+            # duy trì sẵn. KHÔNG kèm `spill_files` ở đây: đếm file là một lần liệt kê thư
+            # mục trên đường nóng mỗi nhịp, mà `spill_blocks`/`replay_blocks` đã nói đủ về
+            # số block vào/ra. Số file chỉ lấy ở đường nguội (`SpillStore.pending_files`).
+            self.metrics.set("spill_bytes", self.spill.bytes_used)
         with self._lock:
             for table, buf in self.buffers.items():
                 if buf:
@@ -195,7 +215,10 @@ class ChWriter:
             return
         if not self.spill.try_acquire():
             return                             # chủ cũ còn sống — KHÔNG đụng, kể cả đọc
-        self.spill.scan()                      # counter quét được do `manage_once` sao chép
+        # `try_acquire` đã quét ngay trong lúc giành khoá (spill.py, nợ M4) — KHÔNG quét
+        # lại ở đây: quét xoá cả `.tmp` mồ côi, mà từ nhịp này trở đi thread vòng ghi có
+        # thể đang có một `.tmp` sống giữa chừng. Counter quét được do `manage_once` sao
+        # chép ngay bên dưới.
         if not self.spill.empty():
             self._enter_disk("adopt")
 
@@ -523,9 +546,76 @@ class ChWriter:
         self.write_once(budget_s=RETRY_BUDGET_S + 30)
 
     def clean(self) -> bool:
-        """Buffer + hàng đợi RAM đã rỗng (Task 8 sẽ thêm điều kiện `spill.empty()` khi
-        chế độ đĩa tồn tại thật)."""
+        """Buffer + hàng đợi RAM + ĐĨA đều rỗng (spec §5.1).
+
+        Đĩa chỉ tính khi TA sở hữu nó: file trong một store chưa giành được khoá là hàng
+        đợi của tiến trình KHÁC (spec §4) — ta không có quyền đọc/xoá nên cũng không có
+        món nợ nào để trả; để nó chặn `clean()` thì phiên nào cũng kết thúc bằng phán
+        quyết "không đáng tin" vì nợ của người khác."""
+        if self.spill is not None and self.spill.owned and not self.spill.empty():
+            return False
         return not any(self.buffers.values()) and not self.queue and not self.head
+
+    def replay_debt(self) -> set[date]:
+        """Xả TOÀN BỘ nợ đĩa TRƯỚC PHIÊN — trả về tập ngày mà nợ đó thuộc về (spec §5.3).
+
+        Hết tốc lực, KHÔNG có trần `K_REPLAY_ROWS`: tiết lưu K sinh ra để chừa băng thông
+        ClickHouse cho dòng ĐANG chảy của phiên (spec §2.4), mà ở đây chưa có socket, chưa
+        có leader, chưa có dòng nào — nhường ai. Đổi lại nợ phải sạch trước 9h.
+
+        Ngày lấy từ `received_at` của dòng ĐẦU và CUỐI mỗi block: một block luôn được cắt
+        trong vài giây nên hai đầu đã kẹp trọn khoảng ngày của nó; quét cả 5.000 dòng chỉ
+        để ra cùng một tập ngày là phí.
+
+        Bốn lối ra, không lối nào làm mất dòng:
+        - hết file → trả tập ngày, phiên vào chế độ RAM bình thường;
+        - transient (ClickHouse chưa dậy) → dừng, nợ giữ nguyên;
+        - dòng độc → `_split_disk_item` cô lập; nó giữ file cha thì dừng luôn (review I3);
+        - lỗi I/O đĩa → nuốt, đếm, dừng: spec §2.1 cấm lỗi đường đĩa thoát ra khỏi vòng
+          quản/vòng ghi, mà ở đây thoát ra còn tệ hơn — nó bay thẳng qua `_run_run` thành
+          traceback trần exit 1, đi vòng đúng hợp đồng exit 3 (bài học ACCESS_DENIED
+          26/08). Nợ nằm lại đĩa, vòng ghi trong phiên thử tiếp.
+
+        🔴 Bất biến ĐẦU RA (khối `finally`): còn file trên đĩa ⇒ writer PHẢI ở chế độ đĩa.
+        Không thể để một lối ra nào quên: `_adopt_spill_if_possible` chỉ vào chế độ đĩa
+        lúc NHẬN NUÔI, mà lúc này store đã sở hữu rồi nên nó về ngay — file sót sẽ nằm đó
+        suốt phiên trong khi block mới đi thẳng vào kho (FIFO vỡ) và `clean()` False tới
+        cuối phiên (phán quyết "KHÔNG ĐÁNG TIN" mỗi ngày).
+        """
+        if self.spill is None or not self.spill.owned:
+            return set()               # không sở hữu thì KHÔNG đụng, kể cả đọc (spec §4)
+        days: set[date] = set()
+        try:
+            while True:
+                item = self.spill.next_batch(max_rows=BLOCK_CAP)
+                if item is None:
+                    if days:
+                        log.warning("đã phát lại xong nợ đĩa của ngày %s",
+                                    sorted(str(d) for d in days))
+                    return days
+                status = self._insert(item.table, item.block)
+                if status == "done":
+                    days |= _block_days(item.table, item.block)
+                    self.spill.delete(item)   # XOÁ CHỈ SAU insert thành công (spec §3)
+                    self.metrics.inc("replay_blocks", len(item.paths))
+                    continue
+                if status == "transient":
+                    code, rep = self._last_err
+                    log.warning("phát lại nợ đĩa dừng ở lỗi transient: code=%s %s — "
+                                "vào phiên ở CHẾ ĐỘ ĐĨA, nợ giữ nguyên", code, rep)
+                    return days
+                if not self._split_disk_item(item):
+                    return days
+        except OSError:
+            self.metrics.inc("spill_io_error")
+            log.exception("lỗi I/O khi phát lại nợ đĩa — dừng phát lại, vào phiên ở "
+                          "CHẾ ĐỘ ĐĨA, nợ giữ nguyên")
+            return days
+        finally:
+            if not self.spill.empty():
+                # `_enter_disk` tự bỏ qua nếu đã ở chế độ đĩa; `queue` lúc khởi động rỗng
+                # nên đầu RAM đông cứng cũng rỗng — vô hại.
+                self._enter_disk("debt_replay")
 
     def insert_percentiles(self) -> dict:
         xs = sorted(self.insert_s)

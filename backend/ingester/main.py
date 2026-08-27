@@ -24,8 +24,9 @@ from core import ch_migrate
 from ingester import catalog as cat
 from ingester import config, eio
 from ingester import leader as leader_mod
+from ingester import spill as spill_mod
 from ingester import state as state_mod
-from ingester.chwriter import RETRY_BUDGET_S, ChWriter
+from ingester.chwriter import SPILL_CAP_BYTES, ChWriter
 from ingester.dedup import FrameDedup, Stamper, frame_key
 from ingester.measure import MeasureWriter, prune_old
 from ingester.normalize import (
@@ -290,21 +291,39 @@ async def _run_reconcile(cfg: config.Config, d) -> int:
     return 1 if (result.p1 or result.p2) else 0
 
 
-# Ngân sách xả cuối phiên phải DÀI HƠN ngân sách retry của ChWriter: lúc đóng phiên,
-# thread `write_once` cũ có thể còn kẹt trong nhịp retry transient tới `RETRY_BUDGET_S`
-# giây, mà `_write_lock` làm mọi lời gọi mới về ngay nên vòng dưới chỉ quay rỗng chờ nó.
-# Trần cũ 3 s (30 vòng x 0,1 s) cạn trước ⇒ `reconcile()` đọc kho khi đuôi phiên chưa
-# ghi xong ⇒ P2 giả + exit code 1 (M-new-3). Suy từ hằng số kia để hai bên không trôi lệch.
-DRAIN_BUDGET_S = RETRY_BUDGET_S + 15.0
+# Ngân sách xả cuối phiên — HAI mức, chọn theo việc có nợ đĩa hay không (spec §5.1).
+#
+# Mức thường 75 s: lúc đóng phiên, thread `write_once` cũ có thể còn kẹt trong nhịp retry
+# transient tới `RETRY_BUDGET_S` giây, mà `_write_lock` làm mọi lời gọi mới về ngay nên
+# vòng dưới chỉ quay rỗng chờ nó. Trần cũ 3 s (30 vòng x 0,1 s) cạn trước ⇒ `reconcile()`
+# đọc kho khi đuôi phiên chưa ghi xong ⇒ P2 giả + exit code 1 (M-new-3).
+#
+# 🔴 Con số 75 s giữ nguyên nhưng CĂN CỨ đã đổi, nên nó không còn được suy ra từ
+# `RETRY_BUDGET_S + 15`: từ Task 6, cạn ngân sách retry KHÔNG còn bỏ block mà chuyển cả
+# writer sang chế độ đĩa, nên "chờ cho thread retry cũ xong" không còn là kịch bản xấu
+# nhất — kịch bản xấu nhất là XẢ NỢ ĐĨA, mà nợ đĩa đo bằng GiB chứ không bằng giây retry
+# (spec §5.1). Hai mức, hai lý do, không mức nào suy từ mức kia:
+DRAIN_CLEAN_BUDGET_S = 75.0    # đĩa rỗng (hoặc không có đĩa) và không ở chế độ đĩa
+DRAIN_HARD_CAP_S = 600.0       # có nợ đĩa — trần cứng 10 phút, spec §5.1
+# Spec §5.1 viết ngân sách nợ = min(độ sâu ÷ K, trần cứng). Ở đây dùng thẳng trần cứng:
+# mỗi nhịp vòng dưới cách nhau ≥ 1 s và xả tối đa K dòng, nên "độ sâu ÷ K" chính là số
+# NHỊP cần — tức số giây — và lấy min chỉ để về sớm hơn, mà `writer.clean()` ở đầu vòng
+# đã về sớm ngay khi nợ hết. Một hằng số thay một công thức cho cùng một hành vi.
 
 
-async def drain_writer(writer, budget_s: float = DRAIN_BUDGET_S,
+async def drain_writer(writer, budget_s: float | None = None,
                        sleep_fn=asyncio.sleep, clock=time.monotonic) -> bool:
-    """Xả nốt đuôi phiên trước khi reconcile. True nếu `writer.clean()`.
+    """Xả nốt đuôi phiên trước khi reconcile. True nếu `writer.clean()` (gồm cả đĩa rỗng).
 
     `write_loop` bị cancel ở tầng await nhưng THREAD `write_once` của nó vẫn chạy tiếp;
     `_write_lock` (review cuối IMPORTANT 4) làm lời gọi ở đây về ngay thay vì giẫm lên nó.
     """
+    spill = writer.spill
+    # Nợ đĩa CỦA MÌNH mới tính: store chưa giành được khoá là hàng đợi của tiến trình khác
+    # (spec §4) — chờ 10 phút cho nợ người khác là vô nghĩa, ta không được phép xả nó.
+    has_debt = writer.disk_mode or (spill is not None and spill.owned and not spill.empty())
+    if budget_s is None:
+        budget_s = DRAIN_HARD_CAP_S if has_debt else DRAIN_CLEAN_BUDGET_S
     end = clock() + budget_s
     while True:
         await asyncio.to_thread(writer.manage_once)
@@ -314,6 +333,12 @@ async def drain_writer(writer, budget_s: float = DRAIN_BUDGET_S,
         if clock() >= end:
             log.error("hết %.0fs ngân sách xả mà buffer chưa sạch — phán quyết "
                       "reconcile bên dưới có thể sai lệch (thiếu đuôi phiên)", budget_s)
+            if spill is not None and spill.owned and not spill.empty():
+                # Nợ ĐỂ LẠI, không vứt (spec §5.2) — lần khởi động sau `replay_debt` xả
+                # nốt rồi tự chạy lại đối chứng cho ngày nợ.
+                n_files, n_bytes = spill.pending_files()
+                log.error("còn %d block / %d byte trên đĩa — để lại cho lần khởi động sau "
+                          "phát lại, KHÔNG vứt", n_files, n_bytes)
             return False
         # >= 1s giữa các nhịp CHƯA sạch: 0,1s cũ (đúng cho vòng xả bản v1, tick rồi mới
         # xả) giờ nghĩa khác — mỗi nhịp ở đây gọi thẳng `write_once`, nên một server đang
@@ -321,6 +346,46 @@ async def drain_writer(writer, budget_s: float = DRAIN_BUDGET_S,
         # vì ~7 lần như backoff cũ (review Opus Finding 2). Nhịp sạch (return True ở trên)
         # không đi qua đường này nên không mất tốc độ phát hiện sạch.
         await sleep_fn(1.0)
+
+
+async def _replay_startup_debt(writer, store, rc_client_factory) -> list:
+    """Trả nợ đĩa TRƯỚC PHIÊN rồi chạy lại đối chứng cho từng ngày nợ (spec §5.3).
+
+    Trả về danh sách ngày ĐÃ chạy lại đối chứng (tăng dần). Ngày HÔM NAY không nằm trong
+    đó: đối chứng cuối phiên hôm nay sẽ lo, chạy sớm lúc 8h chỉ ra một phán quyết rỗng.
+
+    🔴 Chỗ này insert vào ClickHouse mà KHÔNG giữ khoá leader Redis, có chủ đích: đây là
+    đường khởi động một tiến trình (`manage_loop`/`write_loop`/`leader.run` đều chưa
+    chạy), và thứ bảo vệ file spill là khoá OS trên chính thư mục đó — giành được khoá
+    nghĩa là chủ cũ đã chết thật, không có writer nào khác đang cầm những file này (spec
+    §4). Đừng dời xuống sau khi giành leader: nợ phải sạch trước khi phiên bắt đầu bơm
+    dòng mới, nếu không FIFO toàn cục vỡ và cửa sổ dedup (đếm bằng BLOCK — spec §7) bị
+    đẩy đi bởi chính dòng mới.
+    """
+    if not store.try_acquire():
+        log.warning("thư mục spill đang bị tiến trình khác giữ — chạy KHÔNG có lưới đĩa "
+                    "(spec §4): cạn ngân sách retry sẽ bỏ block CÓ SỔ, không xuống đĩa")
+        return []
+    debt_days = await asyncio.to_thread(writer.replay_debt)
+    days = sorted(d for d in debt_days if d < datetime.now(TZ).date())
+    for dd in days:
+        log.info("nợ đĩa ngày %s đã phát lại — chạy lại đối chứng thay cho phán quyết "
+                 "'KHÔNG ĐÁNG TIN' của phiên trước", dd)
+        # Client RIÊNG, trần đọc mặc định của driver: `reconcile` quét FULL OUTER JOIN
+        # trọn ngày, dùng client ghi (send_receive_timeout=20 s) sẽ hết giờ đọc — đúng
+        # lý do đường cuối phiên cũng dựng `rc_client` riêng.
+        try:
+            rc = rc_client_factory()
+            try:
+                _print_reconcile(await asyncio.to_thread(reconcile, rc, dd))
+            finally:
+                rc.close()
+        except ClickHouseError:
+            # Phán quyết đối chứng là BÁO CÁO, không phải cổng khởi động: hỏng thì ghi log
+            # rồi vào phiên. Từ chối chạy cả ngày vì một truy vấn ĐỌC của hôm qua là đổi
+            # một sự cố nhỏ lấy một ngày mất dữ liệu.
+            log.exception("chạy lại đối chứng ngày %s thất bại — vẫn vào phiên", dd)
+    return days
 
 
 # Mặc định `send_receive_timeout` của clickhouse_connect là 300 s — gấp 5 lần cả ngân
@@ -351,11 +416,17 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
         log.error("Redis ping thất bại")
         return 3
 
+    # Lưới đĩa + trả nợ TRƯỚC catalog/socket: nợ của phiên trước phải vào kho trước khi
+    # dòng mới bắt đầu chảy (spec §5.3, xem `_replay_startup_debt`).
+    store = spill_mod.SpillStore(cfg.spill_dir, SPILL_CAP_BYTES)
+    writer = ChWriter(client, spill=store)
+    await _replay_startup_debt(
+        writer, store, lambda: clickhouse_connect.get_client(dsn=cfg.clickhouse_url))
+
     catalog = await asyncio.to_thread(cat.build_catalog)
     topics = cat.topics(catalog)
     log.info("run: %d mã, %d topic", len(catalog.symbols), len(topics))
 
-    writer = ChWriter(client)
     sink = state_mod.RedisSink(redis)
     dedup = FrameDedup()
     stamper = Stamper()

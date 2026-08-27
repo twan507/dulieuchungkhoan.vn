@@ -43,6 +43,16 @@ class SpillStore:
         self._lock_fh = None
 
     def try_acquire(self) -> bool:
+        """Giành khoá RỒI QUÉT, `owned` đặt CUỐI CÙNG (nợ Task 6 — M4).
+
+        🔴 Thứ tự này là hợp đồng, không phải sở thích: `owned = True` đặt trước `scan()`
+        mở một khe mà store đã nhận là "của mình" nhưng `seq`/`bytes_used` còn nguyên giá
+        trị khởi tạo (1 và 0). Một block xuống đĩa trong khe đó (cửa 2 chạy ở thread vòng
+        ghi) ghi đè tên `0000000001-…` — đo trên bản lỗi: file thứ hai `0000000001-trade-r`
+        ra đời TRÙNG seq mà `seq_collision` không hề tăng (chốt `final.exists()` so cả
+        `kind` nên hai kind khác nhau lọt), và block cùng kind kế tiếp thì bị TỪ CHỐI dù
+        đĩa hoàn toàn khoẻ. `bytes_used = 0` cũ còn làm trần đĩa nới ra bằng đúng khối nợ
+        đang nằm sẵn. Giành được khoá xong là store phải SẴN SÀNG ghi ngay."""
         if self.owned:
             return True
         fh = open(self.root / "owner.lock", "a+b")
@@ -58,11 +68,17 @@ class SpillStore:
             fh.close()
             return False
         self._lock_fh = fh                    # giữ mở suốt đời — nhả = chết
-        self.owned = True
+        self._scan()
+        self.owned = True                     # ĐẶT CUỐI — xem docstring
         return True
 
     def scan(self) -> None:
+        """Quét lại thủ công. `try_acquire()` đã quét sẵn nên đường chạy KHÔNG cần gọi;
+        giữ public cho test và cho ca muốn đồng bộ lại `seq`/`bytes_used` với đĩa."""
         assert self.owned, "scan() chỉ sau khi try_acquire() thành công"
+        self._scan()
+
+    def _scan(self) -> None:
         max_seq = 0
         self.bytes_used = 0
         for p in list(self.root.iterdir()):
@@ -81,6 +97,14 @@ class SpillStore:
 
     def empty(self) -> bool:
         return not self._files()
+
+    def pending_files(self) -> tuple[int, int]:
+        """(số block, số byte) còn nợ trên đĩa — cho log hết ngân sách xả (spec §5.2).
+
+        Đơn vị là BLOCK + BYTE, không phải dòng: đếm dòng buộc phải `pickle.loads` toàn bộ
+        hàng đợi đĩa (có thể nhiều GiB) đúng lúc phiên đang đóng. `bytes_used` là biến đếm
+        đã duy trì sẵn nên chỉ tốn một lần liệt kê thư mục."""
+        return len(self._files()), self.bytes_used
 
     def write(self, table: str, block: list, kind: str) -> bool:
         if not self.owned:

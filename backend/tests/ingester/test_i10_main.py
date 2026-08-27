@@ -351,6 +351,10 @@ class _StuckWriter:
         self.queue = []
         self.head = []
         self.calls = 0
+        # Task 8: `drain_writer` chọn ngân sách theo nợ đĩa — writer giả phải khai đủ hai
+        # thuộc tính đó. Không có đĩa, không ở chế độ đĩa ⇒ mức thường (DRAIN_CLEAN_BUDGET_S).
+        self.spill = None
+        self.disk_mode = False
 
     def manage_once(self) -> None:
         pass
@@ -378,15 +382,18 @@ class _FakeClock:
 
 
 def test_drain_budget_strictly_exceeds_writer_retry_budget():
-    """Bất biến thật, độc lập với con số cụ thể của cả hai bên."""
-    assert main_mod.DRAIN_BUDGET_S > chwriter_mod.RETRY_BUDGET_S
+    """Bất biến thật, độc lập với con số cụ thể của cả hai bên. Task 8 tách hai mức ngân
+    sách (spec spill §5.1): mức THƯỜNG vẫn phải sống lâu hơn nhịp retry của ChWriter, và
+    mức có-nợ-đĩa phải rộng hơn mức thường — nếu không thì nợ đĩa chẳng được ưu ái gì."""
+    assert main_mod.DRAIN_CLEAN_BUDGET_S > chwriter_mod.RETRY_BUDGET_S
+    assert main_mod.DRAIN_HARD_CAP_S > main_mod.DRAIN_CLEAN_BUDGET_S
 
 
 def test_drain_writer_outlasts_chwriter_retry_budget():
     clock = _FakeClock()
     # Đúng biên: thread cũ ngốn TRỌN ngân sách retry rồi mới ghi xong. Lấy đúng hằng số
     # kia làm mốc, không cộng thêm biên nới tay — nới thì một chỉnh sửa thu hẹp
-    # DRAIN_BUDGET_S vẫn lọt qua.
+    # DRAIN_CLEAN_BUDGET_S vẫn lọt qua.
     stuck = _StuckWriter(clock, clears_after_s=chwriter_mod.RETRY_BUDGET_S)
 
     ok = asyncio.run(main_mod.drain_writer(stuck, sleep_fn=clock.sleep, clock=clock))
@@ -403,7 +410,7 @@ def test_drain_writer_gives_up_and_reports_when_never_drains():
 
     assert ok is False
     # Bỏ cuộc đúng lúc, không quay vô tận.
-    assert clock.now - 1000.0 <= main_mod.DRAIN_BUDGET_S + 1.0
+    assert clock.now - 1000.0 <= main_mod.DRAIN_CLEAN_BUDGET_S + 1.0
 
 
 def test_drain_writer_backs_off_at_least_1s_between_failed_write_once_calls():
@@ -421,7 +428,7 @@ def test_drain_writer_backs_off_at_least_1s_between_failed_write_once_calls():
     assert ok is False
     # sleep_fn giả nhảy đúng d khi được gọi -> số lần gọi write_once phải xấp xỉ số giây
     # trong ngân sách (nhịp >= 1s), không phải gấp mười (nhịp 0,1s cũ).
-    assert stuck.calls <= main_mod.DRAIN_BUDGET_S + 2
+    assert stuck.calls <= main_mod.DRAIN_CLEAN_BUDGET_S + 2
 
 
 def test_run_mode_returns_exit_3_when_clickhouse_unreachable(tmp_path, monkeypatch, capsys):
