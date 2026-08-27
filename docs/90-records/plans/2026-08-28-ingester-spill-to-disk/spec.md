@@ -21,7 +21,7 @@
 
 **Mục tiêu:** đóng chế độ hỏng brief §2 — ATO mạnh trùng lúc ClickHouse trục trặc làm `pending` không trần phình tới OOM, mất sạch dữ liệu trong RAM không dấu vết. Sau lát này: RAM có trần cứng, phần vượt trần nằm trên đĩa, tiến trình chết kiểu gì thì phần đã xuống đĩa cũng tự hồi, và *"không mất dòng nào"* chứng minh bằng **số đếm độc lập**, không bằng lập luận.
 
-**Trong phạm vi:** `ChWriter` + vòng flush của `main.py` (tách vòng, chế độ đĩa, phát lại, trần) · `drain_writer` cuối phiên · metric độ sâu và tốc độ xả · bộ đếm `d[]` offline · các phép kiểm trên ClickHouse thật · counter mới cho các đường bỏ dòng chưa đếm (`not_leader_dropped`).
+**Trong phạm vi:** `ChWriter` + vòng flush của `main.py` (tách vòng, chế độ đĩa, phát lại, trần) · `drain_writer` cuối phiên · metric độ sâu và tốc độ xả · bộ đếm `d[]` offline · các phép kiểm trên ClickHouse thật · counter mới cho các đường bỏ dòng chưa đếm (`not_leader_dropped.<table>`).
 
 **Ngoài phạm vi:** xem §14.
 
@@ -190,7 +190,7 @@ Công cụ offline (lệnh trong họ `python -m ingester`, tên chốt ở plan
 |---|---|
 | **AC1** | Toàn bộ seam test (§13, chốt cuối trong plan) xanh trên ClickHouse thật |
 | **AC2** | Kịch bản sự cố dàn dựng, chạy được thành lệnh: nguồn tải = phát frame từ một file đo thật qua `on_packet` (harness test, số dòng nạp biết trước) → `docker stop` ClickHouse ≥ 2 phút giữa chừng → `docker start` → chờ xả hết. Đối chứng: `count()` trong kho + trùng-đếm-được = số nạp (đẳng thức, cho phép vế trùng > 0 có sổ). RAM: RSS lấy mẫu 1 s suốt kịch bản, **đỉnh ≤ 200 MB** (ngân sách [service-topology §7b](../../../20-design/service-topology.md); chưa có cgroup nào ép nên phải đo bằng tay) |
-| **AC3** | Một phiên thật với `--measure` song song: **hằng đẳng thức sổ sách** `expected − (dup_dropped + normalize_error + no_symbol_dropped + not_leader_dropped + nợ_đĩa + chênh_hai_socket) + trùng_replay_đếm_được = actual`, **dư = 0**; trong đó `chênh_hai_socket` đo tách bằng bộ đếm frame theo topic của mode `run` (§8) đối chiếu bộ đếm của `--measure` theo khoảng rớt trong log. Mọi số hạng là counter/log có thật — không có "chênh nhỏ chấp nhận được", và cũng không đòi "khớp tuyệt đối" kiểu phủ nhận quyết định #4 (trùng hợp lệ nằm ở vế `trùng_replay`) |
+| **AC3** | Một phiên thật với `--measure` song song: **hằng đẳng thức sổ sách** `expected − (dup_dropped + normalize_error + no_symbol_dropped + not_leader_dropped.<table> + nợ_đĩa + chênh_hai_socket) + trùng_replay_đếm_được (replay_rows) = actual`, **dư = 0**; trong đó `chênh_hai_socket` đo tách bằng bộ đếm frame theo topic của mode `run` (§8) đối chiếu bộ đếm của `--measure` theo khoảng rớt trong log. Mọi số hạng là counter/log có thật — không có "chênh nhỏ chấp nhận được", và cũng không đòi "khớp tuyệt đối" kiểu phủ nhận quyết định #4 (trùng hợp lệ nằm ở vế `trùng_replay`) |
 | **AC4** | N, K, trần đĩa nằm trong code kèm căn cứ đo; điều kiện khả thi §2.4 đã kiểm; hai phép kiểm §9 có kết quả ghi tại §9 |
 
 ## 13. Phác seam test cho plan *(chốt cùng plan; client CH inject sẵn — giả lập sự cố không cần vá code)*
