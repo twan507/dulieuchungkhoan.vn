@@ -142,14 +142,18 @@ hạ tầng (docker-compose: PG + ClickHouse + Redis)
 
 **Con số hiển thị KHÔNG phải nhu cầu.** ClickHouse tự cấp cache theo RAM nó nhìn thấy: trên dev (container thấy 31 GiB) nó lấy trần 18,74 GiB và mark cache 5 GiB, RSS 1,41 GB — trong khi **nhu cầu thật `MemoryTracking` chỉ 427 MB**. Đọc RSS rồi kết luận "ClickHouse cần 1,4 GB" là đọc nhầm cache thành nhu cầu.
 
-| Thành phần | Cần thật *(đo)* | Cấp trên VPS | Biên |
-|---|---|---|---|
-| ClickHouse | 427 MB | 1,5 GiB mềm · 2 GiB cứng | ~3,5× |
-| Postgres | 74 MB | 1 GiB | |
-| Redis | 11 MB | 256 MiB (trần 192 MB) | |
-| Ingester (ghi) | **97 MB** | 200 MB | |
-| OS + Docker · API · ETL · pipeline tin | — | ~1,6 GB | |
-| **Cộng** | | **~4,5 GB** | **dư ~1,5 GB** |
+| Thành phần | Đo trọn phiên 2026-08-27 | Cấp trên VPS |
+|---|---|---|
+| ClickHouse | trung bình 373 MB · **đỉnh 1,18 GiB** (RSS đỉnh 1,80 GiB) | 2,0 GiB mềm · **2,6 GiB cứng** |
+| Postgres | 74 MB | 1 GiB |
+| Redis | 11 MB | 256 MiB (trần 192 MB) |
+| Ingester (ghi) | **97 MB** | 200 MB |
+| OS + Docker · API · ETL · pipeline tin | — | ~1,6 GB |
+| **Cộng** | | **~5,6 GB — dư ~0,4 GB** |
+
+🔴 **Đính chính bản đầu (viết sáng 2026-08-27, trước khi có phiên trọn):** bản đầu ghi *"ClickHouse cần thật 427 MB, biên ~3,5×"* và kết luận dư 1,5 GB. **Sai** — 427 MB là số đo lúc 09:00, tức **đầu phiên chứ không phải đỉnh**. Đo trọn phiên cho đỉnh **1,18 GiB**, gần gấp ba. Trần mềm 1,5 GiB của bản đầu sẽ bị tải thật chạm 79%; nay nâng lên 2,0 / 2,6 GiB.
+
+> Bài học đúng họ §1.3: một phép đo *thành công* vẫn có thể trả lời **sai câu hỏi** — hỏi "đỉnh là bao nhiêu" mà đo một điểm giữa phiên yên tĩnh.
 
 **Hai lớp trần, lớp mềm chạm trước.** ClickHouse có `max_server_memory_usage` (mềm — ném `MEMORY_LIMIT_EXCEEDED`, hỏng có kiểm soát) thấp hơn `mem_limit` của Docker (cứng — OOM-kill). Thứ tự này là chủ đích: lỗi có dấu vết trong log ứng dụng dễ chẩn đoán hơn một tiến trình biến mất.
 
@@ -167,7 +171,13 @@ docker compose -f docker-compose.yml -f docker-compose.vps.yml --profile realtim
 
 Overlay [`deploy/infra/docker-compose.vps.yml`](../../deploy/infra/docker-compose.vps.yml) + [`clickhouse/memory-vps.xml`](../../deploy/infra/clickhouse/memory-vps.xml). Không sửa file gốc: máy dev 64 GB ép xuống hồ sơ VPS chỉ làm test chậm mà không lộ thêm điều gì.
 
-⚠️ **Ngân sách trên là TÍNH TOÁN, chưa phải đo trên máy nhỏ thật.** Điểm chưa biết: **đỉnh ATO/ATC** — lưu lượng dồn vào một giây, cũng là lúc ETL dễ chồng ingester. Phải chạy một phiên dưới trần cứng rồi mới được nói "đủ".
+### Đỉnh ATO đã đo — 2026-08-27
+
+`block_cap.quote` chạm **đúng một lần**, lúc **09:00:14** — đúng phiên ATO. Trần block chỉ *cắt sớm rồi xếp hàng*, không vứt dòng; cả phiên **0 `dropped_block`, 0 `poison_row`, 0 `normalize_error`**, đối chứng cuối phiên `p1=0 p2=0 ok=868`.
+
+Ghi được **4,27 triệu dòng / 82,2 MB** một phiên *(quote 3,12tr · snapshot_delta 890k · trade 205k · index_delta 56k · nến 1 phút 37k)*. Suy ra ~250 phiên/năm ≈ **20,5 GB/năm frame thô**, mà TTL 3 tháng ⇒ **~5 GB thường trực**; nến vĩnh viễn ~470 MB/năm. **60 GB đĩa thoải mái.**
+
+⚠️ **Vẫn chưa được nói "đủ".** Đỉnh 1,18 GiB đo trên **dev**, nơi ClickHouse được cấp mark cache 5 GiB và trần 18,74 GiB — nó dùng những gì được cấp. Dưới hồ sơ hẹp (cache 256 MiB) đỉnh sẽ thấp hơn, **thấp bao nhiêu thì chưa biết**. Phải chạy một phiên dưới trần cứng rồi mới kết luận.
 
 ---
 

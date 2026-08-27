@@ -8,13 +8,21 @@
   ingester, API và pipeline tin phải chia nhau 6 GiB đó. Ghim số tuyệt đối là cách
   duy nhất nói được "ClickHouse chỉ được lấy chừng này".
 
-  Nhu cầu THẬT đo trên dev khi đang ghi 2.021 mã: `MemoryTracking` = 427 MB.
-  1,5 GiB cho gấp ~3,5 lần biên — đủ cho đỉnh ATO/ATC chưa đo trên máy nhỏ.
+  ĐO TRỌN MỘT PHIÊN 2026-08-27 (2.021 mã, 4,27 triệu dòng ghi):
+    MemoryTracking  trung bình 373 MB  ·  ĐỈNH 1,18 GiB
+    MemoryResident  ĐỈNH 1,80 GiB
+  🔴 Bản đầu của file này đặt trần mềm 1,5 GiB dựa trên số 427 MB đo lúc 09:00 —
+  đó là giá trị ĐẦU PHIÊN, không phải đỉnh. Tải thật chạm 79% trần đó.
+
+  Lưu ý khi đọc con số đỉnh: nó đo trên dev, nơi ClickHouse được phép giữ mark cache
+  5 GiB và trần 18,74 GiB — nó DÙNG những gì được cấp. Dưới hồ sơ này (cache 256 MiB)
+  đỉnh sẽ thấp hơn, nhưng THẤP BAO NHIÊU thì CHƯA ĐO. Vì vậy trần đặt rộng hơn đỉnh
+  quan sát được, và phải chạy một phiên dưới trần cứng rồi mới được nói "đủ".
 -->
 <clickhouse>
   <!-- Trần cứng. Vượt là ClickHouse ném MEMORY_LIMIT_EXCEEDED chứ không để OOM
        killer của kernel giết cả tiến trình — hỏng có kiểm soát, dễ chẩn đoán. -->
-  <max_server_memory_usage>1610612736</max_server_memory_usage>   <!-- 1,5 GiB -->
+  <max_server_memory_usage>2147483648</max_server_memory_usage>   <!-- 2,0 GiB — trên đỉnh đo được 1,18 GiB -->
 
   <!-- Cache mark: mặc định 5 GiB, gần bằng cả máy. Kho `rt` hiện vài MB nên
        256 MiB thừa sức; đây là cache, thiếu thì chậm chứ không sai. -->
