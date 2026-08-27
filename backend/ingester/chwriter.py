@@ -2,9 +2,12 @@
 cắt buffer/gauge, không bao giờ chạm ClickHouse) tách khỏi vòng GHI (write_once, một hạn
 mức thời gian mỗi lần gọi) — vòng quản không bao giờ bị một insert treo chặn lại (spec
 spill §2.1). Hàng đợi là MỘT deque toàn cục (không còn dict theo bảng); mỗi phần tử một
-block chờ ghi. Task này CHƯA có chế độ đĩa (spill) — giữ nguyên ngữ nghĩa cũ: retry
-NGUYÊN block, chia đôi block độc, hết RETRY_BUDGET_S thì bỏ block (Task 6 sẽ đổi chỗ này
-thành tràn xuống đĩa)."""
+block chờ ghi.
+
+Task 6 thêm CHẾ ĐỘ ĐĨA với hai cửa vào (spec spill §2.3): trần RAM theo DÒNG, và block
+cạn ngân sách retry. Hệ quả lớn: **`dropped_block` chết hẳn** — không còn đường bỏ dòng
+theo thời gian ở mode run. Đường mất dòng duy nhất còn lại là trần đĩa / không có đĩa,
+và đường đó có sổ sách đầy đủ (`spill_drop_newest.<bảng>` + log cấu trúc, spec §6)."""
 from __future__ import annotations
 
 import logging
@@ -23,6 +26,24 @@ RETRY_BUDGET_S = 60          # < tuổi thọ cửa sổ dedup ~100 s (spec CH �
 ROW_BYTES_EST = 497          # đo brief §3.2 — KHÔNG getsizeof trên đường chạy
 WARN_DEPTH_ROWS = 50_000     # brief §5.1 đòi ngưỡng cảnh báo kèm metric
 WRITE_CALL_BUDGET_S = 5.0    # hạn mức MỘT LẦN GỌI write_once — vòng lặp ở main gọi lại mỗi nhịp
+
+# --- Hằng số chế độ đĩa — điền theo gate đo 2026-08-27 (spec spill §2.5) --------------
+# Không con số nào bốc thuốc: probe `tests/clickhouse/test_c99_dedup_probe.py` + số phiên
+# thật 27/08 (brief §3) là căn cứ, ghi ngay tại chỗ theo luật CLAUDE.md §1.2.
+N_CAP_ROWS = 100_000      # 100.000 × 497 B = 49,7 MB ≤ ngân sách hàng đợi ~50 MB
+                          # (200 − 97 writer nền − 13 tiến trình đo − ~12 buffers);
+                          # ≈ 15 s ATO đỉnh (6.496 dòng/s) ≈ 5 s × hệ số 3.
+K_REPLAY_ROWS = 20_000    # > 6.496 dòng/s × hệ số 3 = 19.488; chi phí xả 4 insert gộp
+                          # × p95 88 ms ≈ 0,35 s < 1 nhịp. Điều kiện khả thi spec §2.4
+                          # ĐẠT dư ~8,7× (6.496 × 88 ms ÷ 5.000 ≈ 0,114 < 1); p95 hồ sơ
+                          # VPS hẹp ≈ hồ sơ dev (88,2 vs 87,5 ms) nên không hiệu chỉnh.
+SPILL_CAP_BYTES = 10 * 2**30   # 10 GiB — pickle đo 65 B/dòng (§9.2): 6.496 dòng/s ×
+                               # 7.200 s × 65 B × 3 ≈ 9,1 GB ≤ 10 GiB (≥ 2 giờ sự cố ở
+                               # tải đỉnh × hệ số 3).
+
+# Vị trí cột `received_at` tra SẴN một lần — log bỏ block (spec §6) cần min/max của nó
+# trên đường nóng, không được `cols.index(...)` lại cho từng block.
+RA_IDX = {t: cols.index("received_at") for t, cols in COLUMNS.items()}
 
 # Mã lỗi DỮ LIỆU của ClickHouse — chỉ những mã này mới là lỗi tất định (chia đôi block
 # để cô lập dòng hỏng). Danh sách kín có chủ đích: luật cũ dò "timeout|connection|
@@ -90,16 +111,21 @@ class _Pending:
 class ChWriter:
     def __init__(self, client, spill=None, sleep_fn=time.sleep, clock=time.monotonic):
         self.client = client
-        self.spill = spill                     # Task 6+: chế độ đĩa. Task này chỉ giữ tham chiếu.
+        self.spill = spill                     # SpillStore | None (None = chạy KHÔNG có lưới đĩa)
         self.sleep = sleep_fn
         self.clock = clock
         self.metrics = Metrics()
         self.buffers: dict[str, list[list]] = {t: [] for t in COLUMNS}
         self.queue: deque[_Pending] = deque()  # RAM: block đã cắt khỏi buffer, chờ ghi
         self.queue_rows = 0
-        self.head: deque[_Pending] = deque()   # Task 6: block đọc lại từ đĩa, ghi trước queue
+        # Chế độ đĩa: `head` = phần `queue` bị ĐÔNG CỨNG lúc vào chế độ (cũ nhất, ghi
+        # trước đĩa để giữ FIFO toàn cục — spec §2.3.4); `queue` từ đó chỉ còn là chỗ tạm
+        # giữa hai nhịp vòng quản trước khi xuống đĩa.
+        self.head: deque[_Pending] = deque()
         self.head_rows = 0
-        self.disk_mode = False                 # Task 6: bật khi RAM vượt trần
+        self.disk_mode = False
+        self._disk_since = 0.0                 # mốc `clock()` lúc vào chế độ đĩa (cho log ra)
+        self._disk_blocks = 0                  # số block đã xuống đĩa trong LƯỢT đĩa này
         self.insert_s: deque[float] = deque(maxlen=4096)
         # (mã, repr) của lỗi insert gần nhất — KHÔNG giữ nguyên exception: nó mang
         # `__traceback__` ghim cả block lỗi (~2,5 MB) sống tới lần lỗi kế tiếp, trong khi
@@ -132,90 +158,293 @@ class ChWriter:
                 log.warning("bảng %s chạm trần block %d — tải cao bất thường", n.table, BLOCK_CAP)
 
     def manage_once(self) -> None:
-        """Vòng QUẢN: cắt buffer → hàng đợi, cập nhật gauge. KHÔNG BAO GIỜ chạm
-        ClickHouse — đây là điều làm nó không thể bị một insert treo chặn lại
-        (Task 6 sẽ thêm cửa vào chế độ đĩa + quét spill tại đây)."""
+        """Vòng QUẢN: cắt buffer → hàng đợi, cập nhật gauge, kiểm hai cửa vào chế độ đĩa,
+        đẩy block mới xuống đĩa khi đang ở chế độ đĩa. KHÔNG BAO GIỜ chạm ClickHouse — đây
+        là điều làm nó không thể bị một insert treo chặn lại (spec §2.1)."""
+        self._adopt_spill_if_possible()
         with self._lock:
             for table, buf in self.buffers.items():
                 if buf:
                     self.queue.append(_Pending(table=table, block=buf[:]))
                     self.queue_rows += len(buf)
                     buf.clear()
-            depth = self.head_rows + self.queue_rows
+            queue_rows = self.queue_rows       # chụp DƯỚI khoá — đây là input điều khiển
+            depth = self.head_rows + queue_rows
             self.metrics.set("pending_depth_rows", depth)
             self.metrics.set("pending_depth_bytes", depth * ROW_BYTES_EST)
         if depth > WARN_DEPTH_ROWS:
             log.warning("pending sâu %d dòng (> %d)", depth, WARN_DEPTH_ROWS)
+        if not self.disk_mode and queue_rows > N_CAP_ROWS:
+            self._enter_disk("ram_cap")        # CỬA 1: trần RAM theo DÒNG (spec §2.3)
+        if self.disk_mode:
+            self._spill_tail()
+            self._maybe_exit_disk()
+
+    def _adopt_spill_if_possible(self) -> None:
+        """Mỗi nhịp, mọi chế độ: có thư mục spill mà chưa sở hữu thì thử giành. Giành được
+        nghĩa là chủ cũ đã CHẾT THẬT (OS nhả khoá) — mới được đụng file (spec §4). Còn file
+        sót ⇒ đó là nợ của tiến trình trước, vào thẳng chế độ đĩa để phát lại theo FIFO."""
+        if self.spill is None or self.spill.owned:
+            return
+        if not self.spill.try_acquire():
+            return                             # chủ cũ còn sống — KHÔNG đụng, kể cả đọc
+        self.spill.scan()
+        for key, val in self.spill.counters.items():
+            self.metrics.set(key, val)         # orphan_tmp/replay_corrupt/seq_collision
+        if not self.spill.empty():
+            self._enter_disk("adopt")
+
+    def _enter_disk(self, door: str) -> None:
+        """Vào chế độ đĩa: `queue` hiện tại ĐÔNG CỨNG thành `head` (không xuống đĩa — nó đã
+        ở RAM rồi, ghi ra rồi đọc lại chỉ tốn I/O), `queue` thành deque rỗng để nhận block
+        cắt mới; từ nhịp sau mọi block mới đi thẳng xuống đĩa (spec §2.3.3)."""
+        if self.disk_mode:
+            return                             # đã ở chế độ đĩa — không đông cứng chồng head
+        with self._lock:
+            self.head = self.queue
+            self.head_rows = self.queue_rows
+            self.queue = deque()
+            self.queue_rows = 0
+            head_rows = self.head_rows
+        self.disk_mode = True
+        self._disk_since = self.clock()
+        log.warning("VÀO chế độ đĩa (cửa %s) — đầu RAM đông cứng %d dòng", door, head_rows)
+
+    def _maybe_exit_disk(self) -> None:
+        """Ra chế độ đĩa CHỈ khi cả ba cùng rỗng: đầu RAM, hàng đợi mới, và đĩa (spec
+        §2.3.6). Rỗng một phần mà ra sớm sẽ phá FIFO toàn cục."""
+        with self._lock:
+            if self.head or self.queue:
+                return
+        if self.spill is not None and not self.spill.empty():
+            return
+        self.disk_mode = False
+        log.warning("RA chế độ đĩa sau %.1fs — %d block đã qua đĩa",
+                    self.clock() - self._disk_since, self._disk_blocks)
+        self._disk_blocks = 0
+
+    def _spill_tail(self) -> None:
+        """Chế độ đĩa: đẩy TOÀN BỘ hàng đợi hiện tại xuống đĩa trong nhịp này. Pop DƯỚI
+        `_lock` từng cái một, ghi đĩa NGOÀI `_lock` — I/O đĩa không bao giờ được giữ khoá
+        (nếu giữ thì `add()` trên event-loop kẹt theo, đúng cái spec §2.1 cấm)."""
+        while True:
+            with self._lock:
+                if not self.queue:
+                    return
+                p = self.queue.popleft()
+                self.queue_rows -= len(p.block)
+            self._spill_block(p, "n")
+
+    def _spill_block(self, p: _Pending, kind: str) -> None:
+        """Ghi một block xuống đĩa. Không ghi được (đĩa đầy, lỗi I/O, hoặc KHÔNG CÓ đĩa)
+        → đường thoát cuối duy nhất còn lại của mode run: bỏ block MỚI đến, kèm sổ sách đủ
+        để dựng lại thủ công từ bản đo (spec §6) — counter tách theo bảng + một dòng log
+        cấu trúc chỉ đúng khoảng `received_at` bị thủng."""
+        n_rows = len(p.block)
+        if self.spill is not None and self.spill.write(p.table, p.block, kind):
+            self.metrics.inc("spill_blocks")
+            self.metrics.inc("spill_rows", n_rows)
+            self._disk_blocks += 1
+            return
+        self.metrics.inc(f"spill_drop_newest.{p.table}", n_rows)
+        ra = RA_IDX[p.table]
+        stamps = [r[ra] for r in p.block if r[ra] is not None]
+        log.error("BỎ block %s — n_rows=%d received_at_min=%s received_at_max=%s "
+                  "(không ghi được xuống đĩa)", p.table, n_rows,
+                  min(stamps, default=None), max(stamps, default=None))
 
     def write_once(self, budget_s: float = WRITE_CALL_BUDGET_S) -> None:
-        """Vòng GHI: xử lý đầu hàng đợi trong một hạn mức thời gian mỗi lần gọi. Chỉ giữ
-        `_lock` để peek/pop — KHÔNG BAO GIỜ trong lúc `client.insert` (RAM mode, Task này;
-        Task 6 sẽ thêm nhánh đọc `head`/đĩa khi `disk_mode`)."""
+        """Vòng GHI: một hạn mức thời gian mỗi lần gọi. Chỉ giữ `_lock` để peek/pop —
+        KHÔNG BAO GIỜ trong lúc `client.insert`. Chế độ RAM xả `queue`; chế độ đĩa xả đầu
+        RAM rồi tới đĩa, có thêm hạn mức K theo DÒNG (spec §2.3.4)."""
         if not self._write_lock.acquire(blocking=False):
             return                             # đã có thread khác đang ghi — nhịp sau ghi tiếp
         try:
-            end = self.clock() + budget_s
-            while self.clock() < end:
-                with self._lock:
-                    if not self.queue:
-                        return
-                    p = self.queue[0]
-                t0 = self.clock()
-                status = self._insert(p.table, p.block)
-                if status == "done":
-                    with self._lock:
-                        self.queue.popleft()
-                        self.queue_rows -= len(p.block)
-                    continue
-                if status == "transient":
-                    if p.first_try is None:
-                        # Tính từ TRƯỚC lúc gọi insert (t0), không phải sau — bài học
-                        # send_receive_timeout: một lần thử treo có thể tự ăn hết ngân
-                        # sách retry ngay từ lần đầu, hạn chót phải tính cả thời gian NẰM
-                        # TRONG lần thử đó, không chỉ thời gian chờ giữa các lần thử.
-                        p.first_try = t0
-                        # Chỉ log MỘT lần cho mỗi block khi lần đầu thấy transient — một
-                        # block có thể còn nằm ở đầu hàng đợi qua rất nhiều nhịp gọi trước
-                        # khi hết hạn hoặc thành công, log mỗi nhịp sẽ spam WARNING vô ích.
-                        code, rep = self._last_err
-                        log.warning("insert %s lỗi transient: code=%s %s", p.table, code, rep)
-                    if self.clock() - p.first_try >= RETRY_BUDGET_S:
-                        # TASK 5: giữ hành vi cũ — hết hạn thì bỏ block. Task 6 sẽ đổi
-                        # nhánh này thành tràn xuống đĩa (spill) thay vì vứt bỏ.
-                        with self._lock:
-                            self.queue.popleft()
-                            self.queue_rows -= len(p.block)
-                        self.metrics.inc(f"dropped_block.{p.table}", len(p.block))
-                        # In cả MÃ lỗi: khi server tắt show_clickhouse_errors thì repr rút
-                        # gọn còn câu chung chung, mã là thứ duy nhất còn dùng để lần ra
-                        # nguyên nhân và quyết định có bổ sung vào _DETERMINISTIC_CODES không.
-                        code, rep = self._last_err
-                        log.error("bỏ block %s (%d dòng) — quá hạn retry %ds: code=%s %s",
-                                  p.table, len(p.block), RETRY_BUDGET_S, code, rep)
-                        continue
-                    return                      # chưa hết hạn — thử lại nhịp sau, không ngủ
-                # "poison": lỗi tất định — cô lập dòng hỏng (§5.8)
-                with self._lock:
-                    self.queue.popleft()
-                    if len(p.block) == 1:
-                        self.queue_rows -= 1   # mọi thay đổi queue_rows phải nằm trong _lock
-                if len(p.block) == 1:
-                    self.metrics.inc(f"poison_row.{p.table}")
-                    code, rep = self._last_err
-                    log.error("dòng độc %s: code=%s %r — %s", p.table, code, p.block[0], rep)
-                    continue
-                mid = len(p.block) // 2
-                first = _Pending(table=p.table, block=p.block[:mid])
-                second = _Pending(table=p.table, block=p.block[mid:])
-                with self._lock:
-                    # appendleft nửa SAU rồi nửa TRƯỚC → nửa TRƯỚC nằm đúng đầu hàng đợi
-                    # (giữ vị trí đầu — trần tự nhiên theo độ sâu chia, không đệ quy, không
-                    # cấp lại ngân sách thời gian cho từng tầng chia).
-                    self.queue.appendleft(second)
-                    self.queue.appendleft(first)
-                continue
+            if self.disk_mode:
+                self._drain_disk_step(budget_s)
+            else:
+                self._drain_ram(budget_s)
         finally:
             self._write_lock.release()
+
+    def _drain_ram(self, budget_s: float) -> None:
+        """Chế độ RAM: xả `queue` theo FIFO tới khi hết hạn mức thời gian của lần gọi."""
+        end = self.clock() + budget_s
+        while self.clock() < end:
+            with self._lock:
+                if not self.queue:
+                    return
+                p = self.queue[0]
+            t0 = self.clock()
+            status = self._insert(p.table, p.block)
+            if status == "done":
+                self._detach_front(p)
+                continue
+            if status == "transient":
+                if p.first_try is None:
+                    # Tính từ TRƯỚC lúc gọi insert (t0), không phải sau — bài học
+                    # send_receive_timeout: một lần thử treo có thể tự ăn hết ngân
+                    # sách retry ngay từ lần đầu, hạn chót phải tính cả thời gian NẰM
+                    # TRONG lần thử đó, không chỉ thời gian chờ giữa các lần thử.
+                    p.first_try = t0
+                    # Chỉ log MỘT lần cho mỗi block khi lần đầu thấy transient — một
+                    # block có thể còn nằm ở đầu hàng đợi qua rất nhiều nhịp gọi trước
+                    # khi hết hạn hoặc thành công, log mỗi nhịp sẽ spam WARNING vô ích.
+                    code, rep = self._last_err
+                    log.warning("insert %s lỗi transient: code=%s %s", p.table, code, rep)
+                if self.clock() - p.first_try >= RETRY_BUDGET_S:
+                    # CỬA 2 (spec §2.3): cạn ngân sách retry KHÔNG còn là bỏ block. Block
+                    # xuống đĩa loại '-r' (phát lại nguyên văn, giữ hash cho lưới dedup) và
+                    # cả writer chuyển sang chế độ đĩa. Đây là lý do `dropped_block` chết:
+                    # ở tải nhẹ hàng đợi không bao giờ chạm N, nên nếu giữ drop-theo-hạn-chót
+                    # thì một lần `docker stop` vài phút chắc chắn mất dòng (review A-B2).
+                    # In cả MÃ lỗi: khi server tắt show_clickhouse_errors thì repr rút gọn
+                    # còn câu chung chung, mã là thứ duy nhất còn dùng để lần ra nguyên nhân
+                    # và quyết định có bổ sung vào _DETERMINISTIC_CODES không.
+                    if self._detach_front(p) is None:
+                        return
+                    code, rep = self._last_err
+                    log.warning("block %s (%d dòng) cạn ngân sách retry %ds → xuống đĩa: "
+                                "code=%s %s", p.table, len(p.block), RETRY_BUDGET_S, code, rep)
+                    self._spill_block(p, "r")
+                    self._enter_disk("retry_budget")
+                    return
+                return                          # chưa hết hạn — thử lại nhịp sau, không ngủ
+            # "poison": lỗi tất định — cô lập dòng hỏng (§5.8)
+            self._isolate_poison(p)
+
+    def _drain_disk_step(self, budget_s: float) -> None:
+        """Chế độ đĩa: FIFO toàn cục — đầu RAM (cũ nhất) trước, rồi đĩa theo thứ tự tên
+        file. `K_REPLAY_ROWS` là trần TỔNG số dòng insert cho CẢ lần gọi, tính cả phần lấy
+        từ đầu RAM (spec §2.3.4) — không có nhịp "xả dồn" nào lúc ClickHouse vừa gượng dậy.
+        KHÔNG có drop theo thời gian ở đây: transient thì về, nhịp sau thử tiếp (§2.3.5)."""
+        end = self.clock() + budget_s
+        budget = K_REPLAY_ROWS
+        while budget > 0 and self.clock() < end:
+            with self._lock:
+                p = self.head[0] if self.head else None
+            if p is not None:
+                status = self._insert(p.table, p.block)
+                if status == "done":
+                    self._detach_front(p)
+                    budget -= len(p.block)
+                    continue
+                if status == "transient":
+                    return
+                self._isolate_poison(p)
+                continue
+            item = self.spill.next_batch(max_rows=budget) if self.spill else None
+            if item is None:
+                return
+            status = self._insert(item.table, item.block)
+            if status == "done":
+                self.spill.delete(item)        # XOÁ CHỈ SAU insert thành công (spec §3)
+                self.metrics.inc("replay_blocks", len(item.paths))
+                budget -= item.n_rows
+                continue
+            if status == "transient":
+                return                          # file nằm nguyên đó — nhịp sau thử tiếp
+            self._split_disk_item(item)
+
+    def _front_deque(self, p: _Pending) -> deque | None:
+        """Hàng đợi RAM đang giữ `p` ở ĐẦU (`queue` hay `head`), `None` nếu không hàng đợi
+        nào. GỌI KHI ĐANG GIỮ `_lock`.
+
+        🔴 Tìm theo ĐỊNH DANH, không theo vị trí. Vòng quản chạy ở THREAD KHÁC có thể
+        `_enter_disk` ngay giữa lúc `client.insert` — lúc đó `queue` cũ đã thành `head` còn
+        `self.queue` là deque MỚI. `self.queue.popleft()` mù khi ấy hoặc nổ `IndexError`,
+        hoặc (tệ hơn, im lặng) gỡ một block KHÁC chưa từng được ghi ⇒ mất dòng không dấu
+        vết — đúng họ lỗi mà cả lát này sinh ra để đóng."""
+        if self.queue and self.queue[0] is p:
+            return self.queue
+        if self.head and self.head[0] is p:
+            return self.head
+        return None
+
+    def _detach_front(self, p: _Pending) -> deque | None:
+        """Gỡ `p` khỏi đầu hàng đợi đang chứa nó, trừ đúng số dòng của hàng đợi ĐÓ, trả về
+        chính deque đó (`None` nếu không tìm thấy)."""
+        with self._lock:
+            dq = self._front_deque(p)
+            if dq is None:
+                found = False
+            else:
+                found = True
+                dq.popleft()
+                if dq is self.head:
+                    self.head_rows -= len(p.block)
+                else:
+                    self.queue_rows -= len(p.block)
+        if not found:
+            log.error("block %s (%d dòng) không còn ở đầu hàng đợi nào — không gỡ",
+                      p.table, len(p.block))
+            return None
+        return dq
+
+    def _isolate_poison(self, p: _Pending) -> None:
+        """Cô lập dòng độc cho block NẰM TRONG RAM (`queue` ở chế độ RAM, `head` ở chế độ
+        đĩa) — cùng một luật, hai hàng đợi, nên viết một chỗ. Gỡ và đẩy hai nửa trở lại
+        nằm TRONG CÙNG một lần giữ `_lock`: nửa chừng mà vòng quản chen vào thì hai nửa có
+        thể rơi vào deque đã mồ côi."""
+        one_row = len(p.block) == 1
+        first = second = None
+        if not one_row:
+            mid = len(p.block) // 2
+            first = _Pending(table=p.table, block=p.block[:mid])
+            second = _Pending(table=p.table, block=p.block[mid:])
+        with self._lock:
+            dq = self._front_deque(p)
+            if dq is not None:
+                dq.popleft()
+                if one_row:                    # mọi thay đổi *_rows phải nằm trong _lock
+                    if dq is self.head:
+                        self.head_rows -= 1
+                    else:
+                        self.queue_rows -= 1
+                else:
+                    # appendleft nửa SAU rồi nửa TRƯỚC → nửa TRƯỚC nằm đúng đầu hàng đợi
+                    # (giữ vị trí đầu — trần tự nhiên theo độ sâu chia, không đệ quy, không
+                    # cấp lại ngân sách thời gian cho từng tầng chia). Tổng dòng không đổi
+                    # nên không đụng tới *_rows.
+                    dq.appendleft(second)
+                    dq.appendleft(first)
+        if dq is None:
+            log.error("block độc %s (%d dòng) không còn ở đầu hàng đợi nào — không chia",
+                      p.table, len(p.block))
+            return
+        if one_row:
+            self.metrics.inc(f"poison_row.{p.table}")
+            code, rep = self._last_err
+            log.error("dòng độc %s: code=%s %r — %s", p.table, code, p.block[0], rep)
+
+    def _split_disk_item(self, item) -> None:
+        """Dòng độc trên một item ĐÃ Ở ĐĨA: ghi HAI file con rồi xoá file cha TRƯỚC khi
+        insert bất kỳ con nào (spec §3) — biến một block không nguyên tử thành hai block
+        nguyên tử, đóng ca "insert nửa block rồi chết → phát lại trùng nửa đầu".
+
+        Hai file con nằm ở CUỐI hàng đợi đĩa (seq mới), không giữ vị trí đầu như nhánh RAM.
+        Đây là ngoại lệ FIFO có chủ đích và vô hại: spec §2.3.6 ghi rõ FIFO toàn cục là
+        ràng buộc tự đặt cho dễ suy luận, KHÔNG bất biến đọc nào đòi thứ tự insert (MV nến
+        khoá theo giá trị cột). Đổi lại: cô lập dòng độc không chặn phần còn lại của đĩa."""
+        if item.n_rows == 1:
+            self.metrics.inc(f"poison_row.{item.table}")
+            code, rep = self._last_err
+            log.error("dòng độc %s (đĩa): code=%s %r — %s",
+                      item.table, code, item.block[0], rep)
+            self.spill.delete(item)
+            return
+        mid = item.n_rows // 2
+        ok_first = self.spill.write(item.table, item.block[:mid], item.kind)
+        ok_second = ok_first and self.spill.write(item.table, item.block[mid:], item.kind)
+        if not ok_second:
+            # Ghi con hỏng → GIỮ file cha, nhịp sau chia lại (SpillStore đã đếm lỗi I/O).
+            # Nếu con đầu đã ghi được thì lần phát lại tới sẽ trùng nửa đầu — chấp nhận
+            # theo quyết định #4 "thà trùng hơn mất": trùng có dấu ở đối chứng d[], mất thì
+            # không có gì lần ra.
+            log.error("spill: chia đôi block độc %s hỏng giữa chừng — giữ file cha",
+                      item.table)
+            return
+        self.spill.delete(item)
 
     def _insert(self, table: str, block: list) -> str:
         """MỘT lần thử `client.insert`. Không sleep, không đệ quy — phân loại kết quả rồi

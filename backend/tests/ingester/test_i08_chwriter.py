@@ -11,6 +11,7 @@ from clickhouse_connect.driver.exceptions import DatabaseError as ChDatabaseErro
 
 from ingester.chwriter import COLUMNS, ChWriter, RETRY_BUDGET_S
 from ingester.normalize import Metrics, Normalized, normalize
+from ingester.spill import SpillStore
 
 RECV = 1786342136000
 T = {"TD": "10/08/2026", "FT": "13:08:56", "SB": "ACV", "FV": "100", "LC": "S",
@@ -384,24 +385,34 @@ def test_data_error_still_classified_when_server_detail_suppressed():
     assert len(client.written) == 2
 
 
-def test_backpressure_code_stays_transient():
+def test_backpressure_code_stays_transient(tmp_path):
     """Ranh giới ngược: TOO_MANY_PARTS là quá tải, KHÔNG được chia đôi block.
 
     v2: transient không tự lặp trong một lần gọi (retry theo nhịp, không sleep) — nhịp 1
     chỉ đặt `first_try`; tự advance đồng hồ giả qua khỏi RETRY_BUDGET_S rồi gọi nhịp 2 mới
-    chạm hạn chót và bỏ block.
+    chạm hạn chót.
+
+    TASK 6 (spec spill §2.3, cửa vào 2): cạn hạn chót KHÔNG còn bỏ block — block NGUYÊN
+    VẸN xuống đĩa thành file '-r' và writer vào chế độ đĩa. Điều cần giữ ở test này vẫn là
+    ranh giới cũ: block không bị CHIA ĐÔI (không `poison_row`), chỉ đổi đích đến.
     """
     client = _RejectingClient(_server_error(252), poison_seq=70002)
     clock = _FakeClock()
-    w = ChWriter(client, clock=clock)
+    store = SpillStore(tmp_path, cap_bytes=10**9)
+    assert store.try_acquire()
+    store.scan()
+    w = ChWriter(client, spill=store, clock=clock)
     for seq in (70001, 70002, 70003):
         w.add(_n(SM=str(seq)))
     w.flush_once()                                  # nhịp 1: transient, chưa hết hạn
-    assert w.metrics.counters.get("dropped_block.trade") is None
+    assert store.empty() and not w.disk_mode
     clock.advance(RETRY_BUDGET_S + 1)                # mô phỏng nhịp sau, đã hết hạn
-    w.flush_once()                                   # nhịp 2: hết hạn -> bỏ nguyên block
+    w.flush_once()                                   # nhịp 2: hết hạn -> xuống đĩa
     assert w.metrics.counters.get("poison_row.trade") is None
-    assert w.metrics.counters.get("dropped_block.trade") == 3   # giữ nguyên block rồi bỏ
+    assert w.metrics.counters.get("dropped_block.trade") is None
+    assert w.disk_mode
+    item = store.next_batch(max_rows=100)
+    assert item.kind == "r" and item.n_rows == 3     # nguyên block, không chia, không bỏ
     assert client.written == []
 
 
@@ -427,9 +438,11 @@ class _HangingClient:
 
 
 def test_retry_budget_counts_wall_clock_not_sleep_time():
-    # TASK 5: hết ngân sách retry vẫn BỎ block (dropped_block) — hành vi giữ nguyên từ v1.
-    # Task 6 sẽ đổi nhánh này thành tràn xuống đĩa (spill) thay vì vứt bỏ; test này sẽ
-    # phải sửa lại lần nữa khi đó.
+    # TASK 6 (spec spill §2.3): cạn ngân sách retry → block xuống đĩa, không bỏ. Writer này
+    # KHÔNG có spill (spill=None — ca "chạy không có lưới đĩa") nên rơi vào đường thoát
+    # cuối spec §6: bỏ block MỚI, có sổ sách `spill_drop_newest.<bảng>` theo DÒNG.
+    # Điều test này canh vẫn không đổi: ngân sách đếm bằng THỜI GIAN THỰC, một lần thử
+    # treo 300 s tự nó cạn ngân sách 60 s ⇒ không có lần thử thứ hai.
     clock = _FakeClock()
     # 300 s = mặc định `send_receive_timeout` của clickhouse_connect.
     client = _HangingClient(clock, cost_s=300.0)
@@ -437,9 +450,9 @@ def test_retry_budget_counts_wall_clock_not_sleep_time():
     w.add(_n(SM="60001"))
     w.flush_once()
 
-    # Lần thử ĐẦU đã ăn 300 s > ngân sách 60 s ⇒ phải bỏ ngay, không thử lần hai.
     assert client.attempts == 1
-    assert w.metrics.counters.get("dropped_block.trade") == 1
+    assert w.metrics.counters.get("dropped_block.trade") is None   # đường drop đã chết
+    assert w.metrics.counters.get("spill_drop_newest.trade") == 1
     assert clock.now - 1000.0 == 300.0            # không kéo dài thêm bằng backoff
 
 

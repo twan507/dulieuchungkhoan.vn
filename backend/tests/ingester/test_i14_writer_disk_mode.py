@@ -1,10 +1,13 @@
-"""ChWriter v2 — spec spill §2. Task 5: vòng tách + hợp đồng insert; seam 11, 16."""
+"""ChWriter v2 — spec spill §2. Task 5: vòng tách + hợp đồng insert; seam 11, 16.
+Task 6: hai cửa vào chế độ đĩa + đường bỏ-mới có sổ sách; seam 3, 4, 12."""
+import logging
 import sys
 import threading
 import time
 
-from ingester.chwriter import COLUMNS, ChWriter
+from ingester.chwriter import COLUMNS, N_CAP_ROWS, ChWriter, _Pending
 from ingester.normalize import Normalized
+from ingester.spill import SpillStore
 
 
 def _n(seq: int, table: str = "trade") -> Normalized:
@@ -149,3 +152,100 @@ def _run_concurrent_add_and_poison_drain_check():
     # Bất biến: queue_rows phải luôn khớp tổng số dòng thật còn nằm trong queue — không
     # phải một con số cụ thể (không tautological — tính lại độc lập từ nội dung queue).
     assert w.queue_rows == sum(len(p.block) for p in w.queue)
+
+
+# --- Task 6: hai cửa vào chế độ đĩa (spec §2.3) ---------------------------------------
+
+
+def _writer_with_spill(tmp_path, client, clock=None) -> ChWriter:
+    s = SpillStore(tmp_path, cap_bytes=10**9)
+    assert s.try_acquire()
+    s.scan()
+    return ChWriter(client, spill=s, clock=clock or time.monotonic)
+
+
+def test_door1_ram_cap_enters_disk_mode(tmp_path):
+    class _Down:
+        def insert(self, *a, **k): raise ConnectionError("CH chết")
+
+    w = _writer_with_spill(tmp_path, _Down())
+    # vượt trần bằng block to đã cắt sẵn — không add N_CAP_ROWS dòng lẻ cho nhanh
+    w.queue.append(_Pending("trade", [[None] * len(COLUMNS["trade"])] * (N_CAP_ROWS + 1)))
+    w.queue_rows = N_CAP_ROWS + 1
+    w.manage_once()
+    assert w.disk_mode and w.head_rows == N_CAP_ROWS + 1   # queue cũ thành đầu đông cứng
+    w.add(_n(9)); w.manage_once()
+    assert w.queue_rows == 0 and not w.spill.empty()       # block mới xuống đĩa '-n'
+
+
+def test_door2_retry_budget_spills_as_r_not_drop(tmp_path):
+    clock = _Clock()
+
+    class _Down:
+        def insert(self, *a, **k):
+            clock.advance(61.0)                            # một lần thử ăn hết ngân sách
+            raise ConnectionError("treo")
+
+    w = _writer_with_spill(tmp_path, _Down(), clock=clock)
+    w.add(_n(1)); w.manage_once(); w.write_once(); w.write_once()
+    assert w.disk_mode
+    assert w.metrics.counters.get("dropped_block.trade") is None      # KHÔNG còn drop
+    item = w.spill.next_batch(max_rows=10)
+    assert item.kind == "r" and item.n_rows == 1                      # thành file -r
+
+
+def test_no_spill_available_drops_newest_with_ledger(tmp_path, caplog):
+    """spill=None (không sở hữu đĩa) — đường thoát cuối thống nhất spec §6."""
+    clock = _Clock()
+
+    class _Down:
+        def insert(self, *a, **k):
+            clock.advance(61.0); raise ConnectionError("treo")
+
+    w = ChWriter(_Down(), spill=None, clock=clock)
+    w.add(_n(1)); w.manage_once()
+    with caplog.at_level(logging.ERROR):
+        w.write_once(); w.write_once()
+    assert w.metrics.counters["spill_drop_newest.trade"] == 1
+    assert "BỎ block trade" in caplog.text
+
+
+def test_enter_disk_during_insert_removes_the_right_block(tmp_path):
+    """Vòng QUẢN và vòng GHI chạy ở HAI THREAD (main.py `manage_loop`/`write_loop`), nên
+    `_enter_disk` có thể rơi vào ĐÚNG lúc vòng ghi đang nằm trong `client.insert`: khi đó
+    `queue` cũ đã thành `head` còn `self.queue` là deque MỚI. Vòng ghi peek block TRƯỚC
+    insert rồi popleft SAU insert — popleft "mù" theo vị trí lúc đó gỡ nhầm hàng đợi (nổ
+    IndexError, hoặc tệ hơn: gỡ một block khác chưa từng được ghi ⇒ mất dòng im lặng).
+
+    Tái hiện tất định không cần thread: cho `insert` giả tự gọi `manage_once()` giữa
+    chừng — đúng thứ tự sự kiện của ca đua, chạy trong một luồng."""
+    seq_i = COLUMNS["trade"].index("seq")
+    seen = []
+    w = None
+
+    class _OkThenManageEntersDisk:
+        def insert(self, table, data, column_names):
+            seen.extend(r[seq_i] for r in data)
+            w.queue_rows = N_CAP_ROWS + 1      # ép cửa 1 nổ ngay trong lúc insert
+            w.manage_once()
+
+    w = _writer_with_spill(tmp_path, _OkThenManageEntersDisk())
+    w.add(_n(1)); w.manage_once()
+    w.write_once()
+
+    assert seen == [1]                          # block đã ghi đúng một lần
+    assert not w.head and not w.queue           # ...và đã được gỡ khỏi hàng đợi CHỨA nó
+    assert w.queue_rows == sum(len(p.block) for p in w.queue)
+    assert w.head_rows == N_CAP_ROWS            # trừ đúng 1 dòng vừa ghi khỏi đầu đông cứng
+
+
+def test_exit_disk_only_when_all_empty(tmp_path):
+    ok = type("_Ok", (), {"insert": lambda self, *a, **k: None})()
+    w = _writer_with_spill(tmp_path, ok)
+    w.add(_n(1)); w.manage_once()
+    w._enter_disk("test")
+    w.add(_n(2)); w.manage_once()                          # dòng 2 xuống đĩa
+    assert w.disk_mode
+    w.write_once()                                         # xả đầu RAM + đĩa
+    w.manage_once()                                        # kiểm điều kiện ra
+    assert not w.disk_mode and w.clean()
