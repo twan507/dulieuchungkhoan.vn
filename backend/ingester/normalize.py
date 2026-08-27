@@ -46,6 +46,10 @@ class Metrics:
     def inc(self, key: str, n: int = 1) -> None:
         self.counters[key] = self.counters.get(key, 0) + n
 
+    def set(self, key: str, value: int) -> None:
+        """Gauge: ghi đè giá trị hiện tại (khác inc — không cộng dồn)."""
+        self.counters[key] = value
+
 
 @dataclass(frozen=True)
 class Normalized:

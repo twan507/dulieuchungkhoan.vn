@@ -14,6 +14,8 @@ from ingester.normalize import COLUMNS, Metrics, Normalized
 log = logging.getLogger("ingester.chwriter")
 BLOCK_CAP = 5000
 RETRY_BUDGET_S = 60          # < tuổi thọ cửa sổ dedup ~100 s (spec CH §5.5)
+ROW_BYTES_EST = 497          # đo brief §3.2 — KHÔNG getsizeof trên đường chạy
+WARN_DEPTH_ROWS = 50_000     # brief §5.1 đòi ngưỡng cảnh báo kèm metric
 
 # Mã lỗi DỮ LIỆU của ClickHouse — chỉ những mã này mới là lỗi tất định (chia đôi block
 # để cô lập dòng hỏng). Danh sách kín có chủ đích: luật cũ dò "timeout|connection|
@@ -76,6 +78,7 @@ class ChWriter:
         self.metrics = Metrics()
         self.buffers: dict[str, list[list]] = {t: [] for t in COLUMNS}
         self.pending: dict[str, deque] = {t: deque() for t in COLUMNS}
+        self.insert_s: deque[float] = deque(maxlen=4096)
         # add() chạy trên event-loop thread, flush_once() chạy trong thread khác qua
         # asyncio.to_thread — pha cắt buffer (copy+clear) phải atomic với add() (§CRITICAL 1
         # review wave 2), nếu không có thể mất dòng vừa append đúng lúc buffer bị cắt.
@@ -107,6 +110,11 @@ class ChWriter:
                     if buf:
                         self.pending[table].append(buf[:])
                         buf.clear()
+            depth = sum(len(b) for q in self.pending.values() for b in q)
+            self.metrics.set("pending_depth_rows", depth)
+            self.metrics.set("pending_depth_bytes", depth * ROW_BYTES_EST)
+            if depth > WARN_DEPTH_ROWS:
+                log.warning("pending sâu %d dòng (> %d)", depth, WARN_DEPTH_ROWS)
             for table, q in self.pending.items():
                 while q:
                     self._write_block(table, q[0])
@@ -128,11 +136,11 @@ class ChWriter:
         # tự khai là phải nằm dưới, và làm ngân sách xả cuối phiên (suy ra từ đây) mất căn cứ.
         delay = 1.0
         while True:
+            t0 = self.clock()
             try:
                 self.client.insert(f"rt.{table}", block, column_names=COLUMNS[table])
-                self.metrics.inc(f"rows.{table}", len(block))
-                return
             except Exception as e:  # noqa: BLE001 — phân loại rồi xử lý theo hợp đồng
+                self.insert_s.append(self.clock() - t0)
                 if not _is_deterministic(e):
                     if self.clock() >= deadline:
                         self.metrics.inc(f"dropped_block.{table}", len(block))
@@ -155,3 +163,14 @@ class ChWriter:
                 self._write_block(table, block[:mid], deadline)   # hạn chót CHUNG
                 self._write_block(table, block[mid:], deadline)
                 return
+            else:
+                self.insert_s.append(self.clock() - t0)
+                self.metrics.inc(f"rows.{table}", len(block))
+                return
+
+    def insert_percentiles(self) -> dict:
+        xs = sorted(self.insert_s)
+        if not xs:
+            return {}
+        pick = lambda q: xs[min(len(xs) - 1, int(q * len(xs)))]  # noqa: E731
+        return {"p50": pick(0.50), "p95": pick(0.95), "p99": pick(0.99)}

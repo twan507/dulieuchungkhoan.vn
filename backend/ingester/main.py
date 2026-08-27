@@ -182,6 +182,7 @@ def make_on_packet(writer: ChWriter, metrics: Metrics, dedup: FrameDedup, stampe
         if not isinstance(pkt, eio.Event) or pkt.name not in EVENTS:
             return
         event = pkt.name
+        metrics.inc(f"frames.{event}")
         now = time.time()
         # Frame thật có vỏ sails.io: mỗi bản ghi trong `d` là MỘT dòng (đo 2026-08-26).
         for record in records_of(pkt.payload):
@@ -202,6 +203,8 @@ def make_on_packet(writer: ChWriter, metrics: Metrics, dedup: FrameDedup, stampe
             if is_leader.is_set():
                 writer.add(n)
                 redis_queue.put_nowait(n)
+            else:
+                metrics.inc("not_leader_dropped")
     return on_packet
 
 
@@ -391,6 +394,7 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
         while not stop.is_set():
             await asyncio.sleep(60)
             log.info("run counters: %s", {**metrics.counters, **writer.metrics.counters})
+            log.info("insert percentiles: %s", writer.insert_percentiles())
 
     tasks = [
         asyncio.create_task(leader_lock.run(is_leader)),
