@@ -3,11 +3,30 @@ import sqlalchemy as sa
 from conftest import expect_violation
 
 L1 = {"TAICHINH","BATDONGSAN","SANXUAT","XUATKHAU","TIEUDUNG","NANGLUONG"}
-L2 = {"NGANHANG","CHUNGKHOAN","BAOHIEM","BDS","KCN","XAYDUNG","VLXD",
-      "KIMLOAI","TAINGUYEN","HOACHAT","NHUA","THIETBI",
+L2 = {"NGANHANG","CHUNGKHOAN","BAOHIEM","DANDUNG","KHUCONGNGHIEP","XAYDUNG","VATLIEU",
+      "KIMLOAI","KHOANGSAN","HOACHAT","NHUA","THIETBI",
       "NONGNGHIEP","THUYSAN","DETMAY","CAOSU",
-      "BANLE","THUCPHAM","DULICH","YTEGD",
-      "DIENNUOC","DAUKHI","VANTAI","CONGNGHE"}   # literal từ industry-tree.md §2
+      "BANLE","THUCPHAM","DULICH","YTE",
+      "TIENICH","DAUKHI","VANTAI","CONGNGHE"}   # literal từ industry-tree.md §2
+
+NAMES = {                                        # literal từ industry-tree.md §2
+    "DANDUNG": "Bất động sản Dân dụng",
+    "KHUCONGNGHIEP": "Bất động sản Khu công nghiệp",
+    "VATLIEU": "Vật liệu Xây dựng",
+    "KHOANGSAN": "Than và Khoáng sản",
+    "NHUA": "Nhựa, Bao bì và Giấy",
+    "DETMAY": "Dệt may, Gỗ và Gia dụng",
+    "DULICH": "Hàng không, Du lịch và Truyền thông",
+    "YTE": "Y tế, Giáo dục và Xuất bản",
+    "TIENICH": "Điện, Nước và Môi trường",
+    "DAUKHI": "Dầu mỏ và Khí đốt",
+}
+
+
+def test_industry_names_match_tree(db):
+    rows = dict(db.execute(sa.text(
+        "SELECT code, name_vi FROM market.industry WHERE level=2")).all())
+    assert {c: rows[c] for c in NAMES} == NAMES
 
 
 def _mk_security(db, ticker, exchange, status="listed", stype="stock"):
