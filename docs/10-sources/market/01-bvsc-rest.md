@@ -242,6 +242,14 @@ Các trường sau chỉ có giá trị với loại chứng khoán tương ứn
 
 Cách lấy: gọi `/datafeed/instruments` **không tham số**, rồi lọc `FloorCode === "03"` *(tương đương `exchange === "XHNF"`)*. Gọi theo mã cũng được: `?symbols=41I1G8000`.
 
+🔴 **Lọc `FloorCode` KHÔNG đủ — endpoint trả cả hợp đồng đã đáo hạn** *(đo 2026-08-27)*: **61 bản ghi** `FloorCode='03'`, trong đó **chỉ 14 còn hiệu lực**. 47 bản ghi kia là hợp đồng cũ vẫn nằm nguyên trong response, **mất `tradingdate` · `Status` · `MaturityDate` · `lastTradingDate` · `ts`**, chỉ còn `ceiling`/`floor`/`reference` cũ — ví dụ `VN30F2509` = *"HDTL VN30 9/2025"*, và `StockId` của chúng là số ngắn (`1219`) thay vì trùng `symbol` như hợp đồng sống.
+
+**Phân biệt:** hợp đồng còn sống có `tradingdate` **và** `Status` khác rỗng. Nhận bừa cả 61 là đăng ký thừa 47 × 20 topic và nạp danh mục rác.
+
+⚠️ Con số **14** ở tiêu đề mục này *(đo 2026-08-15)* vẫn **đúng** — nó đếm hợp đồng sống. Chỗ tài liệu bản cũ chưa nói là **response chứa nhiều hơn thế**.
+
+Hai họ mã cùng tồn tại: mã máy `41I1G9000` *(= "VN30 Index Futures 092026", `StockId` trùng symbol, đây là mã đi trong luồng realtime)* và mã người đọc `VN30F2509` *(chỉ thấy ở nhóm đã hết hạn)*. `underlyingSymbol` phân bố `VN30` 22 · `VN100` 19 · `VGB10` 10 · `VGB05` 9 *(đo 2026-08-27, tính cả hợp đồng chết)*. `openInterest` chỉ có ở **8/14** hợp đồng sống — không phổ quát.
+
 #### Danh mục 14 hợp đồng *(đo 2026-08-15, phiên 14/08/2026)*
 
 | Mã HĐ | Sản phẩm | Cơ sở | GD đầu | GD cuối | Đáo hạn | OI | KL phiên |
@@ -318,7 +326,9 @@ Không phải hai định nghĩa OI khác nhau, cũng không phải sai số —
 
 ### ETF và chứng chỉ quỹ — 31 mã
 
-**31 mã `StockType=3`** *(đo 2026-08-15)*. Ngoài giá, endpoint này là nơi duy nhất của BVSC có **số chứng chỉ lưu hành** và **room ngoại** cho quỹ.
+**31 mã `StockType=3`** *(đo 2026-08-15)*.
+
+✅ **Tách ETF với chứng chỉ quỹ: dùng `FundType` của `/datafeed/instruments`** *(đo 2026-08-27)* — `E` = ETF (20 mã) · `M` = quỹ mở (3 mã) · rỗng (7 mã). `/quotes` **không có** trường này, `StockType=3` của nó gộp chung cả hai loại. *(30 bản ghi `StockType=3` ở instruments vs 31 ở `/quotes` — chênh đúng `VFMVF1`, xem bẫy 11.)* Ngoài giá, endpoint này là nơi duy nhất của BVSC có **số chứng chỉ lưu hành** và **room ngoại** cho quỹ.
 
 | Trường | Kiểu | Mô tả |
 |---|---|---|
