@@ -89,4 +89,11 @@ cd backend && uv run pytest tests/schema -v
   ```sql
   CREATE USER etl_worker LOGIN PASSWORD '…' IN ROLE dlck_etl;
   ```
-- ⚠️ downgrade 0003 xoá cả `market.industry_icb_map` (bản đồ ICB→ngành có thể gán tay) — trước khi downgrade qua 0003 trên DB có dữ liệu thật, backup bảng này.
+- ⚠️ downgrade 0003 xoá cả `market.industry_icb_map` (bản đồ ICB→ngành có thể gán tay) — trước khi downgrade qua 0003 trên DB có dữ liệu thật, backup bảng này. Tương tự, downgrade qua `0012` xoá cả `market.issuer_industry_override` (161 dòng gán tay lớp 2, xem mục **Bootstrap DB mới** dưới đây) — backup bảng này trước khi downgrade qua `0012` trên DB có dữ liệu thật.
+- **Bootstrap DB mới — thứ tự bắt buộc, không được đảo:**
+  1. `uv run --project backend alembic -c database/alembic.ini upgrade head`
+  2. Chạy `etl refdata` một lượt để nạp danh bạ doanh nghiệp (`market.security`, `market.issuer`).
+  3. Seed lại lớp 2: `uv run --project backend alembic -c database/alembic.ini downgrade 0012` rồi `uv run --project backend alembic -c database/alembic.ini upgrade head`.
+  4. Kiểm: `select count(*) from market.issuer_industry_override` phải ra **161**.
+
+  Vì sao cần bước 3: migration `0013` seed lớp 2 (`market.issuer_industry_override`) bằng cách phân giải **ticker → `issuer_id` qua `market.security`**. Trên DB dựng mới, `market.security` còn rỗng khi `0013` chạy ở bước 1 ⇒ nạp **0 dòng override, không exception** (câu `RAISE NOTICE` báo số dòng khớp cũng không hiện ra vì `alembic` không in `NOTICE`). Job `etl refdata` sau đó vẫn báo `issuers_without_industry` y hệt trạng thái khoẻ mạnh — **không có gì báo động** — trong khi toàn bộ 161 doanh nghiệp lẽ ra được gán tay lại rơi về gán máy (lớp 1), có thể sai ngành hoặc vi phạm luật BCTC. Đường downgrade→upgrade lại `0012`/`0013` ở bước 3 an toàn để lặp lại: `downgrade()` của `0013` chỉ `DELETE` hai bảng seed (`market.industry_icb_map`, `market.issuer_industry_override`), còn `upgrade()` của cả hai đều idempotent nhờ `ON CONFLICT DO NOTHING`.
