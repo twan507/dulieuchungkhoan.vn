@@ -162,6 +162,13 @@ class ChWriter:
         đẩy block mới xuống đĩa khi đang ở chế độ đĩa. KHÔNG BAO GIỜ chạm ClickHouse — đây
         là điều làm nó không thể bị một insert treo chặn lại (spec §2.1)."""
         self._adopt_spill_if_possible()
+        if self.spill is not None and self.spill.owned:
+            # Sao chép MỖI NHỊP, không chỉ lúc nhận nuôi: `replay_corrupt` là một sự kiện
+            # MẤT DÒNG và nó xảy ra trong lúc chạy: chỉ chép một lần lúc khởi động thì mọi
+            # file hỏng về sau không bao giờ lên metric (spec §6 — mọi mất mát phải đếm
+            # được). Chép dict 3 khoá, rẻ (review M3).
+            for key, val in self.spill.counters.items():
+                self.metrics.set(key, val)     # orphan_tmp/replay_corrupt/seq_collision
         with self._lock:
             for table, buf in self.buffers.items():
                 if buf:
@@ -188,9 +195,7 @@ class ChWriter:
             return
         if not self.spill.try_acquire():
             return                             # chủ cũ còn sống — KHÔNG đụng, kể cả đọc
-        self.spill.scan()
-        for key, val in self.spill.counters.items():
-            self.metrics.set(key, val)         # orphan_tmp/replay_corrupt/seq_collision
+        self.spill.scan()                      # counter quét được do `manage_once` sao chép
         if not self.spill.empty():
             self._enter_disk("adopt")
 
@@ -198,15 +203,20 @@ class ChWriter:
         """Vào chế độ đĩa: `queue` hiện tại ĐÔNG CỨNG thành `head` (không xuống đĩa — nó đã
         ở RAM rồi, ghi ra rồi đọc lại chỉ tốn I/O), `queue` thành deque rỗng để nhận block
         cắt mới; từ nhịp sau mọi block mới đi thẳng xuống đĩa (spec §2.3.3)."""
-        if self.disk_mode:
-            return                             # đã ở chế độ đĩa — không đông cứng chồng head
         with self._lock:
+            # 🔴 Kiểm-VÀ-đặt phải NGUYÊN TỬ, cùng một lần giữ khoá. Chốt nằm ngoài khoá thì
+            # cửa 1 (thread vòng quản) và cửa 2 (thread vòng ghi) cùng lọt qua khi
+            # `disk_mode` còn False; lần đông cứng thứ hai gán `head` = `queue` MỚI (rỗng)
+            # và NUỐT SẠCH phần đã đông cứng lần đầu — tới N_CAP_ROWS dòng, không counter,
+            # không log. (review C1, test `test_concurrent_enter_disk_never_discards_...`)
+            if self.disk_mode:
+                return                         # đã ở chế độ đĩa — không đông cứng chồng head
             self.head = self.queue
             self.head_rows = self.queue_rows
             self.queue = deque()
             self.queue_rows = 0
+            self.disk_mode = True
             head_rows = self.head_rows
-        self.disk_mode = True
         self._disk_since = self.clock()
         log.warning("VÀO chế độ đĩa (cửa %s) — đầu RAM đông cứng %d dòng", door, head_rows)
 
@@ -280,6 +290,12 @@ class ChWriter:
         """Chế độ RAM: xả `queue` theo FIFO tới khi hết hạn mức thời gian của lần gọi."""
         end = self.clock() + budget_s
         while self.clock() < end:
+            if self.disk_mode:
+                # Vòng quản (thread khác) vừa lật chế độ giữa lần gọi này. Về NGAY: từ đây
+                # `queue` là chỗ tạm của `_spill_tail`, ta mà bốc tiếp thì cùng một block
+                # vừa vào kho vừa thành file '-n' — phát lại có gộp nên hash đổi, lưới
+                # dedup của ClickHouse không bắt được bản trùng đó (review I2).
+                return
             with self._lock:
                 if not self.queue:
                     return
@@ -354,7 +370,14 @@ class ChWriter:
                     return
                 self._isolate_poison(p)
                 continue
-            item = self.spill.next_batch(max_rows=budget) if self.spill else None
+            # KHÔNG sở hữu thì KHÔNG đụng, kể cả ĐỌC (spec §4). Trạng thái này đến được:
+            # cửa 1 vô điều kiện nên tiến trình thua `try_acquire` vẫn vào chế độ đĩa —
+            # đọc/xoá ở đó là lấy mất file của chủ thật (chủ mất vĩnh viễn, kho nhận bản
+            # trùng). Coi phần đĩa như rỗng cho tới khi `_adopt_spill_if_possible` giành
+            # được khoá (review I1).
+            if self.spill is None or not self.spill.owned:
+                return
+            item = self.spill.next_batch(max_rows=budget)
             if item is None:
                 return
             status = self._insert(item.table, item.block)
@@ -365,7 +388,8 @@ class ChWriter:
                 continue
             if status == "transient":
                 return                          # file nằm nguyên đó — nhịp sau thử tiếp
-            self._split_disk_item(item)
+            if not self._split_disk_item(item):
+                return                          # giữ cha — đừng chia lại ngay trong lần gọi
 
     def _front_deque(self, p: _Pending) -> deque | None:
         """Hàng đợi RAM đang giữ `p` ở ĐẦU (`queue` hay `head`), `None` nếu không hàng đợi
@@ -438,7 +462,7 @@ class ChWriter:
             code, rep = self._last_err
             log.error("dòng độc %s: code=%s %r — %s", p.table, code, p.block[0], rep)
 
-    def _split_disk_item(self, item) -> None:
+    def _split_disk_item(self, item) -> bool:
         """Dòng độc trên một item ĐÃ Ở ĐĨA: ghi HAI file con rồi xoá file cha TRƯỚC khi
         insert bất kỳ con nào (spec §3) — biến một block không nguyên tử thành hai block
         nguyên tử, đóng ca "insert nửa block rồi chết → phát lại trùng nửa đầu".
@@ -446,26 +470,31 @@ class ChWriter:
         Hai file con nằm ở CUỐI hàng đợi đĩa (seq mới), không giữ vị trí đầu như nhánh RAM.
         Đây là ngoại lệ FIFO có chủ đích và vô hại: spec §2.3.6 ghi rõ FIFO toàn cục là
         ràng buộc tự đặt cho dễ suy luận, KHÔNG bất biến đọc nào đòi thứ tự insert (MV nến
-        khoá theo giá trị cột). Đổi lại: cô lập dòng độc không chặn phần còn lại của đĩa."""
+        khoá theo giá trị cột). Đổi lại: cô lập dòng độc không chặn phần còn lại của đĩa.
+
+        Trả về False khi giữ lại file cha — caller PHẢI dừng vòng xả khi đó (review I3)."""
         if item.n_rows == 1:
             self.metrics.inc(f"poison_row.{item.table}")
             code, rep = self._last_err
             log.error("dòng độc %s (đĩa): code=%s %r — %s",
                       item.table, code, item.block[0], rep)
             self.spill.delete(item)
-            return
+            return True
         mid = item.n_rows // 2
         ok_first = self.spill.write(item.table, item.block[:mid], item.kind)
         ok_second = ok_first and self.spill.write(item.table, item.block[mid:], item.kind)
         if not ok_second:
-            # Ghi con hỏng → GIỮ file cha, nhịp sau chia lại (SpillStore đã đếm lỗi I/O).
+            # Ghi con hỏng → GIỮ file cha, NHỊP SAU chia lại (SpillStore đã đếm lỗi I/O).
+            # Nhịp sau, không phải vòng sau: cùng lần gọi mà bốc lại đúng item cha đó thì
+            # mỗi vòng lặp đẻ thêm một file con mồ côi (review I3).
             # Nếu con đầu đã ghi được thì lần phát lại tới sẽ trùng nửa đầu — chấp nhận
             # theo quyết định #4 "thà trùng hơn mất": trùng có dấu ở đối chứng d[], mất thì
             # không có gì lần ra.
             log.error("spill: chia đôi block độc %s hỏng giữa chừng — giữ file cha",
                       item.table)
-            return
+            return False
         self.spill.delete(item)
+        return True
 
     def _insert(self, table: str, block: list) -> str:
         """MỘT lần thử `client.insert`. Không sleep, không đệ quy — phân loại kết quả rồi

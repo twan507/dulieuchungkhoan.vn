@@ -194,6 +194,97 @@ def test_door2_retry_budget_spills_as_r_not_drop(tmp_path):
     assert item.kind == "r" and item.n_rows == 1                      # thành file -r
 
 
+def test_disk_replay_never_touches_a_store_we_do_not_own(tmp_path):
+    """Review I1: cửa 1 vô điều kiện nên chế độ đĩa VỚI store chưa sở hữu là trạng thái đến
+    được (tiến trình thứ hai thua `try_acquire`). Vòng phát lại mà đọc/xoá file ở đó là ăn
+    trộm hàng đợi của chủ thật: chủ mất file vĩnh viễn, kho nhận bản trùng. Spec §4 —
+    không sở hữu thì KHÔNG đụng, kể cả đọc."""
+    owner = SpillStore(tmp_path, cap_bytes=10**9)
+    assert owner.try_acquire()
+    owner.scan()
+    assert owner.write("trade", [[None] * len(COLUMNS["trade"])], "n")
+    before = sorted(p.name for p in tmp_path.iterdir())
+
+    calls = []
+    intruder = SpillStore(tmp_path, cap_bytes=10**9)   # KHÔNG try_acquire → owned = False
+    w = ChWriter(type("_Rec", (), {"insert": lambda s, t, d, column_names:
+                                   calls.append(len(d))})(), spill=intruder)
+    w.disk_mode = True
+    w.write_once()
+    assert calls == []                                  # không đọc, không ghi lại vào kho
+    assert sorted(p.name for p in tmp_path.iterdir()) == before   # không xoá file của chủ
+
+
+def test_ram_drain_stops_when_mode_flips_midway(tmp_path):
+    """Review I2: `disk_mode` lật giữa lần gọi `write_once` (vòng quản ở thread kia), nhưng
+    `_drain_ram` còn tới 5 s ngân sách nên vẫn bốc tiếp block trong `queue` — chính những
+    block mà `_spill_tail` đang đẩy xuống đĩa. Kết cục: block vừa VÀO KHO vừa nằm file
+    '-n'; phát lại có gộp nên hash đổi, lưới dedup của ClickHouse KHÔNG bắt được."""
+    seq_i = COLUMNS["trade"].index("seq")
+    inserted = []
+    w = None
+
+    class _OkThenFlip:
+        def insert(self, table, data, column_names):
+            inserted.append(data[0][seq_i])
+            if len(inserted) == 1:
+                w.disk_mode = True             # cửa 1 nổ ở vòng quản, giữa lúc insert
+
+    w = _writer_with_spill(tmp_path, _OkThenFlip())
+    w.add(_n(1)); w.manage_once()
+    w.add(_n(2)); w.manage_once()              # hai block rời trong queue
+    w.write_once()
+    assert inserted == [1]                     # block 2 KHÔNG được ghi ở chế độ RAM nữa
+    w.manage_once()                            # ...nó thuộc đường đĩa
+    assert w.queue_rows == 0 and not w.spill.empty()
+    item = w.spill.next_batch(max_rows=100)
+    assert item.table == "trade" and item.n_rows == 1 and item.block[0][seq_i] == 2
+
+
+def test_split_failure_does_not_mint_a_child_file_per_pass(tmp_path):
+    """Review I3: nhánh chia đôi item đĩa hỏng giữa chừng thì GIỮ file cha — nhưng nếu vòng
+    xả không `return`, chính item cha đó được bốc lại, insert lại, chia lại ngay trong cùng
+    lần gọi, mỗi vòng đẻ thêm một file con mồ côi."""
+    clock = _Clock()
+
+    class _PoisonSlow:
+        def insert(self, *a, **k):
+            clock.advance(1.0)                 # mỗi lần thử ăn 1 s ngân sách 5 s
+            raise Exception("Code: 117. DB::Exception: x (INCORRECT_DATA)")
+
+    w = _writer_with_spill(tmp_path, _PoisonSlow(), clock=clock)
+    assert w.spill.write("trade", [[None] * len(COLUMNS["trade"])] * 4, "n")
+    parent = [p.name for p in tmp_path.iterdir() if p.name.endswith(".blk")]
+    assert len(parent) == 1
+
+    real_write, calls = w.spill.write, []
+
+    def flaky(table, block, kind):
+        calls.append(kind)
+        if len(calls) % 2 == 0:                # con THỨ HAI của mỗi lần chia luôn hỏng
+            return False
+        return real_write(table, block, kind)
+
+    w.spill.write = flaky
+    w._enter_disk("test")
+    w.write_once()
+    blks = sorted(p.name for p in tmp_path.iterdir() if p.name.endswith(".blk"))
+    assert parent[0] in blks                   # cha còn nguyên — chưa insert xong thì chưa xoá
+    assert len(blks) == 2                      # cha + ĐÚNG MỘT con mồ côi, không phải một đống
+
+
+def test_spill_counters_mirror_into_metrics_every_tick(tmp_path):
+    """Review M3: `replay_corrupt` là một sự kiện MẤT DÒNG. Chỉ sao chép lúc nhận nuôi thì
+    mọi lần hỏng file sau đó không bao giờ lên metric — spec §6 đòi mọi mất mát đếm được."""
+    ok = type("_Ok", (), {"insert": lambda self, *a, **k: None})()
+    w = _writer_with_spill(tmp_path, ok)
+    w.manage_once()                            # nhịp nhận nuôi: đĩa rỗng, chưa có gì hỏng
+    assert w.metrics.counters.get("replay_corrupt") == 0
+    w.spill.counters["replay_corrupt"] = 3     # sự cố xảy ra SAU khi đã sở hữu
+    w.manage_once()
+    assert w.metrics.counters["replay_corrupt"] == 3
+
+
 def test_no_spill_transient_expiry_drops_with_ledger_and_stays_in_ram(caplog):
     """spill=None (không có lưới đĩa) — cửa 2 KHÔNG mở: vào chế độ đĩa mà không có đĩa thì
     mọi block mới bị bỏ suốt sự cố, tệ hơn hẳn bỏ đúng block cạn hạn chót. Ruling C-1:
@@ -267,6 +358,40 @@ def test_enter_disk_during_insert_removes_the_right_block(tmp_path):
     assert not w.head and not w.queue           # ...và đã được gỡ khỏi hàng đợi CHỨA nó
     assert w.queue_rows == sum(len(p.block) for p in w.queue)
     assert w.head_rows == N_CAP_ROWS            # trừ đúng 1 dòng vừa ghi khỏi đầu đông cứng
+
+
+def test_concurrent_enter_disk_never_discards_the_frozen_head():
+    """Review C1: hai CỬA gọi `_enter_disk` từ HAI THREAD thật — cửa 1 ở vòng quản, cửa 2 ở
+    vòng ghi. Nếu chốt `if self.disk_mode: return` nằm NGOÀI `_lock` và `disk_mode = True`
+    đặt SAU khi nhả khoá thì cả hai cùng lọt chốt: lần đông cứng thứ hai gán `head` =
+    `queue` MỚI (rỗng) và **nuốt sạch phần đã đông cứng lần đầu** — tới N_CAP_ROWS dòng,
+    không counter, không log. Bất biến: đông cứng đúng MỘT lần, không dòng nào bốc hơi."""
+    old_interval = sys.getswitchinterval()
+    sys.setswitchinterval(0.00001)
+    try:
+        for attempt in range(400):
+            ok = type("_Ok", (), {"insert": lambda self, *a, **k: None})()
+            w = ChWriter(ok)
+            w.queue.append(_Pending("trade", [[None] * len(COLUMNS["trade"])] * 1000))
+            w.queue_rows = 1000
+            barrier = threading.Barrier(2)
+
+            def door(name, _w=w, _b=barrier):
+                _b.wait()
+                _w._enter_disk(name)
+
+            ts = [threading.Thread(target=door, args=(n,))
+                  for n in ("ram_cap", "retry_budget")]
+            for t in ts:
+                t.start()
+            for t in ts:
+                t.join()
+            # Bảo toàn dòng — tính lại độc lập từ nội dung deque, không từ biến đếm.
+            assert sum(len(p.block) for p in w.head) == 1000, f"lần {attempt}: head bị nuốt"
+            assert w.head_rows == 1000 and w.queue_rows == 0
+            assert w.disk_mode
+    finally:
+        sys.setswitchinterval(old_interval)
 
 
 def test_exit_disk_only_when_all_empty(tmp_path):
