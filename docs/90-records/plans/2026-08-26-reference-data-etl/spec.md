@@ -61,7 +61,7 @@ GetListOrganization    ──→ market.issuer (+ QU nối ETF/quỹ)
 | Hằng số 18 chỉ số | `index` |
 | Ticker chỉ có ở FiinTrade | `comTypeCode='QU'` → `fund_cert`, còn lại → `stock` *(sửa 2026-08-26 lúc chụp fixture: câu "GetListOrganization chỉ chứa doanh nghiệp" sai đo được — có 24 bản ghi QU là quỹ, và `FUCTVGF4` org-only chính là một quỹ đóng đã rời sàn; `comTypeCode` là trường đo được, không phải suy đoán)* |
 
-**Luật 2b — tách `etf` với `fund_cert` là câu hỏi mở, không được bịa.** `StockType=3` gộp chung *"ETF / Chứng chỉ quỹ"*, chưa đo được cách phân biệt. Nạp toàn bộ thành `etf`, ghi câu hỏi mở vào ledger. *(§1.3: chưa đo thì ghi "chưa kiểm".)*
+**Luật 2b — nạp toàn bộ `StockType=3` thành `etf`.** `/quotes` gộp chung *"ETF / Chứng chỉ quỹ"* và **không có trường nào tách được**. `FundType` của `/datafeed/instruments` tách được một phần *(đo 2026-08-27)* nhưng chỉ đúng 1 mã đổi kết quả và 11 mã vẫn treo — xem §9, quyết không sửa lượt này.
 
 **Luật 3 — huỷ niêm yết: so với TRẠNG THÁI ĐÍCH, không so với một endpoint.** Dòng đang `status='listed'` trong kho mà ticker **không có trong trạng thái đích hợp nhất của lượt** (luật 1) ⇒ đổi `delisted`. Không xoá.
 
@@ -232,7 +232,7 @@ Phân ba loại theo §1.4:
 | `getSymbolMapping` (`BVSC /mapping`) | **Đã có đường khác** | Tập con của `/quotes` (cùng 8 trường trừ giá) — `/quotes` phủ hết |
 | `market.metric_dictionary` | **Đã có đường khác** | 729 mã có sẵn trong [`field-dictionary.json`](../../../10-sources/market/field-dictionary.json); nạp là lát riêng |
 | Mã TVC của 15/18 chỉ số | **Chưa kiểm — không bịa** | Chỉ 3 mã đã đo (§3.1); đo thêm thì ghi thêm dòng `external_sub='tvc'` |
-| Phân biệt `etf` với `fund_cert` | **Chưa kiểm — chưa có cách** | Luật 2b |
+| Phân biệt `etf` với `fund_cert` | **Đã đo 2026-08-27 — CỐ Ý KHÔNG SỬA** | `/datafeed/instruments` có `FundType`, nhưng đo tiếp thì không đáng: trong 31 mã `StockType=3` của `/quotes`, 19 mã `FundType='E'` (đã đúng sẵn), **đúng 1 mã** `'M'` (`FUCVREIT`) là sai, và **11 mã không có mặt** ở instruments nên vẫn treo. Thêm endpoint thứ 5 (3,29 MB/ngày) để sửa 1 dòng trên 2.015 — §4.4.2. Làm cùng lát phái sinh |
 
 ---
 

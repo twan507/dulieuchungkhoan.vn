@@ -66,3 +66,18 @@ Reviewer kiểm bằng thí nghiệm đột biến trong scratchpad (repo không
 **224 test xanh** (217 + 7). Chạy thật lần ba sau đợt sửa: exit 0, `sec_unchanged=2015`, các counter mới đều 0 (`icb_orphaned` · `unknown_com_group` · `dup_org_ticker`).
 
 ## KẾT THÚC LÁT: 7/7 task · final review + đợt sửa xong · 224 test xanh · job chạy thật 3 lượt idempotent · task 08:00 hằng ngày đã bật · merge `main`.
+
+
+## 2026-08-27 (sáng) — đóng câu hỏi `etf`/`fund_cert` bằng cách ĐO rồi KHÔNG sửa
+
+Đo `/datafeed/instruments`: có `FundType` (`E`=20 · `M`=3 · rỗng=7) — tưởng là lời giải. Đo tiếp mới thấy **không đáng sửa**:
+
+| Trong 31 mã `StockType=3` của `/quotes` | Số |
+|---|---|
+| `FundType='E'` → `etf` (đang đúng sẵn) | 19 |
+| `FundType='M'` → đáng lẽ `fund_cert` | **1** (`FUCVREIT`) |
+| **Không có mặt ở instruments** — vẫn không biết | **11** |
+
+Thêm endpoint thứ 5 (3,29 MB/ngày) + đổi spec đã qua hai vòng review, để sửa **1 dòng trên 2.015**, mà 11 dòng vẫn treo. Quyết: **không sửa**; spec §9 chuyển từ *"chưa kiểm"* sang *"đã đo — cố ý không sửa"*. Fixture `instruments.json` đã dựng rồi xoá.
+
+Bài học: đo trước khi sửa không chỉ để biết CÁCH sửa, mà để biết **có đáng sửa không** — dừng ở nửa đường phép đo (thấy `FundType` tồn tại) sẽ dẫn tới một thay đổi tệ.
