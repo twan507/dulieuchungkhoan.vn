@@ -147,7 +147,8 @@ hạ tầng (docker-compose: PG + ClickHouse + Redis)
 | ClickHouse | trung bình 373 MB · **đỉnh 1,18 GiB** (RSS đỉnh 1,80 GiB) | 2,0 GiB mềm · **2,6 GiB cứng** |
 | Postgres | 74 MB | 1 GiB |
 | Redis | 11 MB | 256 MiB (trần 192 MB) |
-| Ingester (ghi) | **97 MB** | 200 MB |
+| Ingester (ghi) | **97 MB** | 200 MB *(chung với phiên đo)* |
+| Ingester (đo `--measure`, chạy thường trực cạnh phiên ghi từ 2026-08-27) | **13 MB** | — nằm trong 200 MB trên |
 | OS + Docker · API · ETL · pipeline tin | — | ~1,6 GB |
 | **Cộng** | | **~5,6 GB — dư ~0,4 GB** |
 
@@ -175,7 +176,7 @@ Overlay [`deploy/infra/docker-compose.vps.yml`](../../deploy/infra/docker-compos
 
 `block_cap.quote` chạm **đúng một lần**, lúc **09:00:14** — đúng phiên ATO. Trần block chỉ *cắt sớm rồi xếp hàng*, không vứt dòng; cả phiên **0 `dropped_block`, 0 `poison_row`, 0 `normalize_error`**, đối chứng cuối phiên `p1=0 p2=0 ok=868`.
 
-Ghi được **4,27 triệu dòng / 82,2 MB** một phiên *(quote 3,12tr · snapshot_delta 890k · trade 205k · index_delta 56k · nến 1 phút 37k)*. Suy ra ~250 phiên/năm ≈ **20,5 GB/năm frame thô**, mà TTL 3 tháng ⇒ **~5 GB thường trực**; nến vĩnh viễn ~470 MB/năm. **60 GB đĩa thoải mái.**
+Ghi được **4,27 triệu dòng / 82,2 MB** một phiên *(quote 3,12tr · snapshot_delta 890k · trade 205k · index_delta 56k · nến 1 phút 37k)*. Suy ra ~250 phiên/năm ≈ **20,5 GB/năm frame thô**, mà TTL 3 tháng ⇒ **~5 GB thường trực**; nến vĩnh viễn ~470 MB/năm. Cộng bản đo thô JSONL của phiên `--measure` hằng ngày: **~93 MB gzip/ngày** *(đo 2026-08-27, trọn phiên)*, giữ 30 ngày (job đo tự xoá — `prune_old`, `backend/ingester/measure.py`) ⇒ **~2,8 GB thường trực**. **60 GB đĩa thoải mái.**
 
 ⚠️ **Vẫn chưa được nói "đủ".** Đỉnh 1,18 GiB đo trên **dev**, nơi ClickHouse được cấp mark cache 5 GiB và trần 18,74 GiB — nó dùng những gì được cấp. Dưới hồ sơ hẹp (cache 256 MiB) đỉnh sẽ thấp hơn, **thấp bao nhiêu thì chưa biết**. Phải chạy một phiên dưới trần cứng rồi mới kết luận.
 

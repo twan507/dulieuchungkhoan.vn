@@ -112,7 +112,7 @@ Nên là task đầu tiên của plan, để các phiên sau đó tự sinh dữ
 
 Chế độ `--measure` **đã ghi mọi frame thô ra JSONL gzip** (~52 MB/nửa phiên). Cho nó chạy **thường trực song song** phiên ghi là có sẵn bản sao thô để dựng lại nếu đường ghi mất dòng.
 
-Không thay được tràn-ra-đĩa (bản thô chưa chuẩn hoá, dựng lại là việc thủ công), nhưng là bảo hiểm **có ngay hôm nay**. Cân nhắc bật trong lúc chờ lát này xong.
+Không thay được tràn-ra-đĩa (bản thô chưa chuẩn hoá, dựng lại là việc thủ công), nhưng là bảo hiểm **có ngay hôm nay**. ✅ **Đã bật 2026-08-27** (roadmap [4b]): `dlck-ingester-measure` chạy hằng ngày 08:30 cạnh phiên ghi, bản đo giữ 30 ngày (`prune_old` trong chính job đo). Lát này vì thế có sẵn bản thô mỗi phiên để làm tiêu chí nghiệm thu §6b.
 
 ---
 
