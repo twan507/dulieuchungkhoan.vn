@@ -98,6 +98,49 @@ def test_corrupt_file_moved_aside_and_counted(tmp_path):
     assert any(p.suffix == ".corrupt" for p in tmp_path.iterdir())
 
 
+def test_bytes_used_decrements_on_corrupt_rename(tmp_path):
+    b1, b2 = _block(1), _block(1, seq0=50)
+    size1 = len(pickle.dumps(("trade", b1), protocol=5))
+    size2 = len(pickle.dumps(("trade", b2), protocol=5))
+    cap = size1 + size2                             # đủ đúng 2 khối, không dư
+    s = _store(tmp_path, cap=cap)
+    assert s.write("trade", b1, "n") and s.write("trade", b2, "n")
+    assert s.write("trade", b1, "n") is False        # hết trần trước khi hỏng file
+    files = sorted(p for p in tmp_path.iterdir() if p.suffix == ".blk")
+    files[0].write_bytes(b"x" * size1)               # hỏng nội dung, GIỮ NGUYÊN độ dài
+    before = s.bytes_used
+    item = s.next_batch(max_rows=100)                # corrupt-rename file1, trả về khối 2
+    assert item is not None and item.block == b2
+    assert s.counters["replay_corrupt"] == 1
+    assert s.bytes_used == before - size1            # bytes_used phải trừ đúng size file hỏng
+    assert s.write("trade", b1, "n") is True         # không gian đã giải phóng đủ cho khối mới
+
+
+def test_tmp_cleaned_up_on_write_io_error(tmp_path, monkeypatch):
+    s = _store(tmp_path)
+    real_fdopen = os.fdopen
+
+    def _boom_fdopen(fd, mode):
+        real_fh = real_fdopen(fd, mode)
+
+        class _Boom:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                real_fh.close()
+                return False
+
+            def write(self, data):
+                raise OSError("giả lập lỗi I/O giữa chừng ghi")
+
+        return _Boom()
+
+    monkeypatch.setattr(os, "fdopen", _boom_fdopen)
+    assert s.write("trade", _block(1), "n") is False
+    assert list(tmp_path.glob("*.tmp")) == []        # tmp không được để sót lại
+
+
 def test_lock_excludes_second_process(tmp_path):
     s = _store(tmp_path)
     # lock là CỦA TIẾN TRÌNH — phải kiểm bằng tiến trình con thật, không phải store thứ hai in-process

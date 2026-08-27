@@ -102,6 +102,7 @@ class SpillStore:
                 return False
             os.replace(tmp, final)
         except OSError:
+            tmp.unlink(missing_ok=True)       # đừng để tmp mồ côi nếu ghi giữa chừng lỗi
             log.exception("spill: lỗi I/O khi ghi %s", name)
             return False
         self.seq += 1
@@ -141,7 +142,9 @@ class SpillStore:
             return pickle.loads(p.read_bytes())
         except Exception:  # noqa: BLE001 — file cụt/hỏng: dạt sang bên, có đếm
             self.counters["replay_corrupt"] += 1
+            size = p.stat().st_size           # lấy trước khi rename — sau đó tên đã đổi
             p.rename(p.with_suffix(".corrupt"))
+            self.bytes_used -= size           # file rời khỏi hàng đợi — không còn tính vào trần
             log.error("spill: file hỏng %s — dạt sang .corrupt", p.name)
             return None
 
