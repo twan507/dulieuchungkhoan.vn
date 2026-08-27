@@ -82,7 +82,13 @@ Nhịp đến thật ở chế độ đĩa là **~5–6 block/s** (mỗi bảng 
 |---|---|---|
 | **N** (trần `pending`, đơn vị DÒNG) | Ngân sách RAM hàng đợi ÷ 497 B/dòng. Ngân sách RAM hàng đợi = 200 − 97 (writer thường) − 13 (tiến trình đo) − ~12 (`buffers` 5 bảng × 5.000 dòng) ⇒ **≤ ~50 MB ≈ 100.000 dòng** | N chỉ cần **đủ để chế độ đĩa không kích ở vận hành bình thường**: ≥ 10× `pending_depth` p99 đo được (§10.1) và ≥ vài giây ATO đỉnh. Khả năng "chịu 1 phút đỉnh × 3" **thuộc trần đĩa, không thuộc N** — RAM không phải vùng chịu sự cố trong hướng A |
 | **K** (trần dòng insert/nhịp khi phát lại) | > nhịp dòng đến đỉnh (~6.500 dòng/s) × hệ số an toàn ≥ 3, và K × p95_insert_per_dòng < 1 nhịp | Kèm điều kiện khả thi §2.4; hệ quả phụ: cửa sổ dedup co còn ~100/(block-per-nhịp) — xem §7 |
-| **Trần đĩa** | Chưa đo — chốt sau §9.2 (kích thước pickle block thật). Đích: chịu được **≥ 2 giờ sự cố ở tải đỉnh × hệ số 3** | Cộng kho CH ~5 GB + bản đo 30 ngày ~2,8 GB + Postgres/OS/Docker vẫn nằm trong 60 GB |
+| **Trần đĩa** | ✅ **10 GiB** *(đo 2026-08-27: pickle 65 B/dòng — §9.2)*. Đích: chịu được **≥ 2 giờ sự cố ở tải đỉnh × hệ số 3** — kiểm: 6.496 dòng/s × 7.200 s × 65 B × 3 ≈ 9,1 GB ≤ 10 GiB | Cộng kho CH ~5 GB + bản đo 30 ngày ~2,8 GB + Postgres/OS/Docker vẫn nằm trong 60 GB |
+
+**Kết quả gate điền hằng số** *(2026-08-27 tối — nguồn: probe §9 + số phiên thật 27/08 trong brief §3)*:
+
+- `N_CAP_ROWS = 100_000` — 49,7 MB @ 497 B/dòng ≤ ngân sách ~50 MB; ≈ 15 s ATO đỉnh ≈ 5 s × hệ số 3.
+- `K_REPLAY_ROWS = 20_000` — > 6.496 × 3 = 19.488; chi phí xả 4 insert gộp × p95 88 ms ≈ 0,35 s < 1 nhịp.
+- **Điều kiện khả thi §2.4: ĐẠT, dư ~8,7×** — 6.496 dòng/s × (88 ms ÷ 5.000 dòng) ≈ 0,114 < 1. p95 hồ sơ VPS hẹp ≈ hồ sơ dev (88,2 vs 87,5 ms) nên K không cần hiệu chỉnh theo môi trường.
 
 ## 3. Vòng đời file trên đĩa
 
@@ -143,6 +149,15 @@ Chạm trần → bỏ block **mới đến** (quyết định #3): hàng đợi
 **Log:** một dòng rõ khi vào/ra chế độ đĩa (kèm cửa vào nào, thời lượng, tổng block qua đĩa); log cấu trúc cho block bị bỏ (§6).
 
 ## 9. Phép kiểm một-lần trên ClickHouse thật *(kết quả ghi vào NGAY MỤC NÀY sau khi đo)*
+
+> ✅ **ĐÃ ĐO 2026-08-27** (probe `tests/clickhouse/test_c99_dedup_probe.py`, ClickHouse container thật, schema `rt` — output nguyên văn trong ledger):
+>
+> - **1a (trong cửa sổ, qua đường đĩa):** block 100 dòng insert 2 lần, lần hai là bản pickle-roundtrip → `count = 100` — **server nuốt, hash GIỮ NGUYÊN qua pickle**. Giả định §3 đứng vững.
+> - **1b (ngoài cửa sổ theo block):** block 50 dòng, chen 105 block khác cùng bảng, insert lại → `count = 100` — **NHÂN ĐÔI**, đúng dự đoán: cửa sổ bị đẩy theo block.
+> - **1c (chiều thời gian):** block 10 dòng, chờ 130 s KHÔNG chen block, insert lại → `count = 10` — **cửa sổ thuần block, không co theo giây**; biến thể `_window_seconds` không có tác dụng quan sát được.
+> - **§9.2 kích thước pickle:** block 5.000 dòng `rt.trade` = **323.657 B ≈ 316 KiB ≈ 65 B/dòng** (gọn hơn 497 B/dòng trong RAM ~7,7×).
+> - **Thưởng thêm (Ruling PF-1):** p95 insert — block 5.000 dòng: 87,5 ms (dev) / 88,2 ms (VPS hẹp); block 50 dòng: ~72 ms cả hai. Insert bị chi phối bởi latency, không phải số dòng ⇒ gộp block khi phát lại (§2.4) là đòn bẩy đúng.
+> - ⚠️ **Phát hiện ngoài dự kiến:** `deploy/infra/clickhouse/memory-vps.xml` bản cũ làm ClickHouse **crash-loop lúc boot** (BAD_ARGUMENTS — 3 setting `merge_tree` mặc định lớn hơn pool 8). Đã sửa (pin cả ba = 4) + kiểm bằng boot container thật (commit `7d65d44`). Overlay VPS trước đó **chưa từng được boot thử** — nếu deploy như cũ là chết từ dòng đầu.
 
 1. **Dedup qua đường đĩa, đơn vị block:**
    - *(1a — trong cửa sổ)* insert block X → pickle → file → load → insert lại ngay: kỳ vọng bị nuốt ⇒ chứng minh vòng qua đĩa **không đổi hash** (điều seam test so-object-Python không chứng minh được).
