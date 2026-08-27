@@ -35,6 +35,20 @@
   <background_schedule_pool_size>4</background_schedule_pool_size>
   <background_merges_mutations_concurrency_ratio>2</background_merges_mutations_concurrency_ratio>
 
+  <!-- 🔴 Bắt buộc đi kèm hai dòng trên — thiếu là ClickHouse KHÔNG khởi động được.
+       sanityCheck() của MergeTreeSettings đòi MỌI setting number_of_free_entries_in_pool_to_*
+       (mặc định trong <merge_tree> của config.xml) phải ≤ background_pool_size × ratio = 4×2 = 8,
+       nếu không server ném BAD_ARGUMENTS (Code 36) và thoát ngay ~1s sau start. Đo thật
+       2026-08-27 chạy container dưới đúng hồ sơ này (xem ledger plan spill-to-disk) — bắt
+       lần lượt TỪNG setting một (mutation trước, rồi optimize_entire_partition) vì
+       sanityCheck() dừng ở lỗi đầu tiên; hạ cả ba mặc định liên quan trong MỘT lượt
+       để không phải dò tiếp lần ba. -->
+  <merge_tree>
+    <number_of_free_entries_in_pool_to_execute_mutation>4</number_of_free_entries_in_pool_to_execute_mutation>
+    <number_of_free_entries_in_pool_to_execute_optimize_entire_partition>4</number_of_free_entries_in_pool_to_execute_optimize_entire_partition>
+    <number_of_free_entries_in_pool_to_lower_max_size_of_merge>4</number_of_free_entries_in_pool_to_lower_max_size_of_merge>
+  </merge_tree>
+
   <!-- Trần mỗi truy vấn: một câu hỏi lỡ tay của API không được kéo sập server. -->
   <max_concurrent_queries>32</max_concurrent_queries>
   <profiles>
