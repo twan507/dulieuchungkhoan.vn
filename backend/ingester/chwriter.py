@@ -249,7 +249,13 @@ class ChWriter:
         with self._lock:
             if self.head or self.queue:
                 return
-        if self.spill is not None and not self.spill.empty():
+        # `.owned` là một phần của điều kiện, không phải chi tiết thừa (ruling T8-2): tiến
+        # trình THUA `try_acquire` vẫn vào chế độ đĩa được (cửa 1 vô điều kiện), mà file
+        # của CHỦ THẬT thì không bao giờ tự biến mất dưới tay nó ⇒ không có `.owned` thì
+        # nó KẸT chế độ đĩa cả phiên: mọi block mới rơi vào `spill_drop_newest` (ghi vào
+        # đĩa của người khác là không được phép) trong khi `clean()` vẫn True nên phán
+        # quyết cuối phiên in ra như đáng tin. Đĩa của người khác = coi như không có đĩa.
+        if self.spill is not None and self.spill.owned and not self.spill.empty():
             return
         self.disk_mode = False
         log.warning("RA chế độ đĩa sau %.1fs — %d block đã qua đĩa",
@@ -612,7 +618,17 @@ class ChWriter:
                           "CHẾ ĐỘ ĐĨA, nợ giữ nguyên")
             return days
         finally:
-            if not self.spill.empty():
+            # `finally` chạy SAU `except` nên một `OSError` từ `empty()` (iterdir) ở đây
+            # vẫn thoát được ra ngoài hàm — bọc riêng. Không đọc nổi thư mục thì mặc định
+            # là CÒN NỢ: vào chế độ đĩa thừa chỉ tốn một lượt xả, còn bỏ sót thì FIFO vỡ.
+            try:
+                leftover = not self.spill.empty()
+            except OSError:
+                self.metrics.inc("spill_io_error")
+                log.exception("không đọc được thư mục spill lúc kết thúc phát lại — coi "
+                              "như CÒN nợ")
+                leftover = True
+            if leftover:
                 # `_enter_disk` tự bỏ qua nếu đã ở chế độ đĩa; `queue` lúc khởi động rỗng
                 # nên đầu RAM đông cứng cũng rỗng — vô hại.
                 self._enter_disk("debt_replay")

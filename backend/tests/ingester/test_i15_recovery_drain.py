@@ -6,18 +6,24 @@ Task 8: phát lại nợ đĩa lúc khởi động (`ChWriter.replay_debt`), đ�
 import asyncio
 import gc
 import logging
-from datetime import date, datetime, timedelta
+import re
+from datetime import date, datetime
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
+import pytest
+
 import ingester.main as main_mod
 from ingester.chwriter import COLUMNS, ChWriter
+from ingester.config import Config as IngesterConfig
 from ingester.normalize import Normalized
 from ingester.main import (
     DRAIN_CLEAN_BUDGET_S,
     DRAIN_HARD_CAP_S,
+    _drain_for_verdict,
     _replay_startup_debt,
     drain_writer,
+    run,
 )
 from ingester.reconcile import ReconcileResult
 from ingester.spill import SpillStore
@@ -39,6 +45,14 @@ def _ok_client():
 class _Down:
     def insert(self, *a, **k):
         raise ConnectionError("CH chưa dậy")
+
+
+class _FakeRedis:
+    async def ping(self) -> bool:
+        return True
+
+    async def aclose(self) -> None:
+        pass
 
 
 class _FakeClock:
@@ -197,6 +211,29 @@ def test_lost_leadership_keeps_spilling_and_never_loses_the_frozen_head(tmp_path
     assert seen == [1, 2, 3] and w.clean()
 
 
+def test_intruder_can_exit_disk_mode_although_owner_files_remain(tmp_path, caplog):
+    """Ruling T8-2: `_maybe_exit_disk` kiểm `spill.empty()` mà KHÔNG kiểm `.owned`. Tiến
+    trình thua `try_acquire` vẫn vào chế độ đĩa được (cửa 1 vô điều kiện), và file của CHỦ
+    THẬT thì không bao giờ tự biến mất ⇒ nó KẸT chế độ đĩa cả phiên: mọi block mới rơi vào
+    `spill_drop_newest` (ghi đĩa của người khác là không được phép), trong khi `clean()`
+    trả True nên phán quyết cuối phiên vẫn in ra như đáng tin. Mất dòng có counter nhưng
+    KHÔNG có lý do — đĩa vẫn khoẻ, chỉ là đĩa của người khác."""
+    owner = SpillStore(tmp_path, cap_bytes=10**9)
+    assert owner.try_acquire()
+    assert owner.write("trade", _trade_rows(day=27, n=1), "n")
+
+    intruder = SpillStore(tmp_path, cap_bytes=10**9)   # KHÔNG try_acquire → owned = False
+    w = ChWriter(_ok_client(), spill=intruder)
+    w.add(_n(1))
+    w.manage_once()
+    w._enter_disk("test")                              # cửa 1 ở tiến trình thua khoá
+    w.write_once()                                     # xả đầu RAM đông cứng
+    with caplog.at_level(logging.WARNING):
+        w.manage_once()                                # kiểm điều kiện ra
+    assert not w.disk_mode                             # file kia là của chủ khác — không phải nợ
+    assert not owner.empty()                           # ...và ta không đụng vào nó
+
+
 # --- clean(): nợ đĩa CỦA MÌNH mới tính --------------------------------------------
 
 
@@ -260,7 +297,11 @@ def test_drain_false_when_disk_not_empty(tmp_path, caplog):
     with caplog.at_level(logging.ERROR):
         drained = asyncio.run(drain_writer(w, budget_s=0.3))
     assert drained is False
-    assert "còn" in caplog.text                             # log nợ: "còn X block / Y byte"
+    # Ghim đúng SỐ, không chỉ chữ "còn": đúng 1 block và số byte khác 0 — một log đếm sai
+    # (0 block, 0 byte) vẫn chứa chữ "còn" mà nói dối về khối nợ để lại.
+    m = re.search(r"còn (\d+) block / (\d+) byte", caplog.text)
+    assert m is not None, caplog.text
+    assert int(m.group(1)) == 1 and int(m.group(2)) > 0
     assert not s.empty()                                    # nợ ĐỂ LẠI, không vứt
 
 
@@ -269,6 +310,32 @@ def test_default_budget_short_when_no_debt(tmp_path):
     assert s.try_acquire()
     w = ChWriter(_ok_client(), spill=s)
     assert asyncio.run(drain_writer(w)) is True             # sạch ngay, không chờ 600s
+
+
+def test_non_leader_verdict_is_untrusted_when_disk_debt_remains(tmp_path):
+    """Ruling T8-3: nhánh KHÔNG-leader cuối phiên đặt `drained = True` không hỏi han gì.
+    Tiến trình MẤT leadership giữa phiên vẫn spill xuống đĩa (spec §4 bắt buộc) — nợ đó ở
+    lại đĩa mà phán quyết vẫn in ra như đáng tin. Không-leader thì KHÔNG được insert (spec
+    §3.6) nên cũng KHÔNG được xả: chỉ được KHAI THẬT bằng `clean()`."""
+    calls = []
+    client = type("_Rec", (), {"insert": lambda s, t, d, column_names:
+                               calls.append(len(d))})()
+    s = SpillStore(tmp_path, cap_bytes=10**9)
+    assert s.try_acquire()
+    assert s.write("trade", _trade_rows(day=27, n=1), "r")   # nợ của lượt mất leadership
+    w = ChWriter(client, spill=s)
+    # File trên đĩa LUÔN đi kèm chế độ đĩa trong đời thật (cửa 2 vào chế độ ngay khi ghi
+    # '-r'; `replay_debt`/`_adopt_spill_if_possible` cũng vào khi thấy file sót). Dựng
+    # đúng trạng thái đó — "có nợ đĩa mà không ở chế độ đĩa" là trạng thái KHÔNG đến được,
+    # và ở trạng thái đó `write_once` sẽ không đụng tới đĩa nên vòng xả chỉ quay vô ích.
+    w._enter_disk("test")
+
+    assert asyncio.run(_drain_for_verdict(w, is_leader=False)) is False
+    assert calls == []                                       # không leader ⇒ KHÔNG insert
+    assert not s.empty()
+
+    assert asyncio.run(_drain_for_verdict(w, is_leader=True)) is True   # leader thì xả thật
+    assert calls == [1] and s.empty()
 
 
 def test_default_budget_is_hard_cap_when_disk_mode():
@@ -316,9 +383,18 @@ class _FakeCHClient:
         self.closed = True
 
 
+class _FrozenNow:
+    """`datetime` giả CHỈ có `now` — đóng băng "hôm nay" để mốc so sánh của test là literal
+    bất biến, không phải ngày chạy test (CLAUDE.md §4.4.4: tiêu chí phải còn đúng sau 3 tháng)."""
+
+    @staticmethod
+    def now(tz):
+        return datetime(2026, 8, 27, 8, 0, tzinfo=tz)
+
+
 def test_startup_debt_reconciles_only_days_before_today(monkeypatch):
-    today = datetime.now(TZ).date()
-    yday, d2 = today - timedelta(days=1), today - timedelta(days=3)
+    monkeypatch.setattr(main_mod, "datetime", _FrozenNow)
+    today, yday, d2 = date(2026, 8, 27), date(2026, 8, 26), date(2026, 8, 24)
     seen, clients = [], []
 
     def _fake_reconcile(client, d):
@@ -337,6 +413,82 @@ def test_startup_debt_reconciles_only_days_before_today(monkeypatch):
     assert days == [d2, yday]        # cũ trước, và ngày HÔM NAY KHÔNG đối chứng sớm
     assert seen == [d2, yday]
     assert clients and all(c.closed for c in clients)      # không rò client đối chứng
+
+
+def test_boot_spill_io_error_returns_exit_3_not_a_bare_traceback(tmp_path, monkeypatch,
+                                                                 capsys):
+    """Review I1: mọi lời gọi hệ thống tệp CHẠY TRƯỚC trên đường khởi động (`mkdir` của
+    `SpillStore.__init__`, `open(owner.lock)` và `unlink/stat` của `_scan` trong
+    `try_acquire`) đều ném `OSError` được — trên Windows chỉ cần AV/indexer giữ một `.tmp`
+    mồ côi là `unlink` ném `PermissionError`. Thoát ra ngoài thì nó thành traceback trần
+    exit 1, đi vòng đúng hợp đồng exit 3 (bài học ACCESS_DENIED 26/08)."""
+    cfg = IngesterConfig(clickhouse_url="fake://", redis_url="redis://x",
+                         log_dir=tmp_path, measure_dir=tmp_path, spill_dir=tmp_path)
+    monkeypatch.setattr(main_mod.config, "load", lambda need_db: cfg)
+    monkeypatch.setattr(main_mod.clickhouse_connect, "get_client",
+                        lambda **kw: _FakeCHClient())
+    monkeypatch.setattr(main_mod.ch_migrate, "assert_migrated", lambda client: None)
+    monkeypatch.setattr(main_mod.aioredis.Redis, "from_url",
+                        lambda url, decode_responses=True: _FakeRedis())
+
+    class _BoomStore:                       # ca 1: mkdir/`__init__` hỏng
+        def __init__(self, root, cap_bytes):
+            raise PermissionError("không tạo được thư mục spill")
+
+    monkeypatch.setattr(main_mod.spill_mod, "SpillStore", _BoomStore)
+    assert asyncio.run(run("run")) == 3
+    assert "ingester:" in capsys.readouterr().err
+
+    class _BoomAcquireStore:                # ca 2: `try_acquire`/`_scan` hỏng
+        def __init__(self, root, cap_bytes):
+            self.owned = False
+
+        def try_acquire(self):
+            raise PermissionError("AV giữ .tmp mồ côi — unlink hỏng")
+
+    monkeypatch.setattr(main_mod.spill_mod, "SpillStore", _BoomAcquireStore)
+    assert asyncio.run(run("run")) == 3
+    assert "ingester:" in capsys.readouterr().err
+
+
+def test_replay_debt_finally_invariant_survives_io_error_in_empty(tmp_path):
+    """Review I1, vế hai: khối `finally` chạy SAU `except OSError`, nên một `OSError` từ
+    `spill.empty()` (iterdir) NGAY TRONG `finally` vẫn thoát ra ngoài hàm."""
+    s = SpillStore(tmp_path, cap_bytes=10**9)
+    assert s.try_acquire()
+    w = ChWriter(_ok_client(), spill=s)
+
+    def _boom():
+        raise PermissionError("iterdir hỏng")
+
+    s.empty = _boom
+    assert w.replay_debt() == set()          # KHÔNG được ném ra ngoài
+    assert w.disk_mode                       # không đọc được đĩa ⇒ coi như CÒN nợ
+    assert w.metrics.counters["spill_io_error"] == 1
+
+
+def test_try_acquire_releases_the_lock_when_scan_fails(tmp_path, monkeypatch):
+    """Review I2: `_lock_fh = fh` đặt TRƯỚC `_scan()`, `owned = True` đặt SAU — `_scan`
+    ném thì tiến trình GIỮ khoá OS với `owned = False` vĩnh viễn: chính nó không giành lại
+    được (khoá xung đột kể cả trong cùng tiến trình — `msvcrt.locking` theo handle,
+    `flock` theo open-file-description), và tiến trình khác cũng không nhận nuôi được. Một
+    con zombie ngậm khoá."""
+    s = SpillStore(tmp_path, cap_bytes=10**9)
+
+    def _boom(self):
+        raise PermissionError("AV giữ .tmp mồ côi")
+
+    monkeypatch.setattr(SpillStore, "_scan", _boom)
+    # 🔴 `ei` phải được GÁN và sống qua các assert dưới: nó giữ traceback → giữ frame →
+    # giữ tham chiếu tới `fh`. Không gán thì bản LỖI cũng xanh vì GC đóng `fh` hộ (nhả
+    # khoá nhờ may mắn, không nhờ code).
+    with pytest.raises(OSError) as ei:
+        s.try_acquire()
+    assert s.owned is False and s._lock_fh is None
+    monkeypatch.undo()
+    assert s.try_acquire() is True            # khoá đã được nhả THẬT
+    assert s.owned and s.seq == 1
+    assert ei.value is not None
 
 
 def test_startup_without_lock_skips_replay_and_warns(caplog):

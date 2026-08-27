@@ -68,9 +68,39 @@ class SpillStore:
             fh.close()
             return False
         self._lock_fh = fh                    # giữ mở suốt đời — nhả = chết
-        self._scan()
+        try:
+            self._scan()
+        except OSError:
+            # 🔴 Quét hỏng (AV/indexer giữ một `.tmp` mồ côi ⇒ `unlink` ném PermissionError)
+            # mà cứ ôm khoá thì tiến trình thành ZOMBIE NGẬM KHOÁ: `owned` vẫn False nên
+            # `_adopt_spill_if_possible` thử lại mỗi nhịp, nhưng chính nó không giành lại
+            # được (khoá xung đột theo HANDLE với `msvcrt.locking`, theo open-file-
+            # description với `flock` — kể cả trong cùng tiến trình), và tiến trình khác
+            # cũng không nhận nuôi được. Nhả sạch rồi NÉM TIẾP: đường khởi động bắt
+            # `OSError` để trả exit 3 đúng hợp đồng, vòng quản giữa phiên đã có `try` riêng.
+            self._release()
+            raise
         self.owned = True                     # ĐẶT CUỐI — xem docstring
         return True
+
+    def _release(self) -> None:
+        """Nhả khoá + đóng handle. Đóng handle là đủ để OS nhả; mở khoá tường minh chỉ để
+        không phụ thuộc vào chi tiết đó."""
+        fh, self._lock_fh = self._lock_fh, None
+        if fh is None:
+            return
+        try:
+            if os.name == "nt":
+                import msvcrt
+                fh.seek(0)
+                msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(fh, fcntl.LOCK_UN)
+        except OSError:
+            pass
+        finally:
+            fh.close()
 
     def scan(self) -> None:
         """Quét lại thủ công. `try_acquire()` đã quét sẵn nên đường chạy KHÔNG cần gọi;

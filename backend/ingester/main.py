@@ -348,6 +348,18 @@ async def drain_writer(writer, budget_s: float | None = None,
         await sleep_fn(1.0)
 
 
+async def _drain_for_verdict(writer, is_leader: bool) -> bool:
+    """Có được phép tin phán quyết đối chứng cuối phiên không.
+
+    Không-leader thì KHÔNG được insert (spec §3.6) nên cũng KHÔNG được xả — nhưng phải
+    KHAI THẬT: một tiến trình MẤT leadership giữa phiên vẫn tiếp tục spill xuống đĩa (spec
+    §4 bắt buộc, đầu RAM không bị vứt), nên nợ của nó có thật và phán quyết dưới đây không
+    phản ánh nó. `drained = True` vô điều kiện như bản cũ là in ra một lời bảo đảm rỗng."""
+    if is_leader:
+        return await drain_writer(writer)
+    return writer.clean()
+
+
 async def _replay_startup_debt(writer, store, rc_client_factory) -> list:
     """Trả nợ đĩa TRƯỚC PHIÊN rồi chạy lại đối chứng cho từng ngày nợ (spec §5.3).
 
@@ -393,6 +405,10 @@ async def _replay_startup_debt(writer, store, rc_client_factory) -> list:
 # 20 s cho phép ~3 lần thử nằm gọn trong ngân sách; ghi 5.000 dòng bình thường mất dưới
 # một giây, nên chạm 20 s nghĩa là server đang thật sự có vấn đề.
 CH_IO_TIMEOUT_S = 20
+# Trần cho MỘT truy vấn đối chứng ngày nợ: rộng hơn trần ghi (quét FULL OUTER JOIN trọn
+# ngày, không phải một INSERT) nhưng HỮU HẠN và nhỏ hơn mặc định 300 s của driver — đây là
+# đường khởi động, treo ở đây là treo cả phiên sắp mở.
+RECONCILE_IO_TIMEOUT_S = 120
 
 
 async def _run_run(cfg: config.Config, minutes: float | None) -> int:
@@ -418,10 +434,23 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
 
     # Lưới đĩa + trả nợ TRƯỚC catalog/socket: nợ của phiên trước phải vào kho trước khi
     # dòng mới bắt đầu chảy (spec §5.3, xem `_replay_startup_debt`).
-    store = spill_mod.SpillStore(cfg.spill_dir, SPILL_CAP_BYTES)
-    writer = ChWriter(client, spill=store)
-    await _replay_startup_debt(
-        writer, store, lambda: clickhouse_connect.get_client(dsn=cfg.clickhouse_url))
+    #
+    # 🔴 Cả khối nằm trong hợp đồng exit 3: `SpillStore(...)` gọi `mkdir`, `try_acquire`
+    # gọi `open(owner.lock)` rồi `unlink`/`stat` khi quét — mỗi cái đều ném `OSError`
+    # được (Windows: AV/indexer giữ một `.tmp` mồ côi là `unlink` ném PermissionError).
+    # Để nó thoát ra thì thành traceback trần exit 1, đi vòng đúng hợp đồng dựng ra để
+    # báo lỗi khởi động — họ lỗi ACCESS_DENIED 26/08.
+    try:
+        store = spill_mod.SpillStore(cfg.spill_dir, SPILL_CAP_BYTES)
+        writer = ChWriter(client, spill=store)
+        await _replay_startup_debt(
+            writer, store,
+            lambda: clickhouse_connect.get_client(
+                dsn=cfg.clickhouse_url, send_receive_timeout=RECONCILE_IO_TIMEOUT_S))
+    except OSError as e:
+        print(f"ingester: lỗi I/O trên thư mục spill {cfg.spill_dir}: {e}", file=sys.stderr)
+        log.error("dựng lưới đĩa / phát lại nợ thất bại: %r", e)
+        return 3
 
     catalog = await asyncio.to_thread(cat.build_catalog)
     topics = cat.topics(catalog)
@@ -508,9 +537,7 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
             t.cancel()
     await asyncio.gather(*tasks, return_exceptions=True)
 
-    drained = True
-    if is_leader.is_set():
-        drained = await drain_writer(writer)
+    drained = await _drain_for_verdict(writer, is_leader.is_set())
     await redis.aclose()
 
     # Client riêng cho đối chứng: 20 s là trần hợp lý cho một INSERT, nhưng reconcile
