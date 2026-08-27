@@ -30,8 +30,11 @@ def upgrade() -> None:
           CONSTRAINT note_not_blank CHECK (btrim(note) <> '')
         );
 
-        -- ĐƯỜNG ĐỌC DUY NHẤT của ngành doanh nghiệp. Đọc thẳng issuer.industry_id là
-        -- bỏ qua lớp tay — mọi truy vấn hiển thị/phân tích phải qua view này.
+        -- Đường đọc NGÀNH ĐÃ PHÂN GIẢI của doanh nghiệp. Đọc thẳng issuer.industry_id
+        -- là bỏ qua lớp tay; đọc thẳng issuer_industry_override là chỉ thấy lớp tay.
+        -- DB ép được luật này với dlck_etl (bị REVOKE trên bảng nền); với dlck_api thì
+        -- đây là KỶ LUẬT CODE, không phải ràng buộc DB — API vẫn giữ quyền đọc bảng nền
+        -- để lấy cột `note` (lý do đè tay) mà view không phơi ra.
         CREATE VIEW market.v_issuer_industry AS
         SELECT i.issuer_id,
                COALESCE(o.industry_id, i.industry_id) AS industry_id,

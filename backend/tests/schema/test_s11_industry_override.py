@@ -23,6 +23,16 @@ def test_override_note_is_mandatory(db):                 # seam 1: không cho đ
         "VALUES (:i, :d, NULL)", {"i": iid, "d": ind})
 
 
+def test_override_note_cannot_be_blank(db):              # seam 1b: CHECK note_not_blank
+    """Chuỗi rỗng và chuỗi toàn khoảng trắng đều bị chặn — NOT NULL không bắt được ca này."""
+    iid, ind = _issuer(db), _ind(db, "DANDUNG")
+    for blank in ("", "   "):
+        assert expect_violation(
+            db,
+            "INSERT INTO market.issuer_industry_override (issuer_id, industry_id, note) "
+            "VALUES (:i, :d, :n)", {"i": iid, "d": ind, "n": blank}), f"note={blank!r} phải bị chặn"
+
+
 def test_override_one_row_per_issuer(db):                # seam 2: PK issuer_id
     iid, ind = _issuer(db), _ind(db, "DANDUNG")
     db.execute(sa.text(
