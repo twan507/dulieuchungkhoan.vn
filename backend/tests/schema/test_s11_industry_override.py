@@ -1,6 +1,11 @@
+import json
+import pathlib
+
 import sqlalchemy as sa
 
 from conftest import expect_violation
+
+MAP_JSON = pathlib.Path(__file__).resolve().parents[3] / "docs" / "20-design" / "industry-mapping.json"
 
 
 def _issuer(db, name="DN thử", icb="8355", com="NH"):
@@ -112,3 +117,20 @@ def test_etl_role_can_read_view(db):                     # seam 4b: đường Đ
 def test_api_role_can_read_view(db):                     # seam 4c: đường đọc của API
     db.execute(sa.text("SET LOCAL ROLE dlck_api"))
     db.execute(sa.text("SELECT count(*) FROM market.v_issuer_industry")).scalar_one()
+
+
+def test_icb_map_seed_matches_json(db):                  # seam 5: seed không trôi khỏi tài liệu
+    doc = json.loads(MAP_JSON.read_text(encoding="utf-8"))
+    want = {r["icb_code"]: r["industry_code"]
+            for r in doc["layer1"] if r["industry_code"] is not None}
+    got = dict(db.execute(sa.text(
+        "SELECT m.icb_code, i.code FROM market.industry_icb_map m "
+        "JOIN market.industry i USING (industry_id)")).all())
+    assert got == want
+    assert len(want) == 55                               # 56 dòng lớp 1 trừ 8980 không nạp
+
+
+def test_icb_map_targets_level_2_only(db):               # seam 5, ca biên
+    assert db.execute(sa.text(
+        "SELECT count(*) FROM market.industry_icb_map m JOIN market.industry i "
+        "USING (industry_id) WHERE i.level <> 2")).scalar_one() == 0
