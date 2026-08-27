@@ -86,11 +86,9 @@ def upgrade() -> None:
         JOIN market.industry i ON i.code = v.industry_code AND i.level = 2;
 
         -- LỚP 2 — 161 dòng gán tay. Khoá theo ticker ở worksheet, đổi sang issuer_id
-        -- qua market.security. Ticker chưa có issuer thì BỎ QUA (DB test rỗng issuer
-        -- ⇒ nạp 0 dòng, đúng hành vi mong đợi).
-        INSERT INTO market.issuer_industry_override (issuer_id, industry_id, note)
-        SELECT DISTINCT ON (s.issuer_id) s.issuer_id, i.industry_id, v.reason
-        FROM (VALUES
+        -- qua market.security. Đi qua bảng tạm để chốt chặn đọc được dữ liệu trước khi ghi.
+        CREATE TEMP TABLE _seed_l2 (ticker text, industry_code text, reason text) ON COMMIT DROP;
+        INSERT INTO _seed_l2 (ticker, industry_code, reason) VALUES
          ('AAN','NONGNGHIEP','G3a nông nghiệp bóc khỏi 3573 sau khi đảo'),
          ('ACC','XAYDUNG','G5a xây lắp Bình Dương'),
          ('ACV','DULICH','G6 cảng hàng không tên ngành đã có Hàng không'),
@@ -252,17 +250,43 @@ def upgrade() -> None:
          ('VVS','THIETBI','G7 Đầu tư Phát triển Máy Việt Nam'),
          ('XMC','XAYDUNG','G5a xây dựng Xuân Mai'),
          ('XPH','HOACHAT','G7 Xà phòng Hà Nội cùng nhánh 3767 cùng luật')
-        ) AS v(ticker, industry_code, reason)
-        JOIN market.security s ON s.ticker = v.ticker AND s.issuer_id IS NOT NULL
-        JOIN market.industry i ON i.code = v.industry_code AND i.level = 2
+        ;
+
+        -- CHỐT CHẶN: hai ticker cùng issuer mà khác ngành thì DISTINCT ON bên dưới sẽ
+        -- lặng lẽ giữ một dòng và vứt dòng kia. Dừng hẳn còn hơn seed sai âm thầm.
+        DO $$
+        DECLARE bad text;
+        BEGIN
+          SELECT string_agg(x.txt, '; ') INTO bad FROM (
+            SELECT s.issuer_id || ': ' || string_agg(l.ticker || '=' || l.industry_code, ',') AS txt
+            FROM _seed_l2 l
+            JOIN market.security s ON s.ticker = l.ticker AND s.issuer_id IS NOT NULL
+            GROUP BY s.issuer_id
+            HAVING count(DISTINCT l.industry_code) > 1
+          ) x;
+          IF bad IS NOT NULL THEN
+            RAISE EXCEPTION 'seed lop 2: hai ticker cung issuer nhung khac nganh - %', bad;
+          END IF;
+        END $$;
+
+        -- Ticker chưa có issuer thì BỎ QUA (DB test rỗng issuer ⇒ nạp 0 dòng, đúng
+        -- hành vi mong đợi). DISTINCT ON gộp ca một ticker có nhiều dòng security
+        -- (listed + delisted) — chốt chặn ở trên đã loại ca nguy hiểm.
+        INSERT INTO market.issuer_industry_override (issuer_id, industry_id, note)
+        SELECT DISTINCT ON (s.issuer_id) s.issuer_id, i.industry_id, l.reason
+        FROM _seed_l2 l
+        JOIN market.security s ON s.ticker = l.ticker AND s.issuer_id IS NOT NULL
+        JOIN market.industry i ON i.code = l.industry_code AND i.level = 2
         ORDER BY s.issuer_id, s.security_id
         ON CONFLICT (issuer_id) DO NOTHING;
 
         DO $$
-        DECLARE n int;
+        DECLARE n_rows int; n_matched int;
         BEGIN
-          SELECT count(*) INTO n FROM market.issuer_industry_override;
-          RAISE NOTICE 'seed lop 2: % dong override (worksheet co 161 ticker)', n;
+          SELECT count(*) INTO n_rows FROM market.issuer_industry_override;
+          SELECT count(DISTINCT l.ticker) INTO n_matched FROM _seed_l2 l
+            JOIN market.security s ON s.ticker = l.ticker AND s.issuer_id IS NOT NULL;
+          RAISE NOTICE 'seed lop 2: %/161 ticker khop issuer, % dong override', n_matched, n_rows;
         END $$;
         """
     )
