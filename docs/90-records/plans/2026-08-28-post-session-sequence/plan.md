@@ -10,7 +10,11 @@
 
 ## Trạng thái — cập nhật 2026-08-28 15:12
 
-**Đã xong:** Task 0 ✅ · **Task 1 ✅ (AC3 ĐÓNG — dư = 0)** · **Task 2 ✅ (7/7 S4U)** · **Task 4 ✅** · **Task 5 ✅** · **Task 7 ✅**. **Còn lại: Task 3** (luật huỷ niêm yết) · **Task 6** (kiến thức đi theo repo) · mốc hành vi S4U sáng mai.
+**Đã xong: CẢ 8 TASK** — 0 ✅ · 1 ✅ *(AC3 đóng, dư = 0)* · 2 ✅ *(7/7 S4U)* · 3 ✅ *(A=438·B=0·C=0·D=4)* · 4 ✅ *(313 passed)* · 5 ✅ · 6 ✅ · 7 ✅.
+
+**Hai mốc còn treo, đều cần thời gian trôi qua chứ không phải việc để làm:**
+1. **Thứ 2 31/08 08:00** — mốc hành vi S4U: `dlck-refdata` phải chạy không hiện cửa sổ cmd, `refdata.log` có dòng mới.
+2. **Thứ 3 01/09 08:00** — lượt job đầu tiên thấy 438 ứng viên huỷ niêm yết; chốt chặn 1% sẽ **từ chối**, job báo `failed`. **Đó là hành vi đúng**, dọn bằng `--accept-drop` chạy tay.
 
 Việc ngoài runbook đã làm trong ngày, phiên sau cần biết:
 
@@ -161,13 +165,13 @@ Expected: đủ **7 dòng `S4U`**. Và sáng hôm sau: `dlck-refdata` 08:00 ch�
 
 ---
 
-### Task 3: Luật huỷ niêm yết cho mã vắng danh bạ
+### Task 3: Luật huỷ niêm yết cho mã vắng danh bạ  ✅ XONG 2026-08-28 19:41
 
 **Hồ sơ riêng, đầy đủ code mẫu và nghiệm thu:** [`2026-08-28-catalog-delisting-rule/plan.md`](../2026-08-28-catalog-delisting-rule/plan.md) — 3 task.
 
-- [ ] Task 1 của plan đó — migration `0014` + test schema
-- [ ] Task 2 — đóng/gỡ dấu trong `apply()`, chọn ứng viên trong `plan_delist()`, 5 seam test, thí nghiệm đột biến ngưỡng
-- [ ] Task 3 — migrate DB thật, chạy job hai lượt, đối chiếu **A=438 · B=0 · C=0 · D=4**, đồng bộ tài liệu
+- [x] Task 1 của plan đó — migration `0014` + test schema
+- [x] Task 2 — đóng/gỡ dấu trong `apply()`, chọn ứng viên trong `plan_delist()`, 5 seam test, thí nghiệm đột biến ngưỡng
+- [x] Task 3 — migrate DB thật, chạy job hai lượt, đối chiếu **A=438 · B=0 · C=0 · D=4**, đồng bộ tài liệu
 
 📌 Sau khi cài, đồng hồ 3 ngày bắt đầu chạy ⇒ mốc lật rơi vào khoảng **31/08**, và lượt đó **chốt chặn sẽ từ chối** (438/1.962 = 22,3% ≫ ngưỡng 1%). Lượt dọn phải chạy tay `--accept-drop`, có người nhìn — **không thuộc chuỗi này**, xếp lịch riêng.
 

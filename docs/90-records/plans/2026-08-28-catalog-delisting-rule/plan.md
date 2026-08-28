@@ -54,7 +54,7 @@ cd backend && uv run pytest tests/etl -v
 
 **Interfaces:** Produces cột `market.security.directory_absent_since timestamptz NULL`. Task 2 đọc/ghi cột này.
 
-- [ ] **Bước 1: Viết test đỏ** — `backend/tests/schema/test_s12_directory_absent.py`
+- [x] **Bước 1: Viết test đỏ** — `backend/tests/schema/test_s12_directory_absent.py`
 
 ```python
 import sqlalchemy as sa
@@ -85,10 +85,10 @@ def test_etl_role_can_write_directory_absent_since(db):      # seam 2: đường
         {"i": sid}).scalar_one() is True
 ```
 
-- [ ] **Bước 2: Chạy để thấy đỏ** — `cd backend && uv run pytest tests/schema/test_s12_directory_absent.py -v`
+- [x] **Bước 2: Chạy để thấy đỏ** — `cd backend && uv run pytest tests/schema/test_s12_directory_absent.py -v`
   Expected: FAIL — `UndefinedColumn: column "directory_absent_since" does not exist`.
 
-- [ ] **Bước 3: Viết migration**
+- [x] **Bước 3: Viết migration**
 
 ```python
 """directory_absent_since on market.security (market-data-store §4.4)
@@ -125,8 +125,8 @@ def downgrade() -> None:
     op.execute("ALTER TABLE market.security DROP COLUMN directory_absent_since;")
 ```
 
-- [ ] **Bước 4: Chạy để thấy xanh** — `uv run pytest tests/schema -q`. Expected: toàn bộ PASS.
-- [ ] **Bước 5: Commit** — `feat(db): track when a ticker first went missing from the issuer directory`
+- [x] **Bước 4: Chạy để thấy xanh** — `uv run pytest tests/schema -q`. Expected: toàn bộ PASS.
+- [x] **Bước 5: Commit** — `feat(db): track when a ticker first went missing from the issuer directory`
 
 ---
 
@@ -140,7 +140,7 @@ def downgrade() -> None:
 
 **Thứ tự chạy phải đúng, đây là điểm dễ sai nhất:** `refdata_job` gọi `plan_delist` → `guard.check` → `apply`. Nên `plan_delist` đọc **dấu của các lượt TRƯỚC**, còn `apply` cập nhật dấu **cho lượt SAU**. Không được đóng dấu rồi lật ngay trong cùng một lượt — làm thế thì ngưỡng 3 ngày vô nghĩa.
 
-- [ ] **Bước 1: Viết test đỏ** — thêm vào `backend/tests/etl/test_e09_refdata_store.py`
+- [x] **Bước 1: Viết test đỏ** — thêm vào `backend/tests/etl/test_e09_refdata_store.py`
 
 ```python
 def _mark_age(db, ticker, days):
@@ -227,10 +227,10 @@ def test_etf_and_index_are_never_marked_or_delisted(db):      # ràng buộc 1
     assert rows == 0
 ```
 
-- [ ] **Bước 2: Chạy để thấy đỏ** — `uv run pytest tests/etl/test_e09_refdata_store.py -v`
+- [x] **Bước 2: Chạy để thấy đỏ** — `uv run pytest tests/etl/test_e09_refdata_store.py -v`
   Expected: FAIL — `KeyError: 'directory_absent_cleared'` và `assert None is not None`.
 
-- [ ] **Bước 3: Viết implementation**
+- [x] **Bước 3: Viết implementation**
 
 Trong `backend/etl/refdata_store.py`, thêm hằng số cạnh `JOB`:
 
@@ -288,9 +288,9 @@ Trong `plan_delist()`, sau khi tính `absent`, thêm đường thứ ba và cộ
 
 ⚠️ Giữ nguyên phần tính `flips` cũ ở trên rồi tính lại sau khi gộp `stale` — đừng để hai công thức song song trôi lệch.
 
-- [ ] **Bước 4: Chạy để thấy xanh** — `uv run pytest tests/etl -v`. Expected: PASS toàn bộ, đặc biệt `test_apply_twice_is_idempotent_including_timestamps` **phải vẫn xanh** (dấu không đụng `updated_at`, và lượt hai không đóng dấu lại).
-- [ ] **Bước 5: Thí nghiệm đột biến** — tạm đổi `DIRECTORY_ABSENT_DAYS` thành `0`: `test_not_delisted_before_threshold` phải ĐỎ. Trả lại `3` → xanh. Dán output cả hai lần vào ledger.
-- [ ] **Bước 6: Commit** — `feat(etl): delist stocks missing from the issuer directory past the grace window`
+- [x] **Bước 4: Chạy để thấy xanh** — `uv run pytest tests/etl -v`. Expected: PASS toàn bộ, đặc biệt `test_apply_twice_is_idempotent_including_timestamps` **phải vẫn xanh** (dấu không đụng `updated_at`, và lượt hai không đóng dấu lại).
+- [x] **Bước 5: Thí nghiệm đột biến** — tạm đổi `DIRECTORY_ABSENT_DAYS` thành `0`: `test_not_delisted_before_threshold` phải ĐỎ. Trả lại `3` → xanh. Dán output cả hai lần vào ledger.
+- [x] **Bước 6: Commit** — `feat(etl): delist stocks missing from the issuer directory past the grace window`
 
 ---
 
@@ -300,10 +300,10 @@ Trong `plan_delist()`, sau khi tính `absent`, thêm đường thứ ba và cộ
 
 🔴 **Chỉ chạy ngoài khung 08:00 và 08:30** — hai task tự động đọc file trên đĩa.
 
-- [ ] **Bước 1: Sao lưu** vào scratchpad ngoài repo, kiểm file > 0 byte. Thất bại thì DỪNG.
-- [ ] **Bước 2: Migrate DB thật** — `uv run --project backend alembic -c database/alembic.ini upgrade head` tại gốc repo, rồi `... current` phải in `0014`.
-- [ ] **Bước 3: Chạy job thật hai lượt** — `cd backend && uv run python -m etl refdata`, hai lần. Kỳ vọng: cả hai exit 0; lượt đầu `directory_absent_marked = 438`, lượt hai `= 0` (đóng dấu một lần rồi thôi); `delisted = 0` ở cả hai lượt vì chưa mã nào đủ 3 ngày.
-- [ ] **Bước 4: Đối chiếu trên DB thật** — mọi câu kiểm dán nguyên văn vào ledger:
+- [x] **Bước 1: Sao lưu** vào scratchpad ngoài repo, kiểm file > 0 byte. Thất bại thì DỪNG.
+- [x] **Bước 2: Migrate DB thật** — `uv run --project backend alembic -c database/alembic.ini upgrade head` tại gốc repo, rồi `... current` phải in `0014`.
+- [x] **Bước 3: Chạy job thật hai lượt** — `cd backend && uv run python -m etl refdata`, hai lần. Kỳ vọng: cả hai exit 0; lượt đầu `directory_absent_marked = 438`, lượt hai `= 0` (đóng dấu một lần rồi thôi); `delisted = 0` ở cả hai lượt vì chưa mã nào đủ 3 ngày.
+- [x] **Bước 4: Đối chiếu trên DB thật** — mọi câu kiểm dán nguyên văn vào ledger:
 
 ```sql
 select 'A_co_dau=' || count(*) from market.security where directory_absent_since is not null;
@@ -316,20 +316,20 @@ select 'D_da_bi_lat=' || count(*) from market.security where status = 'delisted'
 ```
 Kỳ vọng: **A = 438 · B = 0 · C = 0 · D = 4** (chưa lật thêm mã nào — đúng, ngưỡng chưa tới).
 
-- [ ] **Bước 5: Sửa `market-data-store.md` §4.4** — đổi bảng "Job hiện xử lý" từ *"🔴 Chưa có luật nào"* sang mô tả cơ chế đã cài: cột dấu, ngưỡng `DIRECTORY_ABSENT_DAYS = 3`, ai đóng ai gỡ, vì sao `plan_delist` đọc dấu của lượt trước. Ghi rõ **việc còn lại là lượt dọn tay**: khi 438 mã đủ ngưỡng, chốt chặn 1% sẽ **từ chối** lượt tự động (job báo `failed`, không ghi gì) cho tới khi có người chạy `python -m etl refdata --accept-drop`. Nói thẳng để người trực không hoảng khi thấy job đỏ.
-- [ ] **Bước 6: Sửa `roadmap.md` §5** — mục này thôi "để ngỏ": cơ chế đã cài, còn lại đúng một việc có người nhìn là lượt dọn `--accept-drop`, dự kiến sau 3 ngày kể từ lượt đóng dấu đầu tiên.
-- [ ] **Bước 7: `git grep`** các chuỗi vừa đổi (`chưa có luật nào`, `438`, `directory_absent`) toàn repo, phán quyết từng hit, dán vào ledger.
-- [ ] **Bước 8: Commit** — `docs: catalog delisting rule is live; only the manual sweep remains`
+- [x] **Bước 5: Sửa `market-data-store.md` §4.4** — đổi bảng "Job hiện xử lý" từ *"🔴 Chưa có luật nào"* sang mô tả cơ chế đã cài: cột dấu, ngưỡng `DIRECTORY_ABSENT_DAYS = 3`, ai đóng ai gỡ, vì sao `plan_delist` đọc dấu của lượt trước. Ghi rõ **việc còn lại là lượt dọn tay**: khi 438 mã đủ ngưỡng, chốt chặn 1% sẽ **từ chối** lượt tự động (job báo `failed`, không ghi gì) cho tới khi có người chạy `python -m etl refdata --accept-drop`. Nói thẳng để người trực không hoảng khi thấy job đỏ.
+- [x] **Bước 6: Sửa `roadmap.md` §5** — mục này thôi "để ngỏ": cơ chế đã cài, còn lại đúng một việc có người nhìn là lượt dọn `--accept-drop`, dự kiến sau 3 ngày kể từ lượt đóng dấu đầu tiên.
+- [x] **Bước 7: `git grep`** các chuỗi vừa đổi (`chưa có luật nào`, `438`, `directory_absent`) toàn repo, phán quyết từng hit, dán vào ledger.
+- [x] **Bước 8: Commit** — `docs: catalog delisting rule is live; only the manual sweep remains`
 
 ---
 
 ## Nghiệm thu toàn slice
 
-- [ ] `pytest tests/schema` và `pytest tests/etl` xanh (chạy riêng)
-- [ ] Job thật hai lượt exit 0; `directory_absent_marked` 438 rồi 0
-- [ ] A = 438 · B = 0 · C = 0 · D = 4 trên DB thật
-- [ ] Thí nghiệm đột biến ngưỡng có output trong ledger
-- [ ] `git grep` §1.7 sạch
+- [x] `pytest tests/schema` và `pytest tests/etl` xanh (chạy riêng)
+- [x] Job thật hai lượt exit 0; `directory_absent_marked` 438 rồi 0
+- [x] A = 438 · B = 0 · C = 0 · D = 4 trên DB thật
+- [x] Thí nghiệm đột biến ngưỡng có output trong ledger
+- [x] `git grep` §1.7 sạch
 
 ## Ngoài phạm vi
 
