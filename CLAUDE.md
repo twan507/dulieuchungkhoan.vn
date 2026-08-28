@@ -166,7 +166,7 @@ Muốn kết luận phủ định thì phải **dò từ ứng dụng thật c�
 
 Task lớn đi đủ chuỗi, mỗi bước dùng skill superpowers có sẵn, không tự làm một mạch:
 
-1. **brainstorm** (skill `brainstorming`) — làm rõ yêu cầu, chốt phương án.
+1. **brainstorm** (skill `brainstorming`) — làm rõ yêu cầu, chốt phương án. Chạm quyết định khó đảo ngược ⇒ đi qua **§4.8** (nhiều phương án độc lập) trước khi chốt.
 2. **spec** → `docs/90-records/plans/YYYY-MM-DD-<tên>/spec.md` — **người dùng duyệt**.
 3. **plan** (skill `writing-plans`) → `plan.md` cùng thư mục — bẻ spec thành task có nội dung/lệnh/expected thật, **không placeholder**. Spec nói *cái gì*, plan nói *chính xác thế nào*.
 4. **thực thi** (skill `subagent-driven-development` / `executing-plans`) — **giao subagent** (model theo bảng dưới, cấm Fable), TDD trong từng task *(§4.5)*.
@@ -239,6 +239,53 @@ Dùng skill `systematic-debugging`. Cốt lõi:
 - **Conventional Commits** (`feat:`, `fix:`, `docs:`, `chore:`, `test:`…), commit nhỏ một mục đích, message tiếng Anh.
 - **Commit theo mốc:** mỗi mốc chốt xong (một quyết định, một việc trọn vẹn) = một commit riêng ngay lúc đó, để diff truy ngược từng quyết định — không dồn nhiều mốc.
 - Không `--no-verify`, không force push.
+
+### 4.8 Nhiều phương án trước quyết định khó đảo ngược
+
+*Chưng cất từ pattern best-of-N/debate (khảo sát 2026-08-28 — xem [danh mục repo tham chiếu](docs/00-overview/reference-repos.md)). Chỉ luật, không cài skill — chạy trên đồ đã có: sinh phương án trong bước brainstorm §4.1.1, subagent song song theo §4.2, hồ sơ vào `90-records/`.*
+
+**Bước 0 — bắt buộc, trước khi sinh phương án.** Liệt kê tách bạch: *dữ kiện đã kiểm* (đã đọc file / chạy lệnh / có nguồn) và *giả định* (chưa kiểm). Nhiều phương án **không tạo ra chân lý**: dữ kiện đầu vào sai thì cả N phương án cùng sai một cách thuyết phục. Phần giả định nặng hơn phần dữ kiện ⇒ đi kiểm trước, đừng sinh phương án.
+
+**Khi nào áp dụng** — quyết định mà đảo ngược tốn hơn làm lại từ đầu:
+
+- schema, migration, hình dạng dữ liệu đã ghi xuống
+- chọn thư viện / hạ tầng / dịch vụ ngoài
+- ranh giới module, hợp đồng API công khai
+- mô hình quyền, xác thực, xử lý secret
+- pattern deploy, biên giới container/volume
+
+**Khi nào KHÔNG áp dụng** *(quan trọng ngang phần trên — áp cho mọi thứ thì luật tự chết sau hai tuần)*:
+
+- sửa bug đã xác định được nguyên nhân
+- refactor cục bộ, đổi tên, dọn dẹp
+- việc đã có ADR chốt — đọc ADR, đừng mở lại *(§2)*
+- người dùng đã chỉ định giải pháp — hỏi lại một câu là đủ, không tự tổ chức tranh luận
+- thay đổi nhỏ, rollback bằng một lần `git revert`
+
+**Quy trình.**
+
+1. **Sinh độc lập.** Mặc định 3 phương án; 5 chỉ khi rủi ro thật sự cao. Mỗi phương án **tối ưu một trục khác nhau** (tốc độ · bán kính hỏng/dễ rollback · bảo mật · chi phí · scope-YAGNI) và phải **tự khai rủi ro của chính nó**.
+2. **Chống thiên lệch neo.** Sinh xong toàn bộ rồi mới phê bình; không để phương án sau đọc điểm chấm của phương án trước; dùng subagent thì dispatch song song. Ba biến thể nhẹ của cùng một ý **không tính là ba phương án** — đọc thấy giống nhau thì sinh lại.
+3. **Chấm theo tiêu chí chấp nhận đã viết trước** *(§4.4.4)*, không chấm bằng cảm giác.
+4. **Chọn nguyên một phương án, không trộn.** Trộn tạo ra kiến trúc không ai thiết kế: mất tính nhất quán của bên thắng mà không được lợi thế của bên thua. Muốn mượn một chi tiết từ phương án khác thì nói rõ mượn gì và kiểm lại phương án thắng còn đứng vững không.
+
+**Đầu ra** — không phải một đoạn "tôi chọn B":
+
+- bảng so sánh theo trục
+- phương án chọn + **lý do loại từng phương án còn lại**
+- **điều kiện đảo ngược**: *"nếu X xảy ra thì xét lại quyết định này"*
+
+Ghi vào **hồ sơ plan của chính task** (`90-records/plans/<task>/` — trong spec hoặc file riêng cùng thư mục, không tách thư mục mới). Quyết định sống lâu hơn task (stack, ranh giới module, hạ tầng) ⇒ nâng thành ADR. Phương án bị loại là tài sản: nó ngăn người sau mở lại đúng ngõ cụt đó *(cùng tinh thần với danh mục repo tham chiếu)*.
+
+**Dấu hiệu đang làm sai:**
+
+| Ý nghĩ | Thực tế |
+|---|---|
+| "Phương án đầu rõ ràng đúng rồi" | Đó là thiên lệch neo, không phải kết luận |
+| "Sinh thêm cho đủ số" | Phương án độn tệ hơn không có — nó tạo cảm giác đã cân nhắc |
+| "Trộn cái hay của cả ba" | Không phương án nào còn nguyên vẹn |
+| "Loại rồi thì khỏi ghi" | Không ghi ⇒ ba tháng sau có người thử lại |
+| "Việc này cũng hơi khó rollback" | Phân vân thì kiểm mục *KHÔNG áp dụng* ở trên |
 
 ---
 
