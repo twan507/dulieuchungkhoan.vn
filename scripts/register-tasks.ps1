@@ -94,3 +94,5 @@ Write-Host "`nĐã kiểm lệnh của cả 7 task. Xem lại bất cứ lúc n�
 Write-Host '  Get-ScheduledTask -TaskName "dlck-*" | % { $_.TaskName + " -> " + $_.Actions[0].Arguments }'
 Write-Host "`n⚠️ Task chạy với tài khoản đang đăng nhập (Interactive). Muốn chạy cả khi"
 Write-Host "   không đăng nhập, đăng ký lại bằng quyền admin với -LogonType S4U."
+Write-Host "   Cửa sổ cmd hiện ra cũng vì Interactive — bấm nhầm X là giết tiến trình."
+Write-Host "   Ba hệ quả và cửa sổ đăng ký lại an toàn: docs/20-design/service-topology.md §5."
