@@ -67,3 +67,21 @@ moc=2026-08-28 12:41:00.214924+00
 Dấu đóng **2026-08-28 19:41** (giờ VN) ⇒ ngưỡng 3 ngày thoả lúc **31/08 19:41**. Job chạy **08:00**, nên lượt thứ 2 (31/08) **chưa** thấy. **Lượt đầu tiên nhìn thấy 438 ứng viên là thứ 3 2026-09-01 08:00**, và lượt đó chốt chặn 1% sẽ **từ chối** (438/1.962 = 22,3%) — job `failed`, không ghi gì, **đúng thiết kế**.
 
 *(Plan ước "khoảng 31/08"; tính chính xác theo giờ chạy thật thì là 01/09.)*
+
+## Bước 7 — phán quyết `git grep` §1.7 *(dán vào ledger theo đúng chỗ plan chỉ định)*
+
+Quét `chưa có luật nào` · `438` · `directory_absent` toàn repo. Phán quyết từng hit:
+
+| Hit | Phán quyết |
+|---|---|
+| `market-data-store.md:246` — "438 cổ phiếu … vẫn mang nhãn `listed`" | **ĐÚNG** — số đo nền 2026-08-28, giữ nguyên |
+| `market-data-store.md` §4.4 bảng "Job hiện xử lý" | **ĐÃ SỬA** — "🔴 Chưa có luật nào" → "✅ Đã cài 2026-08-28" |
+| `industry-tree.md:111` — "job danh bạ **chưa có luật** lật `delisted`" | 🔴 **ĐÃ SỬA** — đây là hit tài liệu-đá-nhau mà quét chéo bắt được; nếu bỏ sót thì hai file nói ngược nhau |
+| `roadmap.md` §5 | **ĐÃ SỬA** — hạ khỏi "để ngỏ", ghi việc còn lại là lượt dọn tay |
+| Các hit trong `90-records/**/ledger.md`, `plan.md` | **GIỮ NGUYÊN** — vùng lịch sử §1.7, là bản ghi tại-thời-điểm |
+
+## Ghi chú AC3 — số hạng `chênh_hai_socket` *(bổ sung sau review toàn nhánh)*
+
+Review trục Spec nêu đúng: công thức AC3 ở [spec §12](../2026-08-28-ingester-spill-to-disk/spec.md) liệt `chênh_hai_socket` như một số hạng phải tính, mà ledger không đóng riêng nó ở cuối phiên — chỉ có mẫu giữa phiên 09:22:02.
+
+Lý do nó **không cần đóng riêng**: cửa sổ chung được cắt về đúng vòng đời tiến trình ghi (`--to "2026-08-28 15:04:59.999"`), và trong cửa sổ đó `expected = actual` **tuyệt đối trên cả 5 bảng**. Số hạng chênh-hai-socket nếu khác 0 sẽ hiện ra thành `diff ≠ 0` ở ít nhất một bảng. Năm bảng cùng bằng 0 ⇒ số hạng đó **bằng 0 trong cửa sổ chung**, đo gián tiếp nhưng chặt. Phần chênh 15 frame `idx` nằm **ngoài** cửa sổ chung (công bố sau khi tiến trình ghi đã thoát) nên không thuộc vế nào của hằng đẳng thức.

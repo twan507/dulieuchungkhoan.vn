@@ -2,7 +2,7 @@
 
 Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập dữ liệu thị trường và tin tức từ nhiều nguồn, lưu vào kho riêng, phân phối lại qua REST và SSE, và một chatbot AI trả lời bằng phương pháp phân tích đã được hệ thống hoá thành skill.
 
-**Trạng thái — 2026-08-28:** thiết kế hoàn chỉnh, và **phần lõi thu thập dữ liệu đã chạy thật trong production**. Ingester bắt tick realtime mỗi phiên *(phiên 28/08: **4.722.406 dòng** vào kho, đối chứng sổ sách **dư = 0** trên cả 5 bảng)*; hai kho đã có schema và dữ liệu thật; **320 test** xanh chạy trên Postgres/ClickHouse/Redis thật; 7 task chạy theo lịch Windows Scheduler. `api` và `frontend` **chưa bắt đầu**. Hai skill chứng khoán đã xong và đã test 6 vòng. **Không còn việc chặn nào phụ thuộc bên ngoài** — giấy phép WiFeed đã chốt và rate limit FiinGroup đã kiểm, cùng ngày 2026-08-15. Cùng ngày, một **đợt khảo sát nguồn 9 nguồn / ~400 lời gọi thật** đã khép độ rộng dữ liệu: thêm **6 nguồn mới** và mở **5 khối dữ liệu** trước nay bỏ trống.
+**Trạng thái — 2026-08-28:** thiết kế hoàn chỉnh, và **phần lõi thu thập dữ liệu đã chạy thật trong production**. Ingester bắt tick realtime mỗi phiên *(phiên 28/08: **4.722.406 dòng** vào kho, đối chứng sổ sách **dư = 0** trên cả 5 bảng)*; hai kho đã có schema và dữ liệu thật; **321 test** xanh chạy trên Postgres/ClickHouse/Redis thật; 7 task chạy theo lịch Windows Scheduler. `api` và `frontend` **chưa bắt đầu**. Hai skill chứng khoán đã xong và đã test 6 vòng. **Không còn việc chặn nào phụ thuộc bên ngoài** — giấy phép WiFeed đã chốt và rate limit FiinGroup đã kiểm, cùng ngày 2026-08-15. Cùng ngày, một **đợt khảo sát nguồn 9 nguồn / ~400 lời gọi thật** đã khép độ rộng dữ liệu: thêm **6 nguồn mới** và mở **5 khối dữ liệu** trước nay bỏ trống.
 
 **Stack chốt 2026-08-24:** Next.js · Python/FastAPI · Postgres + ClickHouse *(lưu tick thô — [ADR 0007](docs/00-overview/decisions/0007-monorepo-layout-and-stack.md))*.
 
@@ -66,7 +66,7 @@ dulieuchungkhoan.vn/
 ├── frontend/            Next.js — chưa bắt đầu (mới có README)
 ├── backend/             Python — ingester (chạy thật) · etl (omo, refdata) · api (chưa bắt đầu)
 │   ├── agent/skills/    vn-stock-advisor · vn-stock-knowledge — sản phẩm chạy được
-│   └── tests/           320 test, chạy trên Postgres/ClickHouse/Redis THẬT
+│   └── tests/           321 test, chạy trên Postgres/ClickHouse/Redis THẬT
 ├── database/            migrations: Postgres 14 (alembic) · ClickHouse 2
 ├── deploy/infra/        docker compose — Postgres · ClickHouse · Redis
 └── scripts/             register-tasks.ps1 — đăng ký 7 task Windows Scheduler
@@ -87,8 +87,15 @@ Kiến thức dựng lại nằm rải ở nhiều file — đây là chuỗi n�
 
    🔴 **Bước ba không được bỏ.** Migration `0013` seed 161 dòng gán ngành tay bằng cách phân giải ticker → `issuer_id` qua `market.security`; bảng đó còn **rỗng** lúc `0013` chạy ở bước một ⇒ nạp **0 dòng, không exception, không cảnh báo nào**, và job `etl refdata` sau đó vẫn báo y hệt trạng thái khoẻ mạnh.
 
-4. `cd backend && uv run pytest tests` — kỳ vọng **320 passed, 2 skipped** *(hai skip là probe thủ công có cổng env: `RUN_PROBE`, `RUN_CHAOS`)*.
-5. **Chỉ khi muốn máy đó ghi thật:** `pwsh -NoProfile -File scripts/register-tasks.ps1 -LogonType S4U`, trong cửa sổ **Run as Administrator**. Máy dev thuần thì bỏ qua bước này.
+4. `cd backend && uv run pytest tests` — kỳ vọng **321 passed, 2 skipped** *(hai skip là probe thủ công có cổng env: `RUN_PROBE`, `RUN_CHAOS`)*.
+5. **Chỉ khi muốn máy đó ghi thật**, trong cửa sổ **Run as Administrator** — đường dẫn phải **tuyệt đối** vì cửa sổ admin mở ở `C:\Windows\System32`, và phải là `pwsh` chứ không phải `powershell` *(file UTF-8 không BOM, 5.1 parse hỏng)*:
+
+   ```bash
+   pwsh -NoProfile -ExecutionPolicy Bypass -File D:\twan_projects\dulieuchungkhoan.vn\scripts\register-tasks.ps1 -LogonType S4U
+egister-tasks.ps1 -LogonType S4U
+   ```
+
+   Máy dev thuần thì bỏ qua bước này.
 
 🔴 **Dữ liệu KHÔNG đi theo repo.** Hai kho và Redis nằm trong Docker named volume của máy cũ; log, bản đo và vùng spill nằm ở `dlck-runtime/` **ngoài repo**. Máy mới bắt đầu với kho rỗng và **đó là bình thường cho dev** — mọi thứ dựng lại được bằng chuỗi trên, **trừ ba thứ không backfill được: tick realtime, phiên OMO, và frame thô.** Ba thứ đó mất là mất hẳn.
 

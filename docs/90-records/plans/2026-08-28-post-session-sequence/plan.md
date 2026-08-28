@@ -22,6 +22,8 @@ Việc ngoài runbook đã làm trong ngày, phiên sau cần biết:
 - ✅ **`main` đã đẩy lên origin** — `origin/main` = `9a8c040`, ahead **0** *(kiểm 2026-08-28 15:18 bằng `git ls-remote`, hỏi thẳng remote chứ không tin ref tracking cục bộ)*. Task 7 Bước 1 vì thế **đã xong**.
 - `main` đã gom mọi việc của ngày; **7 nhánh** đã merge đang chờ xoá ở Task 7 — không phải 3 như bản đầu.
 - **Không có gì đang chạy** — `dlck-ingester` và `dlck-ingester-measure` đều `Ready` từ 15:10:18, `dlck-refdata` `Ready` (mốc kế 08:00 hôm sau).
+- 📄 **Sinh thêm MỘT spec ngoài runbook, chưa duyệt, chưa thực thi:** [`2026-08-28-market-closed-autostop/`](../2026-08-28-market-closed-autostop/spec.md) — tự ngắt khi phát hiện ngày thị trường không mở. Xuất phát từ chính câu hỏi lịch nghỉ mà Task 2 và Task 3 đụng phải. Kèm một phép đo nền đã ghi vào tầng reference: [`11-bvsc-realtime §1.6`](../../../10-sources/market/11-bvsc-realtime.md) — ngoài giờ, `Control` vẫn về 2/phút trong khi 0 frame dữ liệu.
+- 🔧 **Bước 2 mục "Dựng trên máy mới"** dùng `npm run dev-start` thay vì `docker compose up` như câu chữ Task 6 — có chủ đích: ClickHouse nằm sau `profiles: ["realtime"]` nên compose trần **không** bật nó, còn `scripts/stack.mjs` đã kèm sẵn cờ profile.
 
 ---
 

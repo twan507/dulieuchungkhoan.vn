@@ -18,8 +18,10 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.execute(
         """
-        -- Dấu thời điểm LẦN ĐẦU thấy mã vắng khỏi danh bạ doanh nghiệp FiinTrade
-        -- (mã còn trong bảng giá BVSC nhưng không có issuer). NULL = đang có mặt.
+        -- Dấu thời điểm LẦN ĐẦU thấy cổ phiếu `listed` không có issuer. NULL = không
+        -- mang dấu. (Câu đóng dấu KHÔNG lọc theo đích của lượt chạy: mọi cổ phiếu
+        -- `listed` thiếu issuer đều bị đóng dấu, kể cả mã đã rời hẳn bảng giá —
+        -- đường (a) lật chúng ngay trong cùng lượt nên vô hại.)
         -- Job đóng dấu một lần rồi thôi, gỡ dấu khi mã quay lại; chỉ mã mang dấu đủ
         -- ngưỡng mới bị lật 'delisted' (market-data-store §4.4). Nhờ đó mã MỚI niêm
         -- yết — vào bảng giá trước khi vào danh bạ — chỉ mang dấu tạm rồi được gỡ.

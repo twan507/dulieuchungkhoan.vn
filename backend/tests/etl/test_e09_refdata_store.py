@@ -338,10 +338,14 @@ def test_absent_from_directory_gets_marked_once(db):          # seam: đóng d�
     t = _target()
     refdata_store.apply(db, t, [])
     tk = _no_issuer_stock(t)
-    first = _absent_since(db, tk)
-    assert first is not None
+    assert _absent_since(db, tk) is not None
+    # LÙI dấu về quá khứ trước khi chạy lượt hai. Không lùi thì test KHÔNG THỂ ĐỎ:
+    # `now()` là `transaction_timestamp()` nên lượt hai ghi lại đúng giá trị cũ, và
+    # assert vẫn xanh kể cả khi bỏ hẳn điều kiện `IS NULL` (review toàn nhánh 28/08).
+    _mark_age(db, tk, 2)
+    backdated = _absent_since(db, tk)
     refdata_store.apply(db, t, [])                            # lượt hai không được dời dấu
-    assert _absent_since(db, tk) == first
+    assert _absent_since(db, tk) == backdated
 
 
 def test_mark_is_cleared_when_ticker_returns_to_directory(db):   # seam: gỡ dấu
@@ -384,7 +388,7 @@ def test_delisted_after_threshold(db):                        # ca chính
                       {"t": tk}).scalar_one() == "delisted"
 
 
-def test_etf_and_index_are_never_marked_or_delisted(db):      # ràng buộc 1
+def test_etf_and_index_are_never_marked(db):                  # ràng buộc 1
     _as_etl(db)
     t = _target()
     refdata_store.apply(db, t, [])

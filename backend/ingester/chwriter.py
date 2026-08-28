@@ -117,13 +117,25 @@ def _is_deterministic(e: Exception) -> bool:
     # Lỗi serialize PHÍA CLIENT: `driver.transform` gói giá trị vào cột native và ném
     # AttributeError/TypeError/ValueError TRẦN — không `.code`, không phải
     # ClickHouseError — TRƯỚC khi byte nào rời tiến trình. Không byte nào đi thì thử lại
-    # bao nhiêu lần cũng hỏng y hệt ⇒ tất định. Lỗi server LUÔN mang `.code`, còn
-    # ConnectionError/TimeoutError là OSError nên không lọt vào isinstance dưới đây.
+    # bao nhiêu lần cũng hỏng y hệt ⇒ tất định.
+    #
+    # 🔴 Ba mệnh đề loại trừ, mệnh đề `OSError` là thứ ĐẮT NHẤT — đừng bỏ:
+    #   - `not ClickHouseError`: lỗi tầng driver/transport đã được gói đều mang kiểu này
+    #     (kể cả `OperationalError` KHÔNG có `.code`), nên chúng bị loại ở đây chứ không
+    #     phải nhờ có mã.
+    #   - `code is None`: lỗi server có mã thì để bảng mã bên dưới phán, không đoán.
+    #   - `not OSError`: 🔴 **`ssl.SSLCertVerificationError` kế thừa CẢ `ValueError` LẪN
+    #     `OSError`** (kiểm 2026-08-28). Thiếu mệnh đề này thì một lỗi CHỨNG CHỈ bị đọc
+    #     thành dòng độc ⇒ chia đôi ⇒ **BỎ dòng**, trong khi nó là lỗi cấu hình/transport
+    #     phải thử lại. Chưa chạm được khi DSN còn `http://`, sống dậy ngày bật TLS.
+    #     (Đừng viết "ConnectionError là OSError nên không lọt" — là OSError KHÔNG ngăn
+    #      một exception đồng thời là ValueError; phải loại trừ tường minh.)
+    #
     # Vì sao đáng sửa dù `normalize.py` đã che đường thật: sau lát tràn-ra-đĩa, một dòng
     # hỏng vĩnh viễn bị đọc nhầm thành transient sẽ đi 60 s → cửa 2 → file `-r` → phát
     # lại lại hỏng, KẸT ĐẦU HÀNG ĐỢI ĐĨA và không thoát chế độ đĩa cả phiên.
     if (isinstance(e, (AttributeError, TypeError, ValueError))
-            and not isinstance(e, ClickHouseError)
+            and not isinstance(e, (ClickHouseError, OSError))
             and getattr(e, "code", None) is None):
         return True
     code = getattr(e, "code", None)

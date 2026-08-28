@@ -83,7 +83,9 @@ def plan_delist(conn, target: TargetState) -> tuple[list[str], int, int]:
         ).all()
     ]
     absent = sorted(set(absent) | set(stale))
-    flips = len(absent) + len(listed & target_delisted)
+    # Hợp, không cộng: từ khi `absent` gộp thêm `stale`, một mã vừa nằm trong đích với
+    # status='delisted' vừa mang dấu quá ngưỡng sẽ rơi vào CẢ HAI tập (review 28/08).
+    flips = len(set(absent) | (listed & target_delisted))
     return absent, flips, len(listed)
 
 
@@ -327,7 +329,11 @@ def apply(conn, target: TargetState, delist: list[str]) -> dict:
     if delist:
         result = conn.execute(
             sa.text(
-                "UPDATE market.security SET status = 'delisted', updated_at = now()"
+                # Gỡ dấu CÙNG lượt lật: nếu để dấu sống sót, mã này mai kia niêm yết
+                # lại mà vẫn vắng danh bạ sẽ mang dấu cũ hàng tháng ⇒ `plan_delist` lật
+                # NGAY, ân hạn 0 ngày — đúng thứ ngưỡng sinh ra để chặn (review 28/08).
+                "UPDATE market.security SET status = 'delisted', updated_at = now(),"
+                "       directory_absent_since = NULL"
                 " WHERE ticker = ANY(:t) AND status = 'listed'"
             ),
             {"t": delist},

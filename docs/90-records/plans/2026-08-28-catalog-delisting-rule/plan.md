@@ -48,6 +48,34 @@ cd backend && uv run pytest tests/etl -v
 
    **Điều kiện đảo ngược:** nếu gặp ca thật một mã **mới niêm yết** bị lật `delisted` oan vì vắt qua cuối tuần, mở lại quyết định này — khi đó phương án cột đếm quan sát là ứng viên đầu.
 
+## Số đo nền *(đo trên DB thật 2026-08-28)*
+
+| | |
+|---|---|
+| Cổ phiếu không issuer, vẫn `listed` | **438** (UPCOM 378 · HNX 39 · HOSE 21) |
+| Cổ phiếu `listed` tổng | 1.962 ⇒ tỷ lệ lật 22,3% |
+| ETF không issuer | 10 · chỉ số 18 — **phải nằm ngoài** |
+| Chứng chỉ quỹ có issuer `QU` | 3 |
+| Toàn kho `delisted` | 4 dòng |
+
+**Không backdate cột dấu cho 438 mã hiện có.** Đồng hồ tính từ lượt chạy đầu tiên sau khi cài. Backdate là ghi con số không đo được — trong đó có đúng một mã vừa gia nhập nhóm ngày 27/08 mà không biết là mã nào (`stocks_no_issuer` đi từ 437 lên 438).
+
+---
+
+## Cấu trúc file
+
+| File | Trách nhiệm |
+|---|---|
+| `database/migrations/versions/0014_directory_absent_since.py` | **Tạo** — thêm cột `market.security.directory_absent_since` |
+| `backend/etl/refdata_store.py` | **Sửa** — `apply()` đóng/gỡ dấu; `plan_delist()` chọn thêm ứng viên đủ ngưỡng |
+| `backend/tests/etl/test_e09_refdata_store.py` | **Sửa** — seam test cho đóng dấu, gỡ dấu, ngưỡng, loại trừ theo loại |
+| `backend/tests/schema/test_s12_directory_absent.py` | **Tạo** — seam schema: cột tồn tại, mặc định NULL, quyền của `dlck_etl` |
+| `docs/20-design/market-data-store.md` §4.4 | **Sửa** — đổi từ "chưa có luật nào" sang mô tả cơ chế đã cài |
+| `docs/00-overview/roadmap.md` §5 | **Sửa** — hạ mục khỏi "để ngỏ", ghi việc còn lại là lượt dọn tay |
+| `docs/90-records/plans/2026-08-28-catalog-delisting-rule/ledger.md` | **Tạo** — sổ ghi thực thi |
+
+---
+
 ### Task 1: Migration 0014 — cột dấu vắng danh bạ
 
 **Files:** Create `database/migrations/versions/0014_directory_absent_since.py` · Create `backend/tests/schema/test_s12_directory_absent.py`

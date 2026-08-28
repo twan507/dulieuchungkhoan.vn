@@ -564,3 +564,17 @@ def test_client_side_serialize_error_isolates_poison_row():
     assert w.metrics.counters.get("poison_row.trade") == 1
     assert w.metrics.counters.get("dropped_block.trade") is None
     assert len(client.written) == 2                  # hai dòng lành vẫn vào kho
+
+
+def test_tls_errors_stay_transient():
+    """Ranh giới ngược thứ hai — `ssl.SSLCertVerificationError` kế thừa CẢ `ValueError`
+    LẪN `OSError`, nên nhánh client-side ở trên suýt nuốt nó thành dòng độc: một lỗi
+    chứng chỉ sẽ làm BỎ dòng thay vì thử lại. Chưa chạm được khi `CLICKHOUSE_URL` còn
+    là `http://`, nhưng sống dậy ngay ngày bật TLS (review toàn nhánh 2026-08-28).
+    """
+    import ssl
+    from ingester.chwriter import _is_deterministic
+    for exc in (ssl.SSLCertVerificationError("certificate verify failed"),
+                ssl.SSLError("handshake failure"),
+                ssl.SSLEOFError("EOF occurred in violation of protocol")):
+        assert _is_deterministic(exc) is False, f"{type(exc).__name__} phải là transient"

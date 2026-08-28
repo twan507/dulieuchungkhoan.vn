@@ -1,6 +1,6 @@
 # Spec — Hàng đợi ghi có trần, tràn ra đĩa, không mất dòng nào
 
-**Ngày:** 2026-08-27 · **Trạng thái:** 🟡 chờ duyệt (bản v2) · **Brief nền:** [brief.md](brief.md) *(số đo phiên 2026-08-27 + phân tích chế độ hỏng — đọc trước)* · **Hướng:** A (tràn ra đĩa), chủ dự án chốt 2026-08-27.
+**Ngày:** 2026-08-27 · **Trạng thái:** ✅ **duyệt và thực thi xong** — AC1/AC2/AC4 chốt 2026-08-27 tối, **AC3 đóng 2026-08-28** (hằng đẳng thức sổ sách dư = 0 cả 5 bảng); [ledger](ledger.md) · **Brief nền:** [brief.md](brief.md) *(số đo phiên 2026-08-27 + phân tích chế độ hỏng — đọc trước)* · **Hướng:** A (tràn ra đĩa), chủ dự án chốt 2026-08-27.
 
 *Thư mục đặt tên theo ngày dự kiến thực thi (2026-08-28); spec viết 2026-08-27 — không phải gõ nhầm.*
 
