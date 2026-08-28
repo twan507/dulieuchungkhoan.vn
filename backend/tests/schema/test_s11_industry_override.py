@@ -131,6 +131,11 @@ def test_icb_map_seed_matches_json(db):                  # seam 5: seed không t
 
 
 def test_icb_map_targets_level_2_only(db):               # seam 5, ca biên
+    # Gác trước: bảng rỗng thì phép kiểm dưới cũng ra 0 và XANH VÔ ĐIỀU KIỆN — nó sẽ
+    # không gác được gì cả, kể cả khi seed lớp 2 hỏng hoàn toàn.
+    total = db.execute(sa.text(
+        "SELECT count(*) FROM market.industry_icb_map")).scalar_one()
+    assert total > 0, "industry_icb_map rỗng — phép kiểm level <> 2 sẽ xanh giả"
     assert db.execute(sa.text(
         "SELECT count(*) FROM market.industry_icb_map m JOIN market.industry i "
         "USING (industry_id) WHERE i.level <> 2")).scalar_one() == 0

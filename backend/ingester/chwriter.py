@@ -17,7 +17,7 @@ from collections import deque
 from dataclasses import dataclass
 from datetime import date
 
-from clickhouse_connect.driver.exceptions import DataError
+from clickhouse_connect.driver.exceptions import ClickHouseError, DataError
 
 from ingester.normalize import COLUMNS, Metrics, Normalized
 
@@ -113,6 +113,18 @@ def _block_days(table: str, block: list) -> set[date]:
 def _is_deterministic(e: Exception) -> bool:
     """Lỗi dữ liệu (không retry được) hay không. Mọi lỗi KHÁC coi là transient."""
     if isinstance(e, _DETERMINISTIC_TYPES):
+        return True
+    # Lỗi serialize PHÍA CLIENT: `driver.transform` gói giá trị vào cột native và ném
+    # AttributeError/TypeError/ValueError TRẦN — không `.code`, không phải
+    # ClickHouseError — TRƯỚC khi byte nào rời tiến trình. Không byte nào đi thì thử lại
+    # bao nhiêu lần cũng hỏng y hệt ⇒ tất định. Lỗi server LUÔN mang `.code`, còn
+    # ConnectionError/TimeoutError là OSError nên không lọt vào isinstance dưới đây.
+    # Vì sao đáng sửa dù `normalize.py` đã che đường thật: sau lát tràn-ra-đĩa, một dòng
+    # hỏng vĩnh viễn bị đọc nhầm thành transient sẽ đi 60 s → cửa 2 → file `-r` → phát
+    # lại lại hỏng, KẸT ĐẦU HÀNG ĐỢI ĐĨA và không thoát chế độ đĩa cả phiên.
+    if (isinstance(e, (AttributeError, TypeError, ValueError))
+            and not isinstance(e, ClickHouseError)
+            and getattr(e, "code", None) is None):
         return True
     code = getattr(e, "code", None)
     if isinstance(code, int):

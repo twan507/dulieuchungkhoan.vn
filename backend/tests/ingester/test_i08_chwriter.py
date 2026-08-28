@@ -532,3 +532,35 @@ def test_drop_log_carries_error_code_when_message_is_scrubbed(caplog):
     with caplog.at_level("ERROR"):
         w.flush_once()                   # nhịp 2: hết hạn -> log ERROR kèm mã lỗi
     assert "code=252" in caplog.text
+
+
+# --- Lỗi serialize PHÍA CLIENT (nợ Task 5, điều tra 2026-08-28) ------------------
+# Tầng `driver.transform` của clickhouse_connect gói giá trị vào cột native TRƯỚC khi
+# byte nào rời tiến trình, và ném AttributeError/TypeError/ValueError TRẦN — không
+# `.code`, không phải ClickHouseError. Đọc thành "transient" là retry vĩnh viễn.
+# Blast radius tăng hẳn sau lát spill: dòng hỏng vĩnh viễn đi transient 60 s -> cửa 2
+# -> file '-r' -> phát lại lại lỗi -> KẸT ĐẦU HÀNG ĐỢI ĐĨA cả phiên (trước lát spill
+# chỉ mất 1 block sau 60 s).
+
+def test_client_side_serialize_errors_are_deterministic():
+    from ingester.chwriter import _is_deterministic
+    for exc in (AttributeError("'NoneType' object has no attribute 'timestamp'"),
+                TypeError("an integer is required"),
+                ValueError("Decimal('NaN') is not valid")):
+        assert _is_deterministic(exc) is True, f"{type(exc).__name__} phải là tất định"
+
+
+def test_transport_errors_stay_transient():
+    """Ranh giới ngược — lỗi mạng KHÔNG được rơi vào nhánh mới."""
+    from ingester.chwriter import _is_deterministic
+    for exc in (ConnectionError("connection reset by peer"),
+                OSError("socket hang up"),
+                TimeoutError("read timed out")):
+        assert _is_deterministic(exc) is False, f"{type(exc).__name__} phải là transient"
+
+
+def test_client_side_serialize_error_isolates_poison_row():
+    w, client = _run_with(AttributeError("'NoneType' object has no attribute 'timestamp'"))
+    assert w.metrics.counters.get("poison_row.trade") == 1
+    assert w.metrics.counters.get("dropped_block.trade") is None
+    assert len(client.written) == 2                  # hai dòng lành vẫn vào kho

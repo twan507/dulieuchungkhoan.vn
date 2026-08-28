@@ -24,6 +24,11 @@ def test_apply_twice_is_idempotent_including_timestamps(db):
     — đổi khi và chỉ khi dòng thật sự được ghi lại, độc lập với `now()` — để phép
     kiểm bắt được đúng thứ nó tuyên bố (final-fix việc 6).
 
+    Lưới `xmin` phủ CẢ BA bảng (nợ Task 5, 2026-08-28). Trước đó chỉ `issuer` có
+    `xmin`, nên hai assert `updated_at`/`ingested_at` trên `market.security` và
+    `market.security_external_id` là RỖNG NGHĨA trong cùng transaction — chúng xanh
+    kể cả khi `apply()` ghi lại toàn bộ hai bảng đó ở lượt hai.
+
     `xmin` tự nó CŨNG không phân biệt được nếu lượt hai chạy trong CÙNG transaction
     top-level với lượt một — Postgres gán lại y hệt một xmin cho mọi lần ghi trong
     cùng transaction (đã kiểm tay bằng psql: hai UPDATE liên tiếp không SAVEPOINT
@@ -35,10 +40,12 @@ def test_apply_twice_is_idempotent_including_timestamps(db):
     delist, _, _ = refdata_store.plan_delist(db, t)
     refdata_store.apply(db, t, delist)
     snap1 = db.execute(sa.text(
-        "SELECT ticker, exchange, security_type, status, updated_at FROM market.security ORDER BY ticker"
+        "SELECT ticker, exchange, security_type, status, updated_at, xmin::text "
+        "FROM market.security ORDER BY ticker"
     )).all()
     ing1 = db.execute(sa.text(
-        "SELECT source, external_code, ingested_at FROM market.security_external_id ORDER BY 1,2"
+        "SELECT source, external_code, ingested_at, xmin::text "
+        "FROM market.security_external_id ORDER BY 1,2"
     )).all()
     snap_issuer = db.execute(sa.text(
         "SELECT issuer_id, xmin::text FROM market.issuer ORDER BY issuer_id")).all()
@@ -46,10 +53,12 @@ def test_apply_twice_is_idempotent_including_timestamps(db):
     stats2 = refdata_store.apply(db, t, [])
     nested.commit()
     assert db.execute(sa.text(
-        "SELECT ticker, exchange, security_type, status, updated_at FROM market.security ORDER BY ticker"
+        "SELECT ticker, exchange, security_type, status, updated_at, xmin::text "
+        "FROM market.security ORDER BY ticker"
     )).all() == snap1                                   # updated_at KHÔNG đổi lượt hai
     assert db.execute(sa.text(
-        "SELECT source, external_code, ingested_at FROM market.security_external_id ORDER BY 1,2"
+        "SELECT source, external_code, ingested_at, xmin::text "
+        "FROM market.security_external_id ORDER BY 1,2"
     )).all() == ing1                                    # ingested_at KHÔNG đổi
     assert db.execute(sa.text(
         "SELECT issuer_id, xmin::text FROM market.issuer ORDER BY issuer_id")).all() == snap_issuer

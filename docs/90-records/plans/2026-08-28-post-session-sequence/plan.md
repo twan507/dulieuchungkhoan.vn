@@ -10,7 +10,7 @@
 
 ## Trạng thái — cập nhật 2026-08-28 15:12
 
-**Đã xong:** Task 0 ✅ · **Task 1 ✅ (AC3 ĐÓNG — dư = 0 cả 5 bảng)** · **Task 2 ✅ (7/7 S4U)** · **Task 4 ✅ (310 passed)** · **Task 7 ✅**. **Tiếp theo: Task 3 hoặc Task 5.**
+**Đã xong:** Task 0 ✅ · **Task 1 ✅ (AC3 ĐÓNG — dư = 0)** · **Task 2 ✅ (7/7 S4U)** · **Task 4 ✅** · **Task 5 ✅** · **Task 7 ✅**. **Còn lại: Task 3** (luật huỷ niêm yết) · **Task 6** (kiến thức đi theo repo) · mốc hành vi S4U sáng mai.
 
 Việc ngoài runbook đã làm trong ngày, phiên sau cần biết:
 
@@ -186,23 +186,31 @@ Expected: **310 test** thu thập, xanh toàn bộ. Đây cũng là lần đầu
 
 ---
 
-### Task 5: Ba khoản nợ nhỏ đáng trả
+### Task 5: Ba khoản nợ nhỏ đáng trả  ✅ XONG 2026-08-28 16:05
 
 Chỉ ba khoản này. Các khoản park còn lại **cố ý không đụng** — xem cuối file.
 
-- [ ] **Bước 1: `test_icb_map_targets_level_2_only` đang xanh cả khi bảng rỗng**
+- [x] **Bước 1: `test_icb_map_targets_level_2_only` đang xanh cả khi bảng rỗng**
 
 `backend/tests/schema/test_s11_industry_override.py` — thêm một assert số dòng lớn hơn 0 trước phép kiểm `level <> 2`, để nó thật sự gác được chứ không xanh vô điều kiện.
 
-- [ ] **Bước 2: Nới lưới `xmin` sang `market.security`**
+- [x] **Bước 2: Nới lưới `xmin` sang `market.security`**
 
 `backend/tests/etl/test_e09_refdata_store.py` — `test_apply_twice_is_idempotent_including_timestamps` hiện chỉ chụp `xmin` của `market.issuer`. Hai assert `updated_at`/`ingested_at` trên `market.security` và `market.security_external_id` **rỗng nghĩa** trong cùng transaction *(`now()` là `transaction_timestamp()`)*. Chụp thêm `xmin` của hai bảng đó, giữ nguyên khuôn savepoint đã dùng.
 
-- [ ] **Bước 3: Phân loại lỗi serialize PHÍA CLIENT thành tất định** *(điều tra 2026-08-28 trong phiên, từ chip của chaos test — kết luận: ĐÁNG SỬA, code vài dòng)*
+- [x] **Bước 3: Phân loại lỗi serialize PHÍA CLIENT thành tất định** *(điều tra 2026-08-28 trong phiên, từ chip của chaos test — kết luận: ĐÁNG SỬA, code vài dòng)*
 
 `backend/ingester/chwriter.py` `_is_deterministic`: lỗi từ tầng serialize của clickhouse_connect (`driver.transform` gói giá trị vào cột native, ném `AttributeError`/`TypeError`/`ValueError` **trần**, không `.code`, TRƯỚC khi byte nào rời tiến trình) hiện bị đọc thành **transient** → retry vô hạn. Đã kiểm `normalize.py`: **đường thật được che** — mọi cột dựng qua constructor có kiểm kiểu, trường bắt buộc ném `NormalizeError` trước `add()`, nên đây là defense-in-depth. Nhưng **blast radius đã tăng sau lát spill**: dòng hỏng vĩnh viễn giờ đi transient 60 s → cửa 2 → file `-r` → phát lại lại lỗi → **kẹt đầu hàng đợi đĩa, disk mode không thoát cả phiên** (trước lát spill chỉ mất 1 block sau 60 s). Sửa: thêm nhánh vào `_is_deterministic` — `isinstance(e, (AttributeError, TypeError, ValueError)) and not isinstance(e, ClickHouseError) and getattr(e, "code", None) is None` → `True` (đặt sau nhánh `_DETERMINISTIC_TYPES`; `ConnectionError` là `OSError` nên không lọt; lỗi server luôn mang `.code`). Test đỏ-trước theo khuôn `test_i08` (`_RejectingClient` ném `AttributeError("'NoneType' object has no attribute 'timestamp'")` cho đúng 1 seq): 2 dòng lành vào kho, `poison_row.trade == 1`; kèm assert trực tiếp `_is_deterministic` cho cả ba loại + ranh giới ngược `ConnectionError → False`.
 
-- [ ] **Bước 4:** chạy `uv run pytest tests -q`, commit một commit.
+- [x] **Bước 4:** chạy `uv run pytest tests -q`, commit một commit.
+
+✅ **XONG 2026-08-28 16:05 — `313 passed, 2 skipped`** *(+3 đúng bằng số test mới của Bước 3)*.
+
+Cả ba khoản đều là **assert xanh vô điều kiện** hoặc **lỗi phân loại sai** — nên xanh sau khi sửa chưa chứng minh được gì. Đã kiểm bằng **đột biến, gọi chính hàm test thật** *(probe tạm, chạy xong xoá)*:
+
+- Bước 1 — làm rỗng `industry_icb_map` trong savepoint rồi gọi `test_icb_map_targets_level_2_only` ⇒ **ném `AssertionError`**. Trước khi sửa nó xanh.
+- Bước 2 — ghi lại thật `market.security` và `market.security_external_id` trong subxact ⇒ `xmin` **cả hai bảng đều đổi**, tức lưới bắt được lượt ghi lại. Trước đó hai assert `updated_at`/`ingested_at` rỗng nghĩa trong cùng transaction.
+- Bước 3 — **đỏ trước xanh** đúng khuôn `test_i08`: `AttributeError` trần từng bị log là `insert trade lỗi transient: code=None`, cả 3 dòng kẹt hàng đợi (`pending_depth_rows: 3`); sau khi sửa `poison_row.trade == 1`, hai dòng lành vào kho. Kèm **ranh giới ngược** (`ConnectionError`/`OSError`/`TimeoutError` vẫn transient) — test này xanh SẴN trước khi sửa, nên nó chứng minh bản vá không nuốt nhầm lỗi mạng.
 
 ---
 
