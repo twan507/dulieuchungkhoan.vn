@@ -8,6 +8,18 @@
 
 ---
 
+## Trạng thái — cập nhật 2026-08-28 15:12
+
+**Đã xong:** Task 0 ✅ *(phiên đóng sạch, số ở dưới)*. **Tiếp theo: Task 1.**
+
+Việc ngoài runbook đã làm trong ngày, phiên sau cần biết:
+
+- ⏸️ **4 task OMO đã `Disabled` lúc 15:04** *(quyết định chủ dự án — giai đoạn này ưu tiên dev)*. Đồng hồ mất dữ liệu OMO vì thế chạy lại; xem bẫy ở Task 2.
+- `main` đã gom mọi việc của ngày; nhánh `feat/industry-two-layer-mapping` đã merge, chờ xoá ở Task 7.
+- **Không có gì đang chạy** — `dlck-ingester` và `dlck-ingester-measure` đều `Ready` từ 15:10:18, `dlck-refdata` `Ready` (mốc kế 08:00 hôm sau).
+
+---
+
 ## Global Constraints
 
 - `PYTHONIOENCODING=utf-8` cho mọi lệnh Python; nạp biến bằng `set -a; . ./.env; set +a` và **không in giá trị ra output**.
@@ -21,19 +33,21 @@
 
 ### Task 0: Xác nhận phiên đã đóng
 
-- [ ] **Bước 1: Kiểm không còn tiến trình ghi**
+- [x] **Bước 1: Kiểm không còn tiến trình ghi**
 
 ```bash
 powershell -NoProfile -Command "Get-ScheduledTask -TaskName 'dlck-*' | Select-Object TaskName,State"
 ```
 Expected: cả 7 task `Ready`, **không cái nào `Running`**. Còn `Running` thì chưa tới giờ, đợi.
 
-- [ ] **Bước 2: Kiểm phiên đã đóng sổ trong kho**
+- [x] **Bước 2: Kiểm phiên đã đóng sổ trong kho**
 
 ```bash
 docker exec infra-clickhouse-1 clickhouse-client --password "$CLICKHOUSE_PASSWORD" -q "select max(ts) from rt.quote where toDate(ts)=today()"
 ```
 Expected: mốc cuối ≈ **15:05**, giống phiên 27/08 *(đo: `2026-08-27 15:05:01.501`)*.
+
+✅ **Đã chạy 15:11** — cả 7 task hết `Running` lúc **15:10:18**; `max(ts)` = **2026-08-28 15:05:01.338**. Đối chứng cuối phiên trong log: **`p1=0 p2=0 ok=971`**. Hàng đợi lúc đóng `pending_depth_rows = 0`. Cả phiên `spill_bytes = 0` · `orphan_tmp`/`replay_corrupt`/`seq_collision`/`spill_io_error` đều **0**.
 
 ---
 
@@ -192,7 +206,20 @@ clone → tạo .env từ .env.example → docker compose up (deploy/infra)
 
 - [ ] **Bước 3: Ghi phiên 28/08 vào `service-topology §7b`** ⚠️ *cần số của Task 1, làm sau Task 1*
 
-§7b đã có mục *"Đỉnh ATO đã đo — 2026-08-27"*; thiếu đúng **phiên đầu tiên chạy code tràn-ra-đĩa**. Thêm một mục cho 28/08 với số đã đo: đỉnh hàng đợi **2.948 dòng / 1,4 MB lúc 09:00:02** — chỉ **2,9%** của `N_CAP_ROWS = 100.000`, xả sạch trong một phút · `spill_bytes = 0`, **chưa lần nào vào chế độ đĩa** · `orphan_tmp`/`replay_corrupt`/`seq_collision`/`spill_io_error` đều 0 · insert p50 63 ms / p95 73 ms / p99 82 ms · RSS tiến trình ghi **96,9 MB** · hai socket lệch **1 frame trên 464.127**. Bổ sung kết quả AC3 từ Task 1.
+§7b đã có mục *"Đỉnh ATO đã đo — 2026-08-27"*; thiếu đúng **phiên đầu tiên chạy code tràn-ra-đĩa**. Thêm một mục cho 28/08 với số đã đo **trọn phiên** *(sẵn ở đây để khỏi phải lục lại log)*:
+
+| | 28/08 (code spill) | 27/08 (code cũ, để so) |
+|---|---|---|
+| Dòng vào kho | quote **3.417.375** · snapshot 1.009.350 · trade 237.450 · index 56.168 · pt_match 2.063 | quote 3.122.376 |
+| Đỉnh hàng đợi | **2.948 dòng / 1,4 MB** lúc 09:00:02 — **2,9%** của `N_CAP_ROWS = 100.000`, xả sạch trong một phút | — |
+| Chế độ đĩa | `spill_bytes = 0` — **chưa lần nào vào** | chưa có cơ chế |
+| Sổ sách spill | `orphan_tmp`/`replay_corrupt`/`seq_collision`/`spill_io_error` = **0** | — |
+| Đối chứng cuối phiên | `p1=0 p2=0 ok=971`, `pending_depth_rows = 0` lúc đóng | `p1=0 p2=0 ok=868` |
+| Độ trễ insert | giữa phiên p50 63 / p95 73 / p99 82 ms · cuối phiên p50 **14,7** / p95 73,6 / p99 77,4 ms | — |
+| RSS tiến trình ghi | **96,9 MB** | đỉnh CH 1,18 GiB (cache rộng) |
+| Chênh hai socket | **1 frame / 464.127** (đo 09:22:02) | — |
+
+Bổ sung kết quả AC3 từ Task 1 rồi mới viết.
 
 Viết **một lần** sau khi có đủ số — đừng viết trước rồi sửa lại.
 
