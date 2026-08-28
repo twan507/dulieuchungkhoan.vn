@@ -151,7 +151,11 @@ Expected: đủ **7 dòng `S4U`**. Và sáng hôm sau: `dlck-refdata` 08:00 ch�
 
 ✅ **Phần đăng ký ĐẠT 2026-08-28 15:52** — soi độc lập, không tin output của script: cả 7 task `LogonType=S4U`, `RunLevel=Limited` giữ nguyên. Bẫy OMO **đã bắn đúng như dự đoán** — cả 4 task sống lại `Ready`, đã tắt lại ngay; trạng thái chốt: `dlck-ingester*` + `dlck-refdata` `Ready`, 4 OMO `Disabled`.
 
-🕗 **CHƯA ĐẠT TRỌN — còn mốc hành vi sáng mai 2026-08-28+1, 08:00.** Đăng ký đúng ≠ chạy đúng: phải thấy `dlck-refdata` chạy **không hiện cửa sổ cmd** và `refdata.log` có dòng mới. Đây là lần đầu 3 job chạy dưới S4U, mà S4U đổi cả token lẫn môi trường tiến trình — chưa xem log sáng mai thì chưa được tuyên Task 2 xong hẳn.
+🕗 **CHƯA ĐẠT TRỌN — mốc hành vi là sáng THỨ HAI 2026-08-31, KHÔNG phải sáng mai.** Đăng ký đúng ≠ chạy đúng: phải thấy `dlck-refdata` chạy **không hiện cửa sổ cmd** và `refdata.log` có dòng mới. Hôm nay là **thứ 6 2026-08-28**; cả 7 task trigger **Weekly Thứ 2–6** nên thứ 7 và chủ nhật **không có lượt nào chạy**. Mốc kế thật, đọc từ Scheduler: `dlck-refdata` **31/08 08:00**, `dlck-ingester` + `dlck-ingester-measure` **31/08 08:30**. *(4 task OMO vẫn hiện `NextRunTime` tối nay nhưng đang `Disabled` nên không nổ.)*
+
+Đây là lần đầu 3 job chạy dưới S4U, mà S4U đổi cả token lẫn môi trường tiến trình — chưa xem log thứ 2 thì chưa được tuyên Task 2 xong hẳn.
+
+🔴 **Lịch nghỉ lễ VN thì trigger Thứ 2–6 KHÔNG biết.** Task vẫn nổ vào ngày thị trường đóng cửa (Tết, 30/4, 1/5, 2/9, Giỗ tổ). Với ingester/refdata thì phần lớn vô hại (phiên rỗng), nhưng nó **cắn thật vào ngưỡng ân hạn của Task 3** — xem ghi chú trong plan huỷ niêm yết.
 
 - [x] **Bước 5: Đồng bộ tài liệu** — [service-topology §5](../../../20-design/service-topology.md) đổi từ "hiện chạy Interactive" sang trạng thái thật; gỡ mục khỏi [roadmap §5](../../../00-overview/roadmap.md).
 

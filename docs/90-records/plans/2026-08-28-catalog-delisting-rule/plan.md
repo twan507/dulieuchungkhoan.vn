@@ -38,6 +38,23 @@ cd backend && uv run pytest tests/etl -v
 2. **Chốt chặn sụt sẽ từ chối lượt dọn đầu tiên.** `DELIST_RATIO = 0.01`; 438/1.962 = 22,3%. Lượt dọn đầu **phải chạy tay** với `--accept-drop`, có người nhìn.
 3. **Vắng một lượt chưa chắc là chết** — mã mới niêm yết vào bảng giá trước danh bạ. Ngưỡng: **vắng liên tục ≥ 3 ngày**.
 
+   🔴 **CHƯA GIẢI QUYẾT — ngưỡng đang đếm NGÀY LỊCH, không đếm lượt job** *(phát hiện 2026-08-28, chủ dự án nêu; chưa sửa, quyết ở đầu Task 3)*. Câu SQL chọn ứng viên dùng `directory_absent_since <= now() - make_interval(days => :d)`, tức thời gian tường. Nhưng job chỉ chạy **Thứ 2–6**, nên:
+
+   - Đóng dấu **thứ 6** ⇒ **thứ 2** đã thoả "3 ngày", mà giữa hai mốc job chạy **0 lần**. Ba lần xác nhận độc lập co lại còn **một**.
+   - **Tết nghỉ ~9 ngày** ⇒ đóng dấu hôm trước Tết, ngày đi làm đầu tiên là lật ngay, vẫn chỉ một lần quan sát.
+
+   Đây đúng loại lỗi [CLAUDE.md §4.4.4](../../../../CLAUDE.md) cảnh báo — *"mỗi điều kiện kiểm phải soi ngược: hệ thống chạy bình thường có tự vi phạm nó không?"*. Ở đây **cuối tuần nào cũng vi phạm**, không cần tới ngày lễ.
+
+   **Ba hướng, chốt trước khi viết migration `0014`** *(§4.8 — đây là hình dạng dữ liệu ghi xuống, đảo ngược tốn hơn làm lại)*:
+
+   | Hướng | Cách | Đánh đổi |
+   |---|---|---|
+   | **A · Đếm lượt** | Đổi cột thành `directory_absent_runs integer`, mỗi lượt job thấy vắng thì `+1`, thấy lại thì về `NULL` | Mã hoá thẳng ý định "ba lần xác nhận". Không cần lịch. Mất thông tin *khi nào* bắt đầu vắng |
+   | **B · Đếm ngày giao dịch** | Giữ timestamp, đếm `trading_date` xen giữa | Đúng nguồn **đã chốt** ở [step-04-macro §F8](../2026-08-25-postgres-data-schema/step-04-macro.md) *(suy từ `SELECT DISTINCT trading_date` của `market.price_daily`, không dựng bảng lịch riêng)* — **nhưng bảng đó do [7] ETL giá đổ đầy, mà việc đó CHƯA LÀM ⇒ nguồn đã chốt nhưng đang RỖNG** |
+   | **C · Giữ ngày lịch, nới ngưỡng** | Ví dụ 5 ngày để phủ cuối tuần | Rẻ nhất, nhưng vẫn vỡ ở Tết và chỉ là che triệu chứng |
+
+   Giữ cả hai cột (A + timestamp) là lựa chọn rẻ nếu muốn cả số lần lẫn mốc bắt đầu — nhưng phải nói rõ **cột nào là phán quyết**, đừng để hai nguồn sự thật.
+
 ## Số đo nền *(đo trên DB thật 2026-08-28)*
 
 | | |
