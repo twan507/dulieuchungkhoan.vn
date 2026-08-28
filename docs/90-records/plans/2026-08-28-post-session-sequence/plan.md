@@ -155,7 +155,49 @@ Chỉ ba khoản này. Các khoản park còn lại **cố ý không đụng** �
 
 ---
 
-### Task 6: Dọn nhánh và đẩy lên origin
+### Task 6: Kiến thức đi theo repo — cửa vào và đường dựng máy mới
+
+*(Chủ dự án nêu 2026-08-28: dữ liệu mất không tiếc, nhưng **kiến thức phải nằm trong repo** để đổi máy dev vẫn còn.)*
+
+Rà lại thì phần lớn đã ổn: phiên 27/08 nằm đủ trong [service-topology §7b](../../../20-design/service-topology.md) *(4,27 triệu dòng / 82,2 MB một phiên · 93 MB gzip/ngày · cảnh báo đỉnh RAM đo trên cache rộng)*, thứ tự bootstrap DB nằm trong [database/README](../../../../database/README.md). Còn thủng ba chỗ.
+
+- [ ] **Bước 1: Viết lại `README.md` gốc — chỗ trôi lệch nặng nhất repo**
+
+Hiện đang nói: *"**Trạng thái — 2026-08-15:** thiết kế hoàn chỉnh, **chưa viết dòng code sản phẩm nào**"* và bảng cuối ghi *"Toàn bộ phần cài đặt ❌ chưa bắt đầu"*.
+
+Thực tế 2026-08-28: ingester bắt tick thật hằng phiên · hai kho có schema và dữ liệu · 310 test · 7 task chạy theo lịch · ba job ETL đã chạy production. **Người clone repo trên máy mới đọc dòng đầu tiên sẽ kết luận dự án chưa có gì** — đúng chỗ tệ nhất để nói sai. Viết lại phần trạng thái và bảng khối cho khớp, giữ nguyên phần mô tả sản phẩm và stack.
+
+- [ ] **Bước 2: Thêm mục "Dựng trên máy mới" vào `README.md`**
+
+Kiến thức này đang nằm rải ở `database/README` (bootstrap DB) · `deploy/infra/docker-compose.yml` · `backend/README` (ba job) · `scripts/register-tasks.ps1` (task theo lịch) · `.env.example` — **không chỗ nào nối chúng thành một chuỗi**, mà đổi máy dev cần đúng chuỗi đó. Viết dạng các bước, **trỏ** về từng file cho chi tiết, không chép lại nội dung của chúng:
+
+```
+clone → tạo .env từ .env.example → docker compose up (deploy/infra)
+      → alembic upgrade head → core.ch_migrate
+      → một lượt `etl refdata` (nạp danh bạ + danh mục mã + cây ICB từ API thật)
+      → alembic downgrade 0012 && upgrade head   (seed lại lớp 2 gán tay — database/README §Luật)
+      → uv run pytest tests
+```
+Đăng ký task theo lịch **chỉ khi** muốn máy đó ghi thật — máy dev thuần thì bỏ qua.
+
+🔴 Ghi thẳng một câu: **dữ liệu không đi theo repo.** Postgres, ClickHouse, Redis nằm trong Docker named volume của máy cũ (`infra_pgdata` · `infra_chdata` · `infra_redisdata`), `dlck-runtime/` (log, bản đo, spill) nằm ngoài repo. Máy mới bắt đầu với kho rỗng và **đó là bình thường cho dev** — mọi thứ trừ tick, OMO và frame thô đều dựng lại được bằng chuỗi trên.
+
+- [ ] **Bước 3: Ghi phiên 28/08 vào `service-topology §7b`** ⚠️ *cần số của Task 1, làm sau Task 1*
+
+§7b đã có mục *"Đỉnh ATO đã đo — 2026-08-27"*; thiếu đúng **phiên đầu tiên chạy code tràn-ra-đĩa**. Thêm một mục cho 28/08 với số đã đo: đỉnh hàng đợi **2.948 dòng / 1,4 MB lúc 09:00:02** — chỉ **2,9%** của `N_CAP_ROWS = 100.000`, xả sạch trong một phút · `spill_bytes = 0`, **chưa lần nào vào chế độ đĩa** · `orphan_tmp`/`replay_corrupt`/`seq_collision`/`spill_io_error` đều 0 · insert p50 63 ms / p95 73 ms / p99 82 ms · RSS tiến trình ghi **96,9 MB** · hai socket lệch **1 frame trên 464.127**. Bổ sung kết quả AC3 từ Task 1.
+
+Viết **một lần** sau khi có đủ số — đừng viết trước rồi sửa lại.
+
+- [ ] **Bước 4: Quét chéo và commit**
+
+```bash
+git grep -n "chưa viết dòng code\|chưa bắt đầu" -- README.md docs
+```
+Mọi hit còn lại phải **đúng** hoặc **thuộc vùng lịch sử**. Commit một commit `docs: ...`.
+
+---
+
+### Task 7: Dọn nhánh và đẩy lên origin
 
 - [ ] **Bước 1: Đẩy** *(việc này chủ dự án tự chạy — thao tác `git push` bị lớp kiểm duyệt của phiên chặn)*
 
