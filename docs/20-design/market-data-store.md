@@ -255,6 +255,8 @@ Danh mục mã hợp nhất hai nguồn lệch nhau: bảng giá `/quotes` của
 
 **Làm cùng lát nào:** gộp với lát **mở rộng danh mục — phái sinh + `/datafeed/instruments`**. Ba việc đó sửa đúng cùng ba đoạn: `refdata_merge` (trạng thái đích) · `plan_delist` (ai bị lật) · `refdata_guard` (ngưỡng). Làm rời là ba lần đụng đoạn code nguy hiểm nhất của job và ba lần chỉnh lại ngưỡng chốt chặn. Nhưng **phải xong trước ETL giá** — nếu không, ETL giá xây trên một tập niêm yết mà 22% là mã ma.
 
+**Kế hoạch thực thi đã viết 2026-08-28** — cột dấu `market.security.directory_absent_since`, `apply` đóng/gỡ dấu còn `plan_delist` đọc dấu của lượt trước, ngưỡng 3 ngày: [plans/2026-08-28-catalog-delisting-rule/](../90-records/plans/2026-08-28-catalog-delisting-rule/). Chưa cài — mục này vẫn nằm trong [roadmap §5](../00-overview/roadmap.md).
+
 ---
 
 ## 5. Lược đồ dữ liệu
