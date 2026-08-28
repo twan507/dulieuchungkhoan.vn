@@ -83,6 +83,20 @@ Quan sát **2 lần rớt trong 4 phút** đo liên tục. Client phải tự n�
 
 Ứng dụng BVSC gốc nối lại sau `5000 ms`.
 
+### 1.6 Ngày thị trường ĐÓNG CỬA — nhịp `Control` vẫn chạy, dữ liệu im *(đo 2026-08-28 19:16)*
+
+Nối socket ngoài giờ giao dịch: server **nhận đủ 6.364 topic trong 64 lô** (`Ack: 64` — đúng hành vi §1.4, nhận mọi thứ), rồi **im hoàn toàn ở 5 topic dữ liệu**. Nhưng frame `Control` **vẫn về đều**:
+
+| | `Ack` | `Control` | Frame dữ liệu (`i`/`o`/`idx`/`t`/`ptm`) |
+|---|---|---|---|
+| Phiên giao dịch 2026-08-28 | 64 | 959 / ~390 phút ≈ **2,46/phút** | **4.722.406** |
+| **Ngoài giờ, cùng ngày, 19:16** | **64** | **2/phút** *(phút 1: 2 · phút 2: 4)* | **0** |
+| Socket hỏng / mất mạng | **0** | **0** | **0** |
+
+🔴 **`Control` là tín hiệu DUY NHẤT tách "thị trường đóng" khỏi "kết nối hỏng".** Chỉ nhìn frame dữ liệu thì hai hàng dưới **giống hệt nhau**. Bất cứ cơ chế nào tự ngắt khi "không thấy dữ liệu" **bắt buộc** phải kiểm thêm `Control` còn về — thiếu vế đó thì một lần mất mạng lúc sáng sớm sẽ bị đọc thành ngày nghỉ và **mất trắng một phiên tick**, thứ duy nhất trong hệ thống không backfill lại được.
+
+⚠️ **Chưa đo trong một ngày nghỉ lễ thật.** Phép đo trên chạy ngoài giờ của một *ngày giao dịch*. Giả định nhịp `Control` giữ nguyên trong ngày nghỉ là hợp lý — nó là nhịp tim của tầng vận chuyển, không phải của phiên — nhưng **chưa kiểm**. Ngày nghỉ gần nhất là dịp kiểm.
+
 ---
 
 ## 2. Danh sách topic
