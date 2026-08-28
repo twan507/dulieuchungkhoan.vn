@@ -304,3 +304,91 @@ def test_bctc_probe_catches_bank_without_industry(db):
     refdata_store.apply(db, _target(), [])
     bad = db.execute(sa.text(BCTC_PROBE)).all()
     assert ("NH", None) in bad
+
+
+# --- Luật huỷ niêm yết cho mã vắng danh bạ (market-data-store §4.4) ---------------
+# `apply` ĐÓNG/GỠ dấu cho lượt SAU; `plan_delist` đọc dấu của các lượt TRƯỚC. Thứ tự
+# thật trong job là plan_delist -> guard -> apply, nên không lượt nào vừa đóng dấu vừa
+# lật ngay — nếu lật ngay thì ngưỡng ân hạn thành vô nghĩa.
+
+def _mark_age(db, ticker, days):
+    """Lùi dấu vắng danh bạ về quá khứ — mô phỏng mã đã vắng nhiều ngày."""
+    db.execute(sa.text("RESET ROLE"))
+    db.execute(sa.text(
+        "UPDATE market.security SET directory_absent_since = now() - make_interval(days => :d)"
+        " WHERE ticker = :t"), {"d": days, "t": ticker})
+    db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
+
+
+def _absent_since(db, ticker):
+    return db.execute(sa.text(
+        "SELECT directory_absent_since FROM market.security WHERE ticker=:t"),
+        {"t": ticker}).scalar_one()
+
+
+def _no_issuer_stock(target):
+    """Ticker cổ phiếu trong đích mà không khớp doanh nghiệp nào — diện của luật này."""
+    return next(s.ticker for s in target.securities
+                if s.security_type == "stock" and s.organ_code is None
+                and s.status == "listed")
+
+
+def test_absent_from_directory_gets_marked_once(db):          # seam: đóng dấu
+    _as_etl(db)
+    t = _target()
+    refdata_store.apply(db, t, [])
+    tk = _no_issuer_stock(t)
+    first = _absent_since(db, tk)
+    assert first is not None
+    refdata_store.apply(db, t, [])                            # lượt hai không được dời dấu
+    assert _absent_since(db, tk) == first
+
+
+def test_mark_is_cleared_when_ticker_returns_to_directory(db):   # seam: gỡ dấu
+    _as_etl(db)
+    t = _target()
+    refdata_store.apply(db, t, [])
+    tk = _no_issuer_stock(t)
+    assert _absent_since(db, tk) is not None
+    from dataclasses import replace
+    org = t.issuers[0]
+    t2 = type(t)(
+        securities=[replace(s, organ_code=org.organ_code) if s.ticker == tk else s
+                    for s in t.securities],
+        issuers=t.issuers, icb=t.icb, counters=t.counters)
+    stats = refdata_store.apply(db, t2, [])
+    assert _absent_since(db, tk) is None
+    assert stats["directory_absent_cleared"] >= 1
+
+
+def test_not_delisted_before_threshold(db):                   # ca biên: dưới ngưỡng
+    _as_etl(db)
+    t = _target()
+    refdata_store.apply(db, t, [])
+    tk = _no_issuer_stock(t)
+    _mark_age(db, tk, 2)                                      # mới vắng 2 ngày
+    delist, flips, _ = refdata_store.plan_delist(db, t)
+    assert tk not in delist
+
+
+def test_delisted_after_threshold(db):                        # ca chính
+    _as_etl(db)
+    t = _target()
+    refdata_store.apply(db, t, [])
+    tk = _no_issuer_stock(t)
+    _mark_age(db, tk, 4)                                      # vắng 4 ngày > ngưỡng 3
+    delist, flips, _ = refdata_store.plan_delist(db, t)
+    assert tk in delist and flips >= 1
+    refdata_store.apply(db, t, delist)
+    assert db.execute(sa.text("SELECT status FROM market.security WHERE ticker=:t"),
+                      {"t": tk}).scalar_one() == "delisted"
+
+
+def test_etf_and_index_are_never_marked_or_delisted(db):      # ràng buộc 1
+    _as_etl(db)
+    t = _target()
+    refdata_store.apply(db, t, [])
+    rows = db.execute(sa.text(
+        "SELECT count(*) FROM market.security"
+        " WHERE security_type <> 'stock' AND directory_absent_since IS NOT NULL")).scalar_one()
+    assert rows == 0

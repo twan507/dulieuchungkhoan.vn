@@ -28,6 +28,11 @@ log = logging.getLogger(__name__)
 
 JOB = "market.refdata"
 
+# Vắng khỏi danh bạ doanh nghiệp bao lâu thì coi là đã rời sàn (market-data-store §4.4).
+# Có ngưỡng vì mã MỚI niêm yết xuất hiện ở bảng giá BVSC trước khi vào danh bạ FiinTrade —
+# lật ngay lượt đầu là bắn nhầm mã vừa lên sàn.
+DIRECTORY_ABSENT_DAYS = 3
+
 
 def load_baseline(engine) -> dict | None:
     """Mốc so sánh cho chốt chặn tầng 1 — lượt `success` gần nhất của job này."""
@@ -62,6 +67,22 @@ def plan_delist(conn, target: TargetState) -> tuple[list[str], int, int]:
     target_tickers = {t.ticker for t in target.securities}
     target_delisted = {t.ticker for t in target.securities if t.status == "delisted"}
     absent = sorted(listed - target_tickers)
+    # Đường (c) — cổ phiếu CÓ trong bảng giá nhưng vắng khỏi danh bạ doanh nghiệp đủ
+    # lâu (§4.4). Đọc dấu do các lượt TRƯỚC đóng: `apply` của lượt này mới cập nhật
+    # dấu cho lượt sau, nên ngưỡng đếm theo ngày thật, không phải theo một lượt chạy.
+    stale = [
+        r[0]
+        for r in conn.execute(
+            sa.text(
+                "SELECT ticker FROM market.security"
+                " WHERE status = 'listed' AND security_type = 'stock'"
+                "   AND issuer_id IS NULL AND directory_absent_since IS NOT NULL"
+                "   AND directory_absent_since <= now() - make_interval(days => :d)"
+            ),
+            {"d": DIRECTORY_ABSENT_DAYS},
+        ).all()
+    ]
+    absent = sorted(set(absent) | set(stale))
     flips = len(absent) + len(listed & target_delisted)
     return absent, flips, len(listed)
 
@@ -179,6 +200,25 @@ def apply(conn, target: TargetState, delist: list[str]) -> dict:
                 ),
                 {"i": security_id, "src": source, "code": code, "sub": sub},
             )
+
+    # 3b. Dấu vắng danh bạ — bookkeeping cho luật huỷ niêm yết (§4.4). Cố ý KHÔNG
+    # đụng `updated_at`: đây là quan sát của job về nguồn, không phải trường dữ liệu
+    # của mã. Đóng dấu một lần rồi thôi (điều kiện IS NULL), gỡ khi mã quay lại.
+    cleared = conn.execute(
+        sa.text(
+            "UPDATE market.security SET directory_absent_since = NULL"
+            " WHERE directory_absent_since IS NOT NULL AND issuer_id IS NOT NULL"
+        )
+    ).rowcount
+    marked = conn.execute(
+        sa.text(
+            "UPDATE market.security SET directory_absent_since = now()"
+            " WHERE directory_absent_since IS NULL AND issuer_id IS NULL"
+            "   AND security_type = 'stock' AND status = 'listed'"
+        )
+    ).rowcount
+    stats["directory_absent_cleared"] = cleared
+    stats["directory_absent_marked"] = marked
 
     # 4. icb_industry
     for r in target.icb:
