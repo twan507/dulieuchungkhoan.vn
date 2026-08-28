@@ -15,7 +15,8 @@
 Việc ngoài runbook đã làm trong ngày, phiên sau cần biết:
 
 - ⏸️ **4 task OMO đã `Disabled` lúc 15:04** *(quyết định chủ dự án — giai đoạn này ưu tiên dev)*. Đồng hồ mất dữ liệu OMO vì thế chạy lại; xem bẫy ở Task 2.
-- `main` đã gom mọi việc của ngày; nhánh `feat/industry-two-layer-mapping` đã merge, chờ xoá ở Task 7.
+- ✅ **`main` đã đẩy lên origin** — `origin/main` = `9a8c040`, ahead **0** *(kiểm 2026-08-28 15:18 bằng `git ls-remote`, hỏi thẳng remote chứ không tin ref tracking cục bộ)*. Task 7 Bước 1 vì thế **đã xong**.
+- `main` đã gom mọi việc của ngày; **7 nhánh** đã merge đang chờ xoá ở Task 7 — không phải 3 như bản đầu.
 - **Không có gì đang chạy** — `dlck-ingester` và `dlck-ingester-measure` đều `Ready` từ 15:10:18, `dlck-refdata` `Ready` (mốc kế 08:00 hôm sau).
 
 ---
@@ -73,6 +74,10 @@ grep "run counters" ../dlck-runtime/logs/ingester-20260828.log | tail -1
 ```
 Cần các khoản: `not_leader_dropped.<bảng>` · `replay_blocks` · `replay_rows` · `dup_dropped` · `normalize_error` · `no_symbol_dropped` · `spill_*`.
 
+🔴 **Đừng hoảng khi grep ra rỗng — vắng mặt nghĩa là BẰNG 0, không phải log hỏng.** Kiểm 2026-08-28: năm khoản `not_leader_dropped.*` · `replay_blocks` · `replay_rows` · `normalize_error` · `no_symbol_dropped` có **0 lần xuất hiện** trong log ngày 28/08. Căn cứ ở code chứ không phải suy đoán: [`ingester/normalize.py:46`](../../../../backend/ingester/normalize.py) — `Metrics.inc` làm `counters.get(key, 0) + n` trên `dict` trần, **không pre-init**, nên một key chỉ hiện ra sau lần tăng đầu tiên. Chưa từng tăng ⇒ không có dòng ⇒ **bằng 0**. *(Mấy counter spill `orphan_tmp`/`replay_corrupt`/`seq_collision`/`spill_io_error`/`spill_bytes` **có** in `0` là vì được khởi tạo tường minh từ lượt quét đĩa lúc khởi động — seam test 10. Đừng lấy chúng làm mẫu để kết luận về năm khoản kia.)*
+
+Hệ quả tốt: vế trừ của hằng đẳng thức co lại còn đúng một số hạng — **`dup_dropped = 1.974`** *(số của phiên 28/08)*.
+
 - [ ] **Bước 3: Cộng sổ**
 
 ```
@@ -81,7 +86,9 @@ expected − (dup_dropped + normalize_error + no_symbol_dropped + not_leader_dro
 ```
 Điều kiện đỗ: **dư = 0**. Không có "chênh nhỏ chấp nhận được".
 
-📌 **Số đo giữa phiên 09:22:02 cho thấy `chênh_hai_socket` gần như bằng 0**: `i` 88.417 vs 88.418 *(lệch 1)*, `o`/`idx`/`t`/`ptm` **trùng khít**. Nếu cuối phiên vẫn thế thì số hạng này coi như triệt tiêu — hằng đẳng thức có cơ hội đóng khít tuyệt đối.
+📌 **Số đo giữa phiên 09:22:02 cho thấy `chênh_hai_socket` gần như bằng 0**: `i` 88.417 vs 88.418 *(lệch 1)*, `o`/`idx`/`t`/`ptm` **trùng khít**. Mẫu này dùng được vì hai bên được lấy **cùng một thời điểm**.
+
+🔴 **Bẫy: KHÔNG lấy `chênh_hai_socket` bằng cách trừ hai dòng cuối của hai log.** Hai bản ghi không cùng mốc thời gian — run-side in `run counters` lần cuối lúc **15:04:05**, còn measure-side chạy tới 15:10 và đã đứng số từ 15:07. Trừ thẳng ra `i` 288 · `o` 873 · `idx` 32 · `t` 0 · `ptm` 0, nhưng phần lớn chỗ đó chỉ là **56 giây run-side còn nhận sau lần in cuối của nó**, không phải chênh socket. Ai làm theo lối trừ này sẽ dựng ra một lỗ thủng ma **~1.193 frame** rồi đi tìm nguyên nhân không tồn tại. Số hạng này phải suy từ chính lượt chạy bộ đếm ở Bước 1 *(kiểm 2026-08-28 15:18)*.
 
 - [ ] **Bước 4: Ghi kết quả**
 
@@ -234,19 +241,21 @@ Mọi hit còn lại phải **đúng** hoặc **thuộc vùng lịch sử**. Com
 
 ### Task 7: Dọn nhánh và đẩy lên origin
 
-- [ ] **Bước 1: Đẩy** *(việc này chủ dự án tự chạy — thao tác `git push` bị lớp kiểm duyệt của phiên chặn)*
+- [x] **Bước 1: Đẩy** *(việc này chủ dự án tự chạy — thao tác `git push` bị lớp kiểm duyệt của phiên chặn)*
 
 ```bash
 git push origin main
 ```
-`main` đang **ahead 25+ commit**; `origin/main` còn đứng ở `09200a4`.
+✅ **Đã xong** — chủ dự án đẩy sau khi phiên đóng. Kiểm 2026-08-28 15:18: `git ls-remote origin main` trả `9a8c040`, bằng `main` cục bộ, ahead **0**. *(Bản đầu của bước này ghi "ahead 25+ commit, `origin/main` đứng ở `09200a4`" — số đó đã cũ.)*
 
 - [ ] **Bước 2: Xoá 3 nhánh đã vào `main`**
 
 ```bash
-git branch -d feat/industry-two-layer-mapping fix/pytest-conftest-collision docs/task-logontype-s4u
+git branch -d feat/industry-two-layer-mapping fix/pytest-conftest-collision docs/task-logontype-s4u                chore/pause-omo-tasks docs/post-session-sequence docs/runbook-knowledge-task                docs/runbook-state-after-session
 ```
 Dùng `-d` chứ không `-D`: nếu nhánh nào chưa merge thật thì git sẽ từ chối, đó là lưới chặn.
+
+📌 **Bảy nhánh, không phải ba.** Bản đầu liệt 3; bốn nhánh còn lại sinh ra *sau* khi bước này được viết. Kiểm 2026-08-28 15:18: `git branch --merged main` ra đủ 7, `git branch --no-merged main` **rỗng** ⇒ cả 7 xoá `-d` được. Nhánh của chính lượt sửa này (`docs/runbook-drift-fixes`) cũng xoá cùng lượt sau khi merge.
 
 ---
 
