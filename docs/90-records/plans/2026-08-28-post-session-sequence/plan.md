@@ -97,6 +97,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\register-tasks.ps1 -
 ```
 ⚠️ Phải là cửa sổ **Run as Administrator** — S4U cần quyền đó. Và phải chắc Task 0 đã xác nhận không task nào `Running`: `Register-ScheduledTask -Force` lên task đang chạy sẽ giết tiến trình.
 
+🔴 **Bẫy:** 4 task OMO đang ở trạng thái `Disabled` *(tắt 2026-08-28 15:04 theo quyết định chủ dự án)*. `register-tasks.ps1` đăng ký lại **cả bảy** bằng `-Force` ⇒ chúng sẽ **sống lại ở trạng thái BẬT** mà không ai nói gì. Sau khi chạy script, nếu vẫn muốn giữ OMO tắt thì tắt lại ngay:
+
+```powershell
+Get-ScheduledTask -TaskName "dlck-omo-*" | Disable-ScheduledTask
+```
+
+Và kiểm lại bằng `Get-ScheduledTask -TaskName "dlck-*" | Select TaskName,State` — trạng thái mong đợi: `dlck-ingester*` và `dlck-refdata` **Ready**, 4 task OMO **Disabled**.
+
 - [ ] **Bước 4: Nghiệm thu**
 
 ```bash
