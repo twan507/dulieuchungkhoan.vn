@@ -29,10 +29,20 @@ $backend = Join-Path $repo "backend"
 $logDir  = Join-Path (Split-Path $repo -Parent) "dlck-runtime\logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $uv = (Get-Command uv -ErrorAction Stop).Source
-# UserId/RunLevel giữ đúng cái 7 task đang mang (kiểm 2026-08-28: tuanb / Limited) —
-# lượt này CHỈ đổi LogonType, không nhân tiện đổi quyền chạy.
-$principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType $LogonType `
-                 -RunLevel Limited
+# RunLevel giữ đúng cái 7 task đang mang (kiểm 2026-08-28: Limited) — lượt này CHỈ
+# đổi LogonType, không nhân tiện đổi quyền chạy.
+#
+# 🔴 UserId PHẢI qualified "DOMAIN\user", KHÔNG được để tên trần.
+# Get-ScheduledTask HIỂN THỊ UserId là "tuanb", nhưng dạng hiển thị KHÁC dạng nhận
+# vào: Register-ScheduledTask với tên trần ném "The parameter is incorrect.
+# (15,8):UserId:". Đo thật 2026-08-28 bằng probe trên task rác, cả ba dạng:
+#     tuanb                      -> FAIL
+#     TUANB\tuanb                -> OK (S4U đăng ký được)
+#     S-1-5-21-…-1001 (SID)      -> FAIL
+# Và lỗi này KHÔNG chỉ dính S4U — Interactive + tên trần cũng FAIL y hệt. Bản script
+# cũ thoát được vì nó không truyền -Principal nên chẳng phải phân giải UserId nào.
+$principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" `
+                 -LogonType $LogonType -RunLevel Limited
 
 function Register-DlckTask {
     param(

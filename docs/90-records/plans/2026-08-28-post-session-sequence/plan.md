@@ -107,6 +107,16 @@ Dư ≠ 0 ⇒ **dừng, không sửa gì**, ghi nguyên trạng vào ledger và 
 
 Thêm tham số cấp file `[string] $LogonType = "Interactive"`, dựng `$principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType $LogonType -RunLevel Limited`, truyền `-Principal $principal` vào `Register-ScheduledTask`. Giữ nguyên mặc định Interactive để chạy không tham số vẫn ra hành vi cũ.
 
+🔴 **Đính chính bước này: `-UserId $env:USERNAME` SAI — phải qualified `"$env:USERDOMAIN\$env:USERNAME"`.** `Get-ScheduledTask` **hiển thị** UserId là `tuanb`, nhưng dạng hiển thị **khác dạng nhận vào**: `Register-ScheduledTask` với tên trần ném `The parameter is incorrect. (15,8):UserId:`. Đo thật 2026-08-28 bằng probe trên task rác *(không đụng 7 task thật)*:
+
+| UserId | S4U |
+|---|---|
+| `tuanb` | ❌ FAIL |
+| **`TUANB\tuanb`** | ✅ **OK** |
+| `S-1-5-21-…-1001` (SID) | ❌ FAIL |
+
+Và bẫy **không chỉ dính S4U** — đối chứng cho thấy `Interactive` + tên trần cũng FAIL y hệt, tức bản sửa đầu làm hỏng luôn đường mặc định. Script cũ thoát được vì **không truyền `-Principal`** nên chẳng phải phân giải UserId nào. Giả thuyết "tài khoản Microsoft không làm được S4U" đã bị probe **bác bỏ** — `PrincipalSource = MicrosoftAccount` nhưng S4U đăng ký được bình thường khi UserId đúng dạng.
+
 - [x] **Bước 2: Mở rộng `Assert-TaskCommand` hoặc thêm một phép kiểm mới**
 
 Script đã có thói quen tự kiểm lệnh sau khi đăng ký *(bài học §3.5 — 5 task từng nổ vì lệnh rỗng)*. Thêm phép kiểm `LogonType` khớp cái vừa yêu cầu, để không lặp lại đúng lỗi "trạng thái hiển thị ok mà lệnh sai".
