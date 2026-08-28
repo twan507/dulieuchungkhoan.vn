@@ -10,7 +10,7 @@
 
 **Chủ sở hữu thiết kế:** [`market-data-store.md §4.4`](../../../20-design/market-data-store.md) — luật, ba ràng buộc, và lý do. Plan này chỉ nói *cài thế nào*.
 
-**Nhánh:** làm tiếp trên `feat/industry-two-layer-mapping` *(chủ dự án chốt 2026-08-28: xong luật này rồi mới merge)*.
+**Nhánh:** nhánh mới từ `main` — `feat/catalog-delisting-rule`. *(Bản đầu của plan này ghi "làm tiếp trên `feat/industry-two-layer-mapping`"; nhánh đó đã merge vào `main` sáng 2026-08-28 theo quyết định của chủ dự án, nên chỉ dẫn cũ không còn đúng.)*
 
 ---
 
@@ -20,7 +20,7 @@
 - **Không sửa migration `0001`–`0013`** — đã chạy trên DB thật. File mới là `0014`.
 - `PYTHONIOENCODING=utf-8` cho mọi lệnh Python.
 - Test chạy dưới đúng quyền production: `SET LOCAL ROLE dlck_etl`.
-- Chạy test **riêng từng thư mục** (`tests/schema`, rồi `tests/etl`) — lệnh gộp hỏng vì hai `conftest.py` trùng tên module, nợ có sẵn của repo.
+- Chạy `uv run pytest tests` một lệnh là được cả bộ — lỗi collection do hai `conftest.py` trùng tên module **đã sửa ở `ff4d0ca`** (2026-08-28). Trước đó phải chạy riêng từng thư mục; chỉ dẫn cũ nào còn nói thế là đã lỗi thời.
 - Conventional Commits, message tiếng Anh. Không `--no-verify`, không push.
 
 ```bash

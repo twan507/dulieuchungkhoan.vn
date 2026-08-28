@@ -81,6 +81,14 @@ Test schema (tự tạo lại `dulieu_test` từ đầu qua `conftest.py`, khôn
 cd backend && uv run pytest tests/schema -v
 ```
 
+Cả bộ trong một lệnh — 310 test, gồm cả `tests/clickhouse` và `tests/ingester` *(hai bộ này tự dựng container ClickHouse riêng ở cổng riêng, không đụng CH production)*:
+
+```bash
+cd backend && uv run pytest tests -q
+```
+
+*(Trước `ff4d0ca` — 2026-08-28 — lệnh gộp chết ở bước collection vì `tests/schema/conftest.py` và `tests/etl/conftest.py` cùng được nạp dưới tên module `conftest`. Đã sửa bằng cách gọi import đủ đường dẫn `from tests.schema.conftest import ...`, đúng lối mà phần còn lại của bộ test vốn đã dùng.)*
+
 ## Luật
 
 - **Sửa DDL qua migration mới** — không sửa file trong `database/migrations/versions/` đã chạy, kể cả trên dev. Phát hiện sai thì viết migration kế tiếp để sửa, không quay lại sửa migration cũ.
