@@ -10,7 +10,7 @@
 
 ## Trạng thái — cập nhật 2026-08-28 15:12
 
-**Đã xong:** Task 0 ✅ · **Task 1 ✅ (AC3 ĐÓNG — dư = 0 cả 5 bảng)** · **Task 7 ✅**. **Tiếp theo: Task 2.**
+**Đã xong:** Task 0 ✅ · **Task 1 ✅ (AC3 ĐÓNG — dư = 0 cả 5 bảng)** · **Task 4 ✅ (310 passed)** · **Task 7 ✅**. Task 2 Bước 1–2 ✅, **Bước 3 chờ cửa sổ admin**. **Tiếp theo: Task 3 hoặc Task 5.**
 
 Việc ngoài runbook đã làm trong ngày, phiên sau cần biết:
 
@@ -155,16 +155,18 @@ Expected: đủ **7 dòng `S4U`**. Và sáng hôm sau: `dlck-refdata` 08:00 ch�
 
 ---
 
-### Task 4: Chạy nốt hai bộ test nặng
+### Task 4: Chạy nốt hai bộ test nặng  ✅ XONG 2026-08-28 15:41
 
 Chưa chạy bao giờ kể từ khi merge; hoãn trong phiên vì chúng dựng container Docker, tranh CPU/IO với việc bắt tick.
 
-- [ ] **Bước 1**
+- [x] **Bước 1**
 
 ```bash
 cd backend && uv run pytest tests -q
 ```
 Expected: **310 test** thu thập, xanh toàn bộ. Đây cũng là lần đầu chạy trọn bộ bằng **một lệnh** sau khi sửa lỗi collection ở `ff4d0ca`.
+
+✅ **XANH 2026-08-28 15:41 — `310 passed, 2 skipped` trong 28,95 s, exit 0.** Chạy trọn bộ bằng một lệnh, đúng như `ff4d0ca` hứa. Hai skip **không phải test bị bỏ quên**, cả hai là probe thủ công có cổng môi trường, đã soi bằng `-rs`: `tests/clickhouse/test_c99_dedup_probe.py` (`RUN_PROBE=1`) và `tests/ingester/test_i17_chaos_ch_restart.py` (`RUN_CHAOS=1` — chính chaos test đã chạy thật ở AC2). Tổng thu thập là 312; con số 310 trong Expected ở trên là **số test PASS**, không phải số thu thập.
 
 - [ ] **Bước 2:** đỏ ở đâu thì ghi nguyên trạng vào ledger trước khi sửa — đừng sửa trong lúc chưa biết vì sao đỏ.
 
