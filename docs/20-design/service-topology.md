@@ -188,6 +188,27 @@ Ghi được **4,27 triệu dòng / 82,2 MB** một phiên *(quote 3,12tr · sna
 
 ⚠️ **Vẫn chưa được nói "đủ".** Đỉnh 1,18 GiB đo trên **dev**, nơi ClickHouse được cấp mark cache 5 GiB và trần 18,74 GiB — nó dùng những gì được cấp. Dưới hồ sơ hẹp (cache 256 MiB) đỉnh sẽ thấp hơn, **thấp bao nhiêu thì chưa biết**. Phải chạy một phiên dưới trần cứng rồi mới kết luận.
 
+### Phiên ĐẦU TIÊN chạy code tràn-ra-đĩa — 2026-08-28
+
+*(Phiên trọn 27/08 ở trên chạy bằng code cũ; lát spill xong tối 27. Nên đây là số đầu tiên nói được điều gì về cơ chế đó.)*
+
+| | 28/08 *(code spill)* | 27/08 *(code cũ)* |
+|---|---|---|
+| Dòng vào kho | **4.722.406** — quote 3.417.375 · snapshot_delta 1.009.350 · trade 237.450 · index_delta 56.168 · pt_match 2.063 | 4,27 triệu *(quote 3.122.376)* |
+| Đỉnh hàng đợi RAM | **3.090 dòng / 1.535.730 B lúc 13:00:04** — **3,09%** của `N_CAP_ROWS = 100.000` | — |
+| Chế độ đĩa | `spill_bytes = 0` — **cả phiên chưa lần nào vào** | chưa có cơ chế |
+| Sổ sách spill | `orphan_tmp` · `replay_corrupt` · `seq_collision` · `spill_io_error` = **0** | — |
+| Đối chứng cuối phiên | `p1=0 p2=0 ok=971` · `pending_depth_rows = 0` lúc đóng | `p1=0 p2=0 ok=868` |
+| Độ trễ insert cuối phiên | p50 **14,7** · p95 73,6 · p99 77,4 ms | — |
+| **AC3 — hằng đẳng thức sổ sách** | ✅ **dư = 0 trên cả 5 bảng** *(`dup_dropped` 1.974 khớp khít hai vế)* | — |
+
+🔴 **Đỉnh hàng đợi KHÔNG rơi vào ATO.** Mẫu lúc 09:00:02 là 2.948 dòng — gần bằng, nhưng đỉnh thật **3.090 lúc 13:00:04**. Ai lấy mẫu ATO rồi gọi đó là đỉnh sẽ ra số thấp hơn thực tế; phải quét cả phiên. *(Chính bẫy này đã xảy ra một lần: bản đầu của bảng runbook ghi "2.948 lúc 09:00:02" đúng vì lý do sai.)*
+
+Đọc ra hai điều cho ngân sách RAM ở bảng trên: **trần 100.000 dòng rộng gấp ~32 lần đỉnh thật của một phiên bình thường**, và **chế độ đĩa chưa lần nào phải kích hoạt** — nghĩa là ngân sách ~50 MB cấp cho hàng đợi đang dư rất nhiều, nhưng nó được cấp cho **phiên bất thường** (kho trục trặc), không phải phiên bình thường, nên **chưa có căn cứ để hạ trần**.
+
+⚠️ **RSS của tiến trình ghi trong phiên 28/08: chưa có số.** Log phiên không ghi RSS *(kiểm 2026-08-28: 0 hit `rss`/`memory` trong `ingester-20260828.log`)*. Dòng "97 MB" ở bảng trên vẫn là số đo **27/08**. Muốn có số cho phiên chạy code spill thì phải thêm phép lấy mẫu RSS vào chính job, hoặc đo tay trong phiên.
+
+
 ---
 
 ## 8. Quyết định mềm — ghi rõ để không chọn ngầm
