@@ -135,9 +135,9 @@ Expected: **310 test** thu thập, xanh toàn bộ. Đây cũng là lần đầu
 
 ---
 
-### Task 5: Hai khoản nợ nhỏ đáng trả
+### Task 5: Ba khoản nợ nhỏ đáng trả
 
-Chỉ hai khoản này. Các khoản park còn lại **cố ý không đụng** — xem cuối file.
+Chỉ ba khoản này. Các khoản park còn lại **cố ý không đụng** — xem cuối file.
 
 - [ ] **Bước 1: `test_icb_map_targets_level_2_only` đang xanh cả khi bảng rỗng**
 
@@ -147,7 +147,11 @@ Chỉ hai khoản này. Các khoản park còn lại **cố ý không đụng** 
 
 `backend/tests/etl/test_e09_refdata_store.py` — `test_apply_twice_is_idempotent_including_timestamps` hiện chỉ chụp `xmin` của `market.issuer`. Hai assert `updated_at`/`ingested_at` trên `market.security` và `market.security_external_id` **rỗng nghĩa** trong cùng transaction *(`now()` là `transaction_timestamp()`)*. Chụp thêm `xmin` của hai bảng đó, giữ nguyên khuôn savepoint đã dùng.
 
-- [ ] **Bước 3:** chạy `uv run pytest tests -q`, commit một commit.
+- [ ] **Bước 3: Phân loại lỗi serialize PHÍA CLIENT thành tất định** *(điều tra 2026-08-28 trong phiên, từ chip của chaos test — kết luận: ĐÁNG SỬA, code vài dòng)*
+
+`backend/ingester/chwriter.py` `_is_deterministic`: lỗi từ tầng serialize của clickhouse_connect (`driver.transform` gói giá trị vào cột native, ném `AttributeError`/`TypeError`/`ValueError` **trần**, không `.code`, TRƯỚC khi byte nào rời tiến trình) hiện bị đọc thành **transient** → retry vô hạn. Đã kiểm `normalize.py`: **đường thật được che** — mọi cột dựng qua constructor có kiểm kiểu, trường bắt buộc ném `NormalizeError` trước `add()`, nên đây là defense-in-depth. Nhưng **blast radius đã tăng sau lát spill**: dòng hỏng vĩnh viễn giờ đi transient 60 s → cửa 2 → file `-r` → phát lại lại lỗi → **kẹt đầu hàng đợi đĩa, disk mode không thoát cả phiên** (trước lát spill chỉ mất 1 block sau 60 s). Sửa: thêm nhánh vào `_is_deterministic` — `isinstance(e, (AttributeError, TypeError, ValueError)) and not isinstance(e, ClickHouseError) and getattr(e, "code", None) is None` → `True` (đặt sau nhánh `_DETERMINISTIC_TYPES`; `ConnectionError` là `OSError` nên không lọt; lỗi server luôn mang `.code`). Test đỏ-trước theo khuôn `test_i08` (`_RejectingClient` ném `AttributeError("'NoneType' object has no attribute 'timestamp'")` cho đúng 1 seq): 2 dòng lành vào kho, `poison_row.trade == 1`; kèm assert trực tiếp `_is_deterministic` cho cả ba loại + ranh giới ngược `ConnectionError → False`.
+
+- [ ] **Bước 4:** chạy `uv run pytest tests -q`, commit một commit.
 
 ---
 
