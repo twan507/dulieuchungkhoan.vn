@@ -124,7 +124,7 @@ Cả ba việc phải chờ bên thứ ba đều đã xong. *(Câu cũ ở đây
 Hai việc gấp vì **mỗi ngày trì hoãn là một ngày mất vĩnh viễn** — trạng thái 2026-08-28:
 
 1. ✅ **Ingester tích luỹ nến 1 phút — ĐANG CHẠY từ 2026-08-27.** Nến intraday không tồn tại ở bất kỳ nguồn nào, không backfill lại được. Mỗi phiên nay chạy kèm một phiên `--measure` bắt frame thô làm lưới an toàn **và** làm đường nghiệm thu bằng số.
-2. ⏸️ **Crawl OMO của Ngân hàng Nhà nước — ĐÃ CHẠY 26/08, tạm tắt 28/08** *(quyết định chủ dự án: giai đoạn này ưu tiên dev)*. 🔴 **Đồng hồ mất dữ liệu vì thế chạy lại**: nguồn chỉ hiển thị đúng phiên mới nhất, không có kho lưu, ngày nào không crawl là mất hẳn. Bật lại: `Get-ScheduledTask -TaskName "dlck-omo-*" | Enable-ScheduledTask`. Xem [`sbv-omo.md`](docs/10-sources/macro/sbv-omo.md).
+2. ⏸️ **Crawl OMO của Ngân hàng Nhà nước — ĐÃ CHẠY 26/08, tạm tắt 2026-08-28 15:04** *(quyết định chủ dự án: giai đoạn này ưu tiên dev)*. 🔴 **Đồng hồ mất dữ liệu vì thế chạy lại**: nguồn chỉ hiển thị đúng phiên mới nhất, không có kho lưu, ngày nào không crawl là mất hẳn. Điều kiện bật lại, mốc rà và lệnh bật: [lộ trình §2 mục 4d](docs/00-overview/roadmap.md). Xem [`sbv-omo.md`](docs/10-sources/macro/sbv-omo.md).
 
 > ✅ **Việc đo realtime phái sinh — XONG 2026-08-26 (phiên chiều).** Phái sinh **không có kênh riêng**: tick đi chung ba topic `i`/`o10`/`t` với cổ phiếu, phân biệt bằng `EX="XHNF"`, và **không có `openInterest`** trong luồng realtime. Chi tiết: [lộ trình §5.1](docs/00-overview/roadmap.md).
 
