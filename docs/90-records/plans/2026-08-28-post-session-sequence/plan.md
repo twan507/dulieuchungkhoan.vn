@@ -10,7 +10,7 @@
 
 ## Trạng thái — cập nhật 2026-08-28 15:12
 
-**Đã xong:** Task 0 ✅ · **Task 1 ✅ (AC3 ĐÓNG — dư = 0 cả 5 bảng)** · **Task 4 ✅ (310 passed)** · **Task 7 ✅**. Task 2 Bước 1–2 ✅, **Bước 3 chờ cửa sổ admin**. **Tiếp theo: Task 3 hoặc Task 5.**
+**Đã xong:** Task 0 ✅ · **Task 1 ✅ (AC3 ĐÓNG — dư = 0 cả 5 bảng)** · **Task 2 ✅ (7/7 S4U)** · **Task 4 ✅ (310 passed)** · **Task 7 ✅**. **Tiếp theo: Task 3 hoặc Task 5.**
 
 Việc ngoài runbook đã làm trong ngày, phiên sau cần biết:
 
@@ -97,7 +97,7 @@ Dư ≠ 0 ⇒ **dừng, không sửa gì**, ghi nguyên trạng vào ledger và 
 
 ---
 
-### Task 2: Đăng ký lại 7 task với `-LogonType S4U`
+### Task 2: Đăng ký lại 7 task với `-LogonType S4U`  ✅ XONG 2026-08-28 15:52 *(còn một mốc kiểm sáng mai)*
 
 **Hồ sơ:** [service-topology §5](../../../20-design/service-topology.md).
 
@@ -121,9 +121,9 @@ Và bẫy **không chỉ dính S4U** — đối chứng cho thấy `Interactive`
 
 Script đã có thói quen tự kiểm lệnh sau khi đăng ký *(bài học §3.5 — 5 task từng nổ vì lệnh rỗng)*. Thêm phép kiểm `LogonType` khớp cái vừa yêu cầu, để không lặp lại đúng lỗi "trạng thái hiển thị ok mà lệnh sai".
 
-✅ **Đã làm 2026-08-28 15:35.** Tham số `-LogonType` (ValidateSet, mặc định `Interactive` giữ nguyên hành vi cũ); `$principal` dựng một lần với `UserId`/`RunLevel` **đúng cái 7 task đang mang** (`tuanb` / `Limited` — lượt này chỉ đổi LogonType, không nhân tiện đổi quyền chạy). Phép kiểm mới `Assert-TaskLogonType` gọi **bên trong `Register-DlckTask`** nên không task nào lọt. Guard đã chứng minh **đỏ trước xanh** trên chính 7 task thật *(hàm trích khỏi file bằng AST, không gõ lại bản sao — tránh test tautological §4.5.3)*: đòi `S4U` khi thực tế `Interactive` ⇒ ném đúng, thông báo nêu **cả hai** giá trị, **7/7 task đều bị bắt**; đòi `Interactive` ⇒ im lặng. Dòng tổng kết cuối script cũng rẽ theo `$LogonType` — không sửa thì chạy S4U xong nó vẫn in "đang chạy Interactive".
+✅ **Đã làm 2026-08-28 15:35.** Tham số `-LogonType` (ValidateSet, mặc định `Interactive` giữ nguyên hành vi cũ); `$principal` dựng một lần với `RunLevel` **đúng cái 7 task đang mang** (`Limited` — lượt này chỉ đổi LogonType, không nhân tiện đổi quyền chạy). *(Bản 15:35 dùng `-UserId $env:USERNAME` — **SAI**, đã đính chính sang qualified ở Bước 1 lúc 15:52.)* Phép kiểm mới `Assert-TaskLogonType` gọi **bên trong `Register-DlckTask`** nên không task nào lọt. Guard đã chứng minh **đỏ trước xanh** trên chính 7 task thật *(hàm trích khỏi file bằng AST, không gõ lại bản sao — tránh test tautological §4.5.3)*: đòi `S4U` khi thực tế `Interactive` ⇒ ném đúng, thông báo nêu **cả hai** giá trị, **7/7 task đều bị bắt**; đòi `Interactive` ⇒ im lặng. Dòng tổng kết cuối script cũng rẽ theo `$LogonType` — không sửa thì chạy S4U xong nó vẫn in "đang chạy Interactive".
 
-- [ ] **Bước 3: Chạy lại bằng quyền admin**
+- [x] **Bước 3: Chạy lại bằng quyền admin**
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File D:\twan_projects\dulieuchungkhoan.vn\scripts\register-tasks.ps1 -LogonType S4U
@@ -142,14 +142,18 @@ Get-ScheduledTask -TaskName "dlck-omo-*" | Disable-ScheduledTask
 
 Và kiểm lại bằng `Get-ScheduledTask -TaskName "dlck-*" | Select TaskName,State` — trạng thái mong đợi: `dlck-ingester*` và `dlck-refdata` **Ready**, 4 task OMO **Disabled**.
 
-- [ ] **Bước 4: Nghiệm thu**
+- [x] **Bước 4: Nghiệm thu** *(phần đăng ký — phần hành vi chờ sáng mai)*
 
 ```bash
 powershell -NoProfile -Command "Get-ScheduledTask -TaskName 'dlck-*' | % { $_.TaskName + ' ' + $_.Principal.LogonType }"
 ```
 Expected: đủ **7 dòng `S4U`**. Và sáng hôm sau: `dlck-refdata` 08:00 chạy **không hiện cửa sổ cmd**, log `refdata.log` vẫn có dòng mới.
 
-- [ ] **Bước 5: Đồng bộ tài liệu** — [service-topology §5](../../../20-design/service-topology.md) đổi từ "hiện chạy Interactive" sang trạng thái thật; gỡ mục khỏi [roadmap §5](../../../00-overview/roadmap.md).
+✅ **Phần đăng ký ĐẠT 2026-08-28 15:52** — soi độc lập, không tin output của script: cả 7 task `LogonType=S4U`, `RunLevel=Limited` giữ nguyên. Bẫy OMO **đã bắn đúng như dự đoán** — cả 4 task sống lại `Ready`, đã tắt lại ngay; trạng thái chốt: `dlck-ingester*` + `dlck-refdata` `Ready`, 4 OMO `Disabled`.
+
+🕗 **CHƯA ĐẠT TRỌN — còn mốc hành vi sáng mai 2026-08-28+1, 08:00.** Đăng ký đúng ≠ chạy đúng: phải thấy `dlck-refdata` chạy **không hiện cửa sổ cmd** và `refdata.log` có dòng mới. Đây là lần đầu 3 job chạy dưới S4U, mà S4U đổi cả token lẫn môi trường tiến trình — chưa xem log sáng mai thì chưa được tuyên Task 2 xong hẳn.
+
+- [x] **Bước 5: Đồng bộ tài liệu** — [service-topology §5](../../../20-design/service-topology.md) đổi từ "hiện chạy Interactive" sang trạng thái thật; gỡ mục khỏi [roadmap §5](../../../00-overview/roadmap.md).
 
 ---
 
