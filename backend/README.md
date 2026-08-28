@@ -31,6 +31,14 @@ uv run python -m ingester --count 20260827 --db    # bộ đếm d[]: replay b�
 
 **Bốn chế độ** (`run` mặc định · `measure` · `reconcile` · `count`, `ingester/__main__.py`) đều nối cùng một socket khi có socket; `--measure` thêm 20 topic × mã phái sinh + `pth` (câu hỏi đo còn treo — [roadmap §5.1](../docs/00-overview/roadmap.md)). File đo là JSONL gzip theo giờ trong `INGESTER_MEASURE_DIR`. `--count` là công cụ **offline, không nối socket** — replay lại `frames-*.jsonl[.gz]` của một ngày đo qua đúng `process_record` mà `run` dùng (dry-run, không ghi DB) để tính số dòng kỳ vọng mỗi bảng, đối chứng bằng số với kho thật khi thêm `--db` ([spec tràn-ra-đĩa §11](../docs/90-records/plans/2026-08-28-ingester-spill-to-disk/spec.md)); nhận `--from`/`--to` để cắt cửa sổ theo `received_at`, mặc định trọn ngày suy từ đối số đầu.
 
+🔴 **Đối chứng `--db` phải cắt `--to` về đúng vòng đời tiến trình `run` — đừng dùng mặc định trọn ngày.** Job đo và job ghi không đóng cùng lúc (`SESSION_END_MEASURE` 15:10 sau `SESSION_END_RUN` 15:05), nên cửa sổ trọn ngày tính cả frame mà bản đo bắt được **sau khi tiến trình ghi đã thoát**. Nó hiện ra thành thâm hụt ma ở `index_delta`, vì đợt tính lại chỉ số ATC bắn ngay sau giờ đóng. Lấy mốc cắt từ chính kho:
+
+```bash
+docker exec infra-clickhouse-1 clickhouse-client --password "$CLICKHOUSE_PASSWORD"   -q "select max(received_at) from rt.quote where toDate(received_at)=today()"
+```
+
+rồi truyền vào `--to` dạng **giờ địa phương trần, KHÔNG kèm offset TZ** (`_iso_to_ms` gắn sẵn `Asia/Ho_Chi_Minh`; gõ offset vào sẽ bị nuốt). Ca thật 2026-08-28: cửa sổ mặc định ra `index_delta −15`; cắt `--to "2026-08-28 15:04:59.999"` ra **dư 0 cả 5 bảng**, bốn bảng kia không đổi một dòng.
+
 Chế độ `run` (chạy ghi thật) còn dùng **`INGESTER_SPILL_DIR`** (mặc định `dlck-runtime/spill`, cùng họ `INGESTER_MEASURE_DIR`) — thư mục hàng đợi tràn-ra-đĩa khi RAM chạm trần hoặc ClickHouse trục trặc kéo dài; xem [market-data-store §3.7](../docs/20-design/market-data-store.md) và [spec tràn-ra-đĩa](../docs/90-records/plans/2026-08-28-ingester-spill-to-disk/spec.md).
 
 ## Chạy job crawl OMO

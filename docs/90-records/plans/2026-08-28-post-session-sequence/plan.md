@@ -10,7 +10,7 @@
 
 ## Trạng thái — cập nhật 2026-08-28 15:12
 
-**Đã xong:** Task 0 ✅ *(phiên đóng sạch, số ở dưới)*. **Tiếp theo: Task 1.**
+**Đã xong:** Task 0 ✅ · **Task 1 ✅ (AC3 ĐÓNG — dư = 0 cả 5 bảng)** · **Task 7 ✅**. **Tiếp theo: Task 2.**
 
 Việc ngoài runbook đã làm trong ngày, phiên sau cần biết:
 
@@ -52,20 +52,20 @@ Expected: mốc cuối ≈ **15:05**, giống phiên 27/08 *(đo: `2026-08-27 15
 
 ---
 
-### Task 1: Đóng AC3 — hằng đẳng thức sổ sách của lát tràn-ra-đĩa
+### Task 1: Đóng AC3 — hằng đẳng thức sổ sách của lát tràn-ra-đĩa  ✅ XONG 2026-08-28 15:24
 
 **Hồ sơ:** [`2026-08-28-ingester-spill-to-disk/`](../2026-08-28-ingester-spill-to-disk/spec.md) §11. Đây là điều kiện cuối để lát đó thôi 🟡.
 
 🔴 **Hôm nay là phiên ĐẦU TIÊN chạy code tràn-ra-đĩa.** Phiên trọn 27/08 *(3.122.376 dòng quote, 08:45 → 15:05)* chạy bằng code cũ — lát spill mới xong tối 27. Nên số của hôm nay mới dùng được cho AC3.
 
-- [ ] **Bước 1: Chạy bộ đếm `d[]` offline, so thẳng với kho**
+- [x] **Bước 1: Chạy bộ đếm `d[]` offline, so thẳng với kho**
 
 ```bash
 cd backend && uv run python -m ingester --count 20260828 --db
 ```
 In ra bảng `table | expected | actual | diff` cho 5 bảng, kèm dòng metrics offline. **Dán nguyên văn vào ledger.**
 
-- [ ] **Bước 2: Lấy các counter PHIÊN từ log — bộ đếm offline KHÔNG có chúng**
+- [x] **Bước 2: Lấy các counter PHIÊN từ log — bộ đếm offline KHÔNG có chúng**
 
 Chính công cụ tự cảnh báo điều này. Lấy dòng `run counters` cuối cùng của phiên:
 
@@ -78,7 +78,7 @@ Cần các khoản: `not_leader_dropped.<bảng>` · `replay_blocks` · `replay_
 
 Hệ quả tốt: vế trừ của hằng đẳng thức co lại còn đúng một số hạng — **`dup_dropped = 1.974`** *(số của phiên 28/08)*.
 
-- [ ] **Bước 3: Cộng sổ**
+- [x] **Bước 3: Cộng sổ**
 
 ```
 expected − (dup_dropped + normalize_error + no_symbol_dropped + not_leader_dropped.<bảng>
@@ -90,7 +90,7 @@ expected − (dup_dropped + normalize_error + no_symbol_dropped + not_leader_dro
 
 🔴 **Bẫy: KHÔNG lấy `chênh_hai_socket` bằng cách trừ hai dòng cuối của hai log.** Hai bản ghi không cùng mốc thời gian — run-side in `run counters` lần cuối lúc **15:04:05**, còn measure-side chạy tới 15:10 và đã đứng số từ 15:07. Trừ thẳng ra `i` 288 · `o` 873 · `idx` 32 · `t` 0 · `ptm` 0, nhưng phần lớn chỗ đó chỉ là **56 giây run-side còn nhận sau lần in cuối của nó**, không phải chênh socket. Ai làm theo lối trừ này sẽ dựng ra một lỗ thủng ma **~1.193 frame** rồi đi tìm nguyên nhân không tồn tại. Số hạng này phải suy từ chính lượt chạy bộ đếm ở Bước 1 *(kiểm 2026-08-28 15:18)*.
 
-- [ ] **Bước 4: Ghi kết quả**
+- [x] **Bước 4: Ghi kết quả**
 
 Dư = 0 ⇒ cập nhật [`ledger`](../2026-08-28-ingester-spill-to-disk/ledger.md), đổi trạng thái lát spill từ 🟡 sang ✅ ở [`90-records/README.md`](../../README.md) và [roadmap §2 mục 4c](../../../00-overview/roadmap.md).
 Dư ≠ 0 ⇒ **dừng, không sửa gì**, ghi nguyên trạng vào ledger và định vị vùng thủng bằng log §6 trước khi kết luận.
@@ -239,7 +239,7 @@ Mọi hit còn lại phải **đúng** hoặc **thuộc vùng lịch sử**. Com
 
 ---
 
-### Task 7: Dọn nhánh và đẩy lên origin
+### Task 7: Dọn nhánh và đẩy lên origin  ✅ XONG 2026-08-28 15:20 *(8 nhánh, gồm cả nhánh sửa runbook)*
 
 - [x] **Bước 1: Đẩy** *(việc này chủ dự án tự chạy — thao tác `git push` bị lớp kiểm duyệt của phiên chặn)*
 
@@ -248,7 +248,7 @@ git push origin main
 ```
 ✅ **Đã xong** — chủ dự án đẩy sau khi phiên đóng. Kiểm 2026-08-28 15:18: `git ls-remote origin main` trả `9a8c040`, bằng `main` cục bộ, ahead **0**. *(Bản đầu của bước này ghi "ahead 25+ commit, `origin/main` đứng ở `09200a4`" — số đó đã cũ.)*
 
-- [ ] **Bước 2: Xoá 3 nhánh đã vào `main`**
+- [x] **Bước 2: Xoá các nhánh đã vào `main`**
 
 ```bash
 git branch -d feat/industry-two-layer-mapping fix/pytest-conftest-collision docs/task-logontype-s4u                chore/pause-omo-tasks docs/post-session-sequence docs/runbook-knowledge-task                docs/runbook-state-after-session

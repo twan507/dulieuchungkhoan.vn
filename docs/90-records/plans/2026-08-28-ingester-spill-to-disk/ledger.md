@@ -67,3 +67,17 @@ Tự-nhất-quán từng task: T5 test dùng `WRITE_CALL_BUDGET_S`, `_Clock` —
 - Task 2: complete (commits 272c70a..5219dcb, review: probe logic sạch toàn bộ, Important duy nhất xử bằng Ruling T2-2)
 - **GATE Task 3 — ĐÓNG 2026-08-27 tối:** hằng số tạm ĐỨNG VỮNG trước số đo, không đổi giá trị: `N_CAP_ROWS=100_000` (49,7 MB; ~15 s ATO đỉnh) · `K_REPLAY_ROWS=20_000` (>19.488=đỉnh×3; 4 insert gộp×88 ms≈0,35 s<1 nhịp) · `SPILL_CAP_BYTES=10 GiB` (2 h đỉnh ×3 ≈ 9,1 GB @ 65 B/dòng đo). **Điều kiện khả thi §2.4 ĐẠT dư ~8,7×** (6.496×17,6 µs≈0,114<1). p95 VPS hẹp ≈ dev ⇒ K không cần hiệu chỉnh. Số + nguồn đã ghi spec §2.5 + §9. Mục kiểm chứng sau phiên 28/08 giữ nguyên trong plan Task 3.
 - **Ruling T2-1:** brief Task 2 bước 2 viết "bật lại compose với overlay VPS" — nhưng probe chạy trên container test ephemeral, overlay compose dev không chạm tới nó, còn trỏ probe vào CH dev thì ghi rác vào kho thật. Quyết: probe tự dựng container CH thứ hai mount `deploy/infra/clickhouse/memory-vps.xml` + `--memory` theo trần vps để đo hồ sơ hẹp, không đụng compose dev. Chi phí nếu sai: probe đo trên môi trường lệch cấu hình VPS thật một phần (mount config là chính, chấp nhận).
+
+- **AC3 ĐÓNG — 2026-08-28 15:24, phiên ĐẦU TIÊN chạy code tràn-ra-đĩa.** Hằng đẳng thức sổ sách **dư = 0 trên cả 5 bảng**, cửa sổ chung `[00:00:00, 15:04:59.999]`:
+
+  | bảng | expected | actual | diff |
+  |---|---|---|---|
+  | trade | 237.450 | 237.450 | **0** |
+  | quote | 3.417.375 | 3.417.375 | **0** |
+  | snapshot_delta | 1.009.350 | 1.009.350 | **0** |
+  | index_delta | 56.168 | 56.168 | **0** |
+  | pt_match | 2.063 | 2.063 | **0** |
+
+  Tổng 4.722.406 dòng. Mọi số hạng trừ đều **bằng 0 và có chống lưng**: `normalize_error` · `no_symbol_dropped` · `not_leader_dropped.*` · `replay_blocks` · `replay_rows` **không xuất hiện lần nào** trong log 28/08 — mà `Metrics.inc` (`ingester/normalize.py:46`) làm `counters.get(key, 0) + n` trên `dict` trần không pre-init, nên vắng mặt = chưa từng tăng = 0. Nợ đĩa = 0: `spill_bytes = 0`, `pending_depth_rows = 0` lúc đóng, thư mục spill chỉ còn `owner.lock` 0 byte ⇒ **cả phiên chưa lần nào vào chế độ đĩa**. `dup_dropped` **không phải số hạng trừ riêng** — `expected` đã hậu-dedup vì bộ đếm offline chạy đúng `process_record` của mode `run`; hai vế đếm dup **trùng khít 1.974 = 1.974** (offline vs log run), đó là đối chứng độc lập cho phép bỏ số hạng này.
+
+  🔴 **Bài học vận hành (không phải lỗi code):** lượt chạy đầu để cửa sổ **mặc định trọn ngày** ra `index_delta −15` (expected 56.183 vs actual 56.168). Không mất dòng nào: socket đo sống tới 15:10 còn socket ghi đóng theo lịch lúc 15:05, mà đợt tính lại chỉ số ATC bắn **+32 frame `idx` trong phút 15:04:08→15:05:08** (đọc từ counter measure từng phút) — socket ghi kịp 17, **15 frame còn lại công bố sau khi tiến trình ghi không còn tồn tại**; frame cuối trong kho là 15:04:59.843. Cắt `--to` về đúng vòng đời tiến trình ghi thì `index_delta` 56.183→56.168 và **bốn bảng kia không đổi một dòng** — chính điều đó chứng minh đợt bắn cuối phiên thuần index. Luật rút ra đã ghi vào [`backend/README.md`](../../../../backend/README.md) để lượt AC3 sau không vấp lại.
