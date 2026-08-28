@@ -383,3 +383,23 @@ Test suite sau đợt sửa: `tests/etl` 58 passed, `tests/schema` 49 passed.
   thuộc phạm vi tám việc được giao. Không mở rộng sửa quá phạm vi.
 
 Re-review xác nhận: 8/8 finding ADDRESSED, không chặn merge.
+
+---
+
+## Phụ lục — việc thêm ngoài plan (chủ dự án yêu cầu 2026-08-28)
+
+Không thuộc bảy task của plan này. Sau khi rà, chủ dự án hỏi luật *"cổ phiếu không có issuer thì đảo thành `delisted`, trừ ETF"* đã cài chưa. Câu trả lời: **chưa** — và chỗ nó đang nằm mới là vấn đề.
+
+Chẩn đoán đầy đủ đã có từ [spec §7c](spec.md), nhưng **chỉ nằm trong `90-records/`** — vùng lịch sử. Roadmap không có mục nào, [market-data-store.md](../../../20-design/market-data-store.md) không có dòng nào. Đúng bẫy CLAUDE.md §1.1: xoá vùng lịch sử thì chỉ được mất lịch sử, mà ở đây sẽ mất luôn tri thức vận hành — bằng chứng là chủ dự án phải hỏi thay vì tra được.
+
+**Đã kéo luật ra tài liệu sống** *(số đo lại trên DB thật 2026-08-28)*:
+
+| File | Thêm gì |
+|---|---|
+| [market-data-store.md §4.4](../../../20-design/market-data-store.md) | Chủ sở hữu luật: bảng hai chiều vắng mặt · **438 cổ phiếu** không issuer vẫn `listed` (UPCOM 378 · HNX 39 · HOSE 21) · ba ràng buộc khi cài (chỉ `stock`; chốt chặn `DELIST_RATIO=0.01` sẽ từ chối lượt dọn đầu vì 438/1.962 = **22,3%**; cần lưới chống bắn nhầm mã mới niêm yết) · làm cùng lát phái sinh + `/datafeed/instruments`, xong trước ETL giá |
+| [roadmap.md §5](../../../00-overview/roadmap.md) | Một dòng "việc còn thật sự để ngỏ", trỏ về §4.4 |
+| [20-design/README.md](../../../20-design/README.md) | Bổ sung §4.4 vào mô tả `market-data-store.md` (§1.6 — đổi nội dung thì cập nhật index sở hữu cùng lượt) |
+
+Số đối chiếu, đo trên DB thật 2026-08-28: tổng 2.015 security · **chỉ 4 dòng `delisted`** toàn kho · 1.962 cổ phiếu `listed` · 10 ETF + 18 chỉ số không có issuer (bình thường vĩnh viễn, phải loại trừ) · 3 chứng chỉ quỹ **có** issuer `com_type_code='QU'` nên không rơi vào diện này.
+
+**Chưa chốt, cố ý để ngỏ:** vắng danh bạ bao nhiêu lượt liên tiếp thì mới lật `delisted`. Không có lưới này thì luật tự bắn vào mã vừa lên sàn — mã mới có thể vào bảng giá BVSC trước khi vào danh bạ FiinTrade.

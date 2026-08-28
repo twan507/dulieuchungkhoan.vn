@@ -234,6 +234,27 @@ Token bucket riêng cho từng host FiinTrade. ETL và chatbot **dùng chung ng�
 
 Đo 2026-08-15 bằng đúng tải kế hoạch: burst Screener 52 trang chạy tuần tự (~29 request/phút) **không gặp tín hiệu chặn nào**, và **không có header hạn mức** để dựa vào — xem [§10 quy ước chung](../10-sources/market/00-conventions.md). Ngưỡng trần thì vẫn chưa biết, và **cố tình không dò**. Vì vậy token bucket phải tự giữ nhịp, và **nhịp 8 luồng ở §4.1 chưa được kiểm** — đo lại ở đúng nhịp đó trước khi bật chạy thật.
 
+### 4.4 Luật huỷ niêm yết trong danh mục mã
+
+Danh mục mã hợp nhất hai nguồn lệch nhau: bảng giá `/quotes` của BVSC **giữ lại dòng cũ**, còn danh bạ doanh nghiệp `GetListOrganization` của FiinTrade thì **không**. Hai chiều vắng mặt vì vậy mang hai ý nghĩa khác nhau, và job `etl refdata` hiện chỉ bắt một chiều:
+
+| Chiều vắng mặt | Ý nghĩa | Job hiện xử lý |
+|---|---|---|
+| Có trong danh bạ, vắng khỏi bảng giá | Đã rời sàn | ✅ Lật `delisted` — hai đường lật, cả đường "vắng hẳn" lẫn đường "có trong đích với `status='delisted'`" |
+| **Có trong bảng giá, vắng khỏi danh bạ** | **Cũng đã rời sàn** | 🔴 **Chưa có luật nào** |
+
+🔴 **Hệ quả đo được 2026-08-28:** **438 cổ phiếu** không có doanh nghiệp tương ứng vẫn mang nhãn `listed` — UPCOM 378 · HNX 39 · HOSE 21. Kiểm bằng danh tính chứ không bằng cờ: trong đó có **Habubank** (sáp nhập SHB từ **2012**), Bibica, Đường Biên Hoà, Tường An, PVFinance, Chứng khoán Kim Long — **không mã nào còn giao dịch**. Cờ `status` gần như trống thông tin: toàn kho 2.015 mã chỉ có **4 dòng `delisted`**, nên không dùng nó để kiểm giả thuyết được.
+
+Ảnh hưởng mọi thống kê *"mã đang niêm yết"*, và ảnh hưởng thẳng vào [ETL giá §4.1](#41-lịch-chạy): vòng lặp `getPriceData` đi trên tập `listed` sẽ gọi API cho **438 mã chết mỗi ngày** — 22% tập cổ phiếu.
+
+**Ba ràng buộc phải tôn trọng khi cài luật này:**
+
+1. **Chỉ áp cho `security_type = 'stock'`.** ETF (10 mã) và chỉ số (18 mã) không có doanh nghiệp phát hành — với chúng "không có issuer" là trạng thái bình thường vĩnh viễn, không phải tín hiệu gì. Chứng chỉ quỹ đóng thì khác: chúng **có** issuer `com_type_code='QU'` nên không rơi vào diện này.
+2. **Chốt chặn sụt sẽ từ chối lượt dọn đầu tiên.** `refdata_guard` đặt `DELIST_RATIO = 0.01` — lật quá 1% số mã đang niêm yết là chặn trọn lượt. 438/1.962 = **22%**, gấp 22 lần ngưỡng. Lượt dọn đầu phải chạy tay một lần với `--accept-drop`; từ đó về sau mỗi ngày chỉ còn lác đác vài mã, nằm dưới ngưỡng.
+3. **Vắng mặt một lượt chưa chắc là chết.** Một mã **mới niêm yết** có thể xuất hiện ở bảng giá BVSC trước khi vào danh bạ FiinTrade — luật thô sẽ đánh `delisted` cho mã vừa lên sàn. Cần lưới: chỉ lật khi vắng **nhiều lượt liên tiếp**, hay chỉ lật mã vắng lâu hơn một mốc thời gian. **Chưa chốt** — xem [roadmap §5](../00-overview/roadmap.md).
+
+**Làm cùng lát nào:** gộp với lát **mở rộng danh mục — phái sinh + `/datafeed/instruments`**. Ba việc đó sửa đúng cùng ba đoạn: `refdata_merge` (trạng thái đích) · `plan_delist` (ai bị lật) · `refdata_guard` (ngưỡng). Làm rời là ba lần đụng đoạn code nguy hiểm nhất của job và ba lần chỉnh lại ngưỡng chốt chặn. Nhưng **phải xong trước ETL giá** — nếu không, ETL giá xây trên một tập niêm yết mà 22% là mã ma.
+
 ---
 
 ## 5. Lược đồ dữ liệu

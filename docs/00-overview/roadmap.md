@@ -126,6 +126,7 @@ Bốn mục đang nằm trong danh sách **"Còn để ngỏ"** của pipeline t
 | **Tách từ tiếng Việt** | Chỉ làm nếu có bằng chứng `simple` + `unaccent` không đủ | |
 | ~~**Câu treo cuối của dự án skill**~~ | ✅ **Đã quyết 2026-08-14: giữ nguyên tên "ngân hàng"** trong luận điểm *ngành báo hiệu* — là cơ chế, không phải danh sách ngành cứng. Bảng rà `CAN-SUA.md` hết việc và đã xoá | |
 | **Đoạn giới hạn phạm vi vào system prompt** | Skill không tự gác cổng được — xem [§4](architecture.md) | Làm khi dựng backend |
+| 🔴 **Luật huỷ niêm yết cho mã vắng danh bạ** | Job `etl refdata` chỉ lật `delisted` cho chiều *có trong danh bạ mà vắng bảng giá*; chiều ngược lại — **có trong bảng giá BVSC mà vắng khỏi danh bạ FiinTrade** — chưa có luật nào. Đo 2026-08-28: **438 cổ phiếu** không có issuer vẫn mang nhãn `listed` (UPCOM 378 · HNX 39 · HOSE 21), gồm cả Habubank đã sáp nhập SHB từ 2012. Ảnh hưởng mọi thống kê *"mã đang niêm yết"* và làm ETL giá gọi API cho 438 mã chết mỗi ngày | Chốt **lưới chống bắn nhầm mã mới niêm yết** (vắng bao nhiêu lượt liên tiếp thì mới lật) rồi làm **cùng lát phái sinh + `/datafeed/instruments`** — ba việc sửa cùng `refdata_merge`/`plan_delist`/`refdata_guard`. Phải xong **trước [7] ETL giá**. Chi tiết luật và ba ràng buộc: [market-data-store §4.4](../20-design/market-data-store.md) |
 
 ### 5.1 ✅ Realtime phái sinh — ĐÃ ĐO 2026-08-26 (phiên chiều)
 
