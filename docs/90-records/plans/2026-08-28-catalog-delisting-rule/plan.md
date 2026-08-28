@@ -38,50 +38,15 @@ cd backend && uv run pytest tests/etl -v
 2. **Chốt chặn sụt sẽ từ chối lượt dọn đầu tiên.** `DELIST_RATIO = 0.01`; 438/1.962 = 22,3%. Lượt dọn đầu **phải chạy tay** với `--accept-drop`, có người nhìn.
 3. **Vắng một lượt chưa chắc là chết** — mã mới niêm yết vào bảng giá trước danh bạ. Ngưỡng: **vắng liên tục ≥ 3 ngày**.
 
-   🔴 **CHƯA GIẢI QUYẾT — ngưỡng đang đếm NGÀY LỊCH, không đếm lượt job** *(phát hiện 2026-08-28, chủ dự án nêu; chưa sửa, quyết ở đầu Task 3)*. Câu SQL chọn ứng viên dùng `directory_absent_since <= now() - make_interval(days => :d)`, tức thời gian tường. Nhưng job chỉ chạy **Thứ 2–6**, nên:
+   ✅ **ĐÃ CHỐT 2026-08-28 (chủ dự án): GIỮ NGUYÊN ngày lịch, không thêm cột, không thêm cơ chế.**
 
-   - Đóng dấu **thứ 6** ⇒ **thứ 2** đã thoả "3 ngày", mà giữa hai mốc job chạy **0 lần**. Ba lần xác nhận độc lập co lại còn **một**.
-   - **Tết nghỉ ~9 ngày** ⇒ đóng dấu hôm trước Tết, ngày đi làm đầu tiên là lật ngay, vẫn chỉ một lần quan sát.
+   Bối cảnh: có nêu lo ngại rằng job chỉ chạy Thứ 2–6 nên ngưỡng "3 ngày" đo bằng `now() - make_interval` không tương đương 3 lần quan sát. Bốn phương án đã cân nhắc và **loại cả bốn**: đếm lượt job · đếm ngày giao dịch (`DISTINCT trading_date`) · nới 3→5 ngày · cột đếm quan sát song song. Lý do loại: **không đáng độ phức tạp**.
 
-   Đây đúng loại lỗi [CLAUDE.md §4.4.4](../../../../CLAUDE.md) cảnh báo — *"mỗi điều kiện kiểm phải soi ngược: hệ thống chạy bình thường có tự vi phạm nó không?"*. Ở đây **cuối tuần nào cũng vi phạm**, không cần tới ngày lễ.
+   Căn cứ của quyết định: `etl refdata` là job **REST, không phải socket** — ngày nghỉ nó vẫn gọi được danh bạ FiinTrade và vẫn quan sát bình thường, nên **mọi ngày Thứ 2–6 đều có một lượt quan sát thật**, kể cả ngày lễ. Khoảng hở duy nhất còn lại là **cuối tuần**.
 
-   **Ba hướng, chốt trước khi viết migration `0014`** *(§4.8 — đây là hình dạng dữ liệu ghi xuống, đảo ngược tốn hơn làm lại)*:
+   **Hệ quả đã biết và chấp nhận:** đóng dấu ngày thứ 6 thì lượt thứ 6 kế tiếp — tức **thứ 2** — đã thoả ngưỡng, nên ca vắt qua cuối tuần lật sau **2 lượt** thay vì 4 lượt như ca giữa tuần. Chấp nhận vì: lưới `refdata_guard` (ngưỡng 1%) vẫn chặn mọi lượt lật hàng loạt, và lượt dọn 438 mã phải chạy tay `--accept-drop` có người nhìn.
 
-   | Hướng | Cách | Đánh đổi |
-   |---|---|---|
-   | **A · Đếm lượt** | Đổi cột thành `directory_absent_runs integer`, mỗi lượt job thấy vắng thì `+1`, thấy lại thì về `NULL` | Mã hoá thẳng ý định "ba lần xác nhận". Không cần lịch. Mất thông tin *khi nào* bắt đầu vắng |
-   | **B · Đếm ngày giao dịch** | Giữ timestamp, đếm `trading_date` xen giữa | Đúng nguồn **đã chốt** ở [step-04-macro §F8](../2026-08-25-postgres-data-schema/step-04-macro.md) *(suy từ `SELECT DISTINCT trading_date` của `market.price_daily`, không dựng bảng lịch riêng)* — **nhưng bảng đó do [7] ETL giá đổ đầy, mà việc đó CHƯA LÀM ⇒ nguồn đã chốt nhưng đang RỖNG** |
-   | **C · Giữ ngày lịch, nới ngưỡng** | Ví dụ 5 ngày để phủ cuối tuần | Rẻ nhất, nhưng vẫn vỡ ở Tết và chỉ là che triệu chứng |
-
-   Giữ cả hai cột (A + timestamp) là lựa chọn rẻ nếu muốn cả số lần lẫn mốc bắt đầu — nhưng phải nói rõ **cột nào là phán quyết**, đừng để hai nguồn sự thật.
-
-## Số đo nền *(đo trên DB thật 2026-08-28)*
-
-| | |
-|---|---|
-| Cổ phiếu không issuer, vẫn `listed` | **438** (UPCOM 378 · HNX 39 · HOSE 21) |
-| Cổ phiếu `listed` tổng | 1.962 ⇒ tỷ lệ lật 22,3% |
-| ETF không issuer | 10 · chỉ số 18 — **phải nằm ngoài** |
-| Chứng chỉ quỹ có issuer `QU` | 3 |
-| Toàn kho `delisted` | 4 dòng |
-
-**Không backdate cột dấu cho 438 mã hiện có.** Đồng hồ tính từ lượt chạy đầu tiên sau khi cài. Backdate là ghi con số không đo được — trong đó có đúng một mã vừa gia nhập nhóm ngày 27/08 mà không biết là mã nào (`stocks_no_issuer` đi từ 437 lên 438).
-
----
-
-## Cấu trúc file
-
-| File | Trách nhiệm |
-|---|---|
-| `database/migrations/versions/0014_directory_absent_since.py` | **Tạo** — thêm cột `market.security.directory_absent_since` |
-| `backend/etl/refdata_store.py` | **Sửa** — `apply()` đóng/gỡ dấu; `plan_delist()` chọn thêm ứng viên đủ ngưỡng |
-| `backend/tests/etl/test_e09_refdata_store.py` | **Sửa** — seam test cho đóng dấu, gỡ dấu, ngưỡng, loại trừ theo loại |
-| `backend/tests/schema/test_s12_directory_absent.py` | **Tạo** — seam schema: cột tồn tại, mặc định NULL, quyền của `dlck_etl` |
-| `docs/20-design/market-data-store.md` §4.4 | **Sửa** — đổi từ "chưa có luật nào" sang mô tả cơ chế đã cài |
-| `docs/00-overview/roadmap.md` §5 | **Sửa** — hạ mục khỏi "để ngỏ", ghi việc còn lại là lượt dọn tay |
-| `docs/90-records/plans/2026-08-28-catalog-delisting-rule/ledger.md` | **Tạo** — sổ ghi thực thi |
-
----
+   **Điều kiện đảo ngược:** nếu gặp ca thật một mã **mới niêm yết** bị lật `delisted` oan vì vắt qua cuối tuần, mở lại quyết định này — khi đó phương án cột đếm quan sát là ứng viên đầu.
 
 ### Task 1: Migration 0014 — cột dấu vắng danh bạ
 
