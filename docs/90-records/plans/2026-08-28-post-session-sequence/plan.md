@@ -116,8 +116,10 @@ Script đã có thói quen tự kiểm lệnh sau khi đăng ký *(bài học §
 - [ ] **Bước 3: Chạy lại bằng quyền admin**
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\register-tasks.ps1 -LogonType S4U
+pwsh -NoProfile -ExecutionPolicy Bypass -File D:\twan_projects\dulieuchungkhoan.vn\scripts\register-tasks.ps1 -LogonType S4U
 ```
+
+🔴 **Đường dẫn TUYỆT ĐỐI, không phải tương đối** *(vấp thật 2026-08-28)*. Cửa sổ **Run as Administrator** mở ở `C:\Windows\System32`, không ở gốc repo — `-File scripts\register-tasks.ps1` ra thẳng *is not recognized as the name of a script file*. Script tự định vị repo bằng `$PSScriptRoot` nên gọi từ thư mục nào cũng chạy đúng; chỉ **đường dẫn TỚI script** là phải tuyệt đối.
 
 🔴 **`pwsh`, KHÔNG phải `powershell`** *(bản đầu ghi `powershell` — lệnh đó chạy sẽ hỏng)*. Script là UTF-8 **không BOM** và đầy chú thích tiếng Việt; Windows PowerShell 5.1 đọc file không BOM theo ANSI nên **parse hỏng ngay**, không phải lỗi tham số. Kiểm 2026-08-28: bản `HEAD` chưa ai sửa cũng đã hỏng dưới 5.1 (1 lỗi cú pháp) và sạch dưới `pwsh` 7 — ràng buộc sẵn có của file, [`backend/README.md`](../../../../backend/README.md) vốn đã ghi đúng `pwsh`.
 ⚠️ Phải là cửa sổ **Run as Administrator** — S4U cần quyền đó. Và phải chắc Task 0 đã xác nhận không task nào `Running`: `Register-ScheduledTask -Force` lên task đang chạy sẽ giết tiến trình.
