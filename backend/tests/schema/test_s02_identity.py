@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-from conftest import expect_violation
+from tests.schema.conftest import expect_violation
 
 L1 = {"TAICHINH","BATDONGSAN","SANXUAT","XUATKHAU","TIEUDUNG","NANGLUONG"}
 L2 = {"NGANHANG","CHUNGKHOAN","BAOHIEM","DANDUNG","KHUCONGNGHIEP","XAYDUNG","VATLIEU",

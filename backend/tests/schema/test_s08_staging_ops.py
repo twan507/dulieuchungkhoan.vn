@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-from conftest import expect_violation
+from tests.schema.conftest import expect_violation
 
 
 def test_raw_payload_content_type_check(db):                        # seam 1 (M5 siết)

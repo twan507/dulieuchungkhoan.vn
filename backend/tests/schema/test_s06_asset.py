@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-from conftest import expect_violation
+from tests.schema.conftest import expect_violation
 
 
 def _asset(db, code, cls="commodity", ccy="USD"):

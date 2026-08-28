@@ -3,7 +3,7 @@ import pathlib
 
 import sqlalchemy as sa
 
-from conftest import expect_violation
+from tests.schema.conftest import expect_violation
 
 MAP_JSON = pathlib.Path(__file__).resolve().parents[3] / "docs" / "20-design" / "industry-mapping.json"
 
