@@ -103,19 +103,23 @@ Dư ≠ 0 ⇒ **dừng, không sửa gì**, ghi nguyên trạng vào ledger và 
 
 🔴 **Việc này KHÔNG chỉ là chạy lại script.** `scripts/register-tasks.ps1` hiện **không có tham số `-LogonType`** — nó gọi `Register-ScheduledTask` không kèm `-Principal`, nên luôn ra Interactive. Phải **sửa script trước**.
 
-- [ ] **Bước 1: Thêm tham số vào script**
+- [x] **Bước 1: Thêm tham số vào script**
 
 Thêm tham số cấp file `[string] $LogonType = "Interactive"`, dựng `$principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType $LogonType -RunLevel Limited`, truyền `-Principal $principal` vào `Register-ScheduledTask`. Giữ nguyên mặc định Interactive để chạy không tham số vẫn ra hành vi cũ.
 
-- [ ] **Bước 2: Mở rộng `Assert-TaskCommand` hoặc thêm một phép kiểm mới**
+- [x] **Bước 2: Mở rộng `Assert-TaskCommand` hoặc thêm một phép kiểm mới**
 
 Script đã có thói quen tự kiểm lệnh sau khi đăng ký *(bài học §3.5 — 5 task từng nổ vì lệnh rỗng)*. Thêm phép kiểm `LogonType` khớp cái vừa yêu cầu, để không lặp lại đúng lỗi "trạng thái hiển thị ok mà lệnh sai".
+
+✅ **Đã làm 2026-08-28 15:35.** Tham số `-LogonType` (ValidateSet, mặc định `Interactive` giữ nguyên hành vi cũ); `$principal` dựng một lần với `UserId`/`RunLevel` **đúng cái 7 task đang mang** (`tuanb` / `Limited` — lượt này chỉ đổi LogonType, không nhân tiện đổi quyền chạy). Phép kiểm mới `Assert-TaskLogonType` gọi **bên trong `Register-DlckTask`** nên không task nào lọt. Guard đã chứng minh **đỏ trước xanh** trên chính 7 task thật *(hàm trích khỏi file bằng AST, không gõ lại bản sao — tránh test tautological §4.5.3)*: đòi `S4U` khi thực tế `Interactive` ⇒ ném đúng, thông báo nêu **cả hai** giá trị, **7/7 task đều bị bắt**; đòi `Interactive` ⇒ im lặng. Dòng tổng kết cuối script cũng rẽ theo `$LogonType` — không sửa thì chạy S4U xong nó vẫn in "đang chạy Interactive".
 
 - [ ] **Bước 3: Chạy lại bằng quyền admin**
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\register-tasks.ps1 -LogonType S4U
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\register-tasks.ps1 -LogonType S4U
 ```
+
+🔴 **`pwsh`, KHÔNG phải `powershell`** *(bản đầu ghi `powershell` — lệnh đó chạy sẽ hỏng)*. Script là UTF-8 **không BOM** và đầy chú thích tiếng Việt; Windows PowerShell 5.1 đọc file không BOM theo ANSI nên **parse hỏng ngay**, không phải lỗi tham số. Kiểm 2026-08-28: bản `HEAD` chưa ai sửa cũng đã hỏng dưới 5.1 (1 lỗi cú pháp) và sạch dưới `pwsh` 7 — ràng buộc sẵn có của file, [`backend/README.md`](../../../../backend/README.md) vốn đã ghi đúng `pwsh`.
 ⚠️ Phải là cửa sổ **Run as Administrator** — S4U cần quyền đó. Và phải chắc Task 0 đã xác nhận không task nào `Running`: `Register-ScheduledTask -Force` lên task đang chạy sẽ giết tiến trình.
 
 🔴 **Bẫy:** 4 task OMO đang ở trạng thái `Disabled` *(tắt 2026-08-28 15:04 theo quyết định chủ dự án)*. `register-tasks.ps1` đăng ký lại **cả bảy** bằng `-Force` ⇒ chúng sẽ **sống lại ở trạng thái BẬT** mà không ai nói gì. Sau khi chạy script, nếu vẫn muốn giữ OMO tắt thì tắt lại ngay:

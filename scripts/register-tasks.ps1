@@ -1,5 +1,7 @@
 # Đăng ký Task Scheduler cho lát cắt ingester + OMO (spec 2026-08-26 §3.8/§4.5).
-# Chạy: pwsh scripts/register-tasks.ps1     (chạy lại được — ghi đè task cùng tên)
+# Chạy: pwsh scripts/register-tasks.ps1                    (mặc định Interactive)
+#       pwsh scripts/register-tasks.ps1 -LogonType S4U     (CẦN CỬA SỔ ADMIN)
+# Chạy lại được — ghi đè task cùng tên.
 #
 # GATE GHI TICK — MỞ 2026-08-26 (quyết định chủ dự án). `dlck-ingester` nay đăng ký ở
 # trạng thái BẬT. Trước đó nó bị Disable ngay sau khi đăng ký để chặn ghi thật cho tới
@@ -13,11 +15,24 @@
 # chạy đúng giờ, và chết câm mỗi lần. Kiểm nghiệm thu phải soi LỆNH, không soi
 # trạng thái — xem hàm Assert-TaskCommand ở cuối file.
 
+param(
+    # S4U = chạy cả khi không đăng nhập, KHÔNG hiện cửa sổ cmd (service-topology §5).
+    # Mặc định Interactive để chạy không tham số giữ nguyên hành vi cũ.
+    # ⚠️ S4U đòi cửa sổ Run as Administrator — không có quyền thì Register-ScheduledTask
+    #    ném "Access is denied", task giữ nguyên đăng ký cũ.
+    [ValidateSet("Interactive", "S4U", "Password", "InteractiveOrPassword")]
+    [string] $LogonType = "Interactive"
+)
+
 $repo    = Split-Path $PSScriptRoot -Parent
 $backend = Join-Path $repo "backend"
 $logDir  = Join-Path (Split-Path $repo -Parent) "dlck-runtime\logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $uv = (Get-Command uv -ErrorAction Stop).Source
+# UserId/RunLevel giữ đúng cái 7 task đang mang (kiểm 2026-08-28: tuanb / Limited) —
+# lượt này CHỈ đổi LogonType, không nhân tiện đổi quyền chạy.
+$principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType $LogonType `
+                 -RunLevel Limited
 
 function Register-DlckTask {
     param(
@@ -36,7 +51,10 @@ function Register-DlckTask {
                     -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 5) `
                     -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 12)
     Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger `
-        -Settings $settings -Force | Out-Null
+        -Settings $settings -Principal $principal -Force | Out-Null
+    # Cùng bài học §3.5 như Assert-TaskCommand, áp cho principal: đăng ký "thành công"
+    # KHÔNG chứng minh LogonType đã đổi. Kiểm ngay trong hàm nên không task nào lọt.
+    Assert-TaskLogonType -TaskName $TaskName -Expected $LogonType
     Write-Host ("  + {0,-24} {1,-16}  ->  python -m {2}" -f $TaskName, $AtTime, $ModuleArgs)
 }
 
@@ -49,6 +67,15 @@ function Assert-TaskCommand {
     }
     if ($MustNotContain -and $arg -match [regex]::Escape($MustNotContain)) {
         throw "Task $TaskName đăng ký SAI lệnh — KHÔNG được chứa '$MustNotContain'. Lệnh thật: $arg"
+    }
+}
+
+function Assert-TaskLogonType {
+    <#  Nghiệm thu: soi PRINCIPAL thật của task, không tin lệnh vừa gọi đã có tác dụng.  #>
+    param([string] $TaskName, [string] $Expected)
+    $actual = (Get-ScheduledTask -TaskName $TaskName).Principal.LogonType
+    if ("$actual" -ne $Expected) {
+        throw "Task $TaskName đăng ký SAI LogonType — xin '$Expected', thật '$actual'."
     }
 }
 
@@ -92,7 +119,14 @@ Assert-TaskCommand -TaskName $measureTask -MustContain "python -m ingester --mea
 
 Write-Host "`nĐã kiểm lệnh của cả 7 task. Xem lại bất cứ lúc nào:"
 Write-Host '  Get-ScheduledTask -TaskName "dlck-*" | % { $_.TaskName + " -> " + $_.Actions[0].Arguments }'
-Write-Host "`n⚠️ Task chạy với tài khoản đang đăng nhập (Interactive). Muốn chạy cả khi"
-Write-Host "   không đăng nhập, đăng ký lại bằng quyền admin với -LogonType S4U."
-Write-Host "   Cửa sổ cmd hiện ra cũng vì Interactive — bấm nhầm X là giết tiến trình."
-Write-Host "   Ba hệ quả và cửa sổ đăng ký lại an toàn: docs/20-design/service-topology.md §5."
+if ($LogonType -eq "S4U") {
+    Write-Host "`n✅ Cả 7 task đăng ký S4U (đã soi Principal thật từng task, không chỉ soi lệnh):"
+    Write-Host "   chạy cả khi không đăng nhập, KHÔNG hiện cửa sổ cmd để bấm nhầm."
+    Write-Host "   ⚠️ Script đăng ký lại CẢ BẢY — task nào đang cố ý Disabled sẽ sống lại BẬT."
+    Write-Host '      Tắt lại: Get-ScheduledTask -TaskName "dlck-omo-*" | Disable-ScheduledTask'
+} else {
+    Write-Host "`n⚠️ Task chạy với tài khoản đang đăng nhập (Interactive). Muốn chạy cả khi"
+    Write-Host "   không đăng nhập, đăng ký lại bằng quyền admin với -LogonType S4U."
+    Write-Host "   Cửa sổ cmd hiện ra cũng vì Interactive — bấm nhầm X là giết tiến trình."
+    Write-Host "   Ba hệ quả và cửa sổ đăng ký lại an toàn: docs/20-design/service-topology.md §5."
+}
