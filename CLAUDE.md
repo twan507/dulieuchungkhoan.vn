@@ -242,7 +242,7 @@ Dùng skill `systematic-debugging`. Cốt lõi:
 
 ### 4.8 Nhiều phương án trước quyết định khó đảo ngược
 
-*Chưng cất từ pattern best-of-N/debate (khảo sát 2026-08-28 — xem [danh mục repo tham chiếu](docs/00-overview/reference-repos.md)). Chỉ luật, không cài skill — chạy trên đồ đã có: sinh phương án trong bước brainstorm §4.1.1, subagent song song theo §4.2, hồ sơ vào `90-records/`.*
+*Chỉ luật, không cài skill — chạy trên đồ đã có: sinh phương án trong bước brainstorm §4.1.1, subagent song song theo §4.2, hồ sơ vào `90-records/`.*
 
 **Bước 0 — bắt buộc, trước khi sinh phương án.** Liệt kê tách bạch: *dữ kiện đã kiểm* (đã đọc file / chạy lệnh / có nguồn) và *giả định* (chưa kiểm). Nhiều phương án **không tạo ra chân lý**: dữ kiện đầu vào sai thì cả N phương án cùng sai một cách thuyết phục. Phần giả định nặng hơn phần dữ kiện ⇒ đi kiểm trước, đừng sinh phương án.
 

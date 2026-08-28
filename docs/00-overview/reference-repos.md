@@ -32,8 +32,6 @@ Ba trạng thái: ✅ **đã dùng** · 📦 **kho nguồn** (giữ lại, chưa
 | [dotanminh/clean-data-xls](https://github.com/dotanminh/clean-data-xls) | Skill dọn Excel (port tiếng Việt từ repo Anthropic) | **Đã có đường khác** — `document-skills:xlsx` chính chủ Anthropic; dữ liệu dự án đi qua API, không qua xls |
 | [rohitg00/agentmemory](https://github.com/rohitg00/agentmemory) | Hệ memory ngoài: server local 4 port, 54 MCP tool, hook auto-capture | **Loại có chủ đích** — ngược triết lý đã chốt *"tri thức dự án vào repo"* (đầu CLAUDE.md); 54 tool phình context; auto-capture có nguy cơ ghi secret; bộ nhớ file + CLAUDE.md audit được bằng git |
 | [OpenBB-finance/OpenBB](https://github.com/OpenBB-finance/OpenBB) | Nền tảng dữ liệu tài chính mã nguồn mở, có MCP | **Loại có chủ đích khỏi sản phẩm** — (1) license **AGPLv3**, dính vào backend thương mại là rủi ro pháp lý; (2) độ rộng nguồn **đã khép 2026-08-15** ([ADR 0006](decisions/0006-source-selection-2026-08-15.md)). Dùng cá nhân đối chiếu số liệu thì tự do |
-| AgentKit *(pattern best-of-N/`--debate`; ⚠️ URL chưa ghi — chủ dự án bổ sung nguồn đã khảo sát 2026-08-28)* | Khung sinh nhiều phương án song song rồi tranh luận/chấm chọn trước quyết định lớn | **Đã có đường khác** — không cài khung: luật đã **chưng cất vào [CLAUDE.md](../../CLAUDE.md) §4.8** (như cách làm với karpathy/mattpocock); sinh phương án chạy bằng đồ sẵn có (brainstorming + subagent song song + hồ sơ `90-records/`), thêm khung thứ hai là thêm bộ luật cạnh tranh |
-
 ## Luật thêm mục mới
 
 1. **Đọc source trước khi cài** — skill là văn bản bơm vào context, tức là kênh prompt-injection. Repo lạ thì clone về scratchpad soi SKILL.md và tìm file thực thi trước.
