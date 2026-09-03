@@ -139,8 +139,8 @@ Write-Host "Đăng ký screener (15:20 ngày làm việc — sau khi ingester gh
 Register-DlckTask -TaskName "dlck-screener" -AtTime "15:20" -ModuleArgs "etl screener" -LogFile "screener.log"
 Assert-TaskCommand -TaskName "dlck-screener" -MustContain "python -m etl screener"
 
-Write-Host "Đăng ký events (18:00 ngày làm việc — sau phiên và sau screener 15:20, dùng danh bạ tươi từ 08:00):"
-Register-DlckTask -TaskName "dlck-events" -AtTime "18:00" -ModuleArgs "etl events" -LogFile "events.log"
+Write-Host "Đăng ký events (18:10 ngày làm việc — sau phiên, sau screener 15:20, và tránh 18:00 của OMO):"
+Register-DlckTask -TaskName "dlck-events" -AtTime "18:10" -ModuleArgs "etl events" -LogFile "events.log"
 # -MustNotContain là chốt chặn thật: task tự động KHÔNG BAO GIỜ được mang cờ cho phép
 # đẻ issuer tối thiểu hàng loạt — lượt đó phải chạy tay có người nhìn.
 Assert-TaskCommand -TaskName "dlck-events" -MustContain "python -m etl events" -MustNotContain "--accept-new"
