@@ -187,3 +187,38 @@ Nguy hiểm thực tế thấp *(khác nguồn, khác bảng, OMO xong trong và
 ⚠️ **Đọc `StartBoundary` chứ không chỉ đọc dòng script tự in ra** — dòng in là *ý định*, `StartBoundary` là *cái Scheduler thật sự giữ*. Hậu tố `+07:00` xác nhận trigger neo giờ Việt Nam, không phải UTC — đúng loại lỗi mà §3.1 đã trả giá một lần.
 
 **Bài học ghi lại:** giờ chạy của một job mới phải **soi lịch task sẵn có trước khi chọn**, không chọn theo cảm giác "sau phiên là được". Lịch hiện tại: 08:00 refdata · 08:30 ingester + measure · 11:30 OMO · 15:20 screener · 15:30 OMO · **18:00 OMO** · 18:10 events · 21:30 OMO.
+
+---
+
+## Review toàn nhánh — hai trục độc lập, `opus`, 2026-09-03
+
+Hai reviewer chạy song song, không thấy nhau, báo riêng không xếp hạng chéo (§4.1.5). Đợt này bắt được **6 lỗi thật**, tất cả do người điều phối tạo ra.
+
+### Đã sửa — `02fe951`
+
+| # | Trục | Phát hiện | Vì sao thật |
+|---|---|---|---|
+| 1 | Chuẩn | `README.md` gốc vẫn ghi `dlck-events` **18:00** | Đúng file người clone repo đọc đầu tiên. Ai đọc rồi đăng ký theo sẽ **tái tạo đúng va lịch mà commit trước vừa gỡ**. Lượt sửa giờ đã quét 3 file mà sót file gốc — §1.7 |
+| 2 | Chuẩn | Cờ `--accept-new` **không vào `ops.etl_run.stats`** | `refdata_job` đã có tiền lệ ghi `accept_drop`, và chính ledger này dùng nó để quyết bước 1. Không có dấu ⇒ ba tháng sau nhìn `issuers_created: 517` không phân biệt được "người duyệt" với "guard hỏng" |
+| 3 | Chuẩn | 517 issuer tối thiểu **làm sai một đồng hồ mà tài liệu đang bảo là dấu hiệu hỏng** | `backend/README.md` ghi `issuers_without_industry = 24` là ổn định, ">24 đáng kể là có gì đó đổi". Lượt refdata tới sẽ báo **541** (kiểm thật: 24 + 517). Người vận hành hoặc đi truy một hồi quy không tồn tại, hoặc học cách bỏ qua cảnh báo này |
+| 4 | Chuẩn | Index `90-records/README.md` nói AC6 **còn mở**, ledger nói **đã đóng** | Index sở hữu thư mục `plans/` (§1.6) — chỗ người rà đọc trước khi mở hồ sơ |
+| 5 | Chuẩn | `test_e20._cleanup` **xoá cả bảng**, và không nằm trong teardown | Xoá luôn 8 dòng `fiintrade` mà `test_e10` commit và `test_e19` dựa vào — mỉa mai là commit `6071eab` của chính nhánh này vừa ghi ra sự tồn tại của 8 dòng đó. Và một assert đỏ giữa chừng để lại 24 dòng committed, làm test sau đỏ theo |
+| 6 | Chuẩn | `render_as_string(hide_password=False)` dựng DSN có **mật khẩu nguyên văn** | Lát 1 gặp đúng bài này và giải khác — đọc thẳng `TEST_DATABASE_URL`. Bản mới cố ý gỡ mặt nạ ⇒ mọi traceback `--showlocals` hay log CI chạm frame đó in ra mật khẩu (§5) |
+| 7 | Spec | **AC4 mới chạy một nửa** | Spec §7 đòi hai đột biến: thiếu trang **và** ép `issuers_new` vượt ngưỡng. Chỉ chạy cái đầu, mà ledger đánh ✅ trọn — quá tay so với chữ AC |
+| 8 | Spec | 4/11 seam của §6 phủ mỏng hơn hứa | Không test nào assert `record_date`/`payout_date`; họ IPO không có assert cột nào; `dup_keys` chỉ đếm **không kiểm tên** (đúng thứ §5.3 gọi là bài học 3); seam 9 ghi lại **cùng** payload nên không chứng minh `DO UPDATE SET payload`; nhánh `name = organ_code` chưa từng chạy dù kho thật có 177 ca |
+| 9 | Spec | `00-conventions.md` vẫn viết *"`FromDate`/`ToDate` hoạt động đúng"* | File mà CLAUDE.md §6 bắt **đọc trước tiên** khi sắp gọi bất kỳ API nào. Phép quét §1.7 của người điều phối sót nó |
+
+Kết quả: **386 → 394 test**, tất cả xanh.
+
+### Ghi nhận, KHÔNG sửa
+
+- **`close_run(success)` chạy trước `upsert_domain_state`** — nếu bước sau ném lỗi, handler ngoài gọi `close_run(failed, stats=None)` và **xoá trắng** stats của lượt vừa thành công. Kế thừa nguyên khuôn `screener_job`, không do nhánh này tạo ⇒ §4.4.3: rác có sẵn thì báo, không tự dọn. **Nợ chung của cả hai lát.**
+- **`watermark = max(...)` tính sau commit** — `n.rows` rỗng ⇒ `ValueError` ⇒ lượt bị ghi `failed` dù dữ liệu đã vào kho. Chỉ xảy ra khi cả sáu họ trả rỗng và chưa có baseline; xác suất rất thấp nhưng **đường thất bại nói dối**.
+- **Chọn tên issuer là "non-null đầu tiên theo thứ tự họ", không phải "tên tốt nhất"** như spec §5.5a viết. Reviewer đã kiểm trên kho thật: **0 ca lệch** trên cả 2.069 issuer.
+- **Spec §2.1 ghi ShareIssuance 127 khoá đụng, `measurements.md` ghi 129** — hai mốc khác nhau (có/không `issueYear` trong `stage_key`), cả hai đều đúng theo phép đo của mình. Spec là bản ghi tại-thời-điểm nên **không sửa lại**; ghi ở đây để người sau không tưởng là mâu thuẫn.
+
+### Điểm reviewer nêu là đáng giữ làm tiền lệ
+
+- `accept_new` chỉ bỏ qua **vế (iii)**, trong khi `refdata` để `accept_drop` bỏ qua **toàn bộ verdict** — bản mới chặt hơn bản cũ.
+- `Assert-TaskCommand -MustNotContain "--accept-new"` — mã hoá §3.5 thành code: task tự động không bao giờ mang được cờ bỏ qua chốt chặn.
+- Guard nằm cùng giao dịch với `ensure_issuers`, và test chứng minh **issuer cũng rollback**, không chỉ chứng minh bảng sự kiện rỗng.
