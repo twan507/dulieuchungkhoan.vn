@@ -22,8 +22,13 @@ ALL = ("AGM", "CashDividend", "StockDividend", "Earning", "IPO", "ShareIssuance"
 def test_ensure_issuers_mints_one_per_organ_code_and_is_idempotent(db):
     db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
     rows = en.normalize(pages(*ALL)).rows
+    codes = {r.organ_code for r in rows}
     by_organ, created = es.ensure_issuers(db, rows)
-    assert created == 17 and len(by_organ) == 17
+    # `by_organ` là BẢNG TRA TOÀN CỤC (apply() cần tra issuer_id cho mọi dòng), không phải
+    # của riêng lô này ⇒ CẤM assert len(by_organ): test khác commit issuer thật và không dọn
+    # (test_e10 để lại 8 dòng `fiintrade` sống qua cả phiên pytest) sẽ làm số đó đổi.
+    # Tiêu chí phải bất biến, không phải số thời điểm — CLAUDE.md §4.4.4.
+    assert created == 17 and codes <= set(by_organ)
     again_by_organ, again_created = es.ensure_issuers(db, rows)
     assert again_created == 0 and again_by_organ == by_organ
 
