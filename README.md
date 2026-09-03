@@ -2,7 +2,7 @@
 
 Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập dữ liệu thị trường và tin tức từ nhiều nguồn, lưu vào kho riêng, phân phối lại qua REST và SSE, và một chatbot AI trả lời bằng phương pháp phân tích đã được hệ thống hoá thành skill.
 
-**Trạng thái — 2026-09-03:** thiết kế hoàn chỉnh, và **phần lõi thu thập dữ liệu đã chạy thật trong production** — nhưng ⏸️ **mọi job ghi đang tạm tắt để ưu tiên dev** ([lộ trình §2 mục 4d](docs/00-overview/roadmap.md)). Mới nhất: **`etl events` xong 2026-09-03** — sáu họ lịch sự kiện, **110.695 dòng** vào kho trong một lượt 9 lời gọi; cùng ngày trước đó là `etl screener` (1.541 dòng/ngày, 52 trang). Ingester bắt tick realtime mỗi phiên *(phiên 28/08: **4.722.406 dòng** vào kho, đối chứng sổ sách **dư = 0** trên cả 5 bảng)*; hai kho đã có schema và dữ liệu thật; **394 test** xanh chạy trên Postgres/ClickHouse/Redis thật; 9 task chạy theo lịch Windows Scheduler. `api` và `frontend` **chưa bắt đầu**. Hai skill chứng khoán đã xong và đã test 6 vòng. **Không còn việc chặn nào phụ thuộc bên ngoài** — giấy phép WiFeed đã chốt và rate limit FiinGroup đã kiểm, cùng ngày 2026-08-15. Cùng ngày, một **đợt khảo sát nguồn 9 nguồn / ~400 lời gọi thật** đã khép độ rộng dữ liệu: thêm **6 nguồn mới** và mở **5 khối dữ liệu** trước nay bỏ trống.
+**Trạng thái — 2026-09-03:** thiết kế hoàn chỉnh, và **phần lõi thu thập dữ liệu đã chạy thật trong production** — nhưng ⏸️ **mọi job ghi đang tạm tắt để ưu tiên dev** ([lộ trình §2 mục 4d](docs/00-overview/roadmap.md)). Mới nhất: **`etl events` xong 2026-09-03** — sáu họ lịch sự kiện, **110.695 dòng** vào kho trong một lượt 9 lời gọi; cùng ngày trước đó là `etl screener` (1.541 dòng/ngày, 52 trang). Ingester bắt tick realtime mỗi phiên *(phiên 28/08: **4.722.406 dòng** vào kho, đối chứng sổ sách **dư = 0** trên cả 5 bảng)*; hai kho đã có schema và dữ liệu thật; **399 test** xanh chạy trên Postgres/ClickHouse/Redis thật; 9 task chạy theo lịch Windows Scheduler. `api` và `frontend` **chưa bắt đầu**. Hai skill chứng khoán đã xong và đã test 6 vòng. **Không còn việc chặn nào phụ thuộc bên ngoài** — giấy phép WiFeed đã chốt và rate limit FiinGroup đã kiểm, cùng ngày 2026-08-15. Cùng ngày, một **đợt khảo sát nguồn 9 nguồn / ~400 lời gọi thật** đã khép độ rộng dữ liệu: thêm **6 nguồn mới** và mở **5 khối dữ liệu** trước nay bỏ trống.
 
 **Stack chốt 2026-08-24:** Next.js · Python/FastAPI · Postgres + ClickHouse *(lưu tick thô — [ADR 0007](docs/00-overview/decisions/0007-monorepo-layout-and-stack.md))*.
 
@@ -66,7 +66,7 @@ dulieuchungkhoan.vn/
 ├── frontend/            Next.js — chưa bắt đầu (mới có README)
 ├── backend/             Python — ingester (chạy thật) · etl (omo, refdata) · api (chưa bắt đầu)
 │   ├── agent/skills/    vn-stock-advisor · vn-stock-knowledge — sản phẩm chạy được
-│   └── tests/           394 test, chạy trên Postgres/ClickHouse/Redis THẬT
+│   └── tests/           399 test, chạy trên Postgres/ClickHouse/Redis THẬT
 ├── database/            migrations: Postgres 14 (alembic) · ClickHouse 2
 ├── deploy/infra/        docker compose — Postgres · ClickHouse · Redis
 └── scripts/             register-tasks.ps1 — đăng ký 9 task Windows Scheduler

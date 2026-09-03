@@ -210,11 +210,24 @@ Hai reviewer chạy song song, không thấy nhau, báo riêng không xếp hạ
 
 Kết quả: **386 → 394 test**, tất cả xanh.
 
-### Ghi nhận, KHÔNG sửa
+### Ba nợ — ĐÃ ĐÓNG DỨT ĐIỂM (quyết định chủ dự án, cùng ngày)
 
-- **`close_run(success)` chạy trước `upsert_domain_state`** — nếu bước sau ném lỗi, handler ngoài gọi `close_run(failed, stats=None)` và **xoá trắng** stats của lượt vừa thành công. Kế thừa nguyên khuôn `screener_job`, không do nhánh này tạo ⇒ §4.4.3: rác có sẵn thì báo, không tự dọn. **Nợ chung của cả hai lát.**
-- **`watermark = max(...)` tính sau commit** — `n.rows` rỗng ⇒ `ValueError` ⇒ lượt bị ghi `failed` dù dữ liệu đã vào kho. Chỉ xảy ra khi cả sáu họ trả rỗng và chưa có baseline; xác suất rất thấp nhưng **đường thất bại nói dối**.
-- **Chọn tên issuer là "non-null đầu tiên theo thứ tự họ", không phải "tên tốt nhất"** như spec §5.5a viết. Reviewer đã kiểm trên kho thật: **0 ca lệch** trên cả 2.069 issuer.
+Ban đầu ghi là "ghi nhận, không sửa". Chủ dự án yêu cầu xử lý dứt điểm ⇒ làm luôn trên nhánh này, **mỗi nợ một commit riêng, mỗi nợ kiểm bằng đột biến**.
+
+| Nợ | Commit | Cách đóng | Đột biến chứng minh test bắt được |
+|---|---|---|---|
+| `close_run` xoá trắng stats | `9f997ff` | `stats = coalesce(cast(:st AS jsonb), ops.etl_run.stats)` — *`close_run` không bao giờ phá thứ nó không được đưa*. Sửa ở **gốc dùng chung**, không vá một lối của `events_job` | Gỡ `coalesce` ⇒ `test_close_run_never_wipes_stats_it_was_not_given` đỏ |
+| `watermark` ném `ValueError` | `484c181` | Không vá quanh `max()` mà **thêm vế (0) vào guard**: tổng thu được bằng 0 ⇒ từ chối. Sáu họ cùng rỗng là nguồn hỏng, không phải ngày không có sự kiện — riêng IPO đã có 77 bản ghi lịch sử | Đổi vế (0) thành `if False` ⇒ test đỏ |
+| Tên issuer chọn sai hạng | `0847b23` | Tách `EventRow.name_hint` thành `organ_name` + `ticker`, `ensure_issuers` chọn theo **hạng** (tên thật → ticker → mã) thay vì theo thứ tự họ | Đảo ưu tiên ⇒ **2 test** đỏ |
+
+🔴 **Vì sao nợ 1 phải sửa ở gốc:** `close_run` dùng chung cho **4 job** và **chưa có một test nào** — đó chính là lý do cái bẫy sống sót qua ba lát. Vá riêng đường của `events_job` chỉ đóng một lối, cái bẫy vẫn nằm đó chờ job thứ năm. Nay có 2 seam test cho chính nó.
+
+⚠️ **Một phút suýt mất công, ghi lại làm bài học:** lúc chạy đột biến cho nợ 1, tôi khôi phục bằng `git checkout etl/omo_store.py` — lệnh đó trả **cả file** về HEAD nên **xoá luôn bản vá chưa commit**. Bắt được nhờ thông báo file đổi trên đĩa. Đột biến sau đó đổi bằng `python` thay chuỗi rồi thay ngược lại, không dùng `git checkout` nữa.
+
+**Kết quả: 396 → 399 test, tất cả xanh.**
+
+### Còn ghi nhận, KHÔNG sửa
+
 - **Spec §2.1 ghi ShareIssuance 127 khoá đụng, `measurements.md` ghi 129** — hai mốc khác nhau (có/không `issueYear` trong `stage_key`), cả hai đều đúng theo phép đo của mình. Spec là bản ghi tại-thời-điểm nên **không sửa lại**; ghi ở đây để người sau không tưởng là mâu thuẫn.
 
 ### Điểm reviewer nêu là đáng giữ làm tiền lệ
