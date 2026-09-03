@@ -131,3 +131,39 @@ def test_flow_rebuild_works_under_etl_role(db):
     db.execute(sa.text("RESET ROLE"))
     n = db.execute(sa.text("SELECT count(*) FROM macro.omo_flow")).scalar_one()
     assert n == 2
+
+
+def test_close_run_never_wipes_stats_it_was_not_given(migrated_engine):
+    """Regression: mọi job gọi `close_run("success", stats)` rồi mới làm nốt vài bước sau
+    (`upsert_domain_state`…). Bước sau ném lỗi ⇒ handler biên ngoài gọi lại
+    `close_run("failed", error=…)` với `stats=None`. Trước khi có `coalesce`, lượt đó
+    MẤT TRẮNG counts/rows_written/watermark của phần việc đã ghi xong — nhìn lại chỉ
+    thấy `failed` với stats rỗng, không biết đã ghi được gì.
+    """
+    from etl.omo_store import close_run, open_run
+
+    run_id = open_run(migrated_engine, "test.close_run")
+    close_run(migrated_engine, run_id, "success", {"rows_written": 42, "watermark": "2026-09-03"})
+    close_run(migrated_engine, run_id, "failed", error="upsert_domain_state nổ sau khi ghi xong")
+
+    with migrated_engine.begin() as c:
+        status, stats, error = c.execute(sa.text(
+            "SELECT status, stats, error FROM ops.etl_run WHERE run_id = :r"), {"r": run_id}).one()
+        c.execute(sa.text("DELETE FROM ops.etl_run WHERE run_id = :r"), {"r": run_id})
+    assert status == "failed"                       # trạng thái phản ánh cái hỏng sau cùng
+    assert stats == {"rows_written": 42, "watermark": "2026-09-03"}   # nhưng stats CÒN NGUYÊN
+    assert "upsert_domain_state" in error
+
+
+def test_close_run_still_overwrites_stats_when_given_new_ones(migrated_engine):
+    """Mặt kia của `coalesce`: đưa stats mới thì phải ghi đè, không phải gộp hay bỏ qua."""
+    from etl.omo_store import close_run, open_run
+
+    run_id = open_run(migrated_engine, "test.close_run")
+    close_run(migrated_engine, run_id, "success", {"a": 1})
+    close_run(migrated_engine, run_id, "success", {"b": 2})
+    with migrated_engine.begin() as c:
+        stats = c.execute(sa.text("SELECT stats FROM ops.etl_run WHERE run_id = :r"),
+                          {"r": run_id}).scalar_one()
+        c.execute(sa.text("DELETE FROM ops.etl_run WHERE run_id = :r"), {"r": run_id})
+    assert stats == {"b": 2}

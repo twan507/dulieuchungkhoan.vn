@@ -18,7 +18,7 @@
 
 - **`PYTHONIOENCODING=utf-8`** trên mọi lệnh chạy Python — không đặt thì crash cp1252 khi in tiếng Việt.
 - Mọi lệnh chạy từ thư mục `backend/`, bằng `uv run`.
-- Test cần `TEST_DATABASE_URL`; job cần `ETL_DATABASE_URL` (lấy từ `.env` gốc repo qua `core.env.load_dotenv`).
+- Test cần `TEST_DATABASE_URL` — **kể cả test thuần không đụng database**, vì `tests/etl/conftest.py` nạp `tests/schema/conftest.py` và file đó đọc biến này ngay lúc import; thiếu nó là hỏng ở bước thu thập test. Nạp bằng `set -a; . ../.env; set +a`. Job cần `ETL_DATABASE_URL` (qua `core.env.load_dotenv`).
 - **Không `--no-verify`, không force push.** Nhánh `feat/events-daily-etl`, commit nhỏ một mục đích, message tiếng Anh.
 - Mỗi test **assert giá trị cụ thể**, expected lấy từ fixture thật — **cấm tính lại theo đúng cách code tính** (§4.5.3).
 - Vòng TDD: **một seam → một test đỏ → code tối thiểu cho xanh**. Không viết hết test rồi code hết.
@@ -132,7 +132,7 @@ def test_raises_on_empty_page_before_total_reached():
 - [ ] **Bước 2: Chạy để chắc chắn nó ĐỎ**
 
 Run: `PYTHONIOENCODING=utf-8 uv run pytest tests/etl/test_e16_events_fetch.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'etl.events_fetch'`
+Expected: FAIL — `ImportError: cannot import name 'events_fetch' from 'etl'` *(test dùng `from etl import events_fetch`, nên lỗi mang dạng này chứ không phải `ModuleNotFoundError`)*
 
 - [ ] **Bước 3: Viết code tối thiểu cho xanh**
 
@@ -354,7 +354,7 @@ def test_whole_fixture_set_yields_the_measured_totals():
 - [ ] **Bước 2: Chạy để chắc chắn nó ĐỎ**
 
 Run: `PYTHONIOENCODING=utf-8 uv run pytest tests/etl/test_e17_events_normalize.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'etl.events_normalize'`
+Expected: FAIL — `ImportError: cannot import name 'events_normalize' from 'etl'` *(test dùng `from etl import events_normalize`, nên lỗi mang dạng này chứ không phải `ModuleNotFoundError`)*
 
 - [ ] **Bước 3: Viết code tối thiểu cho xanh**
 
@@ -573,7 +573,7 @@ def test_every_broken_rule_is_reported_not_just_the_first():
 - [ ] **Bước 2: Chạy để chắc chắn nó ĐỎ**
 
 Run: `PYTHONIOENCODING=utf-8 uv run pytest tests/etl/test_e18_events_guard.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'etl.events_guard'`
+Expected: FAIL — `ImportError: cannot import name 'events_guard' from 'etl'` *(test dùng `from etl import events_guard`, nên lỗi mang dạng này chứ không phải `ModuleNotFoundError`)*
 
 - [ ] **Bước 3: Viết code tối thiểu cho xanh**
 
@@ -685,8 +685,13 @@ ALL = ("AGM", "CashDividend", "StockDividend", "Earning", "IPO", "ShareIssuance"
 def test_ensure_issuers_mints_one_per_organ_code_and_is_idempotent(db):
     db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
     rows = en.normalize(pages(*ALL)).rows
+    codes = {r.organ_code for r in rows}
     by_organ, created = es.ensure_issuers(db, rows)
-    assert created == 17 and len(by_organ) == 17
+    # `by_organ` là BẢNG TRA TOÀN CỤC (apply() cần tra issuer_id cho mọi dòng), không phải
+    # của riêng lô này ⇒ CẤM assert len(by_organ): test khác commit issuer thật và không dọn
+    # (test_e10 để lại 8 dòng `fiintrade` sống qua cả phiên pytest) sẽ làm số đó đổi.
+    # Tiêu chí phải bất biến, không phải số thời điểm — CLAUDE.md §4.4.4.
+    assert created == 17 and codes <= set(by_organ)
     again_by_organ, again_created = es.ensure_issuers(db, rows)
     assert again_created == 0 and again_by_organ == by_organ
 
@@ -783,7 +788,7 @@ def test_domain_state_and_baseline_round_trip(migrated_engine):
 - [ ] **Bước 2: Chạy để chắc chắn nó ĐỎ**
 
 Run: `PYTHONIOENCODING=utf-8 uv run pytest tests/etl/test_e19_events_store.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'etl.events_store'`
+Expected: FAIL — `ImportError: cannot import name 'events_store' from 'etl'` *(test dùng `from etl import events_store`, nên lỗi mang dạng này chứ không phải `ModuleNotFoundError`)*
 
 - [ ] **Bước 3: Viết code tối thiểu cho xanh**
 
@@ -1057,7 +1062,7 @@ def test_job_runs_under_the_etl_role(migrated_engine, monkeypatch):
 - [ ] **Bước 2: Chạy để chắc chắn nó ĐỎ**
 
 Run: `PYTHONIOENCODING=utf-8 uv run pytest tests/etl/test_e20_events_job.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'etl.events_job'`
+Expected: FAIL — `ImportError: cannot import name 'events_job' from 'etl'` *(test dùng `from etl import events_job`, nên lỗi mang dạng này chứ không phải `ModuleNotFoundError`)*
 
 - [ ] **Bước 3: Viết code tối thiểu cho xanh**
 

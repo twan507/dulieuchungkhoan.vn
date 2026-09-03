@@ -61,10 +61,20 @@ def open_run(engine, job: str) -> int:
 
 def close_run(engine, run_id: int, status: str, stats: dict | None = None,
               error: str | None = None) -> None:
+    """Đóng sổ một lượt chạy. `close_run` KHÔNG BAO GIỜ phá thứ nó không được đưa.
+
+    `coalesce` ở cột `stats` là chốt chặn thật, không phải trang trí: mọi job đều gọi
+    `close_run("success", stats)` rồi mới làm nốt vài bước sau (ví dụ `upsert_domain_state`).
+    Bước sau ném lỗi thì handler biên ngoài gọi lại `close_run("failed", error=…)` với
+    `stats=None` — không có `coalesce` thì lượt đó **mất trắng** counts/rows_written/watermark
+    của phần việc đã ghi xong. Kết cục đúng là `status='failed'` mà VẪN GIỮ stats: thấy được
+    đã ghi những gì, và biết có thứ hỏng sau đó. Seam: `test_e04_store_flow.py`.
+    """
     with engine.connect() as c:
         c.execute(
             sa.text("UPDATE ops.etl_run SET finished_at = now(), status = :s,"
-                    " stats = cast(:st AS jsonb), error = :e WHERE run_id = :r"),
+                    " stats = coalesce(cast(:st AS jsonb), ops.etl_run.stats),"
+                    " error = :e WHERE run_id = :r"),
             {"s": status, "st": json.dumps(stats) if stats is not None else None,
              "e": error, "r": run_id},
         )

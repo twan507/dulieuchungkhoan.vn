@@ -81,7 +81,7 @@ Test schema (tự tạo lại `dulieu_test` từ đầu qua `conftest.py`, khôn
 cd backend && uv run pytest tests/schema -v
 ```
 
-Cả bộ trong một lệnh — 321 test, gồm cả `tests/clickhouse` và `tests/ingester` *(hai bộ này tự dựng container ClickHouse riêng ở cổng riêng, không đụng CH production)*:
+Cả bộ trong một lệnh — 399 test *(đo 2026-09-03)*, gồm cả `tests/clickhouse` và `tests/ingester` *(hai bộ này tự dựng container ClickHouse riêng ở cổng riêng, không đụng CH production)*:
 
 ```bash
 cd backend && uv run pytest tests -q

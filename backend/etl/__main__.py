@@ -28,7 +28,14 @@ def main(argv: list[str] | None = None) -> int:
     if args[0] == "screener":
         import etl.screener_job
         return etl.screener_job.run()
-    print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener)", file=sys.stderr)
+    if args[0] == "events":
+        import etl.events_job
+        parser = argparse.ArgumentParser(prog="etl events")
+        parser.add_argument("--accept-new", action="store_true")
+        parsed = parser.parse_args(args[1:])
+        return etl.events_job.run(accept_new=parsed.accept_new)
+    print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener, events)",
+          file=sys.stderr)
     return 2
 
 

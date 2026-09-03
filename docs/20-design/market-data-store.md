@@ -212,11 +212,11 @@ Bốn luật rút ra từ những lần trả giá, mỗi luật chống một c
 | `getPriceData` Page 1 | Sau 15:00 | 1.974 |
 | **Họ Snapshot — KHÔNG chạy hằng ngày** *(chốt 2026-09-03, xem §4.1b)*: `snapshot` `valuation` `ownership` `dividend`; hai kind chấm điểm đã bỏ khỏi lược đồ (migration `0015`) | **Kích hoạt theo sự kiện + quét sàn định kỳ** | **≈ 200–260** |
 | `GetScreenerItems` — **lưu 80/193 trường** (ước lượng 2026-08-14; đếm 2026-09-03: **75/193** — 66 khoá đặt tên từ response thật, trừ 4 nhãn xếp hạng và 2 dòng KQKD trùng BCTC) *(gửi 1 tiêu chí, nhiều hơn sẽ timeout)* — **lát 1 XONG 2026-09-03: `etl screener` 15:20 — chạy thật sau phiên, 1.541 dòng/ngày, 52 trang ~30–70 s** ([spec](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) · [ledger](../90-records/plans/2026-09-03-screener-daily-etl/ledger.md)) | Sau 15:00 | 52 |
-| Lịch sự kiện *(dùng `FromDate` lấy phần mới)* | Hằng ngày | ~10 |
+| Lịch sự kiện *(tải TRỌN sáu họ `GetCorporate*` — đo 2026-09-03: `FromDate` không dùng được, mỗi họ lọc theo một trục ngày khác nhau và `Earning` lọc theo trường không có trong response; [`08-fiin-event-calendar.md`](../10-sources/market/08-fiin-event-calendar.md))* | Hằng ngày | 9 |
 | BCTC + PDF | **Kích hoạt** theo `GetCorporateEarning` | ~100–300/quý |
 | Re-crawl giá một mã | **Kích hoạt** theo sự kiện quyền của mã đó | tuỳ |
 
-**Hằng ngày ≈ 2.300 lời gọi** *(4 danh bạ + 1.974 giá + 52 Screener + ~10 lịch sự kiện + ~200–260 họ Snapshot)* — **thấp hơn con số ~6.000 của bản 2026-08-14**, vì họ Snapshot chuyển từ chạy-mọi-mã-mỗi-ngày sang kích hoạt theo sự kiện.
+**Hằng ngày ≈ 2.300 lời gọi** *(4 danh bạ + 1.974 giá + 52 Screener + 9 lịch sự kiện + ~200–260 họ Snapshot)* — **thấp hơn con số ~6.000 của bản 2026-08-14**, vì họ Snapshot chuyển từ chạy-mọi-mã-mỗi-ngày sang kích hoạt theo sự kiện.
 
 ### 4.1b Vì sao họ Snapshot không chạy hằng ngày — chốt 2026-09-03
 
@@ -232,7 +232,7 @@ Soi nội dung thật cả 6 endpoint và **18 trường ta thật sự lưu** c
 🔴 **Chỉ trigger là KHÔNG đủ — lịch sự kiện có sót, đã đo.** Độ phủ đo 2026-09-03 ([`08-fiin-event-calendar.md`](../10-sources/market/08-fiin-event-calendar.md)): `ShareIssuance` 100 % · `Earning` 96,4 % *(mọi chỗ sót ≤ 2022, từ 2023 tới nay sạch)* · `CashDividend` 98,6 % **và có một chỗ sót ở vùng gần đây** (SSI, đợt 2026-08). Nên kiến trúc là **hai lớp**:
 
 ```
-lịch sự kiện (~10 lời gọi/ngày)  →  kích hoạt fetch ngay        ← đường nhanh, bắt ~96–100 %
+lịch sự kiện (9 lời gọi/ngày)    →  kích hoạt fetch ngay        ← đường nhanh, bắt ~96–100 %
 quét sàn định kỳ toàn bộ         →  bắt phần lịch bỏ sót        ← lưới, và là THƯỚC ĐO
 ```
 
@@ -245,7 +245,7 @@ quét sàn định kỳ toàn bộ         →  bắt phần lịch bỏ sót   
 
 **Quét sàn vừa là lưới vừa là thước đo:** mỗi lần nó tìm ra thay đổi mà trigger không bắn = **một lỗ của lịch, đếm được**. Sau vài tháng có số thật thì siết hay nới nhịp bằng dữ liệu, không bằng cảm giác. Đây là việc của [§7.1 giám sát hợp đồng dữ liệu](#71-giám-sát-hợp-đồng-dữ-liệu).
 
-⚠️ **Ràng buộc thứ tự:** kiến trúc này đòi **lát lịch sự kiện chạy TRƯỚC lát Snapshot**. Lịch chỉ ~10 lời gọi/ngày — rẻ nhất cả nhóm — mà mở khoá cho Snapshot, BCTC và re-crawl giá.
+⚠️ **Ràng buộc thứ tự:** kiến trúc này đòi **lát lịch sự kiện chạy TRƯỚC lát Snapshot**. Lịch chỉ 9 lời gọi/ngày — rẻ nhất cả nhóm — mà mở khoá cho Snapshot, BCTC và re-crawl giá.
 
 ### 4.2 Backfill một lần
 
@@ -253,7 +253,9 @@ quét sàn định kỳ toàn bộ         →  bắt phần lịch bỏ sót   
 |---|---|---|
 | `getPriceData` toàn bộ 52 trang × 1.974 mã | **102.648** | ~12 giờ ở 8 luồng |
 | BCTC 3 loại × 1.974 mã | 5.922 | ~25 phút |
-| Lịch sự kiện toàn bộ | ~500 | vài phút |
+| Lịch sự kiện toàn bộ | 9 | ~2,5 phút |
+
+*(đo 2026-09-03)* Lịch sự kiện tải TRỌN sáu họ mỗi lượt — **backfill và job hằng ngày nay là cùng một đường code** (`python -m etl events`), khác nhau đúng một cờ: `--accept-new` mở khoá lượt tạo nhiều issuer tối thiểu (517 ở lượt đầu), lượt hằng ngày sau đó chạy không cờ vì gần như không còn issuer mới. Xem [`08-fiin-event-calendar.md`](../10-sources/market/08-fiin-event-calendar.md).
 
 ⚠️ Giới hạn **2 request/giây**, chạy ngoài giờ giao dịch, **rải 1–2 tuần**. Quét ồ ạt 102.648 lời gọi là mức tải đáng kể lên hạ tầng FiinGroup.
 
