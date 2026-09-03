@@ -38,13 +38,13 @@ def test_each_code_stored_once_under_the_authoritative_block():
     """Khối chuẩn `stockScreenerItem` giành mọi mã nó có; `financial` chỉ giữ mã RIÊNG nó.
 
     Kỳ vọng lấy độc lập từ JSON thô: tập mã chỉ có ở `financial` mà không có ở
-    `stockScreenerItem`. Đo 2026-09-03 trên mẫu 28/08 ra đúng 7 mã.
+    `stockScreenerItem`. Đo 2026-09-03 trên mẫu 28/08 ra đúng 5 mã (đều là họ tỷ số/thị trường, BCTC không có).
     """
     keep = set().union(*sn.KEEP.values())
     item = next(it for it in json.loads(POST)["items"] if it["priceInfo"]["ticker"] == "DDB")
     only_fin = {k for k in (item["financial"] or {}) if k in keep} - {
         k for k in (item["stockScreenerItem"] or {}) if k in keep}
-    assert only_fin == {"fryq30", "isa3", "isa5", "rtd39", "rtd53", "rtd54", "rtq81"}
+    assert only_fin == {"fryq30", "rtd39", "rtd53", "rtd54", "rtq81"}
 
     res = sn.normalize([POST])
     for row in res.rows:
@@ -53,7 +53,7 @@ def test_each_code_stored_once_under_the_authoritative_block():
         assert set(row.payload.get("financial", {})) <= only_fin
     ddb = next(r for r in res.rows if r.ticker == "DDB")
     assert set(ddb.payload["financial"]) == only_fin
-    assert len([k for blk in ddb.payload.values() for k in blk]) == 77
+    assert len([k for blk in ddb.payload.values() for k in blk]) == 75
 
 
 def test_rating_labels_are_not_kept():

@@ -461,7 +461,7 @@ CREATE TABLE screener_daily (
 SELECT create_hypertable('screener_daily', 'trading_date');
 ```
 
-> Đây là chỗ **tự tạo ra lịch sử** cho những thứ API chỉ trả giá trị hiện tại: định giá, cơ cấu sở hữu, tỷ số không nguồn nào khác có. *(Đính chính 2026-09-03: bản cũ nêu "điểm VGM" — nhóm chấm điểm của FiinTrade đã bị **loại có chủ đích** ở [chọn trường §4.2](market-field-selection.md), không lưu.)* Screener không có endpoint lịch sử — chuỗi bắt đầu từ ngày job chạy, không backfill được. ⚠️ Ba mã `rtq12` `rtq27` `rtq83` có ở cả hai khối của **response** với giá trị KHÁC NHAU (đo 2026-09-03). **Kho chỉ lưu bản của khối chuẩn `stockScreenerItem`**, mỗi mã đúng một bản; `financial` chỉ giữ 7 mã riêng nó có. Bằng chứng và giới hạn: spec etl screener §5.3.
+> Đây là chỗ **tự tạo ra lịch sử** cho những thứ API chỉ trả giá trị hiện tại: định giá, cơ cấu sở hữu, tỷ số không nguồn nào khác có. *(Đính chính 2026-09-03: bản cũ nêu "điểm VGM" — nhóm chấm điểm của FiinTrade đã bị **loại có chủ đích** ở [chọn trường §4.2](market-field-selection.md), không lưu.)* Screener không có endpoint lịch sử — chuỗi bắt đầu từ ngày job chạy, không backfill được. ⚠️ Ba mã `rtq12` `rtq27` `rtq83` có ở cả hai khối của **response** với giá trị KHÁC NHAU (đo 2026-09-03). **Kho chỉ lưu bản của khối chuẩn `stockScreenerItem`**, mỗi mã đúng một bản; `financial` chỉ giữ 5 mã riêng nó có, đều thuộc họ tỷ số/thị trường mà BCTC cũng không cấp. Bằng chứng và giới hạn: spec etl screener §5.3.
 
 ### 5.6 Sự kiện doanh nghiệp
 

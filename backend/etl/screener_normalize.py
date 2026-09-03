@@ -29,7 +29,8 @@ from pathlib import Path
 SELECTION_JSON = Path(__file__).resolve().parents[2] / "docs" / "20-design" / "market-field-selection.json"
 BLOCKS = ("priceInfo", "stockScreenerItem", "performance", "financial", "technical")
 # Thứ tự giành mã khi một khoá có ở nhiều khối — xem docstring. `financial` chỉ nhận
-# những mã mà `stockScreenerItem` KHÔNG có (isa3 · isa5 · fryq30 · rtd39 · rtd53 · rtd54 · rtq81).
+# những mã mà `stockScreenerItem` KHÔNG có — 5 mã họ tỷ số/thị trường mà BCTC cũng không cấp:
+# fryq30 · rtd39 · rtd53 (EPS Forward) · rtd54 (P/E Forward, suy) · rtq81 (T.trưởng LN YoY).
 BLOCK_PRIORITY = ("stockScreenerItem", "financial", "priceInfo", "performance", "technical")
 EXCHANGE = {"VNINDEX": "HOSE", "HNXIndex": "HNX", "UpcomIndex": "UPCOM"}
 

@@ -914,9 +914,9 @@
     "name_vi": "Doanh số thuần",
     "name_src": "từ điển",
     "source": "Screener",
-    "nguon_chuan": "Screener",
-    "keep": true,
-    "reason": "tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2)",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã. Đo 2026-09-03: cả hai nằm trong `chi_tieu_bao_cao_tai_chinh` của từ điển 729 mã (`ket-qua-kinh-doanh`), cùng họ với `isa1` `isa20` `isa22` đã bỏ theo cùng luật",
     "status": "chốt"
   },
   {
@@ -924,9 +924,9 @@
     "name_vi": "Lãi gộp",
     "name_src": "từ điển",
     "source": "Screener",
-    "nguon_chuan": "Screener",
-    "keep": true,
-    "reason": "tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2)",
+    "nguon_chuan": "BCTC đầy đủ",
+    "keep": false,
+    "reason": "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã. Đo 2026-09-03: cả hai nằm trong `chi_tieu_bao_cao_tai_chinh` của từ điển 729 mã (`ket-qua-kinh-doanh`), cùng họ với `isa1` `isa20` `isa22` đã bỏ theo cùng luật",
     "status": "chốt"
   },
   {

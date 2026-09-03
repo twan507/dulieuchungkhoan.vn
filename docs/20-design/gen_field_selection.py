@@ -141,7 +141,16 @@ add(["revTTM", "revY", "isa1TTM", "isa1Y", "isa20TTM", "isa20Y", "isa3TTM",
 # 48 khoá xếp bằng luật đã chốt; 18 mã tỷ số xếp `lấy` theo duyệt 2026-09-03 (spec §4.2, §9).
 R_NEW = ("tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; "
          "duyệt 2026-09-03 (spec etl screener §4.2)")
-add(["isa3", "isa5", "ryq2", "ryq3", "ryq6"], "Screener", "Screener", True, R_NEW, block="Tỷ số (đo 2026-08-28)")
+# 🔴 Đo 2026-09-03 (vòng hai): `isa3` `isa5` KHÔNG phải tỷ số — từ điển 729 mã xếp chúng vào
+# `chi_tieu_bao_cao_tai_chinh`, `bao_cao=ket-qua-kinh-doanh`, y hệt `isa1`/`isa20`/`isa22` đã bị
+# bỏ vì trùng BCTC. Vòng 2026-09-03 đầu tiên xếp nhầm vào tỷ số. Biến thể TTM/Y (`isa3TTM`…) vẫn
+# GIỮ vì BCTC không cấp kỳ TTM — đó là lý do cụm TTM/Y được giữ trọn ở trên.
+add(["isa3", "isa5"], "Screener", "BCTC đầy đủ", False,
+    "trùng bộ báo cáo tài chính đầy đủ — nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã. "
+    "Đo 2026-09-03: cả hai nằm trong `chi_tieu_bao_cao_tai_chinh` của từ điển 729 mã "
+    "(`ket-qua-kinh-doanh`), cùng họ với `isa1` `isa20` `isa22` đã bỏ theo cùng luật",
+    block="Trùng BCTC (đo 2026-09-03)")
+add(["ryq2", "ryq3", "ryq6"], "Screener", "Screener", True, R_NEW, block="Tỷ số (đo 2026-08-28)")
 # 🔴 Đo 2026-09-03: `roe` `grossMargin` `profitGrowth` `revenueGrowth` trả CHUỖI
 # ('Tốt' · 'Trung bình' · 'Cảnh báo'), không phải số — chúng là NHÃN XẾP HẠNG, thuộc nhóm
 # chấm điểm đã loại. Vòng 2026-09-03 đầu tiên xếp nhầm chúng vào tỷ số vì suy nghĩa từ TÊN
@@ -489,7 +498,8 @@ SCR_NEW_DROP_BLOCKS = [("metadata", "Metadata (đo 2026-08-28)"),
                        ("chấm điểm", "Chấm điểm (đo 2026-08-28)"),
                        ("kỹ thuật", "Chỉ báo kỹ thuật (đo 2026-08-28)"),
                        # 4 nhãn xếp hạng phát hiện 2026-09-03 (giá trị là CHUỖI, không phải số)
-                       ("nhãn xếp hạng", "Chấm điểm (đo 2026-09-03)")]
+                       ("nhãn xếp hạng", "Chấm điểm (đo 2026-09-03)"),
+                       ("trùng BCTC", "Trùng BCTC (đo 2026-09-03)")]
 
 
 def n_scr_block(block, keep):

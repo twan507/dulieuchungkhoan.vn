@@ -83,3 +83,9 @@ Sổ thực thi. Nhánh `feat/screener-daily-etl` từ `70da066` (main). Artifac
 - **Ruling 19:** 4 nhãn xếp hạng → `keep=False` (không cần hỏi lại: quyết định "không dùng điểm bên thứ ba" đang đứng, đây là sửa lỗi phân loại). *Nếu sai:* mất 4 nhãn theo ngày — nhưng chúng là điểm bên thứ ba, đúng thứ đã loại có chủ đích.
 
 Nghiệm thu: `tests/etl` **93 passed** · cả bộ **351 passed, 2 skipped** · đảo thứ tự e15→e10 **8 passed** · generator sinh lại **byte-bằng-byte** (không sửa tay). Payload DDB: **77 khoá, 0 trùng lặp**, `financial` = đúng 7 mã.
+
+**Vòng hai cùng ngày — chủ dự án hỏi "chốt nguồn rồi thì `financial` còn dùng được không".** Đi kiểm 7 mã còn lại thì bắt thêm một chỗ tôi xếp nhầm: **`isa3` (Doanh số thuần) và `isa5` (Lãi gộp) không phải tỷ số** — từ điển 729 mã xếp chúng vào `chi_tieu_bao_cao_tai_chinh`, `bao_cao=ket-qua-kinh-doanh`, y hệt `isa1`/`isa20`/`isa22` đã bị bỏ theo luật đang đứng *"nguồn chuẩn cho mọi mã `bs*` `is*` `cf*` `no*` là bộ 556 mã"*. Lý do tôi viết cho chúng (*"không rơi vào nhóm bỏ nào"*) **sai sự thật**.
+
+- **Ruling 20:** `isa3`/`isa5` → `keep=False`, nguồn chuẩn **BCTC đầy đủ**, block `Trùng BCTC (đo 2026-09-03)`. Biến thể TTM/Y (`isa3TTM`…) **giữ nguyên** vì BCTC không cấp kỳ TTM — đúng lý do cụm TTM/Y được giữ trọn từ đầu. ⇒ keep **77 → 75**; `financial` còn **5 mã** (`fryq30` `rtd39` `rtd53` `rtd54` `rtq81`), đều họ tỷ số/thị trường mà cả `stockScreenerItem` lẫn BCTC đều không có. *Nếu sai:* mất doanh thu/lãi gộp theo ngày từ Screener — nhưng BCTC có đủ hai chỉ tiêu này theo quý, và lấy hai nguồn cho cùng chỉ tiêu chính là "trộn nguồn" mà `architecture.md` §3.4 cấm.
+
+Nghiệm thu vòng hai: cả bộ **351 passed, 2 skipped** · generator sinh lại **byte-bằng-byte** · payload DDB **75 khoá** (`stockScreenerItem` 70 + `financial` 5), 0 trùng lặp.
