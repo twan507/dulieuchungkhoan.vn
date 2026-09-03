@@ -3,7 +3,7 @@
 Base URL: `https://wlgw-market.fiintrade.vn/Calendar` — ký hiệu `FIIN_MARKET`
 Header bắt buộc: `Origin: https://fiinapp.bvsc.com.vn`
 
-8 endpoint. Nguồn gốc dữ liệu là **VSD và các Sở giao dịch** — đây là dữ kiện thô, không phải phân tích của FiinTrade. Trường `sourceUrl` trỏ thẳng về bản công bố gốc.
+8 endpoint. Nguồn gốc dữ liệu là **VSD và các Sở giao dịch** — đây là dữ kiện thô, không phải phân tích của FiinTrade. Trường `sourceUrl` trỏ thẳng về bản công bố gốc — nhưng **chỉ `getCorporateAGM` trả trường này** *(đo 2026-09-03)*; năm họ `GetCorporate*` còn lại (`CashDividend`, `StockDividend`, `Earning`, `IPO`, `ShareIssuance`) không có `sourceUrl`.
 
 BVSC không có nguồn tương đương cho bất kỳ endpoint nào trong nhóm này.
 
@@ -379,6 +379,45 @@ GET FIIN_MARKET/Calendar/GetCalendarWatchList?Page=1&PageSize=50&language=vi
 
 ---
 
+## `PageSize` không có trần — đo 2026-09-03
+
+Bảng tham số dùng chung ở trên đã ghi "không có whitelist" cho `PageSize` của nhóm `GetCorporate*` — đo lại 2026-09-03 xác nhận bằng số: nguồn trả `min(PageSize, số bản ghi còn lại)`, không cắt, không báo lỗi, đã thử tới `PageSize=20.000`.
+
+**Tải trọn cả sáu họ `GetCorporate*` = 9 lời gọi, ~140 giây.** Riêng `getCorporateEarning` — họ nặng nhất, 57.026 bản ghi — ở `PageSize=20.000` mất **~36 giây mỗi trang, ~3,1 MB mỗi 10.000 bản ghi**, cần 3 trang để lấy trọn.
+
+---
+
+## 🔴 Trục lọc `FromDate` — đo 2026-09-03
+
+`FromDate`/`ToDate` được liệt trong bảng tham số dùng chung ở trên là "Hoạt động đúng" — đúng theo nghĩa API không báo lỗi và trả về ít bản ghi hơn. Nhưng **mỗi họ lọc theo một trục ngày khác nhau**, và với `Earning` thì trục đó **không phải trường nào có trong response**.
+
+Phép kiểm: tải trọn một họ, so **tập bản ghi** API trả cho một cửa sổ `FromDate`/`ToDate` với tập suy ra từ từng trường ngày trong bản ghi. Trục đúng phải cho **tập bằng nhau**, không phải "nằm trong".
+
+| Họ | Trục lọc thật | Bằng chứng |
+|---|---|---|
+| `CashDividend` | **`payoutDate`** | 3 cửa sổ, 25/25 bản ghi khớp; `publicDate` 0/25 |
+| `StockDividend` | **`payoutDate`** | cửa sổ 2026-05-25..29: chỉ `payoutDate` cho tập bằng nhau (7/7) |
+| `ShareIssuance` | **`issueDate`** | 2 cửa sổ, 10/10 khớp; `exrightDate` chỉ 6/10 |
+| `AGM` | **`publicDate`** | 219/219 trong cửa sổ 2026-03-10..14 |
+| `IPO` | `publicDate` | mẫu chỉ 1 bản ghi — **chưa đủ để khẳng định** |
+| `Earning` | **không phải trường nào có trong response** | xem bảng dưới |
+
+🔴 **Trục SẮP XẾP lại là trục khác nữa, không phải trục lọc.** 100 bản ghi đầu của `AGM` · `CashDividend` · `StockDividend` · `ShareIssuance` sắp giảm dần theo **`exrightDate`** — không theo trục lọc ở trên, cũng không theo `publicDate`. `IPO` sắp giảm dần theo `publicDate`. `Earning` không sắp theo trường nào quan sát được.
+
+### Earning: cửa sổ `FromDate` bỏ sót phần lớn dữ liệu
+
+| Cửa sổ | API trả | Bản ghi thật có `publicDate` trong cửa sổ | Giao | API trả mà ngoài cửa sổ | Trong cửa sổ mà API KHÔNG trả |
+|---|---|---|---|---|---|
+| 2026-03-10..14 | 24 | 217 | 22 | 2 | **195** |
+| 2025-11-03..07 | 83 | 80 | 75 | 8 | 5 |
+| 2026-08-01..05 | 135 | 116 | 100 | 35 | 16 |
+
+Hai tập **cắt nhau**, không tập nào chứa tập nào ⇒ trục lọc của `Earning` là một trường không có trong response (nhiều khả năng là ngày dự kiến công bố hoặc dấu thời gian cập nhật bản ghi).
+
+**Hệ quả thiết kế:** lấy phần mới bằng `FromDate` cho họ `Earning` sẽ **mất im lặng tới 90% bản ghi** của cửa sổ đó. Tải trọn `Earning` chỉ tốn 3 lời gọi ở `PageSize=20.000` — xem mục trên.
+
+---
+
 ## 🔴 Độ ĐẦY ĐỦ của lịch — đo 2026-09-03 bằng nguồn độc lập
 
 > Câu hỏi *"lịch có sót không"* **không trả lời được từ chính lịch**. Ba phép đo dưới đây đối chiếu lịch với một nguồn khác của cùng sự kiện.
@@ -403,16 +442,18 @@ GET FIIN_MARKET/Calendar/GetCalendarWatchList?Page=1&PageSize=50&language=vi
 
 ## Tổng hợp độ phủ nhóm Calendar
 
-| Endpoint | Bản ghi lịch sử | Thời gian | Ổn định |
-|---|---|---|---|
-| `getCorporateEarning` | 57.176 | ~7,4 s | ✅ |
-| `getCorporateAGM` | 23.434 | ~740 ms | ✅ |
-| `getCorporateCashDividend` | 17.884 | ~800 ms | ✅ |
-| `getCorporateShareIssuance` | 10.052 | ~750 ms | ✅ |
-| `getCorporateStockDividend` | 2.086 | ~1,0 s | ✅ |
-| `getCorporateIPO` | 77 | ~1,4 s | ✅ |
-| `getCalendarWatchList` | 190.143 | ~3,65 s | ✅ |
-| `getEconomy` | 2 / tuần | ~520 ms | ✅ |
+| Endpoint | Bản ghi lịch sử *(đo ~2026-08-10)* | Đo 2026-09-03 | Chênh | Thời gian | Ổn định |
+|---|---|---|---|---|---|
+| `getCorporateEarning` | 57.176 | 57.026 | **−150** | ~7,4 s | ✅ |
+| `getCorporateAGM` | 23.434 | 23.467 | +33 | ~740 ms | ✅ |
+| `getCorporateCashDividend` | 17.884 | 17.970 | +86 | ~800 ms | ✅ |
+| `getCorporateShareIssuance` | 10.052 | 10.097 | +45 | ~750 ms | ✅ |
+| `getCorporateStockDividend` | 2.086 | 2.100 | +14 | ~1,0 s | ✅ |
+| `getCorporateIPO` | 77 | 77 | 0 | ~1,4 s | ✅ |
+| `getCalendarWatchList` | 190.143 | *(chưa đo lại)* | — | ~3,65 s | ✅ |
+| `getEconomy` | 2 / tuần | *(chưa đo lại)* | — | ~520 ms | ✅ |
+
+⚠️ **`totalCount` trôi cả hai chiều theo thời gian** — `Earning` **giảm** 150 bản ghi trong 24 ngày trong khi năm họ kia tăng. Không được giả định tổng số chỉ tăng; chốt chặn kiểu "sụt quá X% thì từ chối" vẫn dùng được, nhưng ngưỡng phải cho phép trôi cả hai hướng.
 
 Gọi lặp hai lần cho kết quả **byte-identical** — dữ liệu ổn định, cache được.
 

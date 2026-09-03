@@ -10,7 +10,7 @@
 
 **Đang có:** [`agent/skills/`](agent/skills/) — hai skill sản phẩm `vn-stock-advisor` · `vn-stock-knowledge` (3.046 dòng, đã test 6 vòng). ⚠️ **Trước khi sửa bất cứ gì trong đó, bắt buộc đọc [`docs/30-skills/maintenance.md`](../docs/30-skills/maintenance.md).** `agent/` sau này chứa luôn system prompt và glue function-calling.
 
-**Trạng thái phần code:** `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)) · job `etl screener` (52 trang `GetScreenerItems` → `market.screener_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-screener-daily-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
+**Trạng thái phần code:** `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)) · job `etl screener` (52 trang `GetScreenerItems` → `market.screener_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-screener-daily-etl/)) · job `etl events` (sáu họ `Calendar/GetCorporate*` → `market.corporate_event`, [hồ sơ](../docs/90-records/plans/2026-09-03-events-daily-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
 
 ---
 
@@ -90,10 +90,25 @@ Chốt chặn vế (i) đòi **≥ 50 % số mã gom được có `closePrice > 
 ~1.545 dòng ma. Ba vế còn lại: đủ trang · tỷ lệ không ghép được `security_id` ≤ 2 % · tỷ lệ `comGroupCode`
 lạ ≤ 2 %.
 
+## Chạy job events (lịch sự kiện doanh nghiệp)
+
+```bash
+cd backend
+set -a; . ../.env; set +a; PYTHONIOENCODING=utf-8 uv run python -m etl events
+```
+
+Cần `ETL_DATABASE_URL` (user thuộc role `dlck_etl`). Một lượt = 9 lời gọi tải TRỌN sáu họ
+`Calendar/GetCorporate*` (~2,5 phút), ghi `market.corporate_event` UPSERT theo khoá tự nhiên —
+chạy lại trong ngày đè bản của chính lượt đó, không đẻ dòng mới.
+
+Cờ `--accept-new` mở khoá lượt tạo NHIỀU issuer tối thiểu cho mã vắng danh bạ — chỉ dùng cho lượt
+backfill đầu tiên (517 issuer, 2026-09-03), phải có người nhìn số trước khi chạy; task tự động
+(`dlck-events`) **không bao giờ** mang cờ này.
+
 ## Lịch chạy (Windows Task Scheduler)
 
 ```bash
 pwsh scripts/register-tasks.ps1
 ```
 
-Đăng ký **8 task**, tất cả hằng ngày làm việc: 4 mốc OMO (11:30 · 15:30 · 18:00 · 21:30) · `dlck-refdata` 08:00 (danh bạ tươi trước phiên) · `dlck-ingester` 08:30 (ghi thật — gate mở 2026-08-26) · `dlck-screener` 15:20 (sau khi ingester đóng 15:05, tránh 15:30 của OMO — đăng ký ở Task 8 của [plan screener](../docs/90-records/plans/2026-09-03-screener-daily-etl/plan.md), để `Disabled` cùng cả đội) · `dlck-ingester-measure` 08:30 (bắt frame thô song song làm lưới an toàn + đường nghiệm thu, thường trực từ 2026-08-27; bản đo giữ 30 ngày, job tự dọn). Bật/tắt tay bằng cmdlet `Enable-ScheduledTask` / `Disable-ScheduledTask`, **không dùng `schtasks.exe`** — xem cảnh báo đầu [`scripts/register-tasks.ps1`](../scripts/register-tasks.ps1).
+Đăng ký **9 task**, tất cả hằng ngày làm việc: 4 mốc OMO (11:30 · 15:30 · 18:00 · 21:30) · `dlck-refdata` 08:00 (danh bạ tươi trước phiên) · `dlck-ingester` 08:30 (ghi thật — gate mở 2026-08-26) · `dlck-screener` 15:20 (sau khi ingester đóng 15:05, tránh 15:30 của OMO — đăng ký ở Task 8 của [plan screener](../docs/90-records/plans/2026-09-03-screener-daily-etl/plan.md), để `Disabled` cùng cả đội) · `dlck-events` 18:00 (sau phiên và sau screener 15:20, dùng danh bạ tươi từ 08:00 — đăng ký ở Task 7 của [plan events](../docs/90-records/plans/2026-09-03-events-daily-etl/plan.md), để `Disabled` cùng cả đội) · `dlck-ingester-measure` 08:30 (bắt frame thô song song làm lưới an toàn + đường nghiệm thu, thường trực từ 2026-08-27; bản đo giữ 30 ngày, job tự dọn). Bật/tắt tay bằng cmdlet `Enable-ScheduledTask` / `Disable-ScheduledTask`, **không dùng `schtasks.exe`** — xem cảnh báo đầu [`scripts/register-tasks.ps1`](../scripts/register-tasks.ps1).

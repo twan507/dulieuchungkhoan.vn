@@ -19,7 +19,7 @@ Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập d
 | Repo vào git | ✅ khởi tạo 2026-08-14 | commit đầu tiên |
 | **Hạ tầng + schema hai kho** | ✅ **2026-08-26** | Postgres **14 migration** (alembic) · ClickHouse **2** · compose PG+CH+Redis |
 | **Ingester realtime** | ✅ **ghi thật từ 2026-08-27** — hàng đợi có trần, tràn ra đĩa khi kho trục trặc | 4,72 triệu dòng phiên 28/08 · chưa lần nào phải dùng tới đĩa |
-| **ETL theo lịch** | `etl omo` · `etl refdata` · **`etl screener`** (mới 2026-09-03, 15:20) — ⏸️ **tạm tắt, ưu tiên dev** ([lộ trình §2 mục 4d](docs/00-overview/roadmap.md)) | 8 task Scheduler, `LogonType=S4U`, đều `Disabled` |
+| **ETL theo lịch** | `etl omo` · `etl refdata` · **`etl screener`** (15:20) · **`etl events`** (mới 2026-09-03, 18:00) — ⏸️ **tạm tắt, ưu tiên dev** ([lộ trình §2 mục 4d](docs/00-overview/roadmap.md)) | 9 task Scheduler, `LogonType=S4U`, đều `Disabled` |
 | **`api` · `frontend`** | ❌ chưa bắt đầu | |
 
 Bảng đầy đủ kèm bằng chứng: [lộ trình §0](docs/00-overview/roadmap.md).
@@ -69,7 +69,7 @@ dulieuchungkhoan.vn/
 │   └── tests/           321 test, chạy trên Postgres/ClickHouse/Redis THẬT
 ├── database/            migrations: Postgres 14 (alembic) · ClickHouse 2
 ├── deploy/infra/        docker compose — Postgres · ClickHouse · Redis
-└── scripts/             register-tasks.ps1 — đăng ký 8 task Windows Scheduler
+└── scripts/             register-tasks.ps1 — đăng ký 9 task Windows Scheduler
 ```
 
 ## Dựng trên máy mới
