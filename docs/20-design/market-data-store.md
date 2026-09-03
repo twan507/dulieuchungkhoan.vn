@@ -209,7 +209,7 @@ Bốn luật rút ra từ những lần trả giá, mỗi luật chống một c
 | Nhóm | Nhịp | Số lời gọi |
 |---|---|---|
 | Danh bạ, ngành ICB, `/quotes`, `/mapping` | Trước phiên | 4 |
-| `getPriceData` Page 1 | Sau 15:00 | 1.974 |
+| `getPriceData` Page 1 — **lát 3 XONG 2026-09-04: `etl price` 15:40** — trang 1 (60 phiên) của **1.523** cổ phiếu niêm yết, lượt thật đầu 91.165 dòng, **38 phút tuần tự, 0 retry**; lượt chạy lại bỏ qua dòng payload không đổi; `close_raw` điền từ `closePrice` cho cả lịch sử ([spec](../90-records/plans/2026-09-03-price-daily-etl/spec.md) · [ledger](../90-records/plans/2026-09-03-price-daily-etl/ledger.md)) | Sau 15:00 | **1.523** *(1.974 cũ gồm 442 mã đã rời sàn)* |
 | **Họ Snapshot — KHÔNG chạy hằng ngày** *(chốt 2026-09-03, xem §4.1b)*: `snapshot` `valuation` `ownership` `dividend`; hai kind chấm điểm đã bỏ khỏi lược đồ (migration `0015`) | **Kích hoạt theo sự kiện + quét sàn định kỳ** | **≈ 200–260** |
 | `GetScreenerItems` — **lưu 80/193 trường** (ước lượng 2026-08-14; đếm 2026-09-03: **75/193** — 66 khoá đặt tên từ response thật, trừ 4 nhãn xếp hạng và 2 dòng KQKD trùng BCTC) *(gửi 1 tiêu chí, nhiều hơn sẽ timeout)* — **lát 1 XONG 2026-09-03: `etl screener` 15:20 — chạy thật sau phiên, 1.541 dòng/ngày, 52 trang ~30–70 s** ([spec](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) · [ledger](../90-records/plans/2026-09-03-screener-daily-etl/ledger.md)) | Sau 15:00 | 52 |
 | Lịch sự kiện *(tải TRỌN sáu họ `GetCorporate*` — đo 2026-09-03: `FromDate` không dùng được, mỗi họ lọc theo một trục ngày khác nhau và `Earning` lọc theo trường không có trong response; [`08-fiin-event-calendar.md`](../10-sources/market/08-fiin-event-calendar.md))* | Hằng ngày | 9 |
@@ -252,7 +252,7 @@ quét sàn định kỳ toàn bộ         →  bắt phần lịch bỏ sót   
 | Việc | Lời gọi | Thời gian |
 |---|---|---|
 | `getPriceData` mọi trang × **1.523** cổ phiếu niêm yết *(đo 2026-09-03 — số 1.974 cũ đếm trước lượt dọn 442 mã huỷ niêm yết; độ sâu mỗi mã theo tuổi niêm yết: BID 53 trang, TD6 6 trang)* | **~50.000–80.000** | **tuần tự**, ~25–40 giờ, rải vài đêm bằng `python -m etl price --backfill --max-minutes N` — con trỏ trong `ops.etl_run.stats.cursor` nên lượt sau đi tiếp từ mã kế, không làm lại ([spec lát 3 §5.5e](../90-records/plans/2026-09-03-price-daily-etl/spec.md)) |
-| BCTC 3 loại × 1.974 mã | 5.922 | ~25 phút |
+| BCTC 3 loại × 1.974 mã *(số cũ; tập niêm yết nay 1.523 và BCTC theo doanh nghiệp — tính lại ở lát BCTC)* | 5.922 | ~25 phút |
 | Lịch sự kiện toàn bộ | 9 | ~2,5 phút |
 
 *(đo 2026-09-03)* Lịch sự kiện tải TRỌN sáu họ mỗi lượt — **backfill và job hằng ngày nay là cùng một đường code** (`python -m etl events`), khác nhau đúng một cờ: `--accept-new` mở khoá lượt tạo nhiều issuer tối thiểu (517 ở lượt đầu), lượt hằng ngày sau đó chạy không cờ vì gần như không còn issuer mới. Xem [`08-fiin-event-calendar.md`](../10-sources/market/08-fiin-event-calendar.md).

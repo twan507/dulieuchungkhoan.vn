@@ -165,7 +165,7 @@ Bốn mục đang nằm trong danh sách **"Còn để ngỏ"** của pipeline t
 
 | Đang ghi là để ngỏ | Đáp án đã có |
 |---|---|
-| Danh sách ~1.600 mã niêm yết | `getListOrganization` cho danh bạ doanh nghiệp (**gồm cả mã đã huỷ niêm yết**); con số **1.974 cổ phiếu** là đếm `StockType=2` từ **`getAllQuotes` của BVSC**, đo 2026-08-15 — không phải số của `getListOrganization`. Số ~1.600 là ước lượng sai. Lọc mã huỷ niêm yết bằng `getAllQuotes` |
+| Danh sách ~1.600 mã niêm yết | `getListOrganization` cho danh bạ doanh nghiệp (**gồm cả mã đã huỷ niêm yết**); con số **1.974 cổ phiếu** là đếm `StockType=2` từ **`getAllQuotes` của BVSC**, đo 2026-08-15 — không phải số của `getListOrganization`. Số ~1.600 là ước lượng sai. Lọc mã huỷ niêm yết bằng `getAllQuotes` — *và 1.974 vẫn gồm 442 mã đã rời sàn: sau lượt dọn theo luật huỷ niêm yết (2026-09-03) tập `listed` thật là **1.523**, đó là số lời gọi/ngày của lát giá* |
 | Bảng tên thương mại → mã | `organName` + `organShortName` trong cùng endpoint |
 | Khung ngành để lọc tin | `getAllIcbIndustry` — cây ICB 4 cấp |
 | Khung ngành cho skill | Cùng nguồn trên, nối theo hợp đồng ở [§3.2](architecture.md) |

@@ -2,7 +2,7 @@
 
 Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập dữ liệu thị trường và tin tức từ nhiều nguồn, lưu vào kho riêng, phân phối lại qua REST và SSE, và một chatbot AI trả lời bằng phương pháp phân tích đã được hệ thống hoá thành skill.
 
-**Trạng thái — 2026-09-03:** thiết kế hoàn chỉnh, và **phần lõi thu thập dữ liệu đã chạy thật trong production** — nhưng ⏸️ **mọi job ghi đang tạm tắt để ưu tiên dev** ([lộ trình §2 mục 4d](docs/00-overview/roadmap.md)). Mới nhất: **`etl events` xong 2026-09-03** — sáu họ lịch sự kiện, **110.695 dòng** vào kho trong một lượt 9 lời gọi; cùng ngày trước đó là `etl screener` (1.541 dòng/ngày, 52 trang). Ingester bắt tick realtime mỗi phiên *(phiên 28/08: **4.722.406 dòng** vào kho, đối chứng sổ sách **dư = 0** trên cả 5 bảng)*; hai kho đã có schema và dữ liệu thật; **399 test** xanh chạy trên Postgres/ClickHouse/Redis thật; 9 task chạy theo lịch Windows Scheduler. `api` và `frontend` **chưa bắt đầu**. Hai skill chứng khoán đã xong và đã test 6 vòng. **Không còn việc chặn nào phụ thuộc bên ngoài** — giấy phép WiFeed đã chốt và rate limit FiinGroup đã kiểm, cùng ngày 2026-08-15. Cùng ngày, một **đợt khảo sát nguồn 9 nguồn / ~400 lời gọi thật** đã khép độ rộng dữ liệu: thêm **6 nguồn mới** và mở **5 khối dữ liệu** trước nay bỏ trống.
+**Trạng thái — 2026-09-03:** thiết kế hoàn chỉnh, và **phần lõi thu thập dữ liệu đã chạy thật trong production** — nhưng ⏸️ **mọi job ghi đang tạm tắt để ưu tiên dev** ([lộ trình §2 mục 4d](docs/00-overview/roadmap.md)). Mới nhất: **`etl price` xong 2026-09-04** — giá theo ngày, **91.165 dòng** (60 phiên × 1.523 cổ phiếu niêm yết) trong một lượt 38 phút tuần tự, và phát hiện `closePrice` của FiinTrade là **giá thô lịch sử** nên `close_raw` điền được cho cả 12,5 năm; trước đó `etl events` 2026-09-03 (sáu họ lịch sự kiện, **110.695 dòng**, 9 lời gọi) và `etl screener` (1.541 dòng/ngày, 52 trang). Ingester bắt tick realtime mỗi phiên *(phiên 28/08: **4.722.406 dòng** vào kho, đối chứng sổ sách **dư = 0** trên cả 5 bảng)*; hai kho đã có schema và dữ liệu thật; **432 test** xanh chạy trên Postgres/ClickHouse/Redis thật; 9 task chạy theo lịch Windows Scheduler (task thứ 10 `dlck-price` sẵn trong script). `api` và `frontend` **chưa bắt đầu**. Hai skill chứng khoán đã xong và đã test 6 vòng. **Không còn việc chặn nào phụ thuộc bên ngoài** — giấy phép WiFeed đã chốt và rate limit FiinGroup đã kiểm, cùng ngày 2026-08-15. Cùng ngày, một **đợt khảo sát nguồn 9 nguồn / ~400 lời gọi thật** đã khép độ rộng dữ liệu: thêm **6 nguồn mới** và mở **5 khối dữ liệu** trước nay bỏ trống.
 
 **Stack chốt 2026-08-24:** Next.js · Python/FastAPI · Postgres + ClickHouse *(lưu tick thô — [ADR 0007](docs/00-overview/decisions/0007-monorepo-layout-and-stack.md))*.
 
@@ -19,7 +19,7 @@ Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập d
 | Repo vào git | ✅ khởi tạo 2026-08-14 | commit đầu tiên |
 | **Hạ tầng + schema hai kho** | ✅ **2026-08-26** | Postgres **14 migration** (alembic) · ClickHouse **2** · compose PG+CH+Redis |
 | **Ingester realtime** | ✅ **ghi thật từ 2026-08-27** — hàng đợi có trần, tràn ra đĩa khi kho trục trặc | 4,72 triệu dòng phiên 28/08 · chưa lần nào phải dùng tới đĩa |
-| **ETL theo lịch** | `etl omo` · `etl refdata` · **`etl screener`** (15:20) · **`etl events`** (mới 2026-09-03, 18:10) — ⏸️ **tạm tắt, ưu tiên dev** ([lộ trình §2 mục 4d](docs/00-overview/roadmap.md)) | 9 task Scheduler, `LogonType=S4U`, đều `Disabled` |
+| **ETL theo lịch** | `etl omo` · `etl refdata` · **`etl screener`** (15:20) · **`etl events`** (18:10) · **`etl price`** (mới 2026-09-04, 15:40 — giá theo ngày + backfill 12,5 năm) — ⏸️ **tạm tắt, ưu tiên dev** ([lộ trình §2 mục 4d](docs/00-overview/roadmap.md)) | 9 task Scheduler đã đăng ký, `LogonType=S4U`, đều `Disabled`; task thứ 10 `dlck-price` sẵn trong script, chờ cửa sổ admin |
 | **`api` · `frontend`** | ❌ chưa bắt đầu | |
 
 Bảng đầy đủ kèm bằng chứng: [lộ trình §0](docs/00-overview/roadmap.md).
@@ -28,7 +28,7 @@ Bảng đầy đủ kèm bằng chứng: [lộ trình §0](docs/00-overview/road
 
 | Khối | Nguồn chuẩn | Quy mô đo được *(2026-08-15)* |
 |---|---|---|
-| Cổ phiếu · chỉ số · sổ lệnh · khối ngoại | BVSC | 1.974 cổ phiếu · 20 chỉ số |
+| Cổ phiếu · chỉ số · sổ lệnh · khối ngoại | BVSC | 1.974 cổ phiếu *(bảng giá gồm cả mã đã rời sàn; tập niêm yết thật sau lượt dọn 2026-09-03: **1.523**)* · 20 chỉ số |
 | BCTC · tỷ số · dòng tiền · lịch sự kiện | FiinTrade | 729 mã chỉ tiêu |
 | **Phái sinh** *(mới)* | BVSC + FiinTrade | 14 hợp đồng · 62 trường · backfill 2.233 phiên từ 31/08/2017 |
 | **ETF/quỹ niêm yết** *(mới)* | BVSC + FiinTrade | 31 mã · `iNav` phủ **6/31**, chỉ **2 mã** có thanh khoản thật |
@@ -69,7 +69,7 @@ dulieuchungkhoan.vn/
 │   └── tests/           399 test, chạy trên Postgres/ClickHouse/Redis THẬT
 ├── database/            migrations: Postgres 14 (alembic) · ClickHouse 2
 ├── deploy/infra/        docker compose — Postgres · ClickHouse · Redis
-└── scripts/             register-tasks.ps1 — đăng ký 9 task Windows Scheduler
+└── scripts/             register-tasks.ps1 — đăng ký 10 task Windows Scheduler
 ```
 
 ## Dựng trên máy mới
