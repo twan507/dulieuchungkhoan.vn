@@ -11,7 +11,7 @@ def test_preopen_real_sample_is_refused_as_non_trading_day():
     priced = sum(1 for r in res.rows if r.close_price > 0)
     v = sg.check(total_count=30, collected=30, priced=priced, unmapped=0, baseline_items=None)
     assert v.ok is False
-    assert v.reasons == ("không có mã nào có closePrice > 0 — không phải ngày giao dịch",)
+    assert v.reasons == ("chỉ 0/30 mã có closePrice > 0 — không phải ngày giao dịch",)
 
 
 def test_postclose_real_sample_passes_without_baseline():
@@ -34,3 +34,18 @@ def test_incomplete_pages_refused():
 def test_unmapped_ratio_refused_beyond_two_percent():
     assert sg.check(1545, 1545, 1500, unmapped=40, baseline_items=None).ok is False   # 2,6%
     assert sg.check(1545, 1545, 1500, unmapped=30, baseline_items=None).ok is True    # 1,9%
+
+
+def test_priced_ratio_boundary():
+    """Vế (i) là TỶ LỆ ≥ 50 %: một nhúm mã có giá không đủ mở cửa cho cả bộ 1.545 dòng.
+
+    Ngưỡng tính tay: 1.545 × 0,5 = 772,5 ⇒ 772 (49,97 %) từ chối, 773 (50,03 %) qua.
+    """
+    assert sg.check(1545, 1545, 772, 0, None).ok is False
+    assert sg.check(1545, 1545, 773, 0, None).ok is True
+
+
+def test_unknown_com_group_ratio_refused_beyond_two_percent():
+    """Vế (iv): nguồn đổi tên sàn thì mất trọn một sàn — không được im lặng."""
+    assert sg.check(1545, 1545, 1500, 0, None, unknown=40).ok is False    # 2,6%
+    assert sg.check(1545, 1545, 1500, 0, None, unknown=30).ok is True     # 1,9%

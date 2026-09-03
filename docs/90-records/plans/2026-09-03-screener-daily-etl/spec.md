@@ -100,7 +100,7 @@ open_run(engine, JOB)                       JOB = "market.screener"
       if not verdict.ok: raise GuardRefused  → giao dịch tự rollback
       stats = screener_store.apply(conn, t)  UPSERT theo PK
   close_run(success, stats) · upsert_domain_state('market.scores','fiintrade', watermark=trading_date)
-except GuardRefused → store_refusal_evidence (giao dịch riêng, staging.raw_payload source='screener') · close_run('failed') · exit 1
+except GuardRefused → store_refusal_evidence (giao dịch riêng, staging.raw_payload source='screener') — trang 1 (đủ cho vế (i)/(iii)), mọi trang khi lý do là thiếu trang · close_run('failed') · exit 1
 except Exception   → close_run('failed', error) · exit 2
 ```
 
@@ -126,28 +126,29 @@ Một item → `ScreenerRow(ticker, exchange, organ_code, trading_date, payload)
 
 ### 5.4 `screener_guard` — thuần, đánh giá trước commit
 
-Ba vế, **vế nào hỏng cũng từ chối**:
+Bốn vế, **vế nào hỏng cũng từ chối**:
 
 | # | Vế | Vì sao |
 |---|---|---|
-| (i) | **Phiên có giao dịch**: số mã có `priceInfo.closePrice > 0` phải **> 0** | Ngày lễ nguồn vẫn đóng dấu hôm nay với giá 0 (đo 03/09). Không có vế này, mỗi ngày lễ đẻ 1.545 dòng ma |
+| (i) | **Phiên có giao dịch**: số mã có `priceInfo.closePrice > 0` phải **≥ 50 % số mã gom được** (`MIN_PRICED_RATIO = 0.5` — đo được 30/30 sau phiên vs 0/30 trước mở cửa; ngưỡng tỷ lệ thay cho "> 0" sau review cuối 2026-09-03: một mã lẻ có giá trong ngày lễ không được phép mở cửa ghi 1.545 dòng ma) | Ngày lễ nguồn vẫn đóng dấu hôm nay với giá 0 (đo 03/09). Không có vế này, mỗi ngày lễ đẻ 1.545 dòng ma |
 | (ii) | **Đủ trang**: số item gom được == `totalCount` của trang 1, và `totalCount ≥ (1 − 2%) × mốc` | Mốc = `stats.counts.items` của lượt `success` gần nhất trong `ops.etl_run` — khuôn `refdata_guard` tầng 1, `DROP_RATIO = 0.02`. Lượt đầu không mốc thì bỏ vế sụt |
 | (iii) | **Ghép được**: tỷ lệ dòng không tìm thấy `security_id` ≤ 2% | Mã có trong Screener mà chưa có trong `market.security` là bất thường (refdata chạy 08:00 cùng ngày) |
+| (iv) | **Sàn lạ**: số dòng bị bỏ vì `comGroupCode` không thuộc {VNINDEX, HNXIndex, UpcomIndex} ≤ 2 % | Nguồn đổi tên sàn thì không được im lặng mất trọn một sàn (review cuối 2026-09-03) |
 
-Vế (i) là lý do tồn tại của guard này; (ii) và (iii) là bảo hiểm rẻ theo khuôn có sẵn.
+Vế (i) là lý do tồn tại của guard này; (ii), (iii) và (iv) là bảo hiểm rẻ theo khuôn có sẵn.
 
 ### 5.5 `screener_merge` + `screener_store`
 
 - Ghép theo `(ticker, exchange)` với `market.security WHERE status = 'listed'` — đúng unique index đã có. Không ghép qua `organCode → issuer` vì một issuer có thể có nhiều security.
 - `apply`: `INSERT … ON CONFLICT (security_id, trading_date) DO UPDATE SET payload = EXCLUDED.payload, ingested_at = now()` — **UPSERT theo PK**, đúng ngữ nghĩa step-03 §3 *("chạy lại trong ngày đè bản của chính ngày đó")*.
-- `stats` ghi vào `ops.etl_run`: `counts.items`, `counts.pages`, `rows_written`, `unmapped`, `unknown_com_group`, `null_blocks`, `retries`, `trading_date`.
+- `stats` ghi vào `ops.etl_run`: `counts.items`, `counts.pages`, `counts.priced`, `counts.trading_dates`, `rows_written`, `unmapped`, `unknown_com_group`, `null_blocks`, `dup_conflicts`, `retries`, `trading_date`.
 
 ### 5.6 Lịch và vận hành
 
 - Task `dlck-screener` **15:20** Thứ 2–6, đăng ký qua `Register-DlckTask` trong `scripts/register-tasks.ps1` + `Assert-TaskCommand -MustContain "python -m etl screener"`. 15:20 vì ingester ghi xong 15:05, và **tránh 15:30 của OMO** (đang tắt, sẽ bật lại theo roadmap [4d]).
 - Chạy thật dưới `ETL_DATABASE_URL` (role `dlck_etl`) — role đã có `SELECT, INSERT, UPDATE, DELETE` trên `market.*`, `staging.*`, `ops.*` (`0009`), không cần grant mới.
 - Thời lượng dự kiến: 52 × ~2,4 s ≈ **2–3 phút**.
-- Ngày lễ: guard (i) từ chối ⇒ `etl_run.status = 'failed'`, error *"không có mã nào có closePrice > 0 — không phải ngày giao dịch"*, bằng chứng vào `staging.raw_payload`. **Đó là hành vi đúng**, không phải sự cố — cùng triết lý với job huỷ niêm yết báo đỏ 01/09.
+- Ngày lễ: guard (i) từ chối ⇒ `etl_run.status = 'failed'`, error *"chỉ 0/1.545 mã có closePrice > 0 — không phải ngày giao dịch"*, bằng chứng vào `staging.raw_payload`. **Đó là hành vi đúng**, không phải sự cố — cùng triết lý với job huỷ niêm yết báo đỏ 01/09.
 
 ## 6. Seam test *(chốt cùng plan — §4.5.2; expected từ mẫu thật ở `samples/`, không tính lại theo code)*
 

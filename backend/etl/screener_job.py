@@ -43,7 +43,8 @@ def run() -> int:
             with engine.begin() as conn:
                 mapped, unmapped = screener_store.merge(conn, n.rows)
                 verdict = screener_guard.check(n.total_count, len(n.rows) + n.unknown_com_group,
-                                               priced, unmapped, baseline)
+                                               priced, unmapped, baseline,
+                                               unknown=n.unknown_com_group)
                 if not verdict.ok:
                     raise GuardRefused(verdict.reasons)
                 apply_stats = screener_store.apply(conn, mapped)
