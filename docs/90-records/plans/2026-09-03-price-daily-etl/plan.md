@@ -411,7 +411,7 @@ def open_fetcher(get=None, sleep=time.sleep, clock=time.monotonic):
 - [ ] **Bước 4: Chạy lại, xanh**
 
 Run: `PYTHONIOENCODING=utf-8 uv run pytest tests/etl/test_e21_price_fetch.py -v`
-Expected: `9 passed`
+Expected: `11 passed` *(9 lúc giao plan; 2 test exception vận chuyển thêm sau sự cố máy ngủ 2026-09-04 02:00 — xem ledger)*
 
 - [ ] **Bước 5: Commit**
 

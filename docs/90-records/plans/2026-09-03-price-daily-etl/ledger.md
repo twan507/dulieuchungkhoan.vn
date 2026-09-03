@@ -87,3 +87,90 @@ price xong: {'codes': 1523, 'with_data': 1523, 'invalid': 0, 'failed': 0, 'no_or
 | log | 0 WARNING | không mã nào phải retry; không tín hiệu chặn (không 429/403/5xx, không `Failed` tạm) |
 
 **Nhịp thật:** 1.523 lời gọi / 2.288 s = **1,50 s/lời gọi ≈ 40 request/phút**, liên tục 38 phút — cao hơn burst Screener đã đo (~29/phút) mà **không gặp tín hiệu chặn nào**. Đây là mức tải kế hoạch, chạy đúng rồi dừng (§4.3) — ghi vào [00-conventions §10](../../../10-sources/market/00-conventions.md).
+
+### AC4 — idempotent
+
+```
+python -m etl price                              exit 0, 01:19:25 → 01:55:00, elapsed 2138 s
+
+price xong: {'codes': 1523, 'with_data': 1523, 'invalid': 0, 'failed': 0, 'retries': 0,
+             'latest_trading_date': '2026-09-03', 'rows_sent': 91165, 'rows_changed': 0,
+             'dup_dates': 0, 'raw_close_mismatch': 0, 'elapsed_s': 2138}
+
+count(*) price_daily: 91165 → 91165
+```
+
+**`rows_changed = 0` trên 91.165 dòng gửi lại** — không một payload nào đổi giữa 00:41 và 01:55 (kể cả dòng T+1 của phiên 03/09: nguồn chưa điền dòng tiền lúc đó). Lượt hai nhanh hơn 150 s vì không phải UPDATE dòng nào. 1.523 lời gọi nữa, 0 retry ⇒ tổng đêm nay **3.046 + 100 + 54 lời gọi liên tiếp** không tín hiệu chặn.
+
+### AC5 — guard từ chối thật bằng đột biến
+
+Đột biến bằng script thay chuỗi *(không dùng `git checkout` để khôi phục — bài học lát 2)*: trong `Fetcher.many`, mỗi mã thứ 33 raise `CodeInvalid` ⇒ 3/100 mã đầu bảng. Chạy `--codes` 100 mã đầu (`A32,AAA,AAH,…`):
+
+```
+MUTATED
+price từ chối: ('3/100 mã không có dữ liệu (3 mã sai, 0 mã hỏng) — quá 2%',)        exit 1
+REVERTED
+rows: 91165 → 91165                                   KHÔNG GHI GÌ
+etl_run 74: failed, error = "guard refused: 3/100 mã không có dữ liệu (3 mã sai, 0 mã hỏng) — quá 2%"
+            stats.invalid_tickers = ['AGP', 'ATS', 'BHN']     ← bộ đếm NÊU TÊN
+staging.raw_payload 'price:refusal': 1 dòng, meta.run_id = 74
+git diff --stat etl/price_fetch.py: rỗng
+```
+
+### AC6 — `price_factor` có nghĩa trên lịch sử
+
+```
+python -m etl price --backfill --codes DMX,BID    exit 0, 121 s
+backfill xong: {'cursor': None, 'codes_done': 2, 'pages': 54, 'rows_sent': 3160, 'rows_changed': 3082,
+                'invalid_tickers': [], 'failed_tickers': [], 'retries': 0, 'budget_hit': False,
+                'pass_complete': False, 'subset': True}
+```
+
+`rows_changed = 3.082 = 3.160 − 78` — 78 dòng (60 BID + 18 DMX) đã có từ lượt hằng ngày với payload y hệt, bị bỏ qua đúng. `cursor = None` và `pass_complete = False` vì là lượt `--codes` (subset không đụng con trỏ).
+
+| Kiểm | Kết quả |
+|---|---|
+| DMX `price_factor` 14/08 · 17/08 · **18/08** · 19/08 | **0,9548 · 0,9548 · 1,0000 · 1,0000** — bậc đúng ngày không hưởng quyền, đúng hệ số (88.500 − 4.000)/88.500 |
+| BID | **3.142 dòng** = `totalCount` nguồn, 2014-01-24 *(ngày niêm yết)* → 2026-09-03, **0** `close_raw` NULL |
+| BID 2014-06-03 | `factor 0,3964` — `close_adj 5747.8202873773` / `close_raw 14500` — đúng số spec dự đoán từ bản đo |
+
+### Sự cố giữa AC7 — máy NGỦ, và một lỗi thật lộ ra
+
+Lượt backfill thứ nhất (`etl_run` 76) bắt đầu **02:00:01**; Windows vào sleep **02:00:06** (System event 42), thức **05:56** (event 107/1). Lời gọi đầu tiên treo qua giấc ngủ, thức dậy thành `httpx.ReadTimeout` — và **exception đó lọt qua vòng retry**, giết cả lượt ở mã đầu tiên: `codes_done = 0`, `status = failed`. Spec §5.2 ghi *"retry 3 lần cho mọi lỗi khác"*, nhưng `_page` chỉ xử lý **response xấu**, không bắt exception vận chuyển — cùng khuôn với `events_fetch`/`screener_fetch` (ở đó 9–52 lời gọi nên chưa ai gặp).
+
+Sửa theo TDD, commit `e7f80f6`: hai test đỏ (`ReadTimeout` 2 lần rồi hồi ⇒ `retries = 2`, ngủ `[2, 4]`; `ConnectError` mãi ⇒ `FetchError` cho mã đó, `many` xếp vào `failed` không ném) → `_page` bắt `httpx.HTTPError` và cho đi cùng đường với response xấu → **11 passed**. Ngắt khẩn 10 mã liên tiếp vẫn giữ nguyên nên mạng chết thật vẫn dừng lượt.
+
+**Điều code không chống được:** máy ngủ 4 tiếng. Ghi thành luật vận hành ở [backend/README](../../../../backend/README.md) (tắt sleep trước khi backfill qua đêm) và dạng hỏng thứ ba ở [service-topology §5](../../../20-design/service-topology.md).
+
+### AC7 — backfill tiếp tục được (hai lượt `--max-minutes 3` nối nhau, cộng lượt 76 chết giữa chừng)
+
+```
+run 76  failed   cursor NULL  codes_done 0     ← ngủ máy, ReadTimeout ở mã đầu (trước bản vá)
+run 77  success  cursor AAM   codes_done 4  pages 183  rows_sent 10864  rows_changed 10624  budget_hit true  256 s
+        (A32 · AAA · AAH · AAM)
+run 78  success  cursor ABC   codes_done 6  pages 151  rows_sent  8916  rows_changed  8556  budget_hit true  240 s
+        log: "tiếp tục sau con trỏ AAM: còn 1519 mã"   (AAN · AAS · AAT · AAV · ABB · ABC)
+```
+
+Không mã nào làm hai lần: 4 + 6 = 10 mã, và `securities có > 60 dòng = 11` = 10 mã này + BID của AC6 (DMX chỉ 18 phiên). `rows_changed` = `rows_sent` − 60 × số mã *(60 phiên/mã đã có từ lượt hằng ngày với payload y hệt)* ở cả hai lượt — vế bỏ-qua-dòng-không-đổi chạy đúng cả trong backfill. Lượt 76 `failed` nhưng **không làm mất gì**: con trỏ NULL nên lượt 77 bắt đầu từ mã đầu, đúng thiết kế *"con trỏ ghi sau từng mã"*. Kho sau AC7: **113.427 dòng**.
+
+Nhịp backfill đo được: 334 trang / 496 s ≈ **1,5 s/trang**, 33 trang/mã ⇒ ước toàn tập ~50.000 trang ≈ **20 giờ tuần tự**, tức 2–3 đêm `--max-minutes 600` với máy không ngủ.
+
+### AC1 (lại) sau bản vá `e7f80f6`
+
+```
+434 passed, 2 skipped, 1 warning in 28.91s
+```
+
+### AC8 — đăng ký task `dlck-price`: ⏳ chờ chủ dự án (cần cửa sổ Run as Administrator)
+
+Script đã có task thứ 10 (`51850f4`): `dlck-price` 15:40, `Assert-TaskCommand -MustContain "python -m etl price" -MustNotContain "--backfill"`. Khi đăng ký, kiểm bằng lệnh thật rồi tắt lại cùng cả đội:
+
+```powershell
+pwsh scripts/register-tasks.ps1 -LogonType S4U          # cửa sổ admin; script -Force sẽ BẬT lại task đang tắt — tắt lại ngay sau
+(Get-ScheduledTask -TaskName "dlck-price").Triggers[0].StartBoundary   # phải có T15:40:00+07:00
+(Get-ScheduledTask -TaskName "dlck-price").Actions[0].Arguments        # phải có "python -m etl price", KHÔNG có "--backfill"
+Get-ScheduledTask -TaskName "dlck-*" | Disable-ScheduledTask           # giữ Disabled theo [4d]
+```
+
+**AC1–AC7 ✅ — AC8 ⏳ admin.**

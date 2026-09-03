@@ -140,6 +140,12 @@ Hồ sơ và ba quyết định thiết kế (tuần tự thay vì 8 luồng · 
 | hằng ngày | `market.price_daily` | một giao dịch cho cả lượt, guard **trước** commit | (0) không mã nào có dữ liệu · (i) mã sai + mã hỏng > 2 % · (ii) số mã có dữ liệu sụt > 2 % so lượt success toàn tập gần nhất · (iii) ngày mới nhất ở tương lai · (iv) ngày mới nhất lùi so mốc |
 | `--backfill` | `market.price_backfill` | mỗi mã một giao dịch; `stats.cursor` ghi sau từng mã | không guard tổng — chỉ ngắt khẩn khi **10 mã liên tiếp** hỏng |
 
+🔴 **Backfill qua đêm đòi máy KHÔNG NGỦ.** Sự cố 2026-09-04 02:00: Windows vào sleep giữa một lời gọi, thức lúc
+05:56 ⇒ `httpx.ReadTimeout`; lượt đó ghi `failed` (con trỏ giữ nguyên nhờ `save_progress` sau từng mã, lượt sau đi
+tiếp) và từ commit `e7f80f6` timeout/đứt kết nối được thử lại 3 lần như response xấu thay vì giết cả lượt. Nhưng
+không code nào chống được máy ngủ 4 tiếng: trước khi chạy `--backfill --max-minutes 600` phải tắt sleep (Power &
+sleep → Never) hoặc chạy lúc có người. Lượt hằng ngày 15:40 (~38 phút) không bị vì máy đang dùng.
+
 Lượt `--codes` ghi `stats.subset = true`: **không** làm mốc cho guard (ii)/(iv), **không** đụng
 `data_domain_state('market.price')`, **không** dời con trỏ backfill. Backfill hết vòng (`pass_complete`)
 thì lượt kế bắt đầu vòng mới từ mã đầu — log ghi rõ. `stats.raw_close_mismatch` phải là **0**: đó là
