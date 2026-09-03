@@ -1,0 +1,98 @@
+{
+ "CashDividend": {
+  "total_count": 15,
+  "items": 15,
+  "fields": {
+   "publicDate": {
+    "non_null": 15,
+    "in_window": 0,
+    "min": "2026-05-21",
+    "max": "2026-07-10"
+   },
+   "exrightDate": {
+    "non_null": 15,
+    "in_window": 0,
+    "min": "2026-06-30",
+    "max": "2026-07-22"
+   },
+   "recordDate": {
+    "non_null": 15,
+    "in_window": 0,
+    "min": "2026-07-01",
+    "max": "2026-07-23"
+   },
+   "payoutDate": {
+    "non_null": 15,
+    "in_window": 15,
+    "min": "2026-08-03",
+    "max": "2026-08-05"
+   }
+  }
+ },
+ "ShareIssuance": {
+  "total_count": 4,
+  "items": 4,
+  "fields": {
+   "publicDate": {
+    "non_null": 4,
+    "in_window": 1,
+    "min": "2026-07-28",
+    "max": "2026-08-18"
+   },
+   "exrightDate": {
+    "non_null": 4,
+    "in_window": 4,
+    "min": "2026-08-03",
+    "max": "2026-08-05"
+   },
+   "issueDate": {
+    "non_null": 4,
+    "in_window": 4,
+    "min": "2026-08-03",
+    "max": "2026-08-05"
+   },
+   "listingDate": {
+    "non_null": 1,
+    "in_window": 0,
+    "min": "2029-08-06",
+    "max": "2029-08-06"
+   }
+  }
+ },
+ "Earning": {
+  "total_count": 135,
+  "items": 135,
+  "fields": {
+   "publicDate": {
+    "non_null": 135,
+    "in_window": 100,
+    "min": "2026-07-15",
+    "max": "2026-08-28"
+   }
+  }
+ },
+ "AGM": {
+  "total_count": 4,
+  "items": 4,
+  "fields": {
+   "publicDate": {
+    "non_null": 4,
+    "in_window": 4,
+    "min": "2026-08-03",
+    "max": "2026-08-05"
+   },
+   "exrightDate": {
+    "non_null": 4,
+    "in_window": 0,
+    "min": "2026-08-13",
+    "max": "2026-08-19"
+   },
+   "issueDate": {
+    "non_null": 2,
+    "in_window": 0,
+    "min": "2026-09-14",
+    "max": "2026-09-18"
+   }
+  }
+ }
+}

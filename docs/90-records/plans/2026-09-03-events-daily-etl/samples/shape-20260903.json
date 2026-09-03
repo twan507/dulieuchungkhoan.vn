@@ -1,0 +1,336 @@
+{
+ "agm": {
+  "total_count": 23467,
+  "first_3": [
+   {
+    "organCode": "QNC",
+    "ticker": "QNC",
+    "organShortName": "Xi măng Quảng Ninh",
+    "publicDate": "2026-09-03T00:00:00",
+    "issueDate": "2026-10-24T00:00:00",
+    "exrightDate": "2026-09-22T00:00:00",
+    "address": "Công ty cổ phần Xi măng và Xây dựng Quảng Ninh, Khu phố Bạch Đằng, Phường Yên Tử, Tỉnh Quảng Ninh, Việt Nam",
+    "locationName": "Tỉnh Quảng Ninh",
+    "eventTitle": null,
+    "sourceUrl": "https://vsdc.vn/vi/ad/199746"
+   },
+   {
+    "organCode": "KTS",
+    "ticker": "KTS",
+    "organShortName": "Đường Kon Tum",
+    "publicDate": "2026-08-28T00:00:00",
+    "issueDate": null,
+    "exrightDate": "2026-09-18T00:00:00",
+    "address": "Công ty cổ phần Đường Kon Tum: Thôn Kon Rờ Bàng 1, Xã Ngọk Bay, Tỉnh Quảng Ngãi, Việt Nam",
+    "locationName": "Tỉnh Quảng Ngãi",
+    "eventTitle": null,
+    "sourceUrl": "https://vsdc.vn/vi/ad/199770"
+   },
+   {
+    "organCode": "CTD",
+    "ticker": "CTD",
+    "organShortName": "Xây dựng Coteccons",
+    "publicDate": "2026-09-03T00:00:00",
+    "issueDate": "2026-10-20T00:00:00",
+    "exrightDate": "2026-09-17T00:00:00",
+    "address": "Thông báo sau",
+    "locationName": "Khu vực khác",
+    "eventTitle": null,
+    "sourceUrl": "https://vsdc.vn/vi/ad/199794"
+   }
+  ],
+  "fields": [
+   "address",
+   "eventTitle",
+   "exrightDate",
+   "issueDate",
+   "locationName",
+   "organCode",
+   "organShortName",
+   "publicDate",
+   "sourceUrl",
+   "ticker"
+  ]
+ },
+ "cashdividend": {
+  "total_count": 17970,
+  "first_3": [
+   {
+    "organCode": "THANHHOAWATER",
+    "ticker": "THN",
+    "publicDate": "2026-08-13T00:00:00",
+    "recordDate": "2026-08-21T00:00:00",
+    "exrightDate": "2026-08-20T00:00:00",
+    "payoutDate": "2026-08-28T00:00:00",
+    "exerciseRate": 0.1335,
+    "valuePerShare": 1335.0,
+    "dividendYear": 2025,
+    "stageName": "Cả năm"
+   },
+   {
+    "organCode": "MWJSC",
+    "ticker": "DMX",
+    "publicDate": "2026-08-11T00:00:00",
+    "recordDate": "2026-08-19T00:00:00",
+    "exrightDate": "2026-08-18T00:00:00",
+    "payoutDate": "2026-08-26T00:00:00",
+    "exerciseRate": 0.4,
+    "valuePerShare": 4000.0,
+    "dividendYear": 2025,
+    "stageName": "Đợt 1"
+   },
+   {
+    "organCode": "QNSC",
+    "ticker": "QNS",
+    "publicDate": "2026-08-13T00:00:00",
+    "recordDate": "2026-08-19T00:00:00",
+    "exrightDate": "2026-08-18T00:00:00",
+    "payoutDate": "2026-08-27T00:00:00",
+    "exerciseRate": 0.1,
+    "valuePerShare": 1000.0,
+    "dividendYear": 2026,
+    "stageName": "Đợt 1"
+   }
+  ],
+  "fields": [
+   "dividendYear",
+   "exerciseRate",
+   "exrightDate",
+   "organCode",
+   "payoutDate",
+   "publicDate",
+   "recordDate",
+   "stageName",
+   "ticker",
+   "valuePerShare"
+  ]
+ },
+ "stockdividend": {
+  "total_count": 2100,
+  "first_3": [
+   {
+    "organCode": "12681",
+    "ticker": "RYG",
+    "publicDate": "2026-08-22T00:00:00",
+    "recordDate": "2026-09-04T00:00:00",
+    "exrightDate": "2026-09-03T00:00:00",
+    "payoutDate": "2026-09-03T00:00:00",
+    "exerciseRate": 0.17,
+    "valuePerShare": 0.0,
+    "dividendYear": 2025,
+    "stageName": "Cả năm"
+   },
+   {
+    "organCode": "VC3",
+    "ticker": "VC3",
+    "publicDate": "2026-08-21T00:00:00",
+    "recordDate": "2026-08-28T00:00:00",
+    "exrightDate": "2026-08-27T00:00:00",
+    "payoutDate": "2026-08-27T00:00:00",
+    "exerciseRate": 0.075,
+    "valuePerShare": 0.0,
+    "dividendYear": 2025,
+    "stageName": "Cả năm"
+   },
+   {
+    "organCode": "TN1",
+    "ticker": "TN1",
+    "publicDate": "2026-08-14T00:00:00",
+    "recordDate": "2026-08-27T00:00:00",
+    "exrightDate": "2026-08-26T00:00:00",
+    "payoutDate": "2026-08-26T00:00:00",
+    "exerciseRate": 0.1,
+    "valuePerShare": 0.0,
+    "dividendYear": 2025,
+    "stageName": "Cả năm"
+   }
+  ],
+  "fields": [
+   "dividendYear",
+   "exerciseRate",
+   "exrightDate",
+   "organCode",
+   "payoutDate",
+   "publicDate",
+   "recordDate",
+   "stageName",
+   "ticker",
+   "valuePerShare"
+  ]
+ },
+ "ipo": {
+  "total_count": 77,
+  "first_3": [
+   {
+    "organCode": "0304941312",
+    "ticker": "XDC",
+    "organName": "Xây dựng Công trình Tân Cảng",
+    "publicDate": "2022-09-08T00:00:00",
+    "listingDate": "2022-10-21T09:00:00",
+    "exchange": null,
+    "offeringShare": 3279800.0,
+    "ipoRatio": 0.0,
+    "prices": 15322.0,
+    "revenue": 314796320540.0,
+    "profit": 9916445679.0
+   },
+   {
+    "organCode": "11009",
+    "ticker": "CNA",
+    "organName": "Tổng công ty Chè Nghệ An - CTCP",
+    "publicDate": "2021-09-14T00:00:00",
+    "listingDate": "2021-09-14T09:00:00",
+    "exchange": "UPCoMIndex",
+    "offeringShare": 793917.0,
+    "ipoRatio": 0.23244158,
+    "prices": 0.0,
+    "revenue": 14111351357.0,
+    "profit": -854234909.0
+   },
+   {
+    "organCode": "10666",
+    "ticker": "SCV",
+    "organName": "Muối Việt Nam",
+    "publicDate": "2021-04-12T00:00:00",
+    "listingDate": "2021-04-12T12:00:00",
+    "exchange": "UPCoMIndex",
+    "offeringShare": 1279392.0,
+    "ipoRatio": 0.2928,
+    "prices": 21300.0,
+    "revenue": 234273116965.0,
+    "profit": -3648801603.0
+   }
+  ],
+  "fields": [
+   "exchange",
+   "ipoRatio",
+   "listingDate",
+   "offeringShare",
+   "organCode",
+   "organName",
+   "prices",
+   "profit",
+   "publicDate",
+   "revenue",
+   "ticker"
+  ]
+ },
+ "shareissuance": {
+  "total_count": 10097,
+  "first_3": [
+   {
+    "organCode": "12681",
+    "ticker": "RYG",
+    "publicDate": "2026-08-22T00:00:00",
+    "exrightDate": "2026-09-03T00:00:00",
+    "issueDate": "2026-09-03T00:00:00",
+    "listingDate": null,
+    "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+    "exerciseRatio": 0.17,
+    "planVolumn": 7650000.0,
+    "issueYear": 2026,
+    "issueStatusName": "Đã thực hiện xong"
+   },
+   {
+    "organCode": "12681",
+    "ticker": "RYG",
+    "publicDate": "2026-08-22T00:00:00",
+    "exrightDate": "2026-09-03T00:00:00",
+    "issueDate": "2026-09-03T00:00:00",
+    "listingDate": null,
+    "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+    "exerciseRatio": 0.5,
+    "planVolumn": 22500000.0,
+    "issueYear": 2026,
+    "issueStatusName": "Đã thực hiện xong"
+   },
+   {
+    "organCode": "HHSF",
+    "ticker": "TCH",
+    "publicDate": "2026-08-19T00:00:00",
+    "exrightDate": "2026-09-03T00:00:00",
+    "issueDate": "2026-09-03T00:00:00",
+    "listingDate": null,
+    "issueMethodName": "Cổ phiếu thưởng",
+    "exerciseRatio": 0.1,
+    "planVolumn": 91210922.0,
+    "issueYear": 2026,
+    "issueStatusName": "Đã thực hiện xong"
+   }
+  ],
+  "fields": [
+   "exerciseRatio",
+   "exrightDate",
+   "issueDate",
+   "issueMethodName",
+   "issueStatusName",
+   "issueYear",
+   "listingDate",
+   "organCode",
+   "planVolumn",
+   "publicDate",
+   "ticker"
+  ]
+ },
+ "earning": {
+  "total_count": 57026,
+  "first_3": [
+   {
+    "ticker": "DIC",
+    "organCode": "DIC",
+    "organShortName": "ĐT và TM DIC",
+    "publicDate": "2026-08-19T00:00:00",
+    "yearReport": 2026,
+    "lengthReport": 2,
+    "revenue": 67008018480.0,
+    "revenueGrowth": 10.389685409503649,
+    "profit": 636287028.0,
+    "profitGrowth": -0.3608170815603393,
+    "rtd21": 20.5930275,
+    "rtd25": -0.30479236
+   },
+   {
+    "ticker": "THP",
+    "organCode": "TPST",
+    "organShortName": "Thủy sản và TMại Thuận Phước",
+    "publicDate": "2026-08-18T00:00:00",
+    "yearReport": 2026,
+    "lengthReport": 2,
+    "revenue": 702637555979.0,
+    "revenueGrowth": -0.12361246705827945,
+    "profit": 13350110368.0,
+    "profitGrowth": 0.19898548908787445,
+    "rtd21": 4.8500992,
+    "rtd25": 0.52261969
+   },
+   {
+    "ticker": "TLP",
+    "organCode": "THALEXIM",
+    "organShortName": "Thương mại XNK Thanh Lễ",
+    "publicDate": "2026-08-18T00:00:00",
+    "yearReport": 2026,
+    "lengthReport": 2,
+    "revenue": 8469163220599.0,
+    "revenueGrowth": 0.6858228852541177,
+    "profit": 56702878164.0,
+    "profitGrowth": 1.5361434149598292,
+    "rtd21": 14.7875801,
+    "rtd25": 1.1684373
+   }
+  ],
+  "fields": [
+   "lengthReport",
+   "organCode",
+   "organShortName",
+   "profit",
+   "profitGrowth",
+   "publicDate",
+   "revenue",
+   "revenueGrowth",
+   "rtd21",
+   "rtd25",
+   "ticker",
+   "yearReport"
+  ]
+ }
+}

@@ -1,0 +1,5924 @@
+{
+ "agm": {
+  "ban_ghi": 23467,
+  "khoa_dung": 16,
+  "khoa_dung_khac_noi_dung": 16,
+  "nhom": {
+   "SHX|2022-09-12|2022-09-16|0|0|": [
+    {
+     "organCode": "SHX",
+     "ticker": "SHX",
+     "organShortName": "Sài Gòn Hỏa xa",
+     "publicDate": "2022-09-12T00:00:00",
+     "issueDate": "2022-12-23T00:00:00",
+     "exrightDate": "2022-09-16T00:00:00",
+     "address": "Văn phòng CTCP Sài gòn Hỏa Xa, 275C Phạm Ngũ Lão, phường Phạm Ngũ Lão, Quận 1, TP. Hồ Chí Minh",
+     "locationName": "Thành phố Hồ Chí Minh",
+     "eventTitle": null,
+     "sourceUrl": "http://fiinpro.com/News/Detail/10506404?lang=vi-vn"
+    },
+    {
+     "organCode": "SHX",
+     "ticker": "SHX",
+     "organShortName": "Sài Gòn Hỏa xa",
+     "publicDate": "2022-09-12T00:00:00",
+     "issueDate": "2022-10-18T00:00:00",
+     "exrightDate": "2022-09-16T00:00:00",
+     "address": "Văn phòng CTCP Sài gòn Hỏa Xa, 275C Phạm Ngũ Lão, phường Phạm Ngũ Lão, Quận 1, TP. Hồ Chí Minh",
+     "locationName": "Thành phố Hồ Chí Minh",
+     "eventTitle": null,
+     "sourceUrl": "http://fiinpro.com/News/Detail/10506403?lang=vi-vn"
+    }
+   ],
+   "VSP|2022-04-01|2022-04-22|0|0|": [
+    {
+     "organCode": "VSP",
+     "ticker": "VSP",
+     "organShortName": "ShinPetrol",
+     "publicDate": "2022-04-01T00:00:00",
+     "issueDate": null,
+     "exrightDate": "2022-04-22T00:00:00",
+     "address": "Thông báo sau",
+     "locationName": "Khu vực khác",
+     "eventTitle": null,
+     "sourceUrl": "https://www.vsd.vn/vi/ad/149610"
+    },
+    {
+     "organCode": "VSP",
+     "ticker": "VSP",
+     "organShortName": "ShinPetrol",
+     "publicDate": "2022-04-01T00:00:00",
+     "issueDate": "2022-07-13T00:00:00",
+     "exrightDate": "2022-04-22T00:00:00",
+     "address": "Hội trường tầng 2, trụ sở Tổng công ty Công nghiệp tàu thủy, Số 172 Ngọc Khánh, Quận Ba Đình, Thành phố Hà Nội, Việt Nam",
+     "locationName": "Thành phố Hà Nội",
+     "eventTitle": null,
+     "sourceUrl": "https://www.vsd.vn/vi/ad/149610"
+    }
+   ],
+   "UFC|2022-03-11|2022-03-23|0|0|": [
+    {
+     "organCode": "UFC",
+     "ticker": "FCC",
+     "organShortName": "Liên hợp Thực phẩm",
+     "publicDate": "2022-03-11T00:00:00",
+     "issueDate": "2022-04-26T00:00:00",
+     "exrightDate": "2022-03-23T00:00:00",
+     "address": "",
+     "locationName": "Thành phố Hồ Chí Minh",
+     "eventTitle": null,
+     "sourceUrl": "http://fiinpro.com/News/Detail/10245296?lang=vi-vn"
+    },
+    {
+     "organCode": "UFC",
+     "ticker": "FCC",
+     "organShortName": "Liên hợp Thực phẩm",
+     "publicDate": "2022-03-11T00:00:00",
+     "issueDate": "2022-04-26T00:00:00",
+     "exrightDate": "2022-03-23T00:00:00",
+     "address": "Hội trường tầng 2, 127 Nguyễn Du, Phường Bến Thành, Quận 1, Quận 1, Thành phố Hồ Chí Minh",
+     "locationName": "Thành phố Hồ Chí Minh",
+     "eventTitle": null,
+     "sourceUrl": "http://fiinpro.com/News/Detail/10245296?lang=vi-vn"
+    }
+   ],
+   "PMJ|2019-05-16|2019-05-30|0|0|": [
+    {
+     "organCode": "PMJ",
+     "ticker": "PMJ",
+     "organShortName": "Vật tư Bưu điện",
+     "publicDate": "2019-05-16T16:29:35.067",
+     "issueDate": "2019-06-30T00:00:00",
+     "exrightDate": "2019-05-30T00:00:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": "http://fiinpro.com/News/Detail/3192188?lang=vi-VN"
+    },
+    {
+     "organCode": "PMJ",
+     "ticker": "PMJ",
+     "organShortName": "Vật tư Bưu điện",
+     "publicDate": "2019-05-16T00:00:00",
+     "issueDate": "2019-06-20T00:00:00",
+     "exrightDate": "2019-05-30T00:00:00",
+     "address": "Thông báo sau",
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": "http://vsd.vn/22-p4c20-56179/2460/PMJ-Tham-du-Dai-hoi-dong-co-dong-nam-2019.htm"
+    }
+   ],
+   "SRB|2019-05-21|2019-05-30|0|0|": [
+    {
+     "organCode": "SRB",
+     "ticker": "SRB",
+     "organShortName": "SARA",
+     "publicDate": "2019-05-21T16:35:23.46",
+     "issueDate": "2019-06-25T00:00:00",
+     "exrightDate": "2019-05-30T00:00:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": "http://fiinpro.com/News/Detail/3222933?lang=vi-VN"
+    },
+    {
+     "organCode": "SRB",
+     "ticker": "SRB",
+     "organShortName": "SARA",
+     "publicDate": "2019-05-21T00:00:00",
+     "issueDate": "2019-06-25T00:00:00",
+     "exrightDate": "2019-05-30T00:00:00",
+     "address": "Km số 02, đường Lênin",
+     "locationName": "Tỉnh Nghệ An",
+     "eventTitle": null,
+     "sourceUrl": "http://vsd.vn/22-p4c20-56336/91/SRB-To-chuc-Dai-hoi-co-dong-thuong-nien-2019.htm"
+    }
+   ],
+   "SASTECO|2018-03-27|2018-04-03|0|0|": [
+    {
+     "organCode": "SASTECO",
+     "ticker": "SAC",
+     "organShortName": "Dịch vụ cảng Sài Gòn",
+     "publicDate": "2018-03-27T11:03:28.023",
+     "issueDate": "2018-04-24T00:00:00",
+     "exrightDate": "2018-04-03T00:00:00",
+     "address": "Thông báo sau.",
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": "http://fiinpro.com/News/Detail/1617479?lang=vi-VN"
+    },
+    {
+     "organCode": "SASTECO",
+     "ticker": "SAC",
+     "organShortName": "Dịch vụ cảng Sài Gòn",
+     "publicDate": "2018-03-27T00:00:00",
+     "issueDate": "2018-04-24T00:00:00",
+     "exrightDate": "2018-04-03T00:00:00",
+     "address": "Thông báo sau.",
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": "http://fiinpro.com/News/Detail/1617479?lang=vi-VN"
+    }
+   ],
+   "DTV|2018-03-12|2018-03-23|0|0|": [
+    {
+     "organCode": "DTV",
+     "ticker": "DTV",
+     "organShortName": "PT điện Nông thôn Trà Vinh",
+     "publicDate": "2018-03-12T11:09:16.413",
+     "issueDate": "2018-04-19T00:00:00",
+     "exrightDate": "2018-03-23T00:00:00",
+     "address": "Trụ sở Công ty Cổ phần Phát triển Điện Nông thôn Trà Vinh (Số 68 Nguyễn Chí Thanh, Khóm 1, Phường 9,TP. Trà Vinh, tỉnh Trà Vinh).",
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": "http://fiinpro.com/News/Detail/1554335?lang=vi-VN"
+    },
+    {
+     "organCode": "DTV",
+     "ticker": "DTV",
+     "organShortName": "PT điện Nông thôn Trà Vinh",
+     "publicDate": "2018-03-12T00:00:00",
+     "issueDate": "2018-04-19T00:00:00",
+     "exrightDate": "2018-03-23T00:00:00",
+     "address": "Trụ sở Công ty Cổ phần Phát triển Điện Nông thôn Trà Vinh (Số 68 Nguyễn Chí Thanh, Khóm 1, Phường 9,TP. Trà Vinh, tỉnh Trà Vinh).",
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": "http://fiinpro.com/News/Detail/1554335?lang=vi-VN"
+    }
+   ],
+   "TXM|2017-03-09|2017-03-24|0|0|": [
+    {
+     "organCode": "TXM",
+     "ticker": "TXM",
+     "organShortName": "Thạch cao Xi măng",
+     "publicDate": "2017-03-09T17:27:55.637",
+     "issueDate": "2017-04-20T00:00:00",
+     "exrightDate": "2017-03-24T00:00:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": ""
+    },
+    {
+     "organCode": "TXM",
+     "ticker": "TXM",
+     "organShortName": "Thạch cao Xi măng",
+     "publicDate": "2017-03-09T18:38:55.103",
+     "issueDate": "2017-04-27T00:00:00",
+     "exrightDate": "2017-03-24T00:00:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": ""
+    }
+   ],
+   "VTV|2017-01-20|2017-01-25|0|0|": [
+    {
+     "organCode": "VTV",
+     "ticker": "VTV",
+     "organShortName": "Năng lượng và Môi trường VICEM",
+     "publicDate": "2017-01-20T18:06:25.76",
+     "issueDate": "2017-03-08T00:00:00",
+     "exrightDate": "2017-01-25T00:00:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": "http://fiinpro.com/News/Detail/329578?lang=vi-VN"
+    },
+    {
+     "organCode": "VTV",
+     "ticker": "VTV",
+     "organShortName": "Năng lượng và Môi trường VICEM",
+     "publicDate": "2017-01-20T18:10:44.75",
+     "issueDate": "2017-04-20T00:00:00",
+     "exrightDate": "2017-01-25T00:00:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": "http://fiinpro.com/News/Detail/329578?lang=vi-VN"
+    }
+   ],
+   "LDP|2014-03-13|2014-03-21|0|0|": [
+    {
+     "organCode": "LDP",
+     "ticker": "LDP",
+     "organShortName": "Dược Lâm Đồng - Ladophar",
+     "publicDate": "2014-03-13T10:04:00",
+     "issueDate": "2014-04-26T10:04:00",
+     "exrightDate": "2014-03-21T10:04:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": null
+    },
+    {
+     "organCode": "LDP",
+     "ticker": "LDP",
+     "organShortName": "Dược Lâm Đồng - Ladophar",
+     "publicDate": "2014-03-13T09:53:00",
+     "issueDate": "2014-04-15T09:53:00",
+     "exrightDate": "2014-03-21T09:53:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": null
+    }
+   ],
+   "PVA|2014-03-03|2014-03-07|0|0|": [
+    {
+     "organCode": "PVA",
+     "ticker": "PVA",
+     "organShortName": "Xây dựng dầu khí Nghệ An",
+     "publicDate": "2014-03-03T15:04:00",
+     "issueDate": "2014-05-17T15:04:00",
+     "exrightDate": "2014-03-07T15:04:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": null
+    },
+    {
+     "organCode": "PVA",
+     "ticker": "PVA",
+     "organShortName": "Xây dựng dầu khí Nghệ An",
+     "publicDate": "2014-03-03T09:07:00",
+     "issueDate": "2014-04-04T09:07:00",
+     "exrightDate": "2014-03-07T09:07:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": null
+    }
+   ],
+   "HTC|2013-03-01|2013-03-13|0|0|": [
+    {
+     "organCode": "HTC",
+     "ticker": "HTC",
+     "organShortName": "Thương mại Hóc Môn",
+     "publicDate": "2013-03-01T16:12:00",
+     "issueDate": "2013-04-29T16:12:00",
+     "exrightDate": "2013-03-13T16:12:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": null
+    },
+    {
+     "organCode": "HTC",
+     "ticker": "HTC",
+     "organShortName": "Thương mại Hóc Môn",
+     "publicDate": "2013-03-01T13:53:00",
+     "issueDate": "2013-04-29T13:53:00",
+     "exrightDate": "2013-03-13T13:53:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": null
+    }
+   ],
+   "PXI|2011-03-23|2011-03-29|0|0|": [
+    {
+     "organCode": "PXI",
+     "ticker": "PXI",
+     "organShortName": "XL CN và dân dụng Dầu khí",
+     "publicDate": "2011-03-23T18:26:00",
+     "issueDate": "2011-04-22T18:26:00",
+     "exrightDate": "2011-03-29T18:26:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": null
+    },
+    {
+     "organCode": "PXI",
+     "ticker": "PXI",
+     "organShortName": "XL CN và dân dụng Dầu khí",
+     "publicDate": "2011-03-23T10:40:00",
+     "issueDate": "2011-03-31T10:40:00",
+     "exrightDate": "2011-03-29T10:40:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": null
+    }
+   ],
+   "ECI|2011-03-21|2011-03-25|0|0|": [
+    {
+     "organCode": "ECI",
+     "ticker": "ECI",
+     "organShortName": "Bản đồ và tranh ảnh GD",
+     "publicDate": "2011-03-21T10:36:00",
+     "issueDate": "2011-04-16T10:36:00",
+     "exrightDate": "2011-03-25T10:36:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": null
+    },
+    {
+     "organCode": "ECI",
+     "ticker": "ECI",
+     "organShortName": "Bản đồ và tranh ảnh GD",
+     "publicDate": "2011-03-21T10:25:00",
+     "issueDate": "2011-04-16T10:25:00",
+     "exrightDate": "2011-03-25T10:25:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": null
+    }
+   ],
+   "NTP|2009-02-23|2009-03-03|0|0|": [
+    {
+     "organCode": "NTP",
+     "ticker": "NTP",
+     "organShortName": "Nhựa Tiền Phong",
+     "publicDate": "2009-02-23T17:53:00",
+     "issueDate": "2009-04-18T17:53:00",
+     "exrightDate": "2009-03-03T17:53:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": null
+    },
+    {
+     "organCode": "NTP",
+     "ticker": "NTP",
+     "organShortName": "Nhựa Tiền Phong",
+     "publicDate": "2009-02-23T16:53:00",
+     "issueDate": "2009-04-18T16:53:00",
+     "exrightDate": "2009-03-03T16:53:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": null
+    }
+   ],
+   "VGS|2009-02-17|2009-02-24|0|0|": [
+    {
+     "organCode": "VGS",
+     "ticker": "VGS",
+     "organShortName": "Ống thép Việt Đức",
+     "publicDate": "2009-02-17T14:25:00",
+     "issueDate": "2009-03-21T14:25:00",
+     "exrightDate": "2009-02-24T14:25:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": null
+    },
+    {
+     "organCode": "VGS",
+     "ticker": "VGS",
+     "organShortName": "Ống thép Việt Đức",
+     "publicDate": "2009-02-17T10:48:00",
+     "issueDate": "2009-03-21T10:48:00",
+     "exrightDate": "2009-02-24T10:48:00",
+     "address": null,
+     "locationName": null,
+     "eventTitle": null,
+     "sourceUrl": null
+    }
+   ]
+  }
+ },
+ "cashdividend": {
+  "ban_ghi": 17970,
+  "khoa_dung": 47,
+  "khoa_dung_khac_noi_dung": 45,
+  "nhom": {
+   "SD9|2026-03-17|2026-03-27|0|0|Cả năm": [
+    {
+     "organCode": "SD9",
+     "ticker": "SD9",
+     "publicDate": "2026-03-17T00:00:00",
+     "recordDate": "2026-03-30T00:00:00",
+     "exrightDate": "2026-03-27T00:00:00",
+     "payoutDate": "2026-04-22T00:00:00",
+     "exerciseRate": 0.04,
+     "valuePerShare": 400.0,
+     "dividendYear": 2019,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "SD9",
+     "ticker": "SD9",
+     "publicDate": "2026-03-17T00:00:00",
+     "recordDate": "2026-03-30T00:00:00",
+     "exrightDate": "2026-03-27T00:00:00",
+     "payoutDate": "2026-04-22T00:00:00",
+     "exerciseRate": 0.015,
+     "valuePerShare": 150.0,
+     "dividendYear": 2021,
+     "stageName": "Cả năm"
+    }
+   ],
+   "SGS|2026-01-10|2026-01-14|0|0|Cả năm": [
+    {
+     "organCode": "SGS",
+     "ticker": "SGS",
+     "publicDate": "2026-01-10T00:00:00",
+     "recordDate": "2026-01-15T00:00:00",
+     "exrightDate": "2026-01-14T00:00:00",
+     "payoutDate": "2026-02-03T00:00:00",
+     "exerciseRate": 0.25,
+     "valuePerShare": 2500.0,
+     "dividendYear": 2023,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "SGS",
+     "ticker": "SGS",
+     "publicDate": "2026-01-10T00:00:00",
+     "recordDate": "2026-01-15T00:00:00",
+     "exrightDate": "2026-01-14T00:00:00",
+     "payoutDate": "2026-02-03T00:00:00",
+     "exerciseRate": 0.675,
+     "valuePerShare": 6750.0,
+     "dividendYear": 2024,
+     "stageName": "Cả năm"
+    }
+   ],
+   "X26|2025-12-11|2025-12-17|0|0|Cả năm": [
+    {
+     "organCode": "X26",
+     "ticker": "X26",
+     "publicDate": "2025-12-11T00:00:00",
+     "recordDate": "2025-12-18T00:00:00",
+     "exrightDate": "2025-12-17T00:00:00",
+     "payoutDate": "2025-12-30T00:00:00",
+     "exerciseRate": 0.08,
+     "valuePerShare": 800.0,
+     "dividendYear": 2023,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "X26",
+     "ticker": "X26",
+     "publicDate": "2025-12-11T00:00:00",
+     "recordDate": "2025-12-18T00:00:00",
+     "exrightDate": "2025-12-17T00:00:00",
+     "payoutDate": "2025-12-30T00:00:00",
+     "exerciseRate": 0.1,
+     "valuePerShare": 1000.0,
+     "dividendYear": 2024,
+     "stageName": "Cả năm"
+    }
+   ],
+   "TVG|2025-06-19|2025-06-24|0|0|Cả năm": [
+    {
+     "organCode": "TVG",
+     "ticker": "TVG",
+     "publicDate": "2025-06-19T00:00:00",
+     "recordDate": "2025-06-25T00:00:00",
+     "exrightDate": "2025-06-24T00:00:00",
+     "payoutDate": "2025-07-10T00:00:00",
+     "exerciseRate": 0.1,
+     "valuePerShare": 1000.0,
+     "dividendYear": 2018,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "TVG",
+     "ticker": "TVG",
+     "publicDate": "2025-06-19T00:00:00",
+     "recordDate": "2025-06-25T00:00:00",
+     "exrightDate": "2025-06-24T00:00:00",
+     "payoutDate": "2025-07-10T00:00:00",
+     "exerciseRate": 0.07,
+     "valuePerShare": 700.0,
+     "dividendYear": 2020,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "TVG",
+     "ticker": "TVG",
+     "publicDate": "2025-06-19T00:00:00",
+     "recordDate": "2025-06-25T00:00:00",
+     "exrightDate": "2025-06-24T00:00:00",
+     "payoutDate": "2025-07-10T00:00:00",
+     "exerciseRate": 0.07,
+     "valuePerShare": 700.0,
+     "dividendYear": 2022,
+     "stageName": "Cả năm"
+    }
+   ],
+   "PVBUILDING|2024-09-16|2024-09-19|0|0|Cả năm": [
+    {
+     "organCode": "PVBUILDING",
+     "ticker": "PBT",
+     "publicDate": "2024-09-16T00:00:00",
+     "recordDate": "2024-09-20T00:00:00",
+     "exrightDate": "2024-09-19T00:00:00",
+     "payoutDate": "2024-09-27T00:00:00",
+     "exerciseRate": 0.0114,
+     "valuePerShare": 114.0,
+     "dividendYear": 2009,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "PVBUILDING",
+     "ticker": "PBT",
+     "publicDate": "2024-09-16T00:00:00",
+     "recordDate": "2024-09-20T00:00:00",
+     "exrightDate": "2024-09-19T00:00:00",
+     "payoutDate": "2024-09-27T00:00:00",
+     "exerciseRate": 0.0662,
+     "valuePerShare": 662.0,
+     "dividendYear": 2023,
+     "stageName": "Cả năm"
+    }
+   ],
+   "LGC|2023-12-08|2023-12-25|0|0|Cả năm": [
+    {
+     "organCode": "LGC",
+     "ticker": "LGC",
+     "publicDate": "2023-12-08T00:00:00",
+     "recordDate": "2023-12-26T00:00:00",
+     "exrightDate": "2023-12-25T00:00:00",
+     "payoutDate": "2024-01-18T00:00:00",
+     "exerciseRate": 0.06,
+     "valuePerShare": 600.0,
+     "dividendYear": 2020,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "LGC",
+     "ticker": "LGC",
+     "publicDate": "2023-12-08T00:00:00",
+     "recordDate": "2023-12-26T00:00:00",
+     "exrightDate": "2023-12-25T00:00:00",
+     "payoutDate": "2024-01-18T00:00:00",
+     "exerciseRate": 0.08,
+     "valuePerShare": 800.0,
+     "dividendYear": 2022,
+     "stageName": "Cả năm"
+    }
+   ],
+   "SJD|2023-09-19|2023-10-12|0|0|Cả năm": [
+    {
+     "organCode": "SJD",
+     "ticker": "SJD",
+     "publicDate": "2023-09-19T00:00:00",
+     "recordDate": "2023-10-13T00:00:00",
+     "exrightDate": "2023-10-12T00:00:00",
+     "payoutDate": "2023-10-31T00:00:00",
+     "exerciseRate": 0.15,
+     "valuePerShare": 1500.0,
+     "dividendYear": 2021,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "SJD",
+     "ticker": "SJD",
+     "publicDate": "2023-09-19T00:00:00",
+     "recordDate": "2023-10-13T00:00:00",
+     "exrightDate": "2023-10-12T00:00:00",
+     "payoutDate": "2023-12-29T00:00:00",
+     "exerciseRate": 0.14,
+     "valuePerShare": 1400.0,
+     "dividendYear": 2022,
+     "stageName": "Cả năm"
+    }
+   ],
+   "NAMDO|2023-04-28|2023-05-18|0|0|Cả năm": [
+    {
+     "organCode": "NAMDO",
+     "ticker": "FHN",
+     "publicDate": "2023-04-28T00:00:00",
+     "recordDate": "2023-05-19T00:00:00",
+     "exrightDate": "2023-05-18T00:00:00",
+     "payoutDate": "2023-06-01T00:00:00",
+     "exerciseRate": 0.03,
+     "valuePerShare": 300.0,
+     "dividendYear": 2021,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "NAMDO",
+     "ticker": "FHN",
+     "publicDate": "2023-04-28T00:00:00",
+     "recordDate": "2023-05-19T00:00:00",
+     "exrightDate": "2023-05-18T00:00:00",
+     "payoutDate": "2023-06-01T00:00:00",
+     "exerciseRate": 0.03,
+     "valuePerShare": 300.0,
+     "dividendYear": 2022,
+     "stageName": "Cả năm"
+    }
+   ],
+   "QNWASC|2022-08-05|2022-08-11|0|0|Cả năm": [
+    {
+     "organCode": "QNWASC",
+     "ticker": "QNW",
+     "publicDate": "2022-08-05T00:00:00",
+     "recordDate": "2022-08-12T00:00:00",
+     "exrightDate": "2022-08-11T00:00:00",
+     "payoutDate": "2022-08-25T00:00:00",
+     "exerciseRate": 0.0124,
+     "valuePerShare": 124.0,
+     "dividendYear": 2020,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "QNWASC",
+     "ticker": "QNW",
+     "publicDate": "2022-08-05T00:00:00",
+     "recordDate": "2022-08-12T00:00:00",
+     "exrightDate": "2022-08-11T00:00:00",
+     "payoutDate": "2022-08-25T00:00:00",
+     "exerciseRate": 0.0218,
+     "valuePerShare": 218.0,
+     "dividendYear": 2021,
+     "stageName": "Cả năm"
+    }
+   ],
+   "VOSA|2021-06-22|2021-07-02|0|0|Cả năm": [
+    {
+     "organCode": "VOSA",
+     "ticker": "VSA",
+     "publicDate": "2021-06-22T00:00:00",
+     "recordDate": "2021-07-05T00:00:00",
+     "exrightDate": "2021-07-02T00:00:00",
+     "payoutDate": "2021-07-15T00:00:00",
+     "exerciseRate": 0.15,
+     "valuePerShare": 1500.0,
+     "dividendYear": 2019,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "VOSA",
+     "ticker": "VSA",
+     "publicDate": "2021-06-22T00:00:00",
+     "recordDate": "2021-07-05T00:00:00",
+     "exrightDate": "2021-07-02T00:00:00",
+     "payoutDate": "2021-07-15T00:00:00",
+     "exerciseRate": 0.15,
+     "valuePerShare": 1500.0,
+     "dividendYear": 2020,
+     "stageName": "Cả năm"
+    }
+   ],
+   "HKP|2021-05-07|2021-05-17|0|0|Cả năm": [
+    {
+     "organCode": "HKP",
+     "ticker": "HKP",
+     "publicDate": "2021-05-07T00:00:00",
+     "recordDate": "2021-05-18T00:00:00",
+     "exrightDate": "2021-05-17T00:00:00",
+     "payoutDate": "2021-05-31T00:00:00",
+     "exerciseRate": 0.0222,
+     "valuePerShare": 222.0,
+     "dividendYear": 2018,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "HKP",
+     "ticker": "HKP",
+     "publicDate": "2021-05-07T00:00:00",
+     "recordDate": "2021-05-18T00:00:00",
+     "exrightDate": "2021-05-17T00:00:00",
+     "payoutDate": "2021-05-31T00:00:00",
+     "exerciseRate": 0.0154,
+     "valuePerShare": 154.0,
+     "dividendYear": 2019,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "HKP",
+     "ticker": "HKP",
+     "publicDate": "2021-05-07T00:00:00",
+     "recordDate": "2021-05-18T00:00:00",
+     "exrightDate": "2021-05-17T00:00:00",
+     "payoutDate": "2021-05-31T00:00:00",
+     "exerciseRate": 0.1002,
+     "valuePerShare": 1002.0,
+     "dividendYear": 2020,
+     "stageName": "Cả năm"
+    }
+   ],
+   "GTH|2021-03-26|2021-04-09|0|0|Cả năm": [
+    {
+     "organCode": "GTH",
+     "ticker": "GTH",
+     "publicDate": "2021-03-26T00:00:00",
+     "recordDate": "2021-04-12T00:00:00",
+     "exrightDate": "2021-04-09T00:00:00",
+     "payoutDate": "2021-05-07T00:00:00",
+     "exerciseRate": 0.015,
+     "valuePerShare": 150.0,
+     "dividendYear": 2018,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "GTH",
+     "ticker": "GTH",
+     "publicDate": "2021-03-26T00:00:00",
+     "recordDate": "2021-04-12T00:00:00",
+     "exrightDate": "2021-04-09T00:00:00",
+     "payoutDate": "2021-05-07T00:00:00",
+     "exerciseRate": 0.03,
+     "valuePerShare": 300.0,
+     "dividendYear": 2019,
+     "stageName": "Cả năm"
+    }
+   ],
+   "BHN|2021-02-02|2021-02-18|0|0|Cả năm": [
+    {
+     "organCode": "BHN",
+     "ticker": "BHN",
+     "publicDate": "2021-02-02T00:00:00",
+     "recordDate": "2021-02-19T00:00:00",
+     "exrightDate": "2021-02-18T00:00:00",
+     "payoutDate": "2021-03-31T00:00:00",
+     "exerciseRate": 0.138,
+     "valuePerShare": 1380.0,
+     "dividendYear": 2018,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "BHN",
+     "ticker": "BHN",
+     "publicDate": "2021-02-02T00:00:00",
+     "recordDate": "2021-02-19T00:00:00",
+     "exrightDate": "2021-02-18T00:00:00",
+     "payoutDate": "2021-03-31T00:00:00",
+     "exerciseRate": 0.145,
+     "valuePerShare": 1450.0,
+     "dividendYear": 2019,
+     "stageName": "Cả năm"
+    }
+   ],
+   "VGP|2020-08-17|2020-08-31|0|0|Cả năm": [
+    {
+     "organCode": "VGP",
+     "ticker": "VGP",
+     "publicDate": "2020-08-17T00:00:00",
+     "recordDate": "2020-09-01T00:00:00",
+     "exrightDate": "2020-08-31T00:00:00",
+     "payoutDate": "2020-11-16T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 500.0,
+     "dividendYear": 2018,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "VGP",
+     "ticker": "VGP",
+     "publicDate": "2020-08-17T00:00:00",
+     "recordDate": "2020-09-01T00:00:00",
+     "exrightDate": "2020-08-31T00:00:00",
+     "payoutDate": "2020-11-16T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 500.0,
+     "dividendYear": 2019,
+     "stageName": "Cả năm"
+    }
+   ],
+   "BDGAR|2020-06-29|2020-07-06|0|0|Đợt 3": [
+    {
+     "organCode": "BDGAR",
+     "ticker": "BDG",
+     "publicDate": "2020-06-29T00:00:00",
+     "recordDate": "2020-07-07T00:00:00",
+     "exrightDate": "2020-07-06T00:00:00",
+     "payoutDate": "2020-07-17T00:00:00",
+     "exerciseRate": 0.15,
+     "valuePerShare": 1500.0,
+     "dividendYear": 2016,
+     "stageName": "Đợt 3"
+    },
+    {
+     "organCode": "BDGAR",
+     "ticker": "BDG",
+     "publicDate": "2020-06-29T00:00:00",
+     "recordDate": "2020-07-07T00:00:00",
+     "exrightDate": "2020-07-06T00:00:00",
+     "payoutDate": "2020-07-17T00:00:00",
+     "exerciseRate": 0.1,
+     "valuePerShare": 1000.0,
+     "dividendYear": 2019,
+     "stageName": "Đợt 3"
+    }
+   ],
+   "SDT|2020-03-20|2020-04-14|0|0|Đợt 2": [
+    {
+     "organCode": "SDT",
+     "ticker": "SDT",
+     "publicDate": "2020-03-20T00:00:00",
+     "recordDate": "2020-04-15T00:00:00",
+     "exrightDate": "2020-04-14T00:00:00",
+     "payoutDate": "2021-03-31T00:00:00",
+     "exerciseRate": 0.02,
+     "valuePerShare": 200.0,
+     "dividendYear": 2018,
+     "stageName": "Đợt 2"
+    },
+    {
+     "organCode": "SDT",
+     "ticker": "SDT",
+     "publicDate": "2020-03-20T00:00:00",
+     "recordDate": "2020-04-15T00:00:00",
+     "exrightDate": "2020-04-14T00:00:00",
+     "payoutDate": "2021-05-31T00:00:00",
+     "exerciseRate": 0.02,
+     "valuePerShare": 200.0,
+     "dividendYear": 2018,
+     "stageName": "Đợt 2"
+    }
+   ],
+   "PAS|2019-12-03|2019-12-12|0|0|Cả năm": [
+    {
+     "organCode": "PAS",
+     "ticker": "PAS",
+     "publicDate": "2019-12-03T00:00:00",
+     "recordDate": "2019-12-13T00:00:00",
+     "exrightDate": "2019-12-12T00:00:00",
+     "payoutDate": "2019-12-23T00:00:00",
+     "exerciseRate": 0.06,
+     "valuePerShare": 600.0,
+     "dividendYear": 2016,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "PAS",
+     "ticker": "PAS",
+     "publicDate": "2019-12-03T00:00:00",
+     "recordDate": "2019-12-13T00:00:00",
+     "exrightDate": "2019-12-12T00:00:00",
+     "payoutDate": "2019-12-23T00:00:00",
+     "exerciseRate": 0.06,
+     "valuePerShare": 600.0,
+     "dividendYear": 2017,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "PAS",
+     "ticker": "PAS",
+     "publicDate": "2019-12-03T00:00:00",
+     "recordDate": "2019-12-13T00:00:00",
+     "exrightDate": "2019-12-12T00:00:00",
+     "payoutDate": "2019-12-23T00:00:00",
+     "exerciseRate": 0.08,
+     "valuePerShare": 800.0,
+     "dividendYear": 2018,
+     "stageName": "Cả năm"
+    }
+   ],
+   "BID|2019-11-01|2019-11-07|0|0|Cả năm": [
+    {
+     "organCode": "BID",
+     "ticker": "BID",
+     "publicDate": "2019-11-01T00:00:00",
+     "recordDate": "2019-11-08T00:00:00",
+     "exrightDate": "2019-11-07T00:00:00",
+     "payoutDate": "2019-12-12T00:00:00",
+     "exerciseRate": 0.07,
+     "valuePerShare": 700.0,
+     "dividendYear": 2017,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "BID",
+     "ticker": "BID",
+     "publicDate": "2019-11-01T00:00:00",
+     "recordDate": "2019-11-08T00:00:00",
+     "exrightDate": "2019-11-07T00:00:00",
+     "payoutDate": "2019-12-12T00:00:00",
+     "exerciseRate": 0.07,
+     "valuePerShare": 700.0,
+     "dividendYear": 2018,
+     "stageName": "Cả năm"
+    }
+   ],
+   "BNWSSC|2019-05-09|2019-05-14|0|0|Đợt 2": [
+    {
+     "organCode": "BNWSSC",
+     "ticker": "BNW",
+     "publicDate": "2019-05-09T00:00:00",
+     "recordDate": "2019-05-15T00:00:00",
+     "exrightDate": "2019-05-14T00:00:00",
+     "payoutDate": "2019-05-31T00:00:00",
+     "exerciseRate": 0.018,
+     "valuePerShare": 180.0,
+     "dividendYear": 2017,
+     "stageName": "Đợt 2"
+    },
+    {
+     "organCode": "BNWSSC",
+     "ticker": "BNW",
+     "publicDate": "2019-05-09T00:00:00",
+     "recordDate": "2019-05-15T00:00:00",
+     "exrightDate": "2019-05-14T00:00:00",
+     "payoutDate": "2019-05-31T00:00:00",
+     "exerciseRate": 0.0365,
+     "valuePerShare": 365.0,
+     "dividendYear": 2018,
+     "stageName": "Đợt 2"
+    }
+   ],
+   "KHA|2018-10-22|2018-11-01|0|0|Đợt 1": [
+    {
+     "organCode": "KHA",
+     "ticker": "KHA",
+     "publicDate": "2018-10-22T00:00:00",
+     "recordDate": "2018-11-02T00:00:00",
+     "exrightDate": "2018-11-01T00:00:00",
+     "payoutDate": "2018-11-14T00:00:00",
+     "exerciseRate": 0.1,
+     "valuePerShare": 1000.0,
+     "dividendYear": 2017,
+     "stageName": "Đợt 1"
+    },
+    {
+     "organCode": "KHA",
+     "ticker": "KHA",
+     "publicDate": "2018-10-22T00:00:00",
+     "recordDate": "2018-11-02T00:00:00",
+     "exrightDate": "2018-11-01T00:00:00",
+     "payoutDate": "2018-11-14T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 500.0,
+     "dividendYear": 2018,
+     "stageName": "Đợt 1"
+    }
+   ],
+   "HNCADAS|2018-09-26|2018-09-28|0|0|Cả năm": [
+    {
+     "organCode": "HNCADAS",
+     "ticker": "DCH",
+     "publicDate": "2018-09-26T00:00:00",
+     "recordDate": "2018-10-01T00:00:00",
+     "exrightDate": "2018-09-28T00:00:00",
+     "payoutDate": "2018-10-16T00:00:00",
+     "exerciseRate": 0.0123,
+     "valuePerShare": 123.0,
+     "dividendYear": 2015,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "HNCADAS",
+     "ticker": "DCH",
+     "publicDate": "2018-09-26T00:00:00",
+     "recordDate": "2018-10-01T00:00:00",
+     "exrightDate": "2018-09-28T00:00:00",
+     "payoutDate": "2018-10-16T00:00:00",
+     "exerciseRate": 0.045,
+     "valuePerShare": 450.0,
+     "dividendYear": 2016,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "HNCADAS",
+     "ticker": "DCH",
+     "publicDate": "2018-09-26T00:00:00",
+     "recordDate": "2018-10-01T00:00:00",
+     "exrightDate": "2018-09-28T00:00:00",
+     "payoutDate": "2018-10-16T00:00:00",
+     "exerciseRate": 0.049,
+     "valuePerShare": 490.0,
+     "dividendYear": 2017,
+     "stageName": "Cả năm"
+    }
+   ],
+   "KPF|2018-09-20|2018-09-27|0|0|Cả năm": [
+    {
+     "organCode": "KPF",
+     "ticker": "KPF",
+     "publicDate": "2018-09-20T00:00:00",
+     "recordDate": "2018-09-28T00:00:00",
+     "exrightDate": "2018-09-27T00:00:00",
+     "payoutDate": "2018-10-25T00:00:00",
+     "exerciseRate": 0.065,
+     "valuePerShare": 650.0,
+     "dividendYear": 2016,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "KPF",
+     "ticker": "KPF",
+     "publicDate": "2018-09-20T00:00:00",
+     "recordDate": "2018-09-28T00:00:00",
+     "exrightDate": "2018-09-27T00:00:00",
+     "payoutDate": "2018-10-25T00:00:00",
+     "exerciseRate": 0.035,
+     "valuePerShare": 350.0,
+     "dividendYear": 2017,
+     "stageName": "Cả năm"
+    }
+   ],
+   "DANURENCO|2018-07-06|2018-07-12|0|0|Cả năm": [
+    {
+     "organCode": "DANURENCO",
+     "ticker": "DNE",
+     "publicDate": "2018-07-06T00:00:00",
+     "recordDate": "2018-07-13T00:00:00",
+     "exrightDate": "2018-07-12T00:00:00",
+     "payoutDate": "2018-08-15T00:00:00",
+     "exerciseRate": 0.1,
+     "valuePerShare": 1000.0,
+     "dividendYear": 2016,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "DANURENCO",
+     "ticker": "DNE",
+     "publicDate": "2018-07-06T00:00:00",
+     "recordDate": "2018-07-13T00:00:00",
+     "exrightDate": "2018-07-12T00:00:00",
+     "payoutDate": "2018-08-15T00:00:00",
+     "exerciseRate": 0.0804,
+     "valuePerShare": 804.0,
+     "dividendYear": 2017,
+     "stageName": "Cả năm"
+    }
+   ],
+   "SMA|2018-02-06|2018-02-13|0|0|Cả năm": [
+    {
+     "organCode": "SMA",
+     "ticker": "SMA",
+     "publicDate": "2018-02-06T00:00:00",
+     "recordDate": "2018-02-21T00:00:00",
+     "exrightDate": "2018-02-13T00:00:00",
+     "payoutDate": "2018-03-07T00:00:00",
+     "exerciseRate": 0.04,
+     "valuePerShare": 400.0,
+     "dividendYear": 2013,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "SMA",
+     "ticker": "SMA",
+     "publicDate": "2018-02-06T00:00:00",
+     "recordDate": "2018-02-21T00:00:00",
+     "exrightDate": "2018-02-13T00:00:00",
+     "payoutDate": "2018-03-07T00:00:00",
+     "exerciseRate": 0.03,
+     "valuePerShare": 300.0,
+     "dividendYear": 2014,
+     "stageName": "Cả năm"
+    }
+   ],
+   "IDI|2017-11-29|2017-12-11|0|0|Cả năm": [
+    {
+     "organCode": "IDI",
+     "ticker": "IDI",
+     "publicDate": "2017-11-29T00:00:00",
+     "recordDate": "2017-12-12T00:00:00",
+     "exrightDate": "2017-12-11T00:00:00",
+     "payoutDate": "2017-12-22T00:00:00",
+     "exerciseRate": 0.03,
+     "valuePerShare": 300.0,
+     "dividendYear": 2015,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "IDI",
+     "ticker": "IDI",
+     "publicDate": "2017-11-29T00:00:00",
+     "recordDate": "2017-12-12T00:00:00",
+     "exrightDate": "2017-12-11T00:00:00",
+     "payoutDate": "2017-12-22T00:00:00",
+     "exerciseRate": 0.04,
+     "valuePerShare": 400.0,
+     "dividendYear": 2016,
+     "stageName": "Cả năm"
+    }
+   ],
+   "ALV|2017-09-06|2017-09-14|0|0|Cả năm": [
+    {
+     "organCode": "ALV",
+     "ticker": "ALV",
+     "publicDate": "2017-09-06T00:00:00",
+     "recordDate": "2017-09-15T00:00:00",
+     "exrightDate": "2017-09-14T00:00:00",
+     "payoutDate": "2017-10-19T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 500.0,
+     "dividendYear": 2015,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "ALV",
+     "ticker": "ALV",
+     "publicDate": "2017-09-06T00:00:00",
+     "recordDate": "2017-09-15T00:00:00",
+     "exrightDate": "2017-09-14T00:00:00",
+     "payoutDate": "2017-10-19T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 500.0,
+     "dividendYear": 2016,
+     "stageName": "Cả năm"
+    }
+   ],
+   "VTC|2017-03-07|2017-03-15|0|0|Cả năm": [
+    {
+     "organCode": "VTC",
+     "ticker": "VTC",
+     "publicDate": "2017-03-07T00:00:00",
+     "recordDate": "2017-03-16T00:00:00",
+     "exrightDate": "2017-03-15T00:00:00",
+     "payoutDate": "2017-04-03T00:00:00",
+     "exerciseRate": 0.06,
+     "valuePerShare": 600.0,
+     "dividendYear": 2010,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "VTC",
+     "ticker": "VTC",
+     "publicDate": "2017-03-07T00:00:00",
+     "recordDate": "2017-03-16T00:00:00",
+     "exrightDate": "2017-03-15T00:00:00",
+     "payoutDate": "2017-04-03T00:00:00",
+     "exerciseRate": 0.02,
+     "valuePerShare": 200.0,
+     "dividendYear": 2016,
+     "stageName": "Cả năm"
+    }
+   ],
+   "NBB|2017-02-22|2017-02-28|0|0|Cả năm": [
+    {
+     "organCode": "NBB",
+     "ticker": "NBB",
+     "publicDate": "2017-02-22T00:00:00",
+     "recordDate": "2017-03-01T00:00:00",
+     "exrightDate": "2017-02-28T00:00:00",
+     "payoutDate": "2017-09-08T00:00:00",
+     "exerciseRate": 0.1,
+     "valuePerShare": 1000.0,
+     "dividendYear": 2014,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "NBB",
+     "ticker": "NBB",
+     "publicDate": "2017-02-22T00:00:00",
+     "recordDate": "2017-03-01T00:00:00",
+     "exrightDate": "2017-02-28T00:00:00",
+     "payoutDate": "2017-12-29T00:00:00",
+     "exerciseRate": 0.08,
+     "valuePerShare": 800.0,
+     "dividendYear": 2015,
+     "stageName": "Cả năm"
+    }
+   ],
+   "HARCO|2016-06-30|2016-06-30|0|0|Cả năm": [
+    {
+     "organCode": "HARCO",
+     "ticker": null,
+     "publicDate": "2016-06-30T00:00:00",
+     "recordDate": "2016-06-30T00:00:00",
+     "exrightDate": "2016-06-30T00:00:00",
+     "payoutDate": "2016-06-30T00:00:00",
+     "exerciseRate": 0.0037,
+     "valuePerShare": 37.0,
+     "dividendYear": 2014,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "HARCO",
+     "ticker": null,
+     "publicDate": "2016-06-30T00:00:00",
+     "recordDate": "2016-06-30T00:00:00",
+     "exrightDate": "2016-06-30T00:00:00",
+     "payoutDate": "2016-06-30T00:00:00",
+     "exerciseRate": 0.0051,
+     "valuePerShare": 51.0,
+     "dividendYear": 2015,
+     "stageName": "Cả năm"
+    }
+   ],
+   "KBT|2016-05-13|2016-05-25|0|0|Cả năm": [
+    {
+     "organCode": "KBT",
+     "ticker": null,
+     "publicDate": "2016-05-13T00:00:00",
+     "recordDate": "2016-05-26T00:00:00",
+     "exrightDate": "2016-05-25T00:00:00",
+     "payoutDate": "2016-06-10T00:00:00",
+     "exerciseRate": 0.0925,
+     "valuePerShare": 925.0,
+     "dividendYear": 2014,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "KBT",
+     "ticker": null,
+     "publicDate": "2016-05-13T00:00:00",
+     "recordDate": "2016-05-26T00:00:00",
+     "exrightDate": "2016-05-25T00:00:00",
+     "payoutDate": "2016-06-10T00:00:00",
+     "exerciseRate": 0.1275,
+     "valuePerShare": 1275.0,
+     "dividendYear": 2015,
+     "stageName": "Cả năm"
+    }
+   ],
+   "S33|2015-07-07|2015-07-16|0|0|Cả năm": [
+    {
+     "organCode": "S33",
+     "ticker": null,
+     "publicDate": "2015-07-07T00:00:00",
+     "recordDate": "2015-07-20T00:00:00",
+     "exrightDate": "2015-07-16T00:00:00",
+     "payoutDate": "2015-07-30T00:00:00",
+     "exerciseRate": 0.15,
+     "valuePerShare": 1500.0,
+     "dividendYear": 2013,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "S33",
+     "ticker": null,
+     "publicDate": "2015-07-07T00:00:00",
+     "recordDate": "2015-07-20T00:00:00",
+     "exrightDate": "2015-07-16T00:00:00",
+     "payoutDate": "2015-07-30T00:00:00",
+     "exerciseRate": 0.15,
+     "valuePerShare": 1500.0,
+     "dividendYear": 2014,
+     "stageName": "Cả năm"
+    }
+   ],
+   "TTB|2015-06-02|2015-06-08|0|0|Cả năm": [
+    {
+     "organCode": "TTB",
+     "ticker": "TTB",
+     "publicDate": "2015-06-02T00:00:00",
+     "recordDate": "2015-06-10T00:00:00",
+     "exrightDate": "2015-06-08T00:00:00",
+     "payoutDate": "2015-07-30T00:00:00",
+     "exerciseRate": 0.07,
+     "valuePerShare": 700.0,
+     "dividendYear": 2013,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "TTB",
+     "ticker": "TTB",
+     "publicDate": "2015-06-02T00:00:00",
+     "recordDate": "2015-06-10T00:00:00",
+     "exrightDate": "2015-06-08T00:00:00",
+     "payoutDate": "2015-10-08T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 500.0,
+     "dividendYear": 2014,
+     "stageName": "Cả năm"
+    }
+   ],
+   "SPD|2015-05-08|2015-05-18|0|0|Cả năm": [
+    {
+     "organCode": "SPD",
+     "ticker": "SPD",
+     "publicDate": "2015-05-08T00:00:00",
+     "recordDate": "2015-05-20T00:00:00",
+     "exrightDate": "2015-05-18T00:00:00",
+     "payoutDate": "2015-06-03T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 500.0,
+     "dividendYear": 2014,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "SPD",
+     "ticker": "SPD",
+     "publicDate": "2015-05-08T00:00:00",
+     "recordDate": "2015-05-20T00:00:00",
+     "exrightDate": "2015-05-18T00:00:00",
+     "payoutDate": "2015-06-03T00:00:00",
+     "exerciseRate": 0.03,
+     "valuePerShare": 300.0,
+     "dividendYear": 2013,
+     "stageName": "Cả năm"
+    }
+   ],
+   "S74|2014-10-27|2014-10-30|0|0|Cả năm": [
+    {
+     "organCode": "S74",
+     "ticker": "S74",
+     "publicDate": "2014-10-27T00:00:00",
+     "recordDate": "2014-11-03T00:00:00",
+     "exrightDate": "2014-10-30T00:00:00",
+     "payoutDate": "2014-11-20T00:00:00",
+     "exerciseRate": 0.15,
+     "valuePerShare": 1500.0,
+     "dividendYear": 2011,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "S74",
+     "ticker": "S74",
+     "publicDate": "2014-10-27T00:00:00",
+     "recordDate": "2014-11-03T00:00:00",
+     "exrightDate": "2014-10-30T00:00:00",
+     "payoutDate": "2015-09-25T00:00:00",
+     "exerciseRate": 0.08,
+     "valuePerShare": 800.0,
+     "dividendYear": 2012,
+     "stageName": "Cả năm"
+    }
+   ],
+   "VFC|2014-10-27|2014-10-28|0|0|Đợt 2": [
+    {
+     "organCode": "VFC",
+     "ticker": "VFC",
+     "publicDate": "2014-10-27T00:00:00",
+     "recordDate": "2014-10-30T00:00:00",
+     "exrightDate": "2014-10-28T00:00:00",
+     "payoutDate": "2014-11-19T00:00:00",
+     "exerciseRate": 0.07,
+     "valuePerShare": 700.0,
+     "dividendYear": 2013,
+     "stageName": "Đợt 2"
+    },
+    {
+     "organCode": "VFC",
+     "ticker": "VFC",
+     "publicDate": "2014-10-27T00:00:00",
+     "recordDate": "2014-10-30T00:00:00",
+     "exrightDate": "2014-10-28T00:00:00",
+     "payoutDate": "2016-09-30T00:00:00",
+     "exerciseRate": 0.11,
+     "valuePerShare": 1100.0,
+     "dividendYear": 2014,
+     "stageName": "Đợt 2"
+    }
+   ],
+   "NLC|2014-07-10|2014-07-22|0|0|Cả năm": [
+    {
+     "organCode": "NLC",
+     "ticker": "NLC",
+     "publicDate": "2014-07-10T00:00:00",
+     "recordDate": "2014-07-24T00:00:00",
+     "exrightDate": "2014-07-22T00:00:00",
+     "payoutDate": "2014-07-31T00:00:00",
+     "exerciseRate": 0.3,
+     "valuePerShare": 3000.0,
+     "dividendYear": 2012,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "NLC",
+     "ticker": "NLC",
+     "publicDate": "2014-07-10T00:00:00",
+     "recordDate": "2014-07-24T00:00:00",
+     "exrightDate": "2014-07-22T00:00:00",
+     "payoutDate": "2014-07-31T00:00:00",
+     "exerciseRate": 0.42,
+     "valuePerShare": 4200.0,
+     "dividendYear": 2013,
+     "stageName": "Cả năm"
+    }
+   ],
+   "PETRO|2014-06-04|2014-06-20|0|0|Cả năm": [
+    {
+     "organCode": "PETRO",
+     "ticker": "PLX",
+     "publicDate": "2014-06-04T00:00:00",
+     "recordDate": "2014-06-20T00:00:00",
+     "exrightDate": "2014-06-20T00:00:00",
+     "payoutDate": "2014-07-01T00:00:00",
+     "exerciseRate": 0.058,
+     "valuePerShare": 580.0,
+     "dividendYear": 2012,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "PETRO",
+     "ticker": "PLX",
+     "publicDate": "2014-06-04T00:00:00",
+     "recordDate": "2014-06-20T00:00:00",
+     "exrightDate": "2014-06-20T00:00:00",
+     "payoutDate": "2014-07-01T00:00:00",
+     "exerciseRate": 0.1214,
+     "valuePerShare": 1214.0,
+     "dividendYear": 2013,
+     "stageName": "Cả năm"
+    }
+   ],
+   "SMA|2014-03-28|2012-07-25|0|0|Cả năm": [
+    {
+     "organCode": "SMA",
+     "ticker": "SMA",
+     "publicDate": "2014-03-28T00:00:00",
+     "recordDate": "2012-07-27T00:00:00",
+     "exrightDate": "2012-07-25T00:00:00",
+     "payoutDate": "2015-01-30T00:00:00",
+     "exerciseRate": 0.12,
+     "valuePerShare": 1200.0,
+     "dividendYear": 2011,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "SMA",
+     "ticker": "SMA",
+     "publicDate": "2014-03-28T00:00:00",
+     "recordDate": "2012-07-27T00:00:00",
+     "exrightDate": "2012-07-25T00:00:00",
+     "payoutDate": "2014-03-31T00:00:00",
+     "exerciseRate": 0.01,
+     "valuePerShare": 100.0,
+     "dividendYear": 2011,
+     "stageName": "Cả năm"
+    }
+   ],
+   "TPP|2012-05-31|2012-06-29|0|0|Đợt 2": [
+    {
+     "organCode": "TPP",
+     "ticker": "TPP",
+     "publicDate": "2012-05-31T00:00:00",
+     "recordDate": "2012-07-03T00:00:00",
+     "exrightDate": "2012-06-29T00:00:00",
+     "payoutDate": "2012-07-31T00:00:00",
+     "exerciseRate": 0.04,
+     "valuePerShare": 400.0,
+     "dividendYear": 2010,
+     "stageName": "Đợt 2"
+    },
+    {
+     "organCode": "TPP",
+     "ticker": "TPP",
+     "publicDate": "2012-05-31T00:00:00",
+     "recordDate": "2012-07-03T00:00:00",
+     "exrightDate": "2012-06-29T00:00:00",
+     "payoutDate": "2012-07-31T00:00:00",
+     "exerciseRate": 0.08,
+     "valuePerShare": 800.0,
+     "dividendYear": 2011,
+     "stageName": "Đợt 2"
+    }
+   ],
+   "VSH|2011-12-02|2011-12-14|0|0|Cả năm": [
+    {
+     "organCode": "VSH",
+     "ticker": "VSH",
+     "publicDate": "2011-12-02T00:00:00",
+     "recordDate": "2011-12-16T00:00:00",
+     "exrightDate": "2011-12-14T00:00:00",
+     "payoutDate": "2011-12-28T00:00:00",
+     "exerciseRate": 0.1,
+     "valuePerShare": 1000.0,
+     "dividendYear": 2011,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "VSH",
+     "ticker": "VSH",
+     "publicDate": "2011-12-02T00:00:00",
+     "recordDate": "2011-12-16T00:00:00",
+     "exrightDate": "2011-12-14T00:00:00",
+     "payoutDate": "2011-12-28T00:00:00",
+     "exerciseRate": 0.1,
+     "valuePerShare": 1000.0,
+     "dividendYear": 2010,
+     "stageName": "Cả năm"
+    }
+   ],
+   "TCT|2010-09-23|2010-09-28|0|0|Cả năm": [
+    {
+     "organCode": "TCT",
+     "ticker": "TCT",
+     "publicDate": "2010-09-23T00:00:00",
+     "recordDate": "2010-09-30T00:00:00",
+     "exrightDate": "2010-09-28T00:00:00",
+     "payoutDate": "2010-10-19T00:00:00",
+     "exerciseRate": 0.2,
+     "valuePerShare": 2000.0,
+     "dividendYear": 2009,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "TCT",
+     "ticker": "TCT",
+     "publicDate": "2010-09-23T00:00:00",
+     "recordDate": "2010-09-30T00:00:00",
+     "exrightDate": "2010-09-28T00:00:00",
+     "payoutDate": "2010-10-19T00:00:00",
+     "exerciseRate": 0.1,
+     "valuePerShare": 1000.0,
+     "dividendYear": 2010,
+     "stageName": "Cả năm"
+    }
+   ],
+   "ASM|2010-07-30|2010-08-10|0|0|Cả năm": [
+    {
+     "organCode": "ASM",
+     "ticker": "ASM",
+     "publicDate": "2010-07-30T00:00:00",
+     "recordDate": "2010-08-12T00:00:00",
+     "exrightDate": "2010-08-10T00:00:00",
+     "payoutDate": "2010-09-10T00:00:00",
+     "exerciseRate": 0.2,
+     "valuePerShare": 2000.0,
+     "dividendYear": 2009,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "ASM",
+     "ticker": "ASM",
+     "publicDate": "2010-07-30T00:00:00",
+     "recordDate": "2010-08-12T00:00:00",
+     "exrightDate": "2010-08-10T00:00:00",
+     "payoutDate": "2010-09-10T00:00:00",
+     "exerciseRate": 0.3,
+     "valuePerShare": 3000.0,
+     "dividendYear": 2010,
+     "stageName": "Cả năm"
+    }
+   ],
+   "YSC|2010-02-12|2010-03-02|0|0|Cả năm": [
+    {
+     "organCode": "YSC",
+     "ticker": "YSC",
+     "publicDate": "2010-02-12T00:00:00",
+     "recordDate": "2010-03-04T00:00:00",
+     "exrightDate": "2010-03-02T00:00:00",
+     "payoutDate": "2010-03-26T00:00:00",
+     "exerciseRate": 0.06,
+     "valuePerShare": 600.0,
+     "dividendYear": 2008,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "YSC",
+     "ticker": "YSC",
+     "publicDate": "2010-02-12T00:00:00",
+     "recordDate": "2010-03-04T00:00:00",
+     "exrightDate": "2010-03-02T00:00:00",
+     "payoutDate": "2010-03-26T00:00:00",
+     "exerciseRate": 0.12,
+     "valuePerShare": 1200.0,
+     "dividendYear": 2009,
+     "stageName": "Cả năm"
+    }
+   ],
+   "SJS|2008-08-22|2008-09-03|0|0|Cả năm": [
+    {
+     "organCode": "SJS",
+     "ticker": "SJS",
+     "publicDate": "2008-08-22T00:00:00",
+     "recordDate": "2008-09-05T00:00:00",
+     "exrightDate": "2008-09-03T00:00:00",
+     "payoutDate": "2008-09-25T00:00:00",
+     "exerciseRate": 0.2,
+     "valuePerShare": 2000.0,
+     "dividendYear": 2007,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "SJS",
+     "ticker": "SJS",
+     "publicDate": "2008-08-22T00:00:00",
+     "recordDate": "2008-09-05T00:00:00",
+     "exrightDate": "2008-09-03T00:00:00",
+     "payoutDate": "2008-09-25T00:00:00",
+     "exerciseRate": 0.1,
+     "valuePerShare": 1000.0,
+     "dividendYear": 2008,
+     "stageName": "Cả năm"
+    }
+   ],
+   "TS4|2008-08-12|2008-08-19|0|0|Đợt 1": [
+    {
+     "organCode": "TS4",
+     "ticker": "TS4",
+     "publicDate": "2008-08-12T00:00:00",
+     "recordDate": "2008-08-21T00:00:00",
+     "exrightDate": "2008-08-19T00:00:00",
+     "payoutDate": "2008-09-09T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 500.0,
+     "dividendYear": 2008,
+     "stageName": "Đợt 1"
+    },
+    {
+     "organCode": "TS4",
+     "ticker": "TS4",
+     "publicDate": "2008-08-12T00:00:00",
+     "recordDate": "2008-08-21T00:00:00",
+     "exrightDate": "2008-08-19T00:00:00",
+     "payoutDate": "2008-09-09T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 500.0,
+     "dividendYear": 2008,
+     "stageName": "Đợt 1"
+    }
+   ],
+   "GIL|2008-05-21|2008-06-18|0|0|Đợt 1": [
+    {
+     "organCode": "GIL",
+     "ticker": "GIL",
+     "publicDate": "2008-05-21T00:00:00",
+     "recordDate": "2008-06-20T00:00:00",
+     "exrightDate": "2008-06-18T00:00:00",
+     "payoutDate": "2008-07-10T00:00:00",
+     "exerciseRate": 0.12,
+     "valuePerShare": 1200.0,
+     "dividendYear": 2008,
+     "stageName": "Đợt 1"
+    },
+    {
+     "organCode": "GIL",
+     "ticker": "GIL",
+     "publicDate": "2008-05-21T00:00:00",
+     "recordDate": "2008-06-20T00:00:00",
+     "exrightDate": "2008-06-18T00:00:00",
+     "payoutDate": "2008-07-10T00:00:00",
+     "exerciseRate": 0.12,
+     "valuePerShare": 1200.0,
+     "dividendYear": 2008,
+     "stageName": "Đợt 1"
+    }
+   ],
+   "VTL|2007-06-01|2007-06-13|0|0|Đợt 2": [
+    {
+     "organCode": "VTL",
+     "ticker": "VTL",
+     "publicDate": "2007-06-01T00:00:00",
+     "recordDate": "2007-06-15T00:00:00",
+     "exrightDate": "2007-06-13T00:00:00",
+     "payoutDate": "2007-07-05T00:00:00",
+     "exerciseRate": 0.0104,
+     "valuePerShare": 104.0,
+     "dividendYear": 2005,
+     "stageName": "Đợt 2"
+    },
+    {
+     "organCode": "VTL",
+     "ticker": "VTL",
+     "publicDate": "2007-06-01T00:00:00",
+     "recordDate": "2007-06-15T00:00:00",
+     "exrightDate": "2007-06-13T00:00:00",
+     "payoutDate": "2007-07-05T00:00:00",
+     "exerciseRate": 0.0223,
+     "valuePerShare": 223.0,
+     "dividendYear": 2006,
+     "stageName": "Đợt 2"
+    }
+   ]
+  }
+ },
+ "stockdividend": {
+  "ban_ghi": 2100,
+  "khoa_dung": 19,
+  "khoa_dung_khac_noi_dung": 17,
+  "nhom": {
+   "ABI|2025-09-04|2025-09-11|0|0|Cả năm": [
+    {
+     "organCode": "ABI",
+     "ticker": "ABI",
+     "publicDate": "2025-09-04T00:00:00",
+     "recordDate": "2025-09-12T00:00:00",
+     "exrightDate": "2025-09-11T00:00:00",
+     "payoutDate": "2025-09-11T00:00:00",
+     "exerciseRate": 0.2,
+     "valuePerShare": 0.0,
+     "dividendYear": 2024,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "ABI",
+     "ticker": "ABI",
+     "publicDate": "2025-09-04T00:00:00",
+     "recordDate": "2025-09-12T00:00:00",
+     "exrightDate": "2025-09-11T00:00:00",
+     "payoutDate": "2025-09-11T00:00:00",
+     "exerciseRate": 0.2,
+     "valuePerShare": 0.0,
+     "dividendYear": 2024,
+     "stageName": "Cả năm"
+    }
+   ],
+   "VC3|2025-07-25|2025-08-01|0|0|Cả năm": [
+    {
+     "organCode": "VC3",
+     "ticker": "VC3",
+     "publicDate": "2025-07-25T00:00:00",
+     "recordDate": "2025-08-04T00:00:00",
+     "exrightDate": "2025-08-01T00:00:00",
+     "payoutDate": "2025-08-04T00:00:00",
+     "exerciseRate": 0.09,
+     "valuePerShare": 0.0,
+     "dividendYear": 2024,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "VC3",
+     "ticker": "VC3",
+     "publicDate": "2025-07-25T00:00:00",
+     "recordDate": "2025-08-04T00:00:00",
+     "exrightDate": "2025-08-01T00:00:00",
+     "payoutDate": "2025-08-04T00:00:00",
+     "exerciseRate": 0.09,
+     "valuePerShare": 0.0,
+     "dividendYear": 2024,
+     "stageName": "Cả năm"
+    }
+   ],
+   "HCDG|2023-08-17|2023-09-05|0|0|Cả năm": [
+    {
+     "organCode": "HCDG",
+     "ticker": "HCD",
+     "publicDate": "2023-08-17T00:00:00",
+     "recordDate": "2023-09-06T00:00:00",
+     "exrightDate": "2023-09-05T00:00:00",
+     "payoutDate": "2023-10-02T00:00:00",
+     "exerciseRate": 0.1,
+     "valuePerShare": 0.0,
+     "dividendYear": 2022,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "HCDG",
+     "ticker": "HCD",
+     "publicDate": "2023-08-17T00:00:00",
+     "recordDate": "2023-09-06T00:00:00",
+     "exrightDate": "2023-09-05T00:00:00",
+     "payoutDate": "2023-10-02T00:00:00",
+     "exerciseRate": 0.07,
+     "valuePerShare": 0.0,
+     "dividendYear": 2021,
+     "stageName": "Cả năm"
+    }
+   ],
+   "VC3|2023-06-27|2023-06-29|0|0|Cả năm": [
+    {
+     "organCode": "VC3",
+     "ticker": "VC3",
+     "publicDate": "2023-06-27T00:00:00",
+     "recordDate": "2023-06-30T00:00:00",
+     "exrightDate": "2023-06-29T00:00:00",
+     "payoutDate": "2023-07-03T00:00:00",
+     "exerciseRate": 0.065,
+     "valuePerShare": 0.0,
+     "dividendYear": 2022,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "VC3",
+     "ticker": "VC3",
+     "publicDate": "2023-06-27T00:00:00",
+     "recordDate": "2023-06-30T00:00:00",
+     "exrightDate": "2023-06-29T00:00:00",
+     "payoutDate": "2023-07-03T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 0.0,
+     "dividendYear": 2021,
+     "stageName": "Cả năm"
+    }
+   ],
+   "TEG|2023-06-12|2023-06-15|0|0|Cả năm": [
+    {
+     "organCode": "TEG",
+     "ticker": "TEG",
+     "publicDate": "2023-06-12T00:00:00",
+     "recordDate": "2023-06-16T00:00:00",
+     "exrightDate": "2023-06-15T00:00:00",
+     "payoutDate": "2023-06-15T00:00:00",
+     "exerciseRate": 0.04,
+     "valuePerShare": 0.0,
+     "dividendYear": 2022,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "TEG",
+     "ticker": "TEG",
+     "publicDate": "2023-06-12T00:00:00",
+     "recordDate": "2023-06-16T00:00:00",
+     "exrightDate": "2023-06-15T00:00:00",
+     "payoutDate": "2023-06-15T00:00:00",
+     "exerciseRate": 0.07,
+     "valuePerShare": 0.0,
+     "dividendYear": 2021,
+     "stageName": "Cả năm"
+    }
+   ],
+   "TRACODI|2023-05-19|2023-05-29|0|0|Cả năm": [
+    {
+     "organCode": "TRACODI",
+     "ticker": "TCD",
+     "publicDate": "2023-05-19T00:00:00",
+     "recordDate": "2023-05-30T00:00:00",
+     "exrightDate": "2023-05-29T00:00:00",
+     "payoutDate": "2023-05-29T00:00:00",
+     "exerciseRate": 0.07,
+     "valuePerShare": 0.0,
+     "dividendYear": 2021,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "TRACODI",
+     "ticker": "TCD",
+     "publicDate": "2023-05-19T00:00:00",
+     "recordDate": "2023-05-30T00:00:00",
+     "exrightDate": "2023-05-29T00:00:00",
+     "payoutDate": "2023-05-29T00:00:00",
+     "exerciseRate": 0.08,
+     "valuePerShare": 0.0,
+     "dividendYear": 2022,
+     "stageName": "Cả năm"
+    }
+   ],
+   "BKGVN|2022-10-17|2022-10-24|0|0|Cả năm": [
+    {
+     "organCode": "BKGVN",
+     "ticker": "BKG",
+     "publicDate": "2022-10-17T00:00:00",
+     "recordDate": "2022-10-25T00:00:00",
+     "exrightDate": "2022-10-24T00:00:00",
+     "payoutDate": "2022-10-24T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 0.0,
+     "dividendYear": 2020,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "BKGVN",
+     "ticker": "BKG",
+     "publicDate": "2022-10-17T00:00:00",
+     "recordDate": "2022-10-25T00:00:00",
+     "exrightDate": "2022-10-24T00:00:00",
+     "payoutDate": "2022-10-24T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 0.0,
+     "dividendYear": 2021,
+     "stageName": "Cả năm"
+    }
+   ],
+   "HHSLAGRI|2022-07-19|2022-07-22|0|0|Cả năm": [
+    {
+     "organCode": "HHSLAGRI",
+     "ticker": "HSL",
+     "publicDate": "2022-07-19T00:00:00",
+     "recordDate": "2022-07-25T00:00:00",
+     "exrightDate": "2022-07-22T00:00:00",
+     "payoutDate": "2022-07-22T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 0.0,
+     "dividendYear": 2021,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "HHSLAGRI",
+     "ticker": "HSL",
+     "publicDate": "2022-07-19T00:00:00",
+     "recordDate": "2022-07-25T00:00:00",
+     "exrightDate": "2022-07-22T00:00:00",
+     "payoutDate": "2022-07-22T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 0.0,
+     "dividendYear": 2020,
+     "stageName": "Cả năm"
+    }
+   ],
+   "VC3|2021-07-09|2021-07-29|0|0|Cả năm": [
+    {
+     "organCode": "VC3",
+     "ticker": "VC3",
+     "publicDate": "2021-07-09T00:00:00",
+     "recordDate": "2021-07-30T00:00:00",
+     "exrightDate": "2021-07-29T00:00:00",
+     "payoutDate": "2021-07-29T00:00:00",
+     "exerciseRate": 0.025,
+     "valuePerShare": 0.0,
+     "dividendYear": 2018,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "VC3",
+     "ticker": "VC3",
+     "publicDate": "2021-07-09T00:00:00",
+     "recordDate": "2021-07-30T00:00:00",
+     "exrightDate": "2021-07-29T00:00:00",
+     "payoutDate": "2021-07-29T00:00:00",
+     "exerciseRate": 0.07,
+     "valuePerShare": 0.0,
+     "dividendYear": 2019,
+     "stageName": "Cả năm"
+    }
+   ],
+   "HKT|2018-01-11|2018-01-18|0|0|Cả năm": [
+    {
+     "organCode": "HKT",
+     "ticker": "HKT",
+     "publicDate": "2018-01-11T13:41:58.96",
+     "recordDate": "2018-01-19T00:00:00",
+     "exrightDate": "2018-01-18T00:00:00",
+     "payoutDate": "2018-04-11T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 0.0,
+     "dividendYear": 2016,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "HKT",
+     "ticker": "HKT",
+     "publicDate": "2018-01-11T11:52:19.553",
+     "recordDate": "2018-01-19T00:00:00",
+     "exrightDate": "2018-01-18T00:00:00",
+     "payoutDate": "2018-04-11T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 0.0,
+     "dividendYear": 2015,
+     "stageName": "Cả năm"
+    }
+   ],
+   "SPP|2017-08-02|2017-08-08|0|0|Cả năm": [
+    {
+     "organCode": "SPP",
+     "ticker": "SPP",
+     "publicDate": "2017-08-02T11:01:53.253",
+     "recordDate": "2017-08-09T00:00:00",
+     "exrightDate": "2017-08-08T00:00:00",
+     "payoutDate": "2017-08-08T00:00:00",
+     "exerciseRate": 0.1,
+     "valuePerShare": 0.0,
+     "dividendYear": 2016,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "SPP",
+     "ticker": "SPP",
+     "publicDate": "2017-08-02T16:54:34.14",
+     "recordDate": "2017-08-09T00:00:00",
+     "exrightDate": "2017-08-08T00:00:00",
+     "payoutDate": "2017-08-08T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 0.0,
+     "dividendYear": 2015,
+     "stageName": "Cả năm"
+    }
+   ],
+   "TTB|2017-07-28|2017-08-03|0|0|Cả năm": [
+    {
+     "organCode": "TTB",
+     "ticker": "TTB",
+     "publicDate": "2017-07-28T14:17:51.083",
+     "recordDate": "2017-08-04T00:00:00",
+     "exrightDate": "2017-08-03T00:00:00",
+     "payoutDate": "2017-08-03T00:00:00",
+     "exerciseRate": 0.035,
+     "valuePerShare": 0.0,
+     "dividendYear": 2015,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "TTB",
+     "ticker": "TTB",
+     "publicDate": "2017-07-28T14:19:02.137",
+     "recordDate": "2017-08-04T00:00:00",
+     "exrightDate": "2017-08-03T00:00:00",
+     "payoutDate": "2017-08-03T00:00:00",
+     "exerciseRate": 0.065,
+     "valuePerShare": 0.0,
+     "dividendYear": 2016,
+     "stageName": "Cả năm"
+    }
+   ],
+   "NKG|2017-05-05|2017-05-17|0|0|Cả năm": [
+    {
+     "organCode": "NKG",
+     "ticker": "NKG",
+     "publicDate": "2017-05-05T15:36:28.543",
+     "recordDate": "2017-05-18T00:00:00",
+     "exrightDate": "2017-05-17T00:00:00",
+     "payoutDate": "2017-05-17T00:00:00",
+     "exerciseRate": 0.35,
+     "valuePerShare": 0.0,
+     "dividendYear": 2016,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "NKG",
+     "ticker": "NKG",
+     "publicDate": "2017-05-05T17:30:45.51",
+     "recordDate": "2017-05-18T00:00:00",
+     "exrightDate": "2017-05-17T00:00:00",
+     "payoutDate": "2017-05-17T00:00:00",
+     "exerciseRate": 0.15,
+     "valuePerShare": 0.0,
+     "dividendYear": 2015,
+     "stageName": "Cả năm"
+    }
+   ],
+   "SIC|2016-04-09|2016-08-16|0|0|Cả năm": [
+    {
+     "organCode": "SIC",
+     "ticker": "ANI",
+     "publicDate": "2016-04-09T14:46:26.317",
+     "recordDate": "2016-08-17T00:00:00",
+     "exrightDate": "2016-08-16T00:00:00",
+     "payoutDate": "2016-08-16T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 0.0,
+     "dividendYear": 2011,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "SIC",
+     "ticker": "ANI",
+     "publicDate": "2016-04-09T14:47:30.547",
+     "recordDate": "2016-08-17T00:00:00",
+     "exrightDate": "2016-08-16T00:00:00",
+     "payoutDate": "2016-08-16T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 0.0,
+     "dividendYear": 2010,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "SIC",
+     "ticker": "ANI",
+     "publicDate": "2016-04-09T00:00:00",
+     "recordDate": "2016-08-17T00:00:00",
+     "exrightDate": "2016-08-16T00:00:00",
+     "payoutDate": "2016-08-16T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 0.0,
+     "dividendYear": 2012,
+     "stageName": "Cả năm"
+    }
+   ],
+   "AMD|2016-02-27|2016-05-19|0|0|Cả năm": [
+    {
+     "organCode": "AMD",
+     "ticker": "AMD",
+     "publicDate": "2016-02-27T17:14:56.607",
+     "recordDate": "2016-05-20T00:00:00",
+     "exrightDate": "2016-05-19T00:00:00",
+     "payoutDate": "2016-05-19T00:00:00",
+     "exerciseRate": 0.03,
+     "valuePerShare": 0.0,
+     "dividendYear": 2014,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "AMD",
+     "ticker": "AMD",
+     "publicDate": "2016-02-27T00:00:00",
+     "recordDate": "2016-05-20T00:00:00",
+     "exrightDate": "2016-05-19T00:00:00",
+     "payoutDate": "2016-05-19T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 0.0,
+     "dividendYear": 2015,
+     "stageName": "Cả năm"
+    }
+   ],
+   "CSC|2014-04-15|2014-06-25|0|0|Cả năm": [
+    {
+     "organCode": "CSC",
+     "ticker": "CSC",
+     "publicDate": "2014-04-15T00:00:00",
+     "recordDate": "2014-06-27T00:00:00",
+     "exrightDate": "2014-06-25T00:00:00",
+     "payoutDate": "2014-06-25T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 0.0,
+     "dividendYear": 2011,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "CSC",
+     "ticker": "CSC",
+     "publicDate": "2014-04-15T00:00:00",
+     "recordDate": "2014-06-27T00:00:00",
+     "exrightDate": "2014-06-25T00:00:00",
+     "payoutDate": "2014-06-25T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 0.0,
+     "dividendYear": 2013,
+     "stageName": "Cả năm"
+    }
+   ],
+   "HDA|2013-10-23|2013-10-30|0|0|Cả năm": [
+    {
+     "organCode": "HDA",
+     "ticker": "HDA",
+     "publicDate": "2013-10-23T00:00:00",
+     "recordDate": "2013-11-01T00:00:00",
+     "exrightDate": "2013-10-30T00:00:00",
+     "payoutDate": "2013-10-30T00:00:00",
+     "exerciseRate": 0.2,
+     "valuePerShare": 0.0,
+     "dividendYear": 2011,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "HDA",
+     "ticker": "HDA",
+     "publicDate": "2013-10-23T00:00:00",
+     "recordDate": "2013-11-01T00:00:00",
+     "exrightDate": "2013-10-30T00:00:00",
+     "payoutDate": "2013-10-30T00:00:00",
+     "exerciseRate": 0.15,
+     "valuePerShare": 0.0,
+     "dividendYear": 2012,
+     "stageName": "Cả năm"
+    }
+   ],
+   "HUT|2013-04-11|2013-05-10|0|0|Cả năm": [
+    {
+     "organCode": "HUT",
+     "ticker": "HUT",
+     "publicDate": "2013-04-11T00:00:00",
+     "recordDate": "2013-05-14T00:00:00",
+     "exrightDate": "2013-05-10T00:00:00",
+     "payoutDate": "2013-05-10T00:00:00",
+     "exerciseRate": 0.08,
+     "valuePerShare": 0.0,
+     "dividendYear": 2012,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "HUT",
+     "ticker": "HUT",
+     "publicDate": "2013-04-11T00:00:00",
+     "recordDate": "2013-05-14T00:00:00",
+     "exrightDate": "2013-05-10T00:00:00",
+     "payoutDate": "2013-05-10T00:00:00",
+     "exerciseRate": 0.12,
+     "valuePerShare": 0.0,
+     "dividendYear": 2012,
+     "stageName": "Cả năm"
+    }
+   ],
+   "PPI|2012-05-28|2012-10-19|0|0|Cả năm": [
+    {
+     "organCode": "PPI",
+     "ticker": "PPI",
+     "publicDate": "2012-05-28T00:00:00",
+     "recordDate": "2012-10-23T00:00:00",
+     "exrightDate": "2012-10-19T00:00:00",
+     "payoutDate": "2012-10-19T00:00:00",
+     "exerciseRate": 0.1,
+     "valuePerShare": 0.0,
+     "dividendYear": 2010,
+     "stageName": "Cả năm"
+    },
+    {
+     "organCode": "PPI",
+     "ticker": "PPI",
+     "publicDate": "2012-05-28T00:00:00",
+     "recordDate": "2012-10-23T00:00:00",
+     "exrightDate": "2012-10-19T00:00:00",
+     "payoutDate": "2012-10-19T00:00:00",
+     "exerciseRate": 0.05,
+     "valuePerShare": 0.0,
+     "dividendYear": 2011,
+     "stageName": "Cả năm"
+    }
+   ]
+  }
+ },
+ "ipo": {
+  "ban_ghi": 77,
+  "khoa_dung": 0,
+  "khoa_dung_khac_noi_dung": 0,
+  "nhom": {}
+ },
+ "shareissuance": {
+  "ban_ghi": 10097,
+  "khoa_dung": 129,
+  "khoa_dung_khac_noi_dung": 115,
+  "nhom": {
+   "VIC|2026-07-10|2026-07-10|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "VIC",
+     "ticker": "VIC",
+     "publicDate": "2026-07-10T00:00:00",
+     "exrightDate": "2026-07-10T00:00:00",
+     "issueDate": "2026-07-10T00:00:00",
+     "listingDate": "2026-07-10T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": -27460872.0,
+     "issueYear": 2026,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VIC",
+     "ticker": "VIC",
+     "publicDate": "2026-07-10T00:00:00",
+     "exrightDate": "2026-07-10T00:00:00",
+     "issueDate": "2026-07-10T00:00:00",
+     "listingDate": "2026-08-10T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.007287,
+     "planVolumn": 56155405.0,
+     "issueYear": 2026,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "FPT|2026-06-29|2026-06-24|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2026-06-29T00:00:00",
+     "exrightDate": "2026-06-24T00:00:00",
+     "issueDate": "2026-07-01T00:00:00",
+     "listingDate": "2036-06-24T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.00135,
+     "planVolumn": 2302000.0,
+     "issueYear": 2026,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2026-06-29T00:00:00",
+     "exrightDate": "2026-06-24T00:00:00",
+     "issueDate": "2026-07-01T00:00:00",
+     "listingDate": "2029-06-25T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.00499,
+     "planVolumn": 8517301.0,
+     "issueYear": 2026,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VIT|2026-03-26|2026-03-18|0|0|Phát hành để sáp nhập": [
+    {
+     "organCode": "VIT",
+     "ticker": "VIT",
+     "publicDate": "2026-03-26T00:00:00",
+     "exrightDate": "2026-03-18T00:00:00",
+     "issueDate": "2026-03-19T00:00:00",
+     "listingDate": "2026-05-18T00:00:00",
+     "issueMethodName": "Phát hành để sáp nhập",
+     "exerciseRatio": 0.1957,
+     "planVolumn": 9785720.0,
+     "issueYear": 2026,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VIT",
+     "ticker": "VIT",
+     "publicDate": "2026-03-26T00:00:00",
+     "exrightDate": "2026-03-18T00:00:00",
+     "issueDate": "2026-03-19T00:00:00",
+     "listingDate": "2026-05-18T00:00:00",
+     "issueMethodName": "Phát hành để sáp nhập",
+     "exerciseRatio": 0.18032,
+     "planVolumn": 9016000.0,
+     "issueYear": 2026,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "MSCC|2025-12-30|2026-01-09|0|0|Cổ phiếu thưởng": [
+    {
+     "organCode": "MSCC",
+     "ticker": "MCH",
+     "publicDate": "2025-12-30T00:00:00",
+     "exrightDate": "2026-01-09T00:00:00",
+     "issueDate": "2026-01-12T00:00:00",
+     "listingDate": "2026-02-13T00:00:00",
+     "issueMethodName": "Cổ phiếu thưởng",
+     "exerciseRatio": 0.2147,
+     "planVolumn": 226874640.0,
+     "issueYear": 2026,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "MSCC",
+     "ticker": "MCH",
+     "publicDate": "2025-12-30T00:00:00",
+     "exrightDate": "2026-01-09T00:00:00",
+     "issueDate": "2026-01-09T00:00:00",
+     "listingDate": null,
+     "issueMethodName": "Cổ phiếu thưởng",
+     "exerciseRatio": 0.0103,
+     "planVolumn": 0.0,
+     "issueYear": 2026,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "NOVALAND|2025-10-10|2025-10-09|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "NOVALAND",
+     "ticker": "NVL",
+     "publicDate": "2025-10-10T00:00:00",
+     "exrightDate": "2025-10-09T00:00:00",
+     "issueDate": "2025-10-09T00:00:00",
+     "listingDate": "2028-10-10T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.025,
+     "planVolumn": 48752613.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "NOVALAND",
+     "ticker": "NVL",
+     "publicDate": "2025-10-10T00:00:00",
+     "exrightDate": "2025-10-09T00:00:00",
+     "issueDate": "2025-10-09T00:00:00",
+     "listingDate": "2026-10-12T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.025,
+     "planVolumn": 48752613.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "ABI|2025-09-04|2025-09-11|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "ABI",
+     "ticker": "ABI",
+     "publicDate": "2025-09-04T00:00:00",
+     "exrightDate": "2025-09-11T00:00:00",
+     "issueDate": "2025-09-11T00:00:00",
+     "listingDate": null,
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.2,
+     "planVolumn": 14478350.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "ABI",
+     "ticker": "ABI",
+     "publicDate": "2025-09-04T00:00:00",
+     "exrightDate": "2025-09-11T00:00:00",
+     "issueDate": "2025-09-11T00:00:00",
+     "listingDate": "2025-10-17T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.2,
+     "planVolumn": 14478350.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "ABI|2025-09-04|2025-09-11|0|0|Cổ phiếu thưởng": [
+    {
+     "organCode": "ABI",
+     "ticker": "ABI",
+     "publicDate": "2025-09-04T00:00:00",
+     "exrightDate": "2025-09-11T00:00:00",
+     "issueDate": "2025-09-11T00:00:00",
+     "listingDate": null,
+     "issueMethodName": "Cổ phiếu thưởng",
+     "exerciseRatio": 0.2,
+     "planVolumn": 14478350.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "ABI",
+     "ticker": "ABI",
+     "publicDate": "2025-09-04T00:00:00",
+     "exrightDate": "2025-09-11T00:00:00",
+     "issueDate": "2025-09-11T00:00:00",
+     "listingDate": "2025-10-17T00:00:00",
+     "issueMethodName": "Cổ phiếu thưởng",
+     "exerciseRatio": 0.2,
+     "planVolumn": 14478350.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "GAS|2025-08-05|2025-08-28|0|0|Cổ phiếu thưởng": [
+    {
+     "organCode": "GAS",
+     "ticker": "GAS",
+     "publicDate": "2025-08-05T00:00:00",
+     "exrightDate": "2025-08-28T00:00:00",
+     "issueDate": "2025-08-29T00:00:00",
+     "listingDate": "2025-10-20T00:00:00",
+     "issueMethodName": "Cổ phiếu thưởng",
+     "exerciseRatio": 0.03,
+     "planVolumn": 70280187.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "GAS",
+     "ticker": "GAS",
+     "publicDate": "2025-08-05T00:00:00",
+     "exrightDate": "2025-08-28T00:00:00",
+     "issueDate": "2025-08-29T00:00:00",
+     "listingDate": null,
+     "issueMethodName": "Cổ phiếu thưởng",
+     "exerciseRatio": 0.03,
+     "planVolumn": 70280187.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VIC|2025-08-21|2025-08-21|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "VIC",
+     "ticker": "VIC",
+     "publicDate": "2025-08-21T00:00:00",
+     "exrightDate": "2025-08-21T00:00:00",
+     "issueDate": "2025-08-21T00:00:00",
+     "listingDate": null,
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": -27460873.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VIC",
+     "ticker": "VIC",
+     "publicDate": "2025-08-21T00:00:00",
+     "exrightDate": "2025-08-21T00:00:00",
+     "issueDate": "2025-08-21T00:00:00",
+     "listingDate": "2025-10-07T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 29353951.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VC3|2025-07-25|2025-08-01|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "VC3",
+     "ticker": "VC3",
+     "publicDate": "2025-07-25T00:00:00",
+     "exrightDate": "2025-08-01T00:00:00",
+     "issueDate": "2025-08-04T00:00:00",
+     "listingDate": null,
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.09,
+     "planVolumn": 11263585.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VC3",
+     "ticker": "VC3",
+     "publicDate": "2025-07-25T00:00:00",
+     "exrightDate": "2025-08-01T00:00:00",
+     "issueDate": "2025-08-04T00:00:00",
+     "listingDate": "2025-10-09T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.09,
+     "planVolumn": 11263585.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "GDB|2025-07-04|2025-07-01|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "GDB",
+     "ticker": "BVB",
+     "publicDate": "2025-07-04T00:00:00",
+     "exrightDate": "2025-07-01T00:00:00",
+     "issueDate": "2025-07-01T00:00:00",
+     "listingDate": "2026-07-01T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0322,
+     "planVolumn": 20000000.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "GDB",
+     "ticker": "BVB",
+     "publicDate": "2025-07-04T00:00:00",
+     "exrightDate": "2025-07-01T00:00:00",
+     "issueDate": "2025-07-01T00:00:00",
+     "listingDate": null,
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0322,
+     "planVolumn": 20000000.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "FPT|2025-05-12|2025-05-07|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2025-05-12T00:00:00",
+     "exrightDate": "2025-05-07T00:00:00",
+     "issueDate": "2025-05-07T00:00:00",
+     "listingDate": "2028-05-08T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.00472,
+     "planVolumn": 6945939.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2025-05-12T00:00:00",
+     "exrightDate": "2025-05-07T00:00:00",
+     "issueDate": "2025-05-07T00:00:00",
+     "listingDate": "2035-05-07T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.00225,
+     "planVolumn": 3315000.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "GDB|2025-04-10|2025-04-15|0|0|Quyền mua CP cho Cổ đông hiện hữu": [
+    {
+     "organCode": "GDB",
+     "ticker": "BVB",
+     "publicDate": "2025-04-10T00:00:00",
+     "exrightDate": "2025-04-15T00:00:00",
+     "issueDate": "2025-04-15T00:00:00",
+     "listingDate": "2025-10-03T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 0.125,
+     "planVolumn": 68980776.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "GDB",
+     "ticker": "BVB",
+     "publicDate": "2025-04-10T00:00:00",
+     "exrightDate": "2025-04-15T00:00:00",
+     "issueDate": "2025-04-15T00:00:00",
+     "listingDate": null,
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 0.125,
+     "planVolumn": 68980776.0,
+     "issueYear": 2025,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "FPT|2024-10-14|2024-10-09|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2024-10-14T00:00:00",
+     "exrightDate": "2024-10-09T00:00:00",
+     "issueDate": "2024-10-09T00:00:00",
+     "listingDate": "2027-10-11T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.00499,
+     "planVolumn": 7302117.0,
+     "issueYear": 2024,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2024-10-14T00:00:00",
+     "exrightDate": "2024-10-09T00:00:00",
+     "issueDate": "2024-10-09T00:00:00",
+     "listingDate": "2034-10-09T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.00227,
+     "planVolumn": 3319000.0,
+     "issueYear": 2024,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "HPT|2024-09-10|2024-08-30|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "HPT",
+     "ticker": "HPT",
+     "publicDate": "2024-09-10T00:00:00",
+     "exrightDate": "2024-08-30T00:00:00",
+     "issueDate": "2024-08-30T00:00:00",
+     "listingDate": "2027-09-06T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0225,
+     "planVolumn": 223211.0,
+     "issueYear": 2024,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "HPT",
+     "ticker": "HPT",
+     "publicDate": "2024-09-10T00:00:00",
+     "exrightDate": "2024-08-30T00:00:00",
+     "issueDate": "2024-08-30T00:00:00",
+     "listingDate": "2027-09-06T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0225,
+     "planVolumn": 223211.0,
+     "issueYear": 2024,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "PDVC|2023-10-24|2023-10-24|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "PDVC",
+     "ticker": "PDV",
+     "publicDate": "2023-10-24T00:00:00",
+     "exrightDate": "2023-10-24T00:00:00",
+     "issueDate": "2023-10-24T00:00:00",
+     "listingDate": "2023-10-24T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": -6000000.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "PDVC",
+     "ticker": "PDV",
+     "publicDate": "2023-10-24T00:00:00",
+     "exrightDate": "2023-10-24T00:00:00",
+     "issueDate": "2023-10-24T00:00:00",
+     "listingDate": "2024-01-22T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 6000000.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "HAX|2023-10-04|2023-10-03|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "HAX",
+     "ticker": "HAX",
+     "publicDate": "2023-10-04T00:00:00",
+     "exrightDate": "2023-10-03T00:00:00",
+     "issueDate": "2023-10-03T00:00:00",
+     "listingDate": "2024-10-04T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 2100000.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "HAX",
+     "ticker": "HAX",
+     "publicDate": "2023-10-04T00:00:00",
+     "exrightDate": "2023-10-03T00:00:00",
+     "issueDate": "2023-10-03T00:00:00",
+     "listingDate": "2024-10-04T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1400000.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "HCDG|2023-08-17|2023-09-05|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "HCDG",
+     "ticker": "HCD",
+     "publicDate": "2023-08-17T00:00:00",
+     "exrightDate": "2023-09-05T00:00:00",
+     "issueDate": "2023-10-02T00:00:00",
+     "listingDate": "2023-11-06T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.1,
+     "planVolumn": 3158980.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "HCDG",
+     "ticker": "HCD",
+     "publicDate": "2023-08-17T00:00:00",
+     "exrightDate": "2023-09-05T00:00:00",
+     "issueDate": "2023-10-02T00:00:00",
+     "listingDate": "2023-11-06T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.07,
+     "planVolumn": 2211286.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VC3|2023-06-27|2023-06-29|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "VC3",
+     "ticker": "VC3",
+     "publicDate": "2023-06-27T00:00:00",
+     "exrightDate": "2023-06-29T00:00:00",
+     "issueDate": "2023-07-03T00:00:00",
+     "listingDate": "2023-09-15T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 5010879.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VC3",
+     "ticker": "VC3",
+     "publicDate": "2023-06-27T00:00:00",
+     "exrightDate": "2023-06-29T00:00:00",
+     "issueDate": "2023-07-03T00:00:00",
+     "listingDate": "2023-09-15T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.065,
+     "planVolumn": 6514143.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "TEG|2023-06-12|2023-06-15|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "TEG",
+     "ticker": "TEG",
+     "publicDate": "2023-06-12T00:00:00",
+     "exrightDate": "2023-06-15T00:00:00",
+     "issueDate": "2023-06-15T00:00:00",
+     "listingDate": "2023-08-02T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.04,
+     "planVolumn": 2623670.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "TEG",
+     "ticker": "TEG",
+     "publicDate": "2023-06-12T00:00:00",
+     "exrightDate": "2023-06-15T00:00:00",
+     "issueDate": "2023-06-15T00:00:00",
+     "listingDate": "2023-08-02T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.07,
+     "planVolumn": 4591424.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "TRACODI|2023-05-19|2023-05-29|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "TRACODI",
+     "ticker": "TCD",
+     "publicDate": "2023-05-19T00:00:00",
+     "exrightDate": "2023-05-29T00:00:00",
+     "issueDate": "2023-05-29T00:00:00",
+     "listingDate": "2023-07-10T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.07,
+     "planVolumn": 17109281.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "TRACODI",
+     "ticker": "TCD",
+     "publicDate": "2023-05-19T00:00:00",
+     "exrightDate": "2023-05-29T00:00:00",
+     "issueDate": "2023-05-29T00:00:00",
+     "listingDate": "2023-07-10T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.08,
+     "planVolumn": 19553464.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "FPT|2023-05-11|2023-05-08|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2023-05-11T00:00:00",
+     "exrightDate": "2023-05-08T00:00:00",
+     "issueDate": "2023-05-08T00:00:00",
+     "listingDate": "2026-05-08T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 5485130.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2023-05-11T00:00:00",
+     "exrightDate": "2023-05-08T00:00:00",
+     "issueDate": "2023-05-08T00:00:00",
+     "listingDate": "2033-05-09T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1820000.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VIETRA|2023-02-09|2023-02-07|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "VIETRA",
+     "ticker": "VTR",
+     "publicDate": "2023-02-09T00:00:00",
+     "exrightDate": "2023-02-07T00:00:00",
+     "issueDate": "2023-02-07T00:00:00",
+     "listingDate": "2024-02-19T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 6000000.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VIETRA",
+     "ticker": "VTR",
+     "publicDate": "2023-02-09T00:00:00",
+     "exrightDate": "2023-02-07T00:00:00",
+     "issueDate": "2023-02-07T00:00:00",
+     "listingDate": "2024-02-19T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 6000000.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "TVS|2023-01-05|2023-01-04|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "TVS",
+     "ticker": "TVS",
+     "publicDate": "2023-01-05T00:00:00",
+     "exrightDate": "2023-01-04T00:00:00",
+     "issueDate": "2023-01-04T00:00:00",
+     "listingDate": "2026-01-06T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 2000000.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "TVS",
+     "ticker": "TVS",
+     "publicDate": "2023-01-05T00:00:00",
+     "exrightDate": "2023-01-04T00:00:00",
+     "issueDate": "2023-01-04T00:00:00",
+     "listingDate": "2024-01-02T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 100000.0,
+     "issueYear": 2023,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "BKGVN|2022-10-17|2022-10-24|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "BKGVN",
+     "ticker": "BKG",
+     "publicDate": "2022-10-17T00:00:00",
+     "exrightDate": "2022-10-24T00:00:00",
+     "issueDate": "2022-10-24T00:00:00",
+     "listingDate": "2022-12-08T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 3100000.0,
+     "issueYear": 2022,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "BKGVN",
+     "ticker": "BKG",
+     "publicDate": "2022-10-17T00:00:00",
+     "exrightDate": "2022-10-24T00:00:00",
+     "issueDate": "2022-10-24T00:00:00",
+     "listingDate": "2022-12-08T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 3100000.0,
+     "issueYear": 2022,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VINAHERB|2022-09-21|2022-09-20|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "VINAHERB",
+     "ticker": "VHE",
+     "publicDate": "2022-09-21T00:00:00",
+     "exrightDate": "2022-09-20T00:00:00",
+     "issueDate": "2022-09-20T00:00:00",
+     "listingDate": "2023-09-20T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 750000.0,
+     "issueYear": 2022,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VINAHERB",
+     "ticker": "VHE",
+     "publicDate": "2022-09-21T00:00:00",
+     "exrightDate": "2022-09-20T00:00:00",
+     "issueDate": "2022-09-20T00:00:00",
+     "listingDate": "2023-09-20T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 750000.0,
+     "issueYear": 2022,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "CMX|2022-08-04|2022-08-01|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "CMX",
+     "ticker": "CMX",
+     "publicDate": "2022-08-04T00:00:00",
+     "exrightDate": "2022-08-01T00:00:00",
+     "issueDate": "2022-08-01T00:00:00",
+     "listingDate": "2023-08-02T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 900000.0,
+     "issueYear": 2022,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "CMX",
+     "ticker": "CMX",
+     "publicDate": "2022-08-04T00:00:00",
+     "exrightDate": "2022-08-01T00:00:00",
+     "issueDate": "2022-08-01T00:00:00",
+     "listingDate": "2023-08-02T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1100000.0,
+     "issueYear": 2022,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "HHSLAGRI|2022-07-19|2022-07-22|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "HHSLAGRI",
+     "ticker": "HSL",
+     "publicDate": "2022-07-19T00:00:00",
+     "exrightDate": "2022-07-22T00:00:00",
+     "issueDate": "2022-07-22T00:00:00",
+     "listingDate": "2022-09-16T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 1608357.0,
+     "issueYear": 2022,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "HHSLAGRI",
+     "ticker": "HSL",
+     "publicDate": "2022-07-19T00:00:00",
+     "exrightDate": "2022-07-22T00:00:00",
+     "issueDate": "2022-07-22T00:00:00",
+     "listingDate": "2022-09-16T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 1608357.0,
+     "issueYear": 2022,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "FPT|2022-05-11|2022-05-10|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2022-05-11T00:00:00",
+     "exrightDate": "2022-05-10T00:00:00",
+     "issueDate": "2022-05-10T00:00:00",
+     "listingDate": "2025-05-12T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 4537265.0,
+     "issueYear": 2022,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2022-05-11T00:00:00",
+     "exrightDate": "2022-05-10T00:00:00",
+     "issueDate": "2022-05-10T00:00:00",
+     "listingDate": "2032-05-10T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 2107000.0,
+     "issueYear": 2022,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VIC|2022-01-28|2022-01-27|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "VIC",
+     "ticker": "VIC",
+     "publicDate": "2022-01-28T00:00:00",
+     "exrightDate": "2022-01-27T00:00:00",
+     "issueDate": "2022-01-27T00:00:00",
+     "listingDate": "2022-02-25T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 8720770.0,
+     "issueYear": 2022,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VIC",
+     "ticker": "VIC",
+     "publicDate": "2022-01-28T00:00:00",
+     "exrightDate": "2022-01-27T00:00:00",
+     "issueDate": "2022-01-27T00:00:00",
+     "listingDate": "2022-01-27T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": -7416721.0,
+     "issueYear": 2022,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "TTF|2021-06-24|2021-12-10|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "TTF",
+     "ticker": "TTF",
+     "publicDate": "2021-06-24T00:00:00",
+     "exrightDate": "2021-12-10T00:00:00",
+     "issueDate": "2021-12-10T00:00:00",
+     "listingDate": null,
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 17650000.0,
+     "issueYear": 2021,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "TTF",
+     "ticker": "TTF",
+     "publicDate": "2021-06-24T00:00:00",
+     "exrightDate": "2021-12-10T00:00:00",
+     "issueDate": "2021-12-10T00:00:00",
+     "listingDate": "2022-12-12T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 82350000.0,
+     "issueYear": 2021,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "HAX|2021-10-26|2021-11-03|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "HAX",
+     "ticker": "HAX",
+     "publicDate": "2021-10-26T00:00:00",
+     "exrightDate": "2021-11-03T00:00:00",
+     "issueDate": "2021-11-03T00:00:00",
+     "listingDate": "2022-11-07T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1450000.0,
+     "issueYear": 2021,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "HAX",
+     "ticker": "HAX",
+     "publicDate": "2021-10-26T00:00:00",
+     "exrightDate": "2021-11-03T00:00:00",
+     "issueDate": "2021-11-03T00:00:00",
+     "listingDate": "2022-11-07T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 350000.0,
+     "issueYear": 2021,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VC3|2021-07-09|2021-07-29|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "VC3",
+     "ticker": "VC3",
+     "publicDate": "2021-07-09T00:00:00",
+     "exrightDate": "2021-07-29T00:00:00",
+     "issueDate": "2021-07-29T00:00:00",
+     "listingDate": "2021-10-13T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.025,
+     "planVolumn": 1525391.0,
+     "issueYear": 2021,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VC3",
+     "ticker": "VC3",
+     "publicDate": "2021-07-09T00:00:00",
+     "exrightDate": "2021-07-29T00:00:00",
+     "issueDate": "2021-07-29T00:00:00",
+     "listingDate": "2021-10-13T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.07,
+     "planVolumn": 4271095.0,
+     "issueYear": 2021,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "FPT|2021-03-31|2021-04-07|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2021-03-31T00:00:00",
+     "exrightDate": "2021-04-07T00:00:00",
+     "issueDate": "2021-04-07T00:00:00",
+     "listingDate": "2031-04-07T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1290300.0,
+     "issueYear": 2021,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2021-03-31T00:00:00",
+     "exrightDate": "2021-04-07T00:00:00",
+     "issueDate": "2021-04-07T00:00:00",
+     "listingDate": "2024-04-08T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 3919468.0,
+     "issueYear": 2021,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VNGC|2021-01-12|2021-01-12|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2021-01-12T00:00:00",
+     "exrightDate": "2021-01-12T00:00:00",
+     "issueDate": "2021-01-12T00:00:00",
+     "listingDate": "2021-01-12T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 318735.0,
+     "issueYear": 2021,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2021-01-12T00:00:00",
+     "exrightDate": "2021-01-12T00:00:00",
+     "issueDate": "2021-01-12T00:00:00",
+     "listingDate": "2021-01-12T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 223234.0,
+     "issueYear": 2021,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "IDP|2020-04-23|2020-04-23|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "IDP",
+     "ticker": "IDP",
+     "publicDate": "2020-04-23T00:00:00",
+     "exrightDate": "2020-04-23T00:00:00",
+     "issueDate": "2020-04-23T00:00:00",
+     "listingDate": "2020-04-23T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 2379098.0,
+     "issueYear": 2020,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "IDP",
+     "ticker": "IDP",
+     "publicDate": "2020-04-23T00:00:00",
+     "exrightDate": "2020-04-23T00:00:00",
+     "issueDate": "2020-04-23T00:00:00",
+     "listingDate": "2020-04-23T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 3921314.0,
+     "issueYear": 2020,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "DBC|2020-03-25|2020-04-06|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "DBC",
+     "ticker": "DBC",
+     "publicDate": "2020-03-25T09:53:18.57",
+     "exrightDate": "2020-04-06T00:00:00",
+     "issueDate": "2020-04-06T00:00:00",
+     "listingDate": "2020-05-21T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 4554991.0,
+     "issueYear": 2020,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "DBC",
+     "ticker": "DBC",
+     "publicDate": "2020-03-25T09:55:12.833",
+     "exrightDate": "2020-04-06T00:00:00",
+     "issueDate": "2020-04-06T00:00:00",
+     "listingDate": "2020-05-21T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.1,
+     "planVolumn": 9109982.0,
+     "issueYear": 2020,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VIC|2019-12-03|2019-11-30|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "VIC",
+     "ticker": "VIC",
+     "publicDate": "2019-12-03T00:00:00",
+     "exrightDate": "2019-11-30T00:00:00",
+     "issueDate": "2019-11-30T00:00:00",
+     "listingDate": "2019-12-26T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 22640167.0,
+     "issueYear": 2019,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VIC",
+     "ticker": "VIC",
+     "publicDate": "2019-12-03T00:00:00",
+     "exrightDate": "2019-11-30T00:00:00",
+     "issueDate": "2019-11-30T00:00:00",
+     "listingDate": "2019-11-30T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": -21661534.0,
+     "issueYear": 2019,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VNGC|2019-09-09|2019-09-09|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2019-09-09T00:00:00",
+     "exrightDate": "2019-09-09T00:00:00",
+     "issueDate": "2019-09-09T00:00:00",
+     "listingDate": "2019-09-09T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 690336.0,
+     "issueYear": 2019,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2019-09-09T00:00:00",
+     "exrightDate": "2019-09-09T00:00:00",
+     "issueDate": "2019-09-09T00:00:00",
+     "listingDate": "2019-09-09T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 75700.0,
+     "issueYear": 2019,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "DNP|2019-01-02|2018-12-28|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "DNP",
+     "ticker": "DNP",
+     "publicDate": "2019-01-02T16:16:10.947",
+     "exrightDate": "2018-12-28T00:00:00",
+     "issueDate": "2018-12-28T00:00:00",
+     "listingDate": "2019-03-18T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 700000.0,
+     "issueYear": 2018,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "DNP",
+     "ticker": "DNP",
+     "publicDate": "2019-01-02T16:18:03.227",
+     "exrightDate": "2018-12-28T00:00:00",
+     "issueDate": "2018-12-28T00:00:00",
+     "listingDate": "2019-03-18T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1300000.0,
+     "issueYear": 2018,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "SEAB|2018-12-20|2018-12-20|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "SEAB",
+     "ticker": "SSB",
+     "publicDate": "2018-12-20T16:40:02.727",
+     "exrightDate": "2018-12-20T00:00:00",
+     "issueDate": "2018-12-20T00:00:00",
+     "listingDate": "2018-12-20T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 3000000.0,
+     "issueYear": 2018,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "SEAB",
+     "ticker": "SSB",
+     "publicDate": "2018-12-20T16:42:13.997",
+     "exrightDate": "2018-12-20T00:00:00",
+     "issueDate": "2018-12-20T00:00:00",
+     "listingDate": "2018-12-20T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 20000000.0,
+     "issueYear": 2018,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VNGC|2018-09-24|2018-09-24|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2018-09-24T00:00:00",
+     "exrightDate": "2018-09-24T00:00:00",
+     "issueDate": "2018-09-24T00:00:00",
+     "listingDate": "2018-09-24T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 788529.0,
+     "issueYear": 2018,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2018-09-24T00:00:00",
+     "exrightDate": "2018-09-24T00:00:00",
+     "issueDate": "2018-09-24T00:00:00",
+     "listingDate": "2018-09-24T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 25672.0,
+     "issueYear": 2018,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "GMD|2018-05-16|2018-08-24|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "GMD",
+     "ticker": "GMD",
+     "publicDate": "2018-05-16T11:55:43.627",
+     "exrightDate": "2018-08-24T00:00:00",
+     "issueDate": "2018-08-24T00:00:00",
+     "listingDate": "2020-08-27T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 4324000.0,
+     "issueYear": 2018,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "GMD",
+     "ticker": "GMD",
+     "publicDate": "2018-05-16T11:57:14.247",
+     "exrightDate": "2018-08-24T00:00:00",
+     "issueDate": "2018-08-24T00:00:00",
+     "listingDate": "2022-08-29T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 4324000.0,
+     "issueYear": 2018,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "HKT|2018-01-11|2018-01-18|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "HKT",
+     "ticker": "HKT",
+     "publicDate": "2018-01-11T11:52:19.553",
+     "exrightDate": "2018-01-18T00:00:00",
+     "issueDate": "2018-04-11T00:00:00",
+     "listingDate": "2018-05-11T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 278865.0,
+     "issueYear": 2018,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "HKT",
+     "ticker": "HKT",
+     "publicDate": "2018-01-11T13:41:58.96",
+     "exrightDate": "2018-01-18T00:00:00",
+     "issueDate": "2018-04-11T00:00:00",
+     "listingDate": "2018-05-11T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 278865.0,
+     "issueYear": 2018,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "I40|2017-12-31|2017-12-31|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "I40",
+     "ticker": "L40",
+     "publicDate": "2017-12-31T00:00:00",
+     "exrightDate": "2017-12-31T00:00:00",
+     "issueDate": "2017-12-31T00:00:00",
+     "listingDate": "2017-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 998540.0,
+     "issueYear": 2017,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "I40",
+     "ticker": "L40",
+     "publicDate": "2017-12-31T00:00:00",
+     "exrightDate": "2017-12-31T00:00:00",
+     "issueDate": "2017-12-31T00:00:00",
+     "listingDate": "2017-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 514960.0,
+     "issueYear": 2017,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VRJSC|2017-09-30|2017-09-30|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "VRJSC",
+     "ticker": "VRE",
+     "publicDate": "2017-09-30T13:38:36.8",
+     "exrightDate": "2017-09-30T00:00:00",
+     "issueDate": "2017-09-30T00:00:00",
+     "listingDate": "2017-09-30T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 41920000.0,
+     "issueYear": 2017,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VRJSC",
+     "ticker": "VRE",
+     "publicDate": "2017-09-30T14:28:55.83",
+     "exrightDate": "2017-09-30T00:00:00",
+     "issueDate": "2017-09-30T00:00:00",
+     "listingDate": "2017-09-30T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": -250013762.0,
+     "issueYear": 2017,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VNGC|2017-09-13|2017-09-13|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2017-09-13T00:00:00",
+     "exrightDate": "2017-09-13T00:00:00",
+     "issueDate": "2017-09-13T00:00:00",
+     "listingDate": "2017-09-13T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 49256.0,
+     "issueYear": 2017,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2017-09-13T00:00:00",
+     "exrightDate": "2017-09-13T00:00:00",
+     "issueDate": "2017-09-13T00:00:00",
+     "listingDate": "2017-09-13T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 582570.0,
+     "issueYear": 2017,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "SPP|2017-08-02|2017-08-08|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "SPP",
+     "ticker": "SPP",
+     "publicDate": "2017-08-02T11:01:53.253",
+     "exrightDate": "2017-08-08T00:00:00",
+     "issueDate": "2017-08-08T00:00:00",
+     "listingDate": "2017-10-03T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.1,
+     "planVolumn": 1304046.0,
+     "issueYear": 2017,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "SPP",
+     "ticker": "SPP",
+     "publicDate": "2017-08-02T16:54:34.14",
+     "exrightDate": "2017-08-08T00:00:00",
+     "issueDate": "2017-08-08T00:00:00",
+     "listingDate": "2017-10-03T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 652023.0,
+     "issueYear": 2017,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "TTB|2017-07-28|2017-08-03|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "TTB",
+     "ticker": "TTB",
+     "publicDate": "2017-07-28T14:17:51.083",
+     "exrightDate": "2017-08-03T00:00:00",
+     "issueDate": "2017-08-03T00:00:00",
+     "listingDate": "2017-09-29T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.035,
+     "planVolumn": 1354500.0,
+     "issueYear": 2017,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "TTB",
+     "ticker": "TTB",
+     "publicDate": "2017-07-28T14:19:02.137",
+     "exrightDate": "2017-08-03T00:00:00",
+     "issueDate": "2017-08-03T00:00:00",
+     "listingDate": "2017-09-29T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.065,
+     "planVolumn": 2515500.0,
+     "issueYear": 2017,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "NKG|2017-05-05|2017-05-17|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "NKG",
+     "ticker": "NKG",
+     "publicDate": "2017-05-05T15:36:28.543",
+     "exrightDate": "2017-05-17T00:00:00",
+     "issueDate": "2017-05-17T00:00:00",
+     "listingDate": "2017-06-22T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.35,
+     "planVolumn": 23112026.0,
+     "issueYear": 2017,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "NKG",
+     "ticker": "NKG",
+     "publicDate": "2017-05-05T17:30:45.51",
+     "exrightDate": "2017-05-17T00:00:00",
+     "issueDate": "2017-05-17T00:00:00",
+     "listingDate": "2017-06-22T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.15,
+     "planVolumn": 9905154.0,
+     "issueYear": 2017,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "NOVALAND|2016-11-30|2016-11-30|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "NOVALAND",
+     "ticker": "NVL",
+     "publicDate": "2016-11-30T18:04:00.61",
+     "exrightDate": "2016-11-30T00:00:00",
+     "issueDate": "2016-11-30T00:00:00",
+     "listingDate": "2016-11-30T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 52200000.0,
+     "issueYear": 2016,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "NOVALAND",
+     "ticker": "NVL",
+     "publicDate": "2016-11-30T18:07:36.907",
+     "exrightDate": "2016-11-30T00:00:00",
+     "issueDate": "2016-11-30T00:00:00",
+     "listingDate": "2016-11-30T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 22000000.0,
+     "issueYear": 2016,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VNGC|2016-08-31|2016-08-31|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2016-08-31T00:00:00",
+     "exrightDate": "2016-08-31T00:00:00",
+     "issueDate": "2016-08-31T00:00:00",
+     "listingDate": "2016-08-31T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 215274.0,
+     "issueYear": 2016,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2016-08-31T00:00:00",
+     "exrightDate": "2016-08-31T00:00:00",
+     "issueDate": "2016-08-31T00:00:00",
+     "listingDate": "2016-08-31T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 382223.0,
+     "issueYear": 2016,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "SIC|2016-04-09|2016-08-16|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "SIC",
+     "ticker": "ANI",
+     "publicDate": "2016-04-09T00:00:00",
+     "exrightDate": "2016-08-16T00:00:00",
+     "issueDate": "2016-08-16T00:00:00",
+     "listingDate": "2016-10-03T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 400000.0,
+     "issueYear": 2016,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "SIC",
+     "ticker": "ANI",
+     "publicDate": "2016-04-09T14:46:26.317",
+     "exrightDate": "2016-08-16T00:00:00",
+     "issueDate": "2016-08-16T00:00:00",
+     "listingDate": "2016-10-03T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 400000.0,
+     "issueYear": 2016,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "SIC",
+     "ticker": "ANI",
+     "publicDate": "2016-04-09T14:47:30.547",
+     "exrightDate": "2016-08-16T00:00:00",
+     "issueDate": "2016-08-16T00:00:00",
+     "listingDate": "2016-10-03T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 400000.0,
+     "issueYear": 2016,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "TNG|2016-04-24|2016-08-15|0|0|Phát hành để sáp nhập": [
+    {
+     "organCode": "TNG",
+     "ticker": "TNG",
+     "publicDate": "2016-04-24T13:46:18.457",
+     "exrightDate": "2016-08-15T00:00:00",
+     "issueDate": "2016-08-15T00:00:00",
+     "listingDate": "2017-05-05T00:00:00",
+     "issueMethodName": "Phát hành để sáp nhập",
+     "exerciseRatio": 0.0023631,
+     "planVolumn": 70000.0,
+     "issueYear": 2016,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "TNG",
+     "ticker": "TNG",
+     "publicDate": "2016-04-24T00:00:00",
+     "exrightDate": "2016-08-15T00:00:00",
+     "issueDate": "2016-08-15T00:00:00",
+     "listingDate": "2017-05-05T00:00:00",
+     "issueMethodName": "Phát hành để sáp nhập",
+     "exerciseRatio": 0.0,
+     "planVolumn": 130000.0,
+     "issueYear": 2016,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "AMD|2016-02-27|2016-05-19|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "AMD",
+     "ticker": "AMD",
+     "publicDate": "2016-02-27T17:14:56.607",
+     "exrightDate": "2016-05-19T00:00:00",
+     "issueDate": "2016-05-19T00:00:00",
+     "listingDate": "2016-06-20T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.03,
+     "planVolumn": 900000.0,
+     "issueYear": 2016,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "AMD",
+     "ticker": "AMD",
+     "publicDate": "2016-02-27T00:00:00",
+     "exrightDate": "2016-05-19T00:00:00",
+     "issueDate": "2016-05-19T00:00:00",
+     "listingDate": "2016-06-20T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 1500000.0,
+     "issueYear": 2016,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "AAA|2016-05-12|2016-05-05|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "AAA",
+     "ticker": "AAA",
+     "publicDate": "2016-05-12T00:00:00",
+     "exrightDate": "2016-05-05T00:00:00",
+     "issueDate": "2016-05-05T00:00:00",
+     "listingDate": "2016-06-08T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 2000000.0,
+     "issueYear": 2016,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "AAA",
+     "ticker": "AAA",
+     "publicDate": "2016-05-12T00:00:00",
+     "exrightDate": "2016-05-05T00:00:00",
+     "issueDate": "2016-05-05T00:00:00",
+     "listingDate": "2016-06-08T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 400000.0,
+     "issueYear": 2016,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "CII|2016-01-26|2016-01-26|0|0|Chuyển từ trái phiếu chuyển đổi": [
+    {
+     "organCode": "CII",
+     "ticker": "CII",
+     "publicDate": "2016-01-26T00:00:00",
+     "exrightDate": "2016-01-26T00:00:00",
+     "issueDate": "2016-01-26T00:00:00",
+     "listingDate": "2016-03-02T00:00:00",
+     "issueMethodName": "Chuyển từ trái phiếu chuyển đổi",
+     "exerciseRatio": 0.0,
+     "planVolumn": 29727391.0,
+     "issueYear": 2016,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "CII",
+     "ticker": "CII",
+     "publicDate": "2016-01-26T00:00:00",
+     "exrightDate": "2016-01-26T00:00:00",
+     "issueDate": "2016-01-26T00:00:00",
+     "listingDate": "2016-03-02T00:00:00",
+     "issueMethodName": "Chuyển từ trái phiếu chuyển đổi",
+     "exerciseRatio": 0.0,
+     "planVolumn": 2362978.0,
+     "issueYear": 2016,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "YEGCORP|2015-12-31|2015-12-31|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "YEGCORP",
+     "ticker": "YEG",
+     "publicDate": "2015-12-31T13:31:29.287",
+     "exrightDate": "2015-12-31T00:00:00",
+     "issueDate": "2015-12-31T00:00:00",
+     "listingDate": "2015-12-31T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.5114,
+     "planVolumn": 3240000.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "YEGCORP",
+     "ticker": "YEG",
+     "publicDate": "2015-12-31T13:33:36.22",
+     "exrightDate": "2015-12-31T00:00:00",
+     "issueDate": "2015-12-31T00:00:00",
+     "listingDate": "2015-12-31T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.0267,
+     "planVolumn": 250000.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "TH1|2015-09-18|2015-12-03|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "TH1",
+     "ticker": "TH1",
+     "publicDate": "2015-09-18T00:00:00",
+     "exrightDate": "2015-12-03T00:00:00",
+     "issueDate": "2015-12-03T00:00:00",
+     "listingDate": "2016-01-29T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 629740.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "TH1",
+     "ticker": "TH1",
+     "publicDate": "2015-09-18T00:00:00",
+     "exrightDate": "2015-12-03T00:00:00",
+     "issueDate": "2015-12-03T00:00:00",
+     "listingDate": "2016-01-29T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.025,
+     "planVolumn": 314870.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "HJS|2015-05-23|2015-11-12|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "HJS",
+     "ticker": "HJS",
+     "publicDate": "2015-05-23T00:00:00",
+     "exrightDate": "2015-11-12T00:00:00",
+     "issueDate": "2015-11-12T00:00:00",
+     "listingDate": "2015-12-28T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.1,
+     "planVolumn": 1499998.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "HJS",
+     "ticker": "HJS",
+     "publicDate": "2015-05-23T00:00:00",
+     "exrightDate": "2015-11-12T00:00:00",
+     "issueDate": "2015-11-12T00:00:00",
+     "listingDate": "2015-12-28T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.1,
+     "planVolumn": 1499998.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "SPP|2015-06-28|2015-10-28|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "SPP",
+     "ticker": "SPP",
+     "publicDate": "2015-06-28T00:00:00",
+     "exrightDate": "2015-10-28T00:00:00",
+     "issueDate": "2015-10-28T00:00:00",
+     "listingDate": "2015-12-11T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.04,
+     "planVolumn": 478551.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "SPP",
+     "ticker": "SPP",
+     "publicDate": "2015-06-28T00:00:00",
+     "exrightDate": "2015-10-28T00:00:00",
+     "issueDate": "2015-10-28T00:00:00",
+     "listingDate": "2015-12-11T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 598190.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "IDP|2015-10-23|2015-10-23|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "IDP",
+     "ticker": "IDP",
+     "publicDate": "2015-10-23T00:00:00",
+     "exrightDate": "2015-10-23T00:00:00",
+     "issueDate": "2015-10-23T00:00:00",
+     "listingDate": "2015-10-23T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 21102000.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "IDP",
+     "ticker": "IDP",
+     "publicDate": "2015-10-23T00:00:00",
+     "exrightDate": "2015-10-23T00:00:00",
+     "issueDate": "2015-10-23T00:00:00",
+     "listingDate": "2015-10-23T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 343060.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "GMD|2015-07-15|2015-10-21|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "GMD",
+     "ticker": "GMD",
+     "publicDate": "2015-07-15T00:00:00",
+     "exrightDate": "2015-10-21T00:00:00",
+     "issueDate": "2015-10-21T00:00:00",
+     "listingDate": "2019-10-21T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1742000.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "GMD",
+     "ticker": "GMD",
+     "publicDate": "2015-07-15T00:00:00",
+     "exrightDate": "2015-10-21T00:00:00",
+     "issueDate": "2015-10-21T00:00:00",
+     "listingDate": "2019-10-21T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1742000.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VNGC|2015-10-19|2015-10-19|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2015-10-19T00:00:00",
+     "exrightDate": "2015-10-19T00:00:00",
+     "issueDate": "2015-10-19T00:00:00",
+     "listingDate": "2015-10-19T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 298426.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2015-10-19T00:00:00",
+     "exrightDate": "2015-10-19T00:00:00",
+     "issueDate": "2015-10-19T00:00:00",
+     "listingDate": "2015-10-19T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 358900.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VRJSC|2015-06-30|2015-06-30|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "VRJSC",
+     "ticker": "VRE",
+     "publicDate": "2015-06-30T13:28:19.583",
+     "exrightDate": "2015-06-30T00:00:00",
+     "issueDate": "2015-06-30T00:00:00",
+     "listingDate": "2015-06-30T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 909800.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VRJSC",
+     "ticker": "VRE",
+     "publicDate": "2015-06-30T13:29:46.59",
+     "exrightDate": "2015-06-30T00:00:00",
+     "issueDate": "2015-06-30T00:00:00",
+     "listingDate": "2015-06-30T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 215256747.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "BCI|2015-03-31|2015-06-02|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "BCI",
+     "ticker": "BCI",
+     "publicDate": "2015-03-31T00:00:00",
+     "exrightDate": "2015-06-02T00:00:00",
+     "issueDate": "2015-06-02T00:00:00",
+     "listingDate": "2015-07-09T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.1,
+     "planVolumn": 7226700.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "BCI",
+     "ticker": "BCI",
+     "publicDate": "2015-03-31T00:00:00",
+     "exrightDate": "2015-06-02T00:00:00",
+     "issueDate": "2015-06-02T00:00:00",
+     "listingDate": "2015-07-09T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.1,
+     "planVolumn": 7226700.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VIETJET|2015-03-31|2015-03-31|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "VIETJET",
+     "ticker": "VJC",
+     "publicDate": "2015-03-31T17:04:20.687",
+     "exrightDate": "2015-03-31T00:00:00",
+     "issueDate": "2015-03-31T00:00:00",
+     "listingDate": "2015-03-31T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.2,
+     "planVolumn": 16000000.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VIETJET",
+     "ticker": "VJC",
+     "publicDate": "2015-03-31T17:09:28.463",
+     "exrightDate": "2015-03-31T00:00:00",
+     "issueDate": "2015-03-31T00:00:00",
+     "listingDate": "2015-03-31T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 4000000.0,
+     "issueYear": 2015,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "DNP|2014-05-04|2014-12-26|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "DNP",
+     "ticker": "DNP",
+     "publicDate": "2014-05-04T00:00:00",
+     "exrightDate": "2014-12-26T00:00:00",
+     "issueDate": "2014-12-26T00:00:00",
+     "listingDate": "2015-03-26T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.04,
+     "planVolumn": 137105.0,
+     "issueYear": 2014,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "DNP",
+     "ticker": "DNP",
+     "publicDate": "2014-05-04T00:00:00",
+     "exrightDate": "2014-12-26T00:00:00",
+     "issueDate": "2014-12-26T00:00:00",
+     "listingDate": "2015-03-26T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.16,
+     "planVolumn": 548420.0,
+     "issueYear": 2014,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "TTF|2014-04-29|2014-11-05|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "TTF",
+     "ticker": "TTF",
+     "publicDate": "2014-04-29T00:00:00",
+     "exrightDate": "2014-11-05T00:00:00",
+     "issueDate": "2014-11-05T00:00:00",
+     "listingDate": "2015-11-12T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 7000000.0,
+     "issueYear": 2014,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "TTF",
+     "ticker": "TTF",
+     "publicDate": "2014-04-29T00:00:00",
+     "exrightDate": "2014-11-05T00:00:00",
+     "issueDate": "2014-11-05T00:00:00",
+     "listingDate": "2015-11-12T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 25000000.0,
+     "issueYear": 2014,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VNGC|2014-08-11|2014-08-11|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2014-08-11T00:00:00",
+     "exrightDate": "2014-08-11T00:00:00",
+     "issueDate": "2014-08-11T00:00:00",
+     "listingDate": "2014-08-11T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 700642.0,
+     "issueYear": 2014,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2014-08-11T00:00:00",
+     "exrightDate": "2014-08-11T00:00:00",
+     "issueDate": "2014-08-11T00:00:00",
+     "listingDate": "2014-08-11T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 125844.0,
+     "issueYear": 2014,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "CSC|2014-04-15|2014-06-25|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "CSC",
+     "ticker": "CSC",
+     "publicDate": "2014-04-15T00:00:00",
+     "exrightDate": "2014-06-25T00:00:00",
+     "issueDate": "2014-06-25T00:00:00",
+     "listingDate": "2014-09-09T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 250000.0,
+     "issueYear": 2014,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "CSC",
+     "ticker": "CSC",
+     "publicDate": "2014-04-15T00:00:00",
+     "exrightDate": "2014-06-25T00:00:00",
+     "issueDate": "2014-06-25T00:00:00",
+     "listingDate": "2014-09-09T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 250000.0,
+     "issueYear": 2014,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "HDA|2013-10-23|2013-10-30|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "HDA",
+     "ticker": "HDA",
+     "publicDate": "2013-10-23T00:00:00",
+     "exrightDate": "2013-10-30T00:00:00",
+     "issueDate": "2013-10-30T00:00:00",
+     "listingDate": "2014-05-16T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.2,
+     "planVolumn": 440000.0,
+     "issueYear": 2013,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "HDA",
+     "ticker": "HDA",
+     "publicDate": "2013-10-23T00:00:00",
+     "exrightDate": "2013-10-30T00:00:00",
+     "issueDate": "2013-10-30T00:00:00",
+     "listingDate": "2014-05-16T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.15,
+     "planVolumn": 330000.0,
+     "issueYear": 2013,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VNGC|2013-09-20|2013-09-20|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2013-09-20T00:00:00",
+     "exrightDate": "2013-09-20T00:00:00",
+     "issueDate": "2013-09-20T00:00:00",
+     "listingDate": "2013-09-20T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1054662.0,
+     "issueYear": 2013,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2013-09-20T00:00:00",
+     "exrightDate": "2013-09-20T00:00:00",
+     "issueDate": "2013-09-20T00:00:00",
+     "listingDate": "2013-09-20T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 20849.0,
+     "issueYear": 2013,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "PVD|2013-04-26|2013-07-24|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "PVD",
+     "ticker": "PVD",
+     "publicDate": "2013-04-26T00:00:00",
+     "exrightDate": "2013-07-24T00:00:00",
+     "issueDate": "2013-07-24T00:00:00",
+     "listingDate": "2016-07-18T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 20152000.0,
+     "issueYear": 2013,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "PVD",
+     "ticker": "PVD",
+     "publicDate": "2013-04-26T00:00:00",
+     "exrightDate": "2013-07-24T00:00:00",
+     "issueDate": "2013-07-24T00:00:00",
+     "listingDate": "2014-07-18T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 17848000.0,
+     "issueYear": 2013,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "HUT|2013-04-11|2013-05-10|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "HUT",
+     "ticker": "HUT",
+     "publicDate": "2013-04-11T00:00:00",
+     "exrightDate": "2013-05-10T00:00:00",
+     "issueDate": "2013-05-10T00:00:00",
+     "listingDate": "2013-06-19T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.08,
+     "planVolumn": 2799808.0,
+     "issueYear": 2013,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "HUT",
+     "ticker": "HUT",
+     "publicDate": "2013-04-11T00:00:00",
+     "exrightDate": "2013-05-10T00:00:00",
+     "issueDate": "2013-05-10T00:00:00",
+     "listingDate": "2013-06-19T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.12,
+     "planVolumn": 4199712.0,
+     "issueYear": 2013,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "PPI|2012-05-28|2012-10-19|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "PPI",
+     "ticker": "PPI",
+     "publicDate": "2012-05-28T00:00:00",
+     "exrightDate": "2012-10-19T00:00:00",
+     "issueDate": "2012-10-19T00:00:00",
+     "listingDate": "2012-11-21T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.1,
+     "planVolumn": 1221673.0,
+     "issueYear": 2012,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "PPI",
+     "ticker": "PPI",
+     "publicDate": "2012-05-28T00:00:00",
+     "exrightDate": "2012-10-19T00:00:00",
+     "issueDate": "2012-10-19T00:00:00",
+     "listingDate": "2012-11-21T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.05,
+     "planVolumn": 610837.0,
+     "issueYear": 2012,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "FPT|2012-04-14|2012-07-26|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2012-04-14T00:00:00",
+     "exrightDate": "2012-07-26T00:00:00",
+     "issueDate": "2012-07-26T00:00:00",
+     "listingDate": "2012-07-31T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 2691787.0,
+     "issueYear": 2012,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2012-04-14T00:00:00",
+     "exrightDate": "2012-07-26T00:00:00",
+     "issueDate": "2012-07-26T00:00:00",
+     "listingDate": "2012-07-31T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1071112.0,
+     "issueYear": 2012,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "SD6|2012-03-28|2012-07-13|0|0|Phát hành để sáp nhập": [
+    {
+     "organCode": "SD6",
+     "ticker": "SD6",
+     "publicDate": "2012-03-28T00:00:00",
+     "exrightDate": "2012-07-13T00:00:00",
+     "issueDate": "2012-07-13T00:00:00",
+     "listingDate": "2012-09-06T00:00:00",
+     "issueMethodName": "Phát hành để sáp nhập",
+     "exerciseRatio": 0.0,
+     "planVolumn": 963900.0,
+     "issueYear": 2012,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "SD6",
+     "ticker": "SD6",
+     "publicDate": "2012-03-28T00:00:00",
+     "exrightDate": "2012-07-13T00:00:00",
+     "issueDate": "2012-07-13T00:00:00",
+     "listingDate": "2012-09-06T00:00:00",
+     "issueMethodName": "Phát hành để sáp nhập",
+     "exerciseRatio": 0.0,
+     "planVolumn": 750000.0,
+     "issueYear": 2012,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "MSN|2012-04-25|2012-06-28|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "MSN",
+     "ticker": "MSN",
+     "publicDate": "2012-04-25T00:00:00",
+     "exrightDate": "2012-06-28T00:00:00",
+     "issueDate": "2012-06-28T00:00:00",
+     "listingDate": "2012-08-27T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 110000000.0,
+     "issueYear": 2012,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "MSN",
+     "ticker": "MSN",
+     "publicDate": "2012-04-25T00:00:00",
+     "exrightDate": "2012-06-28T00:00:00",
+     "issueDate": "2012-06-28T00:00:00",
+     "listingDate": "2012-08-27T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 200000000.0,
+     "issueYear": 2012,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "ITA|2012-04-27|2012-04-27|0|0|Cổ phiếu thưởng": [
+    {
+     "organCode": "ITA",
+     "ticker": "ITA",
+     "publicDate": "2012-04-27T00:00:00",
+     "exrightDate": "2012-04-27T00:00:00",
+     "issueDate": "2012-04-27T00:00:00",
+     "listingDate": "2012-04-27T00:00:00",
+     "issueMethodName": "Cổ phiếu thưởng",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1100000.0,
+     "issueYear": 2012,
+     "issueStatusName": "Chưa thực hiện được"
+    },
+    {
+     "organCode": "ITA",
+     "ticker": "ITA",
+     "publicDate": "2012-04-27T00:00:00",
+     "exrightDate": "2012-04-27T00:00:00",
+     "issueDate": "2012-04-27T00:00:00",
+     "listingDate": "2012-04-27T00:00:00",
+     "issueMethodName": "Cổ phiếu thưởng",
+     "exerciseRatio": 0.3,
+     "planVolumn": 133375458.0,
+     "issueYear": 2012,
+     "issueStatusName": "Chưa thực hiện được"
+    }
+   ],
+   "PNJ|2012-04-14|2012-04-14|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "PNJ",
+     "ticker": "PNJ",
+     "publicDate": "2012-04-14T00:00:00",
+     "exrightDate": "2012-04-14T00:00:00",
+     "issueDate": "2012-04-14T00:00:00",
+     "listingDate": "2012-04-14T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 5000000.0,
+     "issueYear": 2012,
+     "issueStatusName": "Thông báo"
+    },
+    {
+     "organCode": "PNJ",
+     "ticker": "PNJ",
+     "publicDate": "2012-04-14T00:00:00",
+     "exrightDate": "2012-04-14T00:00:00",
+     "issueDate": "2012-04-14T00:00:00",
+     "listingDate": "2012-04-14T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 2999900.0,
+     "issueYear": 2012,
+     "issueStatusName": "Thông báo"
+    }
+   ],
+   "MKP|2012-03-30|2012-03-30|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "MKP",
+     "ticker": "MKP",
+     "publicDate": "2012-03-30T00:00:00",
+     "exrightDate": "2012-03-30T00:00:00",
+     "issueDate": "2012-03-30T00:00:00",
+     "listingDate": "2012-03-30T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 2000000.0,
+     "issueYear": 2012,
+     "issueStatusName": "Thông báo"
+    },
+    {
+     "organCode": "MKP",
+     "ticker": "MKP",
+     "publicDate": "2012-03-30T00:00:00",
+     "exrightDate": "2012-03-30T00:00:00",
+     "issueDate": "2012-03-30T00:00:00",
+     "listingDate": "2012-03-30T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 2000000.0,
+     "issueYear": 2012,
+     "issueStatusName": "Thông báo"
+    }
+   ],
+   "VPB|2011-12-31|2011-12-31|0|0|Cổ phiếu thưởng": [
+    {
+     "organCode": "VPB",
+     "ticker": "VPB",
+     "publicDate": "2011-12-31T13:08:43.777",
+     "exrightDate": "2011-12-31T00:00:00",
+     "issueDate": "2011-12-31T00:00:00",
+     "listingDate": "2011-12-31T00:00:00",
+     "issueMethodName": "Cổ phiếu thưởng",
+     "exerciseRatio": 0.1389,
+     "planVolumn": 61601929.0,
+     "issueYear": 2011,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VPB",
+     "ticker": "VPB",
+     "publicDate": "2011-12-31T13:11:03.607",
+     "exrightDate": "2011-12-31T00:00:00",
+     "issueDate": "2011-12-31T00:00:00",
+     "listingDate": "2011-12-31T00:00:00",
+     "issueMethodName": "Cổ phiếu thưởng",
+     "exerciseRatio": 0.1085,
+     "planVolumn": 43398071.0,
+     "issueYear": 2011,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "HAP|2011-05-28|2011-08-24|0|0|Phát hành để sáp nhập": [
+    {
+     "organCode": "HAP",
+     "ticker": "HAP",
+     "publicDate": "2011-05-28T00:00:00",
+     "exrightDate": "2011-08-24T00:00:00",
+     "issueDate": "2011-08-24T00:00:00",
+     "listingDate": "2011-11-16T00:00:00",
+     "issueMethodName": "Phát hành để sáp nhập",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1334472.0,
+     "issueYear": 2011,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "HAP",
+     "ticker": "HAP",
+     "publicDate": "2011-05-28T00:00:00",
+     "exrightDate": "2011-08-24T00:00:00",
+     "issueDate": "2011-08-24T00:00:00",
+     "listingDate": "2011-11-16T00:00:00",
+     "issueMethodName": "Phát hành để sáp nhập",
+     "exerciseRatio": 0.0,
+     "planVolumn": 176196.0,
+     "issueYear": 2011,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "KMR|2011-07-23|2011-07-23|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "KMR",
+     "ticker": "KMR",
+     "publicDate": "2011-07-23T00:00:00",
+     "exrightDate": "2011-07-23T00:00:00",
+     "issueDate": "2011-07-23T00:00:00",
+     "listingDate": "2011-07-23T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 6000000.0,
+     "issueYear": 2012,
+     "issueStatusName": "Chưa thực hiện được"
+    },
+    {
+     "organCode": "KMR",
+     "ticker": "KMR",
+     "publicDate": "2011-07-23T00:00:00",
+     "exrightDate": "2011-07-23T00:00:00",
+     "issueDate": "2011-07-23T00:00:00",
+     "listingDate": "2011-07-23T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 16000000.0,
+     "issueYear": 2011,
+     "issueStatusName": "Chưa thực hiện được"
+    }
+   ],
+   "FPT|2011-04-18|2011-06-21|0|0|Phát hành để sáp nhập": [
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2011-04-18T00:00:00",
+     "exrightDate": "2011-06-21T00:00:00",
+     "issueDate": "2011-06-21T00:00:00",
+     "listingDate": "2011-10-06T00:00:00",
+     "issueMethodName": "Phát hành để sáp nhập",
+     "exerciseRatio": 0.0,
+     "planVolumn": 4252372.0,
+     "issueYear": 2011,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2011-04-18T00:00:00",
+     "exrightDate": "2011-06-21T00:00:00",
+     "issueDate": "2011-06-21T00:00:00",
+     "listingDate": "2011-10-06T00:00:00",
+     "issueMethodName": "Phát hành để sáp nhập",
+     "exerciseRatio": 0.0,
+     "planVolumn": 12794014.0,
+     "issueYear": 2011,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "FPT",
+     "ticker": "FPT",
+     "publicDate": "2011-04-18T00:00:00",
+     "exrightDate": "2011-06-21T00:00:00",
+     "issueDate": "2011-06-21T00:00:00",
+     "listingDate": "2011-10-06T00:00:00",
+     "issueMethodName": "Phát hành để sáp nhập",
+     "exerciseRatio": 0.0,
+     "planVolumn": 2784600.0,
+     "issueYear": 2011,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "KDC|2009-10-20|2011-05-23|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "KDC",
+     "ticker": "KDC",
+     "publicDate": "2009-10-20T00:00:00",
+     "exrightDate": "2011-05-23T00:00:00",
+     "issueDate": "2011-05-23T00:00:00",
+     "listingDate": "2011-05-23T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 0.0,
+     "issueYear": 2011,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "KDC",
+     "ticker": "KDC",
+     "publicDate": "2009-10-20T00:00:00",
+     "exrightDate": "2011-05-23T00:00:00",
+     "issueDate": "2011-05-23T00:00:00",
+     "listingDate": "2011-05-23T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 0.0,
+     "issueYear": 2011,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "CVT|2011-05-12|2011-05-12|0|0|Quyền mua CP cho Cổ đông hiện hữu": [
+    {
+     "organCode": "CVT",
+     "ticker": "CVT",
+     "publicDate": "2011-05-12T00:00:00",
+     "exrightDate": "2011-05-12T00:00:00",
+     "issueDate": "2011-05-12T00:00:00",
+     "listingDate": "2011-05-12T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 0.5,
+     "planVolumn": 4000000.0,
+     "issueYear": 2011,
+     "issueStatusName": "Thông báo"
+    },
+    {
+     "organCode": "CVT",
+     "ticker": "CVT",
+     "publicDate": "2011-05-12T00:00:00",
+     "exrightDate": "2011-05-12T00:00:00",
+     "issueDate": "2011-05-12T00:00:00",
+     "listingDate": "2011-05-12T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 0.3333,
+     "planVolumn": 4000000.0,
+     "issueYear": 2012,
+     "issueStatusName": "Thông báo"
+    }
+   ],
+   "NVN|2011-03-12|2011-03-12|0|0|Quyền mua CP cho Cổ đông hiện hữu": [
+    {
+     "organCode": "NVN",
+     "ticker": "NVN",
+     "publicDate": "2011-03-12T00:00:00",
+     "exrightDate": "2011-03-12T00:00:00",
+     "issueDate": "2011-03-12T00:00:00",
+     "listingDate": "2011-03-12T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 0.2,
+     "planVolumn": 2131360.0,
+     "issueYear": 2011,
+     "issueStatusName": "Chưa thực hiện được"
+    },
+    {
+     "organCode": "NVN",
+     "ticker": "NVN",
+     "publicDate": "2011-03-12T00:00:00",
+     "exrightDate": "2011-03-12T00:00:00",
+     "issueDate": "2011-03-12T00:00:00",
+     "listingDate": "2011-03-12T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 0.0,
+     "planVolumn": 3000000.0,
+     "issueYear": 2011,
+     "issueStatusName": "Chưa thực hiện được"
+    }
+   ],
+   "VTE|2010-12-31|2010-12-31|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "VTE",
+     "ticker": "VTE",
+     "publicDate": "2010-12-31T10:56:55.163",
+     "exrightDate": "2010-12-31T00:00:00",
+     "issueDate": "2010-12-31T00:00:00",
+     "listingDate": "2010-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 3496600.0,
+     "issueYear": 2010,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VTE",
+     "ticker": "VTE",
+     "publicDate": "2010-12-31T10:58:07.247",
+     "exrightDate": "2010-12-31T00:00:00",
+     "issueDate": "2010-12-31T00:00:00",
+     "listingDate": "2010-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1503400.0,
+     "issueYear": 2010,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "KDC|2010-05-08|2010-12-15|0|0|Phát hành để sáp nhập": [
+    {
+     "organCode": "KDC",
+     "ticker": "KDC",
+     "publicDate": "2010-05-08T00:00:00",
+     "exrightDate": "2010-12-15T00:00:00",
+     "issueDate": "2010-12-15T00:00:00",
+     "listingDate": "2011-03-02T00:00:00",
+     "issueMethodName": "Phát hành để sáp nhập",
+     "exerciseRatio": 0.0,
+     "planVolumn": 13749288.0,
+     "issueYear": 2010,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "KDC",
+     "ticker": "KDC",
+     "publicDate": "2010-05-08T00:00:00",
+     "exrightDate": "2010-12-15T00:00:00",
+     "issueDate": "2010-12-15T00:00:00",
+     "listingDate": "2011-03-02T00:00:00",
+     "issueMethodName": "Phát hành để sáp nhập",
+     "exerciseRatio": 0.0,
+     "planVolumn": 4495455.0,
+     "issueYear": 2010,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "HU1|2010-07-10|2010-11-05|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "HU1",
+     "ticker": "HU1",
+     "publicDate": "2010-07-10T00:00:00",
+     "exrightDate": "2010-11-05T00:00:00",
+     "issueDate": "2010-11-05T00:00:00",
+     "listingDate": "2011-02-18T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1020000.0,
+     "issueYear": 2011,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "HU1",
+     "ticker": "HU1",
+     "publicDate": "2010-07-10T00:00:00",
+     "exrightDate": "2010-11-05T00:00:00",
+     "issueDate": "2010-11-05T00:00:00",
+     "listingDate": "2011-02-18T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 880000.0,
+     "issueYear": 2011,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "CT3|2010-04-28|2010-09-20|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "CT3",
+     "ticker": "CT3",
+     "publicDate": "2010-04-28T00:00:00",
+     "exrightDate": "2010-09-20T00:00:00",
+     "issueDate": "2010-09-20T00:00:00",
+     "listingDate": "2010-09-20T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 412549.0,
+     "issueYear": 2010,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "CT3",
+     "ticker": "CT3",
+     "publicDate": "2010-04-28T00:00:00",
+     "exrightDate": "2010-09-20T00:00:00",
+     "issueDate": "2010-09-20T00:00:00",
+     "listingDate": "2010-09-20T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 651880.0,
+     "issueYear": 2010,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "CMG|2010-05-15|2010-05-15|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "CMG",
+     "ticker": "CMG",
+     "publicDate": "2010-05-15T00:00:00",
+     "exrightDate": "2010-05-15T00:00:00",
+     "issueDate": "2010-05-15T00:00:00",
+     "listingDate": "2010-05-15T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 7200000.0,
+     "issueYear": 2010,
+     "issueStatusName": "Chưa thực hiện được"
+    },
+    {
+     "organCode": "CMG",
+     "ticker": "CMG",
+     "publicDate": "2010-05-15T00:00:00",
+     "exrightDate": "2010-05-15T00:00:00",
+     "issueDate": "2010-05-15T00:00:00",
+     "listingDate": "2010-05-15T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1263733.0,
+     "issueYear": 2010,
+     "issueStatusName": "Chưa thực hiện được"
+    }
+   ],
+   "HDA|2010-04-03|2010-05-06|0|0|Trả Cổ tức bằng Cổ phiếu": [
+    {
+     "organCode": "HDA",
+     "ticker": "HDA",
+     "publicDate": "2010-04-03T00:00:00",
+     "exrightDate": "2010-05-06T00:00:00",
+     "issueDate": "2010-05-06T00:00:00",
+     "listingDate": "2010-05-06T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.1,
+     "planVolumn": 0.0,
+     "issueYear": 2010,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "HDA",
+     "ticker": "HDA",
+     "publicDate": "2010-04-03T00:00:00",
+     "exrightDate": "2010-05-06T00:00:00",
+     "issueDate": "2010-05-06T00:00:00",
+     "listingDate": "2010-05-06T00:00:00",
+     "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+     "exerciseRatio": 0.06,
+     "planVolumn": 0.0,
+     "issueYear": 2010,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "SJC|2010-04-10|2010-04-10|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "SJC",
+     "ticker": "SJC",
+     "publicDate": "2010-04-10T00:00:00",
+     "exrightDate": "2010-04-10T00:00:00",
+     "issueDate": "2010-04-10T00:00:00",
+     "listingDate": "2010-04-10T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 500000.0,
+     "issueYear": 2010,
+     "issueStatusName": "Chưa thực hiện được"
+    },
+    {
+     "organCode": "SJC",
+     "ticker": "SJC",
+     "publicDate": "2010-04-10T00:00:00",
+     "exrightDate": "2010-04-10T00:00:00",
+     "issueDate": "2010-04-10T00:00:00",
+     "listingDate": "2010-04-10T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1750000.0,
+     "issueYear": 2010,
+     "issueStatusName": "Chưa thực hiện được"
+    }
+   ],
+   "POM|2010-04-10|2010-04-10|0|0|Quyền mua CP cho Cổ đông hiện hữu": [
+    {
+     "organCode": "POM",
+     "ticker": "POM",
+     "publicDate": "2010-04-10T00:00:00",
+     "exrightDate": "2010-04-10T00:00:00",
+     "issueDate": "2010-04-10T00:00:00",
+     "listingDate": "2010-04-10T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 0.0307,
+     "planVolumn": 5000000.0,
+     "issueYear": 2010,
+     "issueStatusName": "Chưa thực hiện được"
+    },
+    {
+     "organCode": "POM",
+     "ticker": "POM",
+     "publicDate": "2010-04-10T00:00:00",
+     "exrightDate": "2010-04-10T00:00:00",
+     "issueDate": "2010-04-10T00:00:00",
+     "listingDate": "2010-04-10T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 0.0,
+     "planVolumn": 14000000.0,
+     "issueYear": 2010,
+     "issueStatusName": "Chưa thực hiện được"
+    }
+   ],
+   "GTT|2010-02-12|2010-02-12|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "GTT",
+     "ticker": "GTT",
+     "publicDate": "2010-02-12T00:00:00",
+     "exrightDate": "2010-02-12T00:00:00",
+     "issueDate": "2010-02-12T00:00:00",
+     "listingDate": "2010-02-12T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 3190000.0,
+     "issueYear": 2010,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "GTT",
+     "ticker": "GTT",
+     "publicDate": "2010-02-12T00:00:00",
+     "exrightDate": "2010-02-12T00:00:00",
+     "issueDate": "2010-02-12T00:00:00",
+     "listingDate": "2010-02-12T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 14455200.0,
+     "issueYear": 2010,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "LO5|2009-05-20|2009-06-30|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "LO5",
+     "ticker": "LO5",
+     "publicDate": "2009-05-20T00:00:00",
+     "exrightDate": "2009-06-30T00:00:00",
+     "issueDate": "2009-06-30T00:00:00",
+     "listingDate": "2009-06-30T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1000000.0,
+     "issueYear": 2009,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "LO5",
+     "ticker": "LO5",
+     "publicDate": "2009-05-20T00:00:00",
+     "exrightDate": "2009-06-30T00:00:00",
+     "issueDate": "2009-06-30T00:00:00",
+     "listingDate": "2009-06-30T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 2265000.0,
+     "issueYear": 2009,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "LO5",
+     "ticker": "LO5",
+     "publicDate": "2009-05-20T00:00:00",
+     "exrightDate": "2009-06-30T00:00:00",
+     "issueDate": "2009-06-30T00:00:00",
+     "listingDate": "2009-06-30T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 687000.0,
+     "issueYear": 2009,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "DCL|2009-04-22|2009-04-22|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "DCL",
+     "ticker": "DCL",
+     "publicDate": "2009-04-22T00:00:00",
+     "exrightDate": "2009-04-22T00:00:00",
+     "issueDate": "2009-04-22T00:00:00",
+     "listingDate": "2009-04-22T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 145788.0,
+     "issueYear": 2009,
+     "issueStatusName": "Chưa thực hiện được"
+    },
+    {
+     "organCode": "DCL",
+     "ticker": "DCL",
+     "publicDate": "2009-04-22T00:00:00",
+     "exrightDate": "2009-04-22T00:00:00",
+     "issueDate": "2009-04-22T00:00:00",
+     "listingDate": "2009-04-22T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 145788.0,
+     "issueYear": 2009,
+     "issueStatusName": "Chưa thực hiện được"
+    }
+   ],
+   "CII|2009-03-10|2009-03-16|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "CII",
+     "ticker": "CII",
+     "publicDate": "2009-03-10T00:00:00",
+     "exrightDate": "2009-03-16T00:00:00",
+     "issueDate": "2009-03-23T00:00:00",
+     "listingDate": "2009-09-30T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 100000.0,
+     "issueYear": 2009,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "CII",
+     "ticker": "CII",
+     "publicDate": "2009-03-10T00:00:00",
+     "exrightDate": "2009-03-16T00:00:00",
+     "issueDate": "2009-03-23T00:00:00",
+     "listingDate": "2009-09-30T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 0.0,
+     "issueYear": 2009,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "NAB|2008-12-31|2008-12-31|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "NAB",
+     "ticker": "NAB",
+     "publicDate": "2008-12-31T00:00:00",
+     "exrightDate": "2008-12-31T00:00:00",
+     "issueDate": "2008-12-31T00:00:00",
+     "listingDate": "2008-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 58045000.0,
+     "issueYear": 2008,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "NAB",
+     "ticker": "NAB",
+     "publicDate": "2008-12-31T00:00:00",
+     "exrightDate": "2008-12-31T00:00:00",
+     "issueDate": "2008-12-31T00:00:00",
+     "listingDate": "2008-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 9646000.0,
+     "issueYear": 2008,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "NTC|2008-04-14|2008-04-14|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "NTC",
+     "ticker": "NTC",
+     "publicDate": "2008-04-14T09:31:35.32",
+     "exrightDate": "2008-04-14T00:00:00",
+     "issueDate": "2008-04-14T00:00:00",
+     "listingDate": "2008-04-14T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 250000.0,
+     "issueYear": 2008,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "NTC",
+     "ticker": "NTC",
+     "publicDate": "2008-04-14T13:47:35.14",
+     "exrightDate": "2008-04-14T00:00:00",
+     "issueDate": "2008-04-14T00:00:00",
+     "listingDate": "2008-04-14T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1400000.0,
+     "issueYear": 2008,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VNGC|2008-01-08|2008-01-08|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2008-01-08T00:00:00",
+     "exrightDate": "2008-01-08T00:00:00",
+     "issueDate": "2008-01-08T00:00:00",
+     "listingDate": "2008-01-08T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 14650000.0,
+     "issueYear": 2008,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2008-01-08T00:00:00",
+     "exrightDate": "2008-01-08T00:00:00",
+     "issueDate": "2008-01-08T00:00:00",
+     "listingDate": "2008-01-08T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 40010.0,
+     "issueYear": 2008,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VNGC",
+     "ticker": "VNZ",
+     "publicDate": "2008-01-08T00:00:00",
+     "exrightDate": "2008-01-08T00:00:00",
+     "issueDate": "2008-01-08T00:00:00",
+     "listingDate": "2008-01-08T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 9990.0,
+     "issueYear": 2008,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "INVESTCO|2007-12-31|2007-12-31|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "INVESTCO",
+     "ticker": "ING",
+     "publicDate": "2007-12-31T00:00:00",
+     "exrightDate": "2007-12-31T00:00:00",
+     "issueDate": "2007-12-31T00:00:00",
+     "listingDate": "2007-12-31T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 375000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "INVESTCO",
+     "ticker": "ING",
+     "publicDate": "2007-12-31T00:00:00",
+     "exrightDate": "2007-12-31T00:00:00",
+     "issueDate": "2007-12-31T00:00:00",
+     "listingDate": "2007-12-31T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 684250.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "INVESTCO",
+     "ticker": "ING",
+     "publicDate": "2007-12-31T00:00:00",
+     "exrightDate": "2007-12-31T00:00:00",
+     "issueDate": "2007-12-31T00:00:00",
+     "listingDate": "2007-12-31T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 630750.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "TDBECO|2007-12-30|2007-12-30|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "TDBECO",
+     "ticker": "STD",
+     "publicDate": "2007-12-30T00:00:00",
+     "exrightDate": "2007-12-30T00:00:00",
+     "issueDate": "2007-12-30T00:00:00",
+     "listingDate": "2007-12-30T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 2000000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "TDBECO",
+     "ticker": "STD",
+     "publicDate": "2007-12-30T00:00:00",
+     "exrightDate": "2007-12-30T00:00:00",
+     "issueDate": "2007-12-30T00:00:00",
+     "listingDate": "2007-12-30T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1200000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "DNP|2007-12-18|2007-12-26|0|0|Quyền mua CP cho Cổ đông hiện hữu": [
+    {
+     "organCode": "DNP",
+     "ticker": "DNP",
+     "publicDate": "2007-12-18T00:00:00",
+     "exrightDate": "2007-12-26T00:00:00",
+     "issueDate": "2008-01-01T00:00:00",
+     "listingDate": "2008-02-04T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 0.5,
+     "planVolumn": 1000000.0,
+     "issueYear": 2008,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "DNP",
+     "ticker": "DNP",
+     "publicDate": "2007-12-18T00:00:00",
+     "exrightDate": "2007-12-26T00:00:00",
+     "issueDate": "2008-01-01T00:00:00",
+     "listingDate": "2008-02-04T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 0.4,
+     "planVolumn": 800000.0,
+     "issueYear": 2008,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VND|2007-11-25|2007-11-25|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "VND",
+     "ticker": "VND",
+     "publicDate": "2007-11-25T00:00:00",
+     "exrightDate": "2007-11-25T00:00:00",
+     "issueDate": "2007-11-25T00:00:00",
+     "listingDate": "2007-11-25T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 2500000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VND",
+     "ticker": "VND",
+     "publicDate": "2007-11-25T00:00:00",
+     "exrightDate": "2007-11-25T00:00:00",
+     "issueDate": "2007-11-25T00:00:00",
+     "listingDate": "2007-11-25T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 22500000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "ALTC|2007-11-15|2007-11-15|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "ALTC",
+     "ticker": "ALC",
+     "publicDate": "2007-11-15T00:00:00",
+     "exrightDate": "2007-11-15T00:00:00",
+     "issueDate": "2007-11-15T00:00:00",
+     "listingDate": "2007-11-15T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 600000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "ALTC",
+     "ticker": "ALC",
+     "publicDate": "2007-11-15T00:00:00",
+     "exrightDate": "2007-11-15T00:00:00",
+     "issueDate": "2007-11-15T00:00:00",
+     "listingDate": "2007-11-15T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 4527800.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "PEN|2007-09-15|2007-09-15|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "PEN",
+     "ticker": "PEN",
+     "publicDate": "2007-09-15T00:00:00",
+     "exrightDate": "2007-09-15T00:00:00",
+     "issueDate": "2007-09-15T00:00:00",
+     "listingDate": "2007-09-15T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 378900.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "PEN",
+     "ticker": "PEN",
+     "publicDate": "2007-09-15T00:00:00",
+     "exrightDate": "2007-09-15T00:00:00",
+     "issueDate": "2007-09-15T00:00:00",
+     "listingDate": "2007-09-15T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 240000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "LGC|2007-09-04|2007-09-12|0|0|Quyền mua CP cho Cổ đông hiện hữu": [
+    {
+     "organCode": "LGC",
+     "ticker": "LGC",
+     "publicDate": "2007-09-04T00:00:00",
+     "exrightDate": "2007-09-12T00:00:00",
+     "issueDate": "2007-09-12T00:00:00",
+     "listingDate": "2008-01-14T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 1.0,
+     "planVolumn": 1000000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "LGC",
+     "ticker": "LGC",
+     "publicDate": "2007-09-04T00:00:00",
+     "exrightDate": "2007-09-12T00:00:00",
+     "issueDate": "2007-09-12T00:00:00",
+     "listingDate": "2008-01-14T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 0.5,
+     "planVolumn": 500000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "SBDC|2007-08-31|2007-08-31|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "SBDC",
+     "ticker": "SBD",
+     "publicDate": "2007-08-31T10:59:39.823",
+     "exrightDate": "2007-08-31T00:00:00",
+     "issueDate": "2007-08-31T00:00:00",
+     "listingDate": "2007-08-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 930040.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "SBDC",
+     "ticker": "SBD",
+     "publicDate": "2007-08-31T11:01:35.487",
+     "exrightDate": "2007-08-31T00:00:00",
+     "issueDate": "2007-08-31T00:00:00",
+     "listingDate": "2007-08-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 420866.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VTB|2007-07-27|2007-08-08|0|0|Quyền mua CP cho Cổ đông hiện hữu": [
+    {
+     "organCode": "VTB",
+     "ticker": "VTB",
+     "publicDate": "2007-07-27T00:00:00",
+     "exrightDate": "2007-08-08T00:00:00",
+     "issueDate": "2007-08-08T00:00:00",
+     "listingDate": "2007-12-11T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 0.3,
+     "planVolumn": 2100000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VTB",
+     "ticker": "VTB",
+     "publicDate": "2007-07-27T00:00:00",
+     "exrightDate": "2007-08-08T00:00:00",
+     "issueDate": "2007-08-08T00:00:00",
+     "listingDate": "2007-12-11T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 0.3,
+     "planVolumn": 2100000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "HMH|2007-08-02|2007-08-02|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "HMH",
+     "ticker": "HMH",
+     "publicDate": "2007-08-02T00:00:00",
+     "exrightDate": "2007-08-02T00:00:00",
+     "issueDate": "2007-08-02T00:00:00",
+     "listingDate": "2007-08-02T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.25,
+     "planVolumn": 731128.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "HMH",
+     "ticker": "HMH",
+     "publicDate": "2007-08-02T00:00:00",
+     "exrightDate": "2007-08-02T00:00:00",
+     "issueDate": "2007-08-02T00:00:00",
+     "listingDate": "2007-08-02T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 200000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "SD6|2007-07-11|2007-07-18|0|0|Phát hành rộng rãi qua đấu giá": [
+    {
+     "organCode": "SD6",
+     "ticker": "SD6",
+     "publicDate": "2007-07-11T00:00:00",
+     "exrightDate": "2007-07-18T00:00:00",
+     "issueDate": "2007-07-21T00:00:00",
+     "listingDate": "2007-12-20T00:00:00",
+     "issueMethodName": "Phát hành rộng rãi qua đấu giá",
+     "exerciseRatio": 0.0,
+     "planVolumn": 650000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "SD6",
+     "ticker": "SD6",
+     "publicDate": "2007-07-11T00:00:00",
+     "exrightDate": "2007-07-18T00:00:00",
+     "issueDate": "2007-07-21T00:00:00",
+     "listingDate": "2008-03-14T00:00:00",
+     "issueMethodName": "Phát hành rộng rãi qua đấu giá",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1200000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "L35|2007-07-15|2007-07-15|0|0|Quyền mua CP cho Cổ đông hiện hữu": [
+    {
+     "organCode": "L35",
+     "ticker": "L35",
+     "publicDate": "2007-07-15T00:00:00",
+     "exrightDate": "2007-07-15T00:00:00",
+     "issueDate": "2007-07-15T00:00:00",
+     "listingDate": "2007-07-15T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 0.0,
+     "planVolumn": 865155.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "L35",
+     "ticker": "L35",
+     "publicDate": "2007-07-15T00:00:00",
+     "exrightDate": "2007-07-15T00:00:00",
+     "issueDate": "2007-07-15T00:00:00",
+     "listingDate": "2007-07-15T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1206697.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "FPC|2016-06-03|2007-06-22|0|0|Quyền mua CP cho Cổ đông hiện hữu": [
+    {
+     "organCode": "FPC",
+     "ticker": "FPC",
+     "publicDate": "2016-06-03T00:00:00",
+     "exrightDate": "2007-06-22T00:00:00",
+     "issueDate": "2007-06-27T00:00:00",
+     "listingDate": "2007-10-17T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 1.0,
+     "planVolumn": 0.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "FPC",
+     "ticker": "FPC",
+     "publicDate": "2016-06-03T00:00:00",
+     "exrightDate": "2007-06-22T00:00:00",
+     "issueDate": "2007-06-27T00:00:00",
+     "listingDate": "2007-08-08T00:00:00",
+     "issueMethodName": "Quyền mua CP cho Cổ đông hiện hữu",
+     "exerciseRatio": 1.0,
+     "planVolumn": 0.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "CTD|2007-06-05|2007-06-05|0|0|Cổ phiếu thưởng": [
+    {
+     "organCode": "CTD",
+     "ticker": "CTD",
+     "publicDate": "2007-06-05T00:00:00",
+     "exrightDate": "2007-06-05T00:00:00",
+     "issueDate": "2007-06-05T00:00:00",
+     "listingDate": "2007-06-05T00:00:00",
+     "issueMethodName": "Cổ phiếu thưởng",
+     "exerciseRatio": 0.4,
+     "planVolumn": 2380000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "CTD",
+     "ticker": "CTD",
+     "publicDate": "2007-06-05T00:00:00",
+     "exrightDate": "2007-06-05T00:00:00",
+     "issueDate": "2007-06-05T00:00:00",
+     "listingDate": "2007-06-05T00:00:00",
+     "issueMethodName": "Cổ phiếu thưởng",
+     "exerciseRatio": 0.5,
+     "planVolumn": 1750000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "VINATRANSDN|2007-05-09|2007-05-09|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "VINATRANSDN",
+     "ticker": "VMT",
+     "publicDate": "2007-05-09T00:00:00",
+     "exrightDate": "2007-05-09T00:00:00",
+     "issueDate": "2007-05-09T00:00:00",
+     "listingDate": "2007-05-09T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 564000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "VINATRANSDN",
+     "ticker": "VMT",
+     "publicDate": "2007-05-09T00:00:00",
+     "exrightDate": "2007-05-09T00:00:00",
+     "issueDate": "2007-05-09T00:00:00",
+     "listingDate": "2007-05-09T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 6000.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "PEN|2007-04-26|2007-04-26|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "PEN",
+     "ticker": "PEN",
+     "publicDate": "2007-04-26T00:00:00",
+     "exrightDate": "2007-04-26T00:00:00",
+     "issueDate": "2007-04-26T00:00:00",
+     "listingDate": "2007-04-26T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 262500.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "PEN",
+     "ticker": "PEN",
+     "publicDate": "2007-04-26T00:00:00",
+     "exrightDate": "2007-04-26T00:00:00",
+     "issueDate": "2007-04-26T00:00:00",
+     "listingDate": "2007-04-26T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 157500.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "HPB|2007-03-12|2007-03-12|0|0|Phát hành cho CBCNV": [
+    {
+     "organCode": "HPB",
+     "ticker": "HPB",
+     "publicDate": "2007-03-12T00:00:00",
+     "exrightDate": "2007-03-12T00:00:00",
+     "issueDate": "2007-03-12T00:00:00",
+     "listingDate": "2007-03-12T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 0.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "HPB",
+     "ticker": "HPB",
+     "publicDate": "2007-03-12T00:00:00",
+     "exrightDate": "2007-03-12T00:00:00",
+     "issueDate": "2007-03-12T00:00:00",
+     "listingDate": "2007-03-12T00:00:00",
+     "issueMethodName": "Phát hành cho CBCNV",
+     "exerciseRatio": 0.0,
+     "planVolumn": 0.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "CX8|2007-02-01|2007-02-01|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "CX8",
+     "ticker": "CX8",
+     "publicDate": "2007-02-01T00:00:00",
+     "exrightDate": "2007-02-01T00:00:00",
+     "issueDate": "2007-02-01T00:00:00",
+     "listingDate": "2007-02-01T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 471160.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "CX8",
+     "ticker": "CX8",
+     "publicDate": "2007-02-01T00:00:00",
+     "exrightDate": "2007-02-01T00:00:00",
+     "issueDate": "2007-02-01T00:00:00",
+     "listingDate": "2007-02-01T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 28840.0,
+     "issueYear": 2007,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "HU3|2006-11-08|2006-12-31|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "HU3",
+     "ticker": "HU3",
+     "publicDate": "2006-11-08T00:00:00",
+     "exrightDate": "2006-12-31T00:00:00",
+     "issueDate": "2006-12-31T00:00:00",
+     "listingDate": "2006-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 122575.0,
+     "issueYear": 2006,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "HU3",
+     "ticker": "HU3",
+     "publicDate": "2006-11-08T00:00:00",
+     "exrightDate": "2006-12-31T00:00:00",
+     "issueDate": "2006-12-31T00:00:00",
+     "listingDate": "2006-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 79000.0,
+     "issueYear": 2006,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "NAB|2006-12-31|2006-12-31|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "NAB",
+     "ticker": "NAB",
+     "publicDate": "2006-12-31T00:00:00",
+     "exrightDate": "2006-12-31T00:00:00",
+     "issueDate": "2006-12-31T00:00:00",
+     "listingDate": "2006-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 3334000.0,
+     "issueYear": 2006,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "NAB",
+     "ticker": "NAB",
+     "publicDate": "2006-12-31T00:00:00",
+     "exrightDate": "2006-12-31T00:00:00",
+     "issueDate": "2006-12-31T00:00:00",
+     "listingDate": "2006-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 2739000.0,
+     "issueYear": 2006,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "NAB",
+     "ticker": "NAB",
+     "publicDate": "2006-12-31T00:00:00",
+     "exrightDate": "2006-12-31T00:00:00",
+     "issueDate": "2006-12-31T00:00:00",
+     "listingDate": "2006-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 16393000.0,
+     "issueYear": 2006,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "DATPHUONG|2005-12-31|2005-12-31|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "DATPHUONG",
+     "ticker": "DPG",
+     "publicDate": "2005-12-31T13:18:05.79",
+     "exrightDate": "2005-12-31T00:00:00",
+     "issueDate": "2005-12-31T00:00:00",
+     "listingDate": "2005-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 88700.0,
+     "issueYear": 2005,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "DATPHUONG",
+     "ticker": "DPG",
+     "publicDate": "2005-12-31T13:19:59.99",
+     "exrightDate": "2005-12-31T00:00:00",
+     "issueDate": "2005-12-31T00:00:00",
+     "listingDate": "2005-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 772600.0,
+     "issueYear": 2005,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "OCB|2004-12-31|2004-12-31|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "OCB",
+     "ticker": "OCB",
+     "publicDate": "2004-12-31T00:00:00",
+     "exrightDate": "2004-12-31T00:00:00",
+     "issueDate": "2004-12-31T00:00:00",
+     "listingDate": "2004-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 3577900.0,
+     "issueYear": 2004,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "OCB",
+     "ticker": "OCB",
+     "publicDate": "2004-12-31T00:00:00",
+     "exrightDate": "2004-12-31T00:00:00",
+     "issueDate": "2004-12-31T00:00:00",
+     "listingDate": "2004-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 6287000.0,
+     "issueYear": 2004,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "NAB|2004-12-31|2004-12-31|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "NAB",
+     "ticker": "NAB",
+     "publicDate": "2004-12-31T00:00:00",
+     "exrightDate": "2004-12-31T00:00:00",
+     "issueDate": "2004-12-31T00:00:00",
+     "listingDate": "2004-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 3021000.0,
+     "issueYear": 2004,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "NAB",
+     "ticker": "NAB",
+     "publicDate": "2004-12-31T00:00:00",
+     "exrightDate": "2004-12-31T00:00:00",
+     "issueDate": "2004-12-31T00:00:00",
+     "listingDate": "2004-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1197000.0,
+     "issueYear": 2004,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "NAB|2002-12-31|2002-12-31|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "NAB",
+     "ticker": "NAB",
+     "publicDate": "2002-12-31T00:00:00",
+     "exrightDate": "2002-12-31T00:00:00",
+     "issueDate": "2002-12-31T00:00:00",
+     "listingDate": "2002-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 857000.0,
+     "issueYear": 2002,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "NAB",
+     "ticker": "NAB",
+     "publicDate": "2002-12-31T00:00:00",
+     "exrightDate": "2002-12-31T00:00:00",
+     "issueDate": "2002-12-31T00:00:00",
+     "listingDate": "2002-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 1243000.0,
+     "issueYear": 2002,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ],
+   "NAB|1996-12-31|1996-12-31|0|0|Phát hành riêng lẻ": [
+    {
+     "organCode": "NAB",
+     "ticker": "NAB",
+     "publicDate": "1996-12-31T00:00:00",
+     "exrightDate": "1996-12-31T00:00:00",
+     "issueDate": "1996-12-31T00:00:00",
+     "listingDate": "1996-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 630000.0,
+     "issueYear": 1996,
+     "issueStatusName": "Đã thực hiện xong"
+    },
+    {
+     "organCode": "NAB",
+     "ticker": "NAB",
+     "publicDate": "1996-12-31T00:00:00",
+     "exrightDate": "1996-12-31T00:00:00",
+     "issueDate": "1996-12-31T00:00:00",
+     "listingDate": "1996-12-31T00:00:00",
+     "issueMethodName": "Phát hành riêng lẻ",
+     "exerciseRatio": 0.0,
+     "planVolumn": 313000.0,
+     "issueYear": 1996,
+     "issueStatusName": "Đã thực hiện xong"
+    }
+   ]
+  }
+ },
+ "earning": {
+  "ban_ghi": 57026,
+  "khoa_dung": 0,
+  "khoa_dung_khac_noi_dung": 0,
+  "nhom": {}
+ }
+}
