@@ -211,7 +211,7 @@ Bốn luật rút ra từ những lần trả giá, mỗi luật chống một c
 | Danh bạ, ngành ICB, `/quotes`, `/mapping` | Trước phiên | 4 |
 | `getPriceData` Page 1 | Sau 15:00 | 1.974 |
 | Snapshot ngày: **lưu 16/54 trường** — hồ sơ DN, sở hữu chi tiết | Sau 15:00 | ~4.000 |
-| `GetScreenerItems` — **lưu 80/193 trường** *(gửi 1 tiêu chí, nhiều hơn sẽ timeout)* — **lát 1 của nhóm này: `etl screener` 15:20, [spec 2026-09-03](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) chưa duyệt** | Sau 15:00 | 52 |
+| `GetScreenerItems` — **lưu 80/193 trường** *(gửi 1 tiêu chí, nhiều hơn sẽ timeout)* — **lát 1 của nhóm này: `etl screener` 15:20, [spec 2026-09-03](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) đã duyệt 2026-09-03** | Sau 15:00 | 52 |
 | Lịch sự kiện *(dùng `FromDate` lấy phần mới)* | Hằng ngày | ~10 |
 | BCTC + PDF | **Kích hoạt** theo `GetCorporateEarning` | ~100–300/quý |
 | Re-crawl giá một mã | **Kích hoạt** theo sự kiện quyền của mã đó | tuỳ |
