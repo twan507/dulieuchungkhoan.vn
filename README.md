@@ -89,7 +89,7 @@ Kiến thức dựng lại nằm rải ở nhiều file — đây là chuỗi n�
 
    🔴 **Bước ba không được bỏ.** Migration `0013` seed 161 dòng gán ngành tay bằng cách phân giải ticker → `issuer_id` qua `market.security`; bảng đó còn **rỗng** lúc `0013` chạy ở bước một ⇒ nạp **0 dòng, không exception, không cảnh báo nào**, và job `etl refdata` sau đó vẫn báo y hệt trạng thái khoẻ mạnh.
 
-4. `cd backend && uv run pytest tests` — kỳ vọng **394 passed, 2 skipped** *(đo 2026-09-03)* *(hai skip là probe thủ công có cổng env: `RUN_PROBE`, `RUN_CHAOS`)*.
+4. `cd backend && uv run pytest tests` — kỳ vọng **399 passed, 2 skipped** *(đo 2026-09-03)* *(hai skip là probe thủ công có cổng env: `RUN_PROBE`, `RUN_CHAOS`)*.
 5. **Chỉ khi muốn máy đó ghi thật**, trong cửa sổ **Run as Administrator** — đường dẫn phải **tuyệt đối** vì cửa sổ admin mở ở `C:\Windows\System32`, và phải là `pwsh` chứ không phải `powershell` *(file UTF-8 không BOM, 5.1 parse hỏng)*:
 
    ```bash
