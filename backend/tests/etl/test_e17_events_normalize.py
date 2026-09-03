@@ -74,6 +74,34 @@ def test_source_url_only_present_on_agm():
     assert all(r.source_url is None for r in en.normalize(pages("CashDividend")).rows)
 
 
+def test_cash_dividend_maps_all_four_date_columns():
+    """Seam 1 cho ĐỦ cột: ba test trên chỉ chạm public_date/stage_key, còn record_date và
+    payout_date thì không test nào assert — mà kho thật có hơn 20.000 dòng mỗi cột."""
+    n = en.normalize(pages("CashDividend"))
+    thn = next(r for r in n.rows if r.organ_code == "THANHHOAWATER")
+    assert (thn.public_date, thn.exright_date, thn.record_date, thn.payout_date) == (
+        date(2026, 8, 13), date(2026, 8, 20), date(2026, 8, 21), date(2026, 8, 28))
+    assert thn.year_report is None and thn.length_report is None
+
+
+def test_ipo_maps_public_date_and_carries_the_raw_payload():
+    """Họ IPO trước nay chỉ được đếm trong tổng số, không có assert cột nào."""
+    n = en.normalize(pages("IPO"))
+    xdc = next(r for r in n.rows if r.organ_code == "0304941312")     # organCode là MÃ SỐ THUẾ
+    assert xdc.public_date == date(2022, 9, 8)
+    assert xdc.exright_date is None and xdc.stage_key is None
+    assert xdc.payload["listingDate"] == "2022-10-21T09:00:00"        # giữ nguyên trong payload
+
+
+def test_dup_keys_name_the_colliding_keys_not_just_count_them():
+    """§5.3 bài học 3: bộ đếm không nêu tên thì để suốt buổi không biết mã nào."""
+    n = en.normalize(pages(*ALL))
+    assert len(n.dup_keys) == 4
+    assert sum(1 for k in n.dup_keys if k.startswith("ShareIssuance|ABI|")) == 2
+    assert any(k.startswith("AGM|SASTECO|2018-03-27|") for k in n.dup_keys)
+    assert any(k.startswith("StockDividend|ABI|2025-09-04|") for k in n.dup_keys)
+
+
 def test_whole_fixture_set_yields_the_measured_totals():
     n = en.normalize(pages(*ALL))
     assert len(n.rows) == 24 and n.dup_conflicts == 4

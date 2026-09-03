@@ -247,7 +247,9 @@ GET /Calendar/GetCorporateAGM?Ticker=BID&...      →  toàn bộ 23.434 bản g
 GET /Calendar/GetCorporateAGM?OrganCode=BID&...   →  chỉ bản ghi của BID     ✅
 ```
 
-`FromDate` / `ToDate` hoạt động đúng.
+🔴 **`FromDate` / `ToDate` KHÔNG lọc theo trục ngày bạn tưởng** *(đo 2026-09-03)* — mỗi họ một trục khác nhau: `CashDividend`/`StockDividend` lọc theo **`payoutDate`** · `ShareIssuance` theo **`issueDate`** · `AGM` theo **`publicDate`**. Riêng **`Earning` lọc theo một trường KHÔNG có trong response**: cửa sổ `2026-03-10..14` trả **24** bản ghi trong khi có **217** bản ghi mang `publicDate` trong đúng cửa sổ đó, và hai tập **cắt nhau** — dùng cửa sổ cho họ này là mất im lặng phần lớn dữ liệu. Trục **sắp xếp** lại là trục thứ ba (bốn họ trả về giảm dần theo `exrightDate`). Chi tiết và cách né: [`08-fiin-event-calendar.md`](08-fiin-event-calendar.md).
+
+Cũng đo cùng ngày: **`PageSize` của nhóm này không có trần** — nguồn trả `min(PageSize, số còn lại)`, thử tới 20.000 vẫn đúng. Vì vậy cách an toàn là **tải trọn rồi UPSERT**, không phân trang theo cửa sổ ngày: cả sáu họ hết **9 lời gọi**.
 
 ### Bẫy 6 — `totalCount` không đáng tin ở một số endpoint
 

@@ -58,6 +58,11 @@ def run(accept_new: bool = False) -> int:
         stats = {"counts": n.counts, "collected": n.collected, **apply_stats,
                  "issuers_created": issuers_new, "dup_conflicts": n.dup_conflicts,
                  "dup_keys": n.dup_keys, "retries": retries, "watermark": watermark}
+        if accept_new:
+            # Khuôn `refdata_job` ghi `accept_drop`: phải để lại dấu vết rằng CÓ NGƯỜI bấm
+            # qua chốt chặn (iii). Không có dấu này thì về sau nhìn `issuers_created: 517`
+            # không phân biệt được "người duyệt" với "guard hỏng".
+            stats["accept_new"] = True
         omo_store.close_run(engine, run_id, "success", stats)
         events_store.upsert_domain_state(engine, watermark)
         log.info("events xong: %s", {k: v for k, v in stats.items() if k != "dup_keys"})

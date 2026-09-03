@@ -69,6 +69,41 @@ def test_apply_writes_every_row_then_upserts_in_place(db):
     assert set(db.execute(sa.text("SELECT event_id FROM market.corporate_event")).scalars()) == ids
 
 
+def test_apply_replaces_the_payload_not_just_the_timestamp(db):
+    """Seam 9 đúng nghĩa: ghi lại cùng khoá với payload KHÁC phải thay được nội dung.
+    Bản cũ ghi lại đúng cùng payload nên không chứng minh được `DO UPDATE SET payload`."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
+    n = en.normalize(pages("IPO"))
+    by_organ, _ = es.ensure_issuers(db, n.rows)
+    es.apply(db, n.rows, by_organ)
+    doi = [type(r)(**{**r.__dict__, "payload": {**r.payload, "prices": 99999.0}}) for r in n.rows]
+    es.apply(db, doi, by_organ)
+    got = db.execute(sa.text(
+        "SELECT count(*), count(*) FILTER (WHERE payload->>'prices' = '99999.0')"
+        " FROM market.corporate_event WHERE event_type = 'IPO'")).one()
+    assert got == (2, 2)                      # vẫn 2 dòng, và nội dung đã bị thay
+
+
+def test_minimal_issuer_falls_back_to_the_organ_code_when_no_name_at_all(db):
+    """Seam 10 nhánh cuối: fixture nào cũng có `ticker` nên nhánh `names[code] or code`
+    chưa từng chạy — trong khi kho thật có 177 issuer rơi đúng ca này."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
+    rows = en.normalize(pages("CashDividend")).rows
+    khong_ten = [type(r)(**{**r.__dict__, "organ_code": "ZZKHONGTEN", "name_hint": None})
+                 for r in rows[:1]]
+    by_organ, created = es.ensure_issuers(db, khong_ten)
+    assert created == 1
+    assert db.execute(sa.text("SELECT name FROM market.issuer WHERE issuer_id = :i"),
+                      {"i": by_organ["ZZKHONGTEN"]}).scalar_one() == "ZZKHONGTEN"
+
+
+def test_baseline_is_none_when_no_successful_run_exists(migrated_engine):
+    """Lượt đầu tiên chưa có mốc — guard vế (ii) phải bỏ qua thay vì nổ."""
+    with migrated_engine.begin() as c:
+        c.execute(sa.text("DELETE FROM ops.etl_run WHERE job = :j"), {"j": es.JOB})
+    assert es.load_baseline(migrated_engine) is None
+
+
 def test_apply_keeps_two_rows_for_two_dividend_years_on_the_same_day(db):
     db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
     n = en.normalize(pages("CashDividend"))
