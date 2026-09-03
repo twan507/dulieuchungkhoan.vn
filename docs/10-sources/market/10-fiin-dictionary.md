@@ -289,7 +289,7 @@ Số đo không phải bằng chứng duy nhất: [`04-fiin-company-profile.md`]
 
 ✅ **Đã giải chỗ vênh 223-vs-193** *(đo 2026-08-15)*: 223 là tổng kích thước 5 khối, 193 là số khoá phân biệt — xem ô cảnh báo ở [Response 200](#response-200-1). Không phải do loại hình doanh nghiệp: `comGroupCode=ALL` và `VN30` đều ra đúng 193. Con số dưới đây tính trên 193 trường đó.
 
-dulieuchungkhoan.vn chỉ lưu **80/193 trường** (ước lượng 2026-08-14; đếm 2026-09-03: 81/193 sau khi lưu thêm 4 mã `cần kiểm API`). 113 trường bị bỏ *(ước lượng 2026-08-14; đếm 2026-09-03: **112** bỏ, sau khi 4 mã `cần kiểm API` chuyển sang lưu)* vì trùng BVSC, trùng BCTC, hoặc tính lại được từ giá; 20 trường nhóm chấm điểm bỏ theo quyết định của chủ dự án; số còn lại là metadata không dùng.
+dulieuchungkhoan.vn chỉ lưu **80/193 trường** (ước lượng 2026-08-14; đếm 2026-09-03: **75/193** — 66 khoá đặt tên từ response thật, trừ 4 nhãn xếp hạng và 2 dòng KQKD trùng BCTC). 113 trường bị bỏ *(ước lượng 2026-08-14; đếm 2026-09-03: **75/193** — 66 khoá đặt tên từ response thật, trừ 4 nhãn xếp hạng và 2 dòng KQKD trùng BCTC)* vì trùng BVSC, trùng BCTC, hoặc tính lại được từ giá; 20 trường nhóm chấm điểm bỏ theo quyết định của chủ dự án; số còn lại là metadata không dùng.
 
 Phần giữ lại là **55 mã tỷ số tài chính không nguồn nào khác có** (P/S, Giá/Dòng tiền, nhóm cổ tức, nhóm đòn bẩy, nhóm tăng trưởng), Beta, hai chỉ tiêu sở hữu tổ chức, và trọn cụm TTM/Y.
 

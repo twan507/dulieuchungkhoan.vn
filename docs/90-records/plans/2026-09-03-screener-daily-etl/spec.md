@@ -83,7 +83,7 @@ Không rơi vào nhóm bỏ nào; cùng họ với *"55 mã tỷ số không ngu
 
 ### 4.3 🔴 Không ép con số 80
 
-59 + 18 = **77**, không phải 80. "80" là ước lượng theo *nhóm* ngày 2026-08-14, không phải số đếm. Tiêu chí nghiệm thu là **193/193 dòng có mặt** (AC1); số `keep` là *kết quả*, không phải chỉ tiêu. Ra 77 thì ghi 77 và đính chính "80" ở mọi chỗ đang chép nó (§8). **Số chốt sau review cuối 2026-09-03: 81/193** — Ruling 15 áp cùng luật *lưu trước, giải mã sau* cho 4 mã `rtd39` `rtd53` `rtd54` `rtq81` vốn mang `keep = None` (`cần kiểm API`) nên bị ETL bỏ, dù chúng có thật và có giá trị. Ép cho khớp 80 chính là *"sửa số mà không đo"* (CLAUDE.md §1.2).
+59 + 18 = **77**, không phải 80. *(Số cuối trong ngày là **75**: review cuối thêm 4 mã `cần kiểm API` ⇒ 81, rồi vòng giải mã 2026-09-03 bỏ 4 nhãn xếp hạng ⇒ 77 và 2 dòng KQKD trùng BCTC ⇒ 75. Mỗi lần đổi đều vì **đo lại**, không lần nào vì ép cho khớp.)* "80" là ước lượng theo *nhóm* ngày 2026-08-14, không phải số đếm. Tiêu chí nghiệm thu là **193/193 dòng có mặt** (AC1); số `keep` là *kết quả*, không phải chỉ tiêu. Ra 77 thì ghi 77 và đính chính "80" ở mọi chỗ đang chép nó (§8). **Số chốt sau review cuối 2026-09-03: 81/193** — Ruling 15 áp cùng luật *lưu trước, giải mã sau* cho 4 mã `rtd39` `rtd53` `rtd54` `rtq81` vốn mang `keep = None` (`cần kiểm API`) nên bị ETL bỏ, dù chúng có thật và có giá trị. Ép cho khớp 80 chính là *"sửa số mà không đo"* (CLAUDE.md §1.2).
 
 ## 5. Phần B — job `python -m etl screener`
 
