@@ -816,8 +816,10 @@ SQL_UPSERT = (
     "INSERT INTO market.price_daily (security_id, trading_date, close_adj, close_raw,"
     "   open_value, highest_value, lowest_value, raw)"
     " VALUES (:sid, :d, :ca, :cr, :o, :h, :l,"
-    "   jsonb_build_object('fiintrade', jsonb_build_object('fetched_at', :fa,"
+    "   jsonb_build_object('fiintrade', jsonb_build_object('fetched_at', cast(:fa AS text),"
     "                                                      'payload', cast(:p AS jsonb))))"
+    # cast(:fa AS text) bắt buộc: jsonb_build_object là hàm variadic "any", tham số trần trong đó
+    # làm Postgres ném IndeterminateDatatype "could not determine data type of parameter $8".
     " ON CONFLICT (security_id, trading_date) DO UPDATE SET"
     "   close_adj = EXCLUDED.close_adj,"
     "   close_raw = coalesce(market.price_daily.close_raw, EXCLUDED.close_raw),"
