@@ -170,4 +170,20 @@ SELECT count(*) FROM market.corporate_event WHERE exright_date >= current_date; 
 
 🔴 **`dlck-events` 18:00 đụng đầu `dlck-omo-1800` 18:00.** Bốn mốc OMO là 11:30 · 15:30 · **18:00** · 21:30. Spec §5.6 chọn 18:00 mà **không soi lịch task sẵn có** — trong khi repo đã có tiền lệ ngược lại: `dlck-screener` đặt 15:20 với lý do ghi thẳng trong script *"tránh 15:30 của OMO"*.
 
-Nguy hiểm thực tế thấp *(khác nguồn, khác bảng, OMO xong trong vài giây, không tranh khoá)*, nhưng **trái quy ước dự án tự đặt**. Chờ chủ dự án quyết: dời sang 18:10, hay giữ 18:00 và ghi rõ là đã cân nhắc. Đổi giờ cần một lượt chạy lại script trong cửa sổ admin — không gấp vì cả 9 task đang `Disabled`.
+Nguy hiểm thực tế thấp *(khác nguồn, khác bảng, OMO xong trong vài giây, không tranh khoá)*, nhưng **trái quy ước dự án tự đặt**.
+
+✅ **Đã xử lý cùng ngày — chủ dự án chọn dời sang 18:10** (`6635823`). Đăng ký lại thật trong cửa sổ admin:
+
+```
+Đăng ký events (18:10 ngày làm việc — sau phiên, sau screener 15:20, và tránh 18:00 của OMO):
+  + dlck-events              18:10             ->  python -m etl events
+
+✅ Cả 9 task đăng ký S4U          <sau khi tắt lại>  9 task, TẤT CẢ Disabled
+
+(Get-ScheduledTask -TaskName "dlck-events").Triggers[0].StartBoundary
+2026-09-03T18:10:00+07:00
+```
+
+⚠️ **Đọc `StartBoundary` chứ không chỉ đọc dòng script tự in ra** — dòng in là *ý định*, `StartBoundary` là *cái Scheduler thật sự giữ*. Hậu tố `+07:00` xác nhận trigger neo giờ Việt Nam, không phải UTC — đúng loại lỗi mà §3.1 đã trả giá một lần.
+
+**Bài học ghi lại:** giờ chạy của một job mới phải **soi lịch task sẵn có trước khi chọn**, không chọn theo cảm giác "sau phiên là được". Lịch hiện tại: 08:00 refdata · 08:30 ingester + measure · 11:30 OMO · 15:20 screener · 15:30 OMO · **18:00 OMO** · 18:10 events · 21:30 OMO.
