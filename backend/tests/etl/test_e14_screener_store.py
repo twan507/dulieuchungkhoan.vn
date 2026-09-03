@@ -62,9 +62,11 @@ def test_baseline_reads_items_of_last_success(migrated_engine):
                           " VALUES (:j,'failed',now(),cast(:s AS jsonb))"), {"j": st.JOB, "s": json.dumps({"counts": {"items": 9}})})
         c.execute(sa.text("INSERT INTO ops.etl_run (job, status, finished_at, stats)"
                           " VALUES (:j,'success',now(),cast(:s AS jsonb))"), {"j": st.JOB, "s": json.dumps({"counts": {"items": 1545}})})
-    assert st.load_baseline(migrated_engine) == 1545
-    with migrated_engine.begin() as c:
-        c.execute(sa.text("DELETE FROM ops.etl_run WHERE job=:j"), {"j": st.JOB})
+    try:
+        assert st.load_baseline(migrated_engine) == 1545
+    finally:                                            # assert đỏ vẫn phải dọn: DB test không rollback
+        with migrated_engine.begin() as c:
+            c.execute(sa.text("DELETE FROM ops.etl_run WHERE job=:j"), {"j": st.JOB})
 
 
 def test_refusal_evidence_and_domain_state(migrated_engine):
@@ -72,18 +74,30 @@ def test_refusal_evidence_and_domain_state(migrated_engine):
         c.execute(sa.text("DELETE FROM staging.raw_payload WHERE source='screener'"))
         c.execute(sa.text("DELETE FROM ops.data_domain_state"
                           " WHERE domain='market.scores' AND source='fiintrade'"))
-    st.store_refusal_evidence(migrated_engine, [POST, POST], run_id=7, reasons=["x"])
-    with migrated_engine.connect() as c:
-        keys = c.execute(sa.text("SELECT endpoint_key, meta->>'run_id' FROM staging.raw_payload"
-                                 " WHERE source='screener' ORDER BY endpoint_key")).all()
-    assert [k for k, _ in keys] == ["screener:page1", "screener:page2"] and keys[0][1] == "7"
-    st.upsert_domain_state(migrated_engine, "2026-08-28")
-    st.upsert_domain_state(migrated_engine, "2026-08-29")
-    with migrated_engine.connect() as c:
-        w = c.execute(sa.text("SELECT watermark, status FROM ops.data_domain_state"
-                              " WHERE domain='market.scores' AND source='fiintrade'")).one()
-    assert w == ("2026-08-29", "active")
-    with migrated_engine.begin() as c:
-        c.execute(sa.text("DELETE FROM staging.raw_payload WHERE source='screener'"))
-        c.execute(sa.text("DELETE FROM ops.data_domain_state"
-                          " WHERE domain='market.scores' AND source='fiintrade'"))
+    try:
+        # Lý do thường: chỉ cần trang 1 làm bằng chứng (Ruling 16 — tránh ~9,6 MB jsonb mỗi ngày nghỉ)
+        st.store_refusal_evidence(migrated_engine, [POST, POST], run_id=7, reasons=["x"])
+        with migrated_engine.connect() as c:
+            keys = c.execute(sa.text("SELECT endpoint_key, meta->>'run_id' FROM staging.raw_payload"
+                                     " WHERE source='screener' ORDER BY endpoint_key")).all()
+        assert [k for k, _ in keys] == ["screener:page1"] and keys[0][1] == "7"
+        with migrated_engine.begin() as c:
+            c.execute(sa.text("DELETE FROM staging.raw_payload WHERE source='screener'"))
+        # Lý do "thiếu trang" thì mọi trang là bằng chứng — đúng cái đang bị nghi
+        st.store_refusal_evidence(migrated_engine, [POST, POST], run_id=7,
+                                  reasons=["gom được 1 mã, totalCount báo 2 — thiếu trang"])
+        with migrated_engine.connect() as c:
+            keys = c.execute(sa.text("SELECT endpoint_key FROM staging.raw_payload"
+                                     " WHERE source='screener' ORDER BY endpoint_key")).all()
+        assert [k for (k,) in keys] == ["screener:page1", "screener:page2"]
+        st.upsert_domain_state(migrated_engine, "2026-08-28")
+        st.upsert_domain_state(migrated_engine, "2026-08-29")
+        with migrated_engine.connect() as c:
+            w = c.execute(sa.text("SELECT watermark, status FROM ops.data_domain_state"
+                                  " WHERE domain='market.scores' AND source='fiintrade'")).one()
+        assert w == ("2026-08-29", "active")
+    finally:                                            # assert đỏ vẫn phải dọn: DB test không rollback
+        with migrated_engine.begin() as c:
+            c.execute(sa.text("DELETE FROM staging.raw_payload WHERE source='screener'"))
+            c.execute(sa.text("DELETE FROM ops.data_domain_state"
+                              " WHERE domain='market.scores' AND source='fiintrade'"))

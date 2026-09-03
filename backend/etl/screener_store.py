@@ -54,9 +54,15 @@ def apply(conn, mapped: list[tuple[int, ScreenerRow]]) -> dict:
 
 
 def store_refusal_evidence(engine, pages: list[str], run_id: int, reasons: list[str]) -> None:
+    """Bằng chứng vào `staging.raw_payload` — **trang 1 là đủ** cho vế (i)/(iii)/(iv).
+
+    Chỉ lý do *thiếu trang* mới cần trọn bộ, vì cái đang bị nghi chính là bộ trang.
+    Lưu 52 trang mỗi ngày nghỉ là ~9,6 MB jsonb vào một staging không có retention.
+    """
+    keep_all = any("thiếu trang" in r for r in reasons)
     meta = json.dumps({"run_id": run_id, "reasons": reasons})
     with engine.begin() as conn:
-        for i, text in enumerate(pages, start=1):
+        for i, text in enumerate(pages if keep_all else pages[:1], start=1):
             conn.execute(sa.text(
                 "INSERT INTO staging.raw_payload (source, endpoint_key, content_type, payload, meta)"
                 " VALUES ('screener', :ek, 'json', cast(:p AS jsonb), cast(:m AS jsonb))"),
