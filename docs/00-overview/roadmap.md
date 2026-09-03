@@ -140,7 +140,24 @@ sau đó BCTC           kích hoạt theo `getCorporateEarning` của lát 2
 3. **Khoá tự nhiên tưởng đủ phân biệt có thể không đủ — đối chiếu với dữ liệu thật trước khi khoá schema.** Migration `0004` định khoá 7 cột cho `corporate_event`; đo trên dữ liệu thật lộ **211 khoá bị đụng**, xử lý bằng cách thêm trường vào công thức `stage_key` ở tầng ETL (không migration). Khoá `(security_id, trading_date)` dự kiến cho giá theo ngày đơn giản hơn nhưng vẫn nên đối chiếu vài mã trước khi tin là đủ.
 4. **Chính sách "tạo tối thiểu rồi để `etl refdata` hoàn thiện sau" áp được cho mọi FK tới `issuer`/`security`.** Lát 2 tạo issuer tối thiểu (chỉ tên) cho mã vắng danh bạ thay vì chặn job — `etl refdata` vẫn là chủ duy nhất của nội dung, tự lành khi doanh nghiệp vào danh bạ đúng cách. Guard chỉ chặn *lượt đẻ hàng loạt bất thường* (`--accept-new` dành cho lượt backfill có người nhìn), không chặn từng dòng lẻ.
 
-**Lát 2 đã đóng trọn** *(2026-09-03, [ledger](../90-records/plans/2026-09-03-events-daily-etl/ledger.md))*: 110.695 dòng vào `market.corporate_event`, 517 issuer tối thiểu tạo mới, 42 bản ghi gộp vì đụng khoá tự nhiên, lượt hai idempotent, 399 test xanh.
+5. 🔴 **Chọn giờ chạy phải SOI LỊCH TASK SẴN CÓ, không chọn theo cảm giác "sau phiên là được".** Lát 2 đặt `dlck-events` 18:00 rồi mới phát hiện đụng đầu `dlck-omo-1800` — trong khi `dlck-screener` vốn đã đặt 15:20 với lý do ghi thẳng trong script *"tránh 15:30 của OMO"*. Phải đăng ký lại lần hai trong cửa sổ admin. Lịch hiện tại, đọc trước khi chọn chỗ cho `dlck-price`:
+
+   | Giờ | Task |
+   |---|---|
+   | 08:00 | `dlck-refdata` |
+   | 08:30 | `dlck-ingester` · `dlck-ingester-measure` *(chạy tới ~15:05)* |
+   | 11:30 · 15:30 · 18:00 · 21:30 | 4 mốc `dlck-omo-*` |
+   | 15:20 | `dlck-screener` |
+   | 18:10 | `dlck-events` |
+
+   Nghiệm thu giờ chạy bằng **`(Get-ScheduledTask …).Triggers[0].StartBoundary`**, không bằng dòng script tự in ra — dòng in là *ý định*, `StartBoundary` là *cái Scheduler thật sự giữ* (và hậu tố `+07:00` xác nhận neo giờ Việt Nam).
+
+**Hai thay đổi hạ tầng dùng chung mà lát 2 để lại — biết trước kẻo tưởng hỏng:**
+
+- **`close_run` nay giữ `stats` khi được gọi lại mà không đưa stats mới** (`coalesce`, [commit `9f997ff`]). Hệ quả nhìn thấy được: một lượt hỏng *sau khi* đã ghi xong phần chính sẽ ra `status='failed'` **mà vẫn còn nguyên** `counts`/`rows_written`/`watermark`. Đó là hành vi ĐÚNG, không phải sổ ghi sai. Áp cho cả 4 job.
+- **`issuers_without_industry` của `etl refdata` nay báo ~541, không phải 24** — vì lát 2 đúc 517 issuer tối thiểu cho mã vắng danh bạ. **Không phải hồi quy**; cách kiểm đúng là chạy câu bất biến A *(issuer thiếu ngành mà CÓ cổ phiếu đang niêm yết — phải bằng 0)*, không nhìn tổng. Chi tiết và câu SQL: [`backend/README.md`](../../backend/README.md).
+
+**Lát 2 đã đóng trọn** *(2026-09-03, [ledger](../90-records/plans/2026-09-03-events-daily-etl/ledger.md))*: 110.695 dòng vào `market.corporate_event`, 517 issuer tối thiểu tạo mới, 42 bản ghi gộp vì đụng khoá tự nhiên, lượt hai idempotent, 399 test xanh, AC1–AC6 đóng đủ. **Ba nợ kỹ thuật của lát cũng đã đóng dứt điểm cùng ngày**, mỗi nợ kiểm bằng đột biến — không còn nợ nào chuyển sang lát 3.
 
 ## 4. Việc đã có đáp án, chỉ cần áp dụng
 
