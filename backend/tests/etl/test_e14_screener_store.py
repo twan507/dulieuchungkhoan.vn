@@ -70,6 +70,8 @@ def test_baseline_reads_items_of_last_success(migrated_engine):
 def test_refusal_evidence_and_domain_state(migrated_engine):
     with migrated_engine.begin() as c:
         c.execute(sa.text("DELETE FROM staging.raw_payload WHERE source='screener'"))
+        c.execute(sa.text("DELETE FROM ops.data_domain_state"
+                          " WHERE domain='market.scores' AND source='fiintrade'"))
     st.store_refusal_evidence(migrated_engine, [POST, POST], run_id=7, reasons=["x"])
     with migrated_engine.connect() as c:
         keys = c.execute(sa.text("SELECT endpoint_key, meta->>'run_id' FROM staging.raw_payload"
@@ -81,3 +83,7 @@ def test_refusal_evidence_and_domain_state(migrated_engine):
         w = c.execute(sa.text("SELECT watermark, status FROM ops.data_domain_state"
                               " WHERE domain='market.scores' AND source='fiintrade'")).one()
     assert w == ("2026-08-29", "active")
+    with migrated_engine.begin() as c:
+        c.execute(sa.text("DELETE FROM staging.raw_payload WHERE source='screener'"))
+        c.execute(sa.text("DELETE FROM ops.data_domain_state"
+                          " WHERE domain='market.scores' AND source='fiintrade'"))
