@@ -111,3 +111,26 @@ Kiểm trên DB: `screener_daily` **1.541 dòng / 1.541 mã / 1 ngày** · `etl_
 3. **4 mã `unmapped` truy được nguyên nhân:** `refdata` đỏ 3 ngày liên tiếp (01·02·03/09, `guard refused: sắp lật delisted 438 mã`) nên danh bạ đứng ở **31/08**; 4 mã Screener mới chưa có trong `market.security`. Không phải lỗi lát này — lượt dọn `--accept-drop` chạy xong là hết.
 
 **Còn lại của lát:** AC3/AC5 thật (sau 15:05 và trước 09:00 hôm sau) · Task 8 (đăng ký task, cần cửa sổ admin).
+
+## AC3 · AC4 — lượt thật SAU PHIÊN 2026-09-03 15:06 và 15:08
+
+```
+AC3  15:06:14  exit 0  {'counts': {'items': 1545, 'pages': 52, 'priced': 1545, 'trading_dates': 1},
+                        'rows_written': 1541, 'unmapped': 4,
+                        'unmapped_tickers': ['EGL/UPCOM','FUCTVGF4/HOSE','FUCTVGF5/HOSE','FUEKIVND/HOSE'],
+                        'unknown_com_group': 0, 'null_blocks': 5, 'dup_conflicts': 3348,
+                        'retries': 0, 'trading_date': '2026-09-03'}          67 s
+AC4  15:08:53  exit 0  y hệt                                                 29 s
+```
+
+Kho sau hai lượt: **1.541 dòng · 1.541 mã · 1 trading_date** — không đổi ⇒ **idempotent ✅**. Giá trị EOD hợp lý: ACB ROE 0,1633 P/E 8,39 P/B 1,32 · FPT 0,2647 / 12,48 / 3,15 · VNM 0,3386 / 11,88 / 4,09.
+
+**🎯 `priced` = 1545/1545 = 100 % sau phiên** — cùng ngày đo được ba mức: **0 %** trước mở cửa · **53,8 %** giữa phiên · **100 %** sau phiên. Ngưỡng `MIN_PRICED_RATIO = 0.2` (Ruling 21) vì thế có biên rất rộng ở cả hai phía; ngưỡng cũ 0.5 thì chỉ hơn mức giữa phiên 3,8 điểm. Số đo xác nhận việc hạ ngưỡng là đúng.
+
+**4 mã `unmapped` — nguyên nhân thật, công cụ vừa vá trả lời ngay:** `EGL/UPCOM` `FUCTVGF4/HOSE` `FUCTVGF5/HOSE` `FUEKIVND/HOSE`, cả bốn mang `status='delisted'` trong `market.security`. Chúng thuộc nhóm `fiin_only_delisted` của refdata — có trong danh bạ FiinTrade nhưng **vắng khỏi bảng giá BVSC**, nên refdata cố ý lật `delisted`.
+
+🔴 **Nhưng giả định đó SAI với bốn mã này:** cả bốn có `closePrice > 0` sau phiên hôm nay (nằm trong 1545/1545), tức **vẫn đang giao dịch** — chỉ là BVSC không niêm yết chúng trên bảng giá. Ba trong bốn là chứng chỉ quỹ (`FUC*`/`FUE*`). Đây là **lỗi phân loại của refdata**, không phải của lát screener; 4/1545 = 0,26 %, dưới ngưỡng guard 2 % nên không chặn. *(Sửa trước đây tôi đoán sai hai lần: lần đầu bảo do danh bạ cũ — bác bởi lượt refdata thành công `sec_inserted: 0`; lần này mới có tên mã nên truy được.)*
+
+**Mục treo mới cho refdata:** *"vắng khỏi `/quotes` của BVSC" ≠ "đã huỷ niêm yết"* — cần một luật phân biệt, hoặc một `status` thứ ba (kiểu `not_on_bvsc`). Chưa gấp: 4 mã, và hệ quả chỉ là screener không ghi được 4 dòng/ngày.
+
+**Trạng thái AC:** AC1 ✅ · AC2 ✅ (351 passed, 2 skipped) · **AC3 ✅** · **AC4 ✅** · AC5 ⏳ *(chạy trước 09:00 mai, phải bị từ chối)* · AC6 ⏳ *(cần cửa sổ admin của chủ dự án)*.
