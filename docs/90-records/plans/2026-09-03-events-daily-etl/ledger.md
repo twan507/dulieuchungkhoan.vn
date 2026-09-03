@@ -142,4 +142,32 @@ SELECT count(*) FROM market.corporate_event WHERE exright_date >= current_date; 
 
 30 sự kiện quyền còn ở phía trước — đúng tín hiệu lát 3/4 sẽ đọc để kích hoạt re-crawl giá.
 
-**AC1–AC5 ✅. AC6 (đăng ký task) cần cửa sổ Run as Administrator.**
+### AC6 — đăng ký task, chủ dự án chạy trong cửa sổ admin
+
+```
+Đăng ký events (18:00 ngày làm việc — sau phiên và sau screener 15:20, dùng danh bạ tươi từ 08:00):
+  + dlck-events              18:00             ->  python -m etl events
+
+Đã kiểm lệnh của cả 9 task.
+✅ Cả 9 task đăng ký S4U (đã soi Principal thật từng task, không chỉ soi lệnh)
+
+<sau khi tắt lại>   9 task, TẤT CẢ Disabled
+
+(Get-ScheduledTask -TaskName "dlck-events").Actions[0].Arguments
+/c cd /d "...\backend" && set PYTHONIOENCODING=utf-8 && "...\uv.exe" run python -m etl events
+   >> "D:\twan_projects\dlck-runtime\logs\events.log" 2>&1
+```
+
+`Assert-TaskCommand` (kèm `-MustNotContain "--accept-new"`) và `Assert-TaskPrincipal` chạy sạch. Nghiệm thu bằng **lệnh thật**, không bằng trạng thái hiển thị — §3.5.
+
+⚠️ Script `-Force` bật lại 8 task đang tắt, đúng như cảnh báo của chính nó; khối lệnh đã gộp bước tắt lại ngay sau đó nên trạng thái cuối là **cả 9 `Disabled`**.
+
+**AC1–AC6 ✅ — đóng trọn.**
+
+---
+
+## Nợ phát hiện sau khi đóng AC6
+
+🔴 **`dlck-events` 18:00 đụng đầu `dlck-omo-1800` 18:00.** Bốn mốc OMO là 11:30 · 15:30 · **18:00** · 21:30. Spec §5.6 chọn 18:00 mà **không soi lịch task sẵn có** — trong khi repo đã có tiền lệ ngược lại: `dlck-screener` đặt 15:20 với lý do ghi thẳng trong script *"tránh 15:30 của OMO"*.
+
+Nguy hiểm thực tế thấp *(khác nguồn, khác bảng, OMO xong trong vài giây, không tranh khoá)*, nhưng **trái quy ước dự án tự đặt**. Chờ chủ dự án quyết: dời sang 18:10, hay giữ 18:00 và ghi rõ là đã cân nhắc. Đổi giờ cần một lượt chạy lại script trong cửa sổ admin — không gấp vì cả 9 task đang `Disabled`.
