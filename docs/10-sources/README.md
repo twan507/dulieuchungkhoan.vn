@@ -108,7 +108,7 @@ Quyết định của chủ dự án, ghi ngày **2026-08-15**. Cả ba mục đ
 | [06-fiin-scoring-valuation.md](market/06-fiin-scoring-valuation.md) | Chỉ số tài chính, chấm điểm, định giá | 6 |
 | [07-fiin-money-flow.md](market/07-fiin-money-flow.md) | Khối ngoại, tự doanh, đóng góp chỉ số | 3 |
 | [08-fiin-event-calendar.md](market/08-fiin-event-calendar.md) | ĐHCĐ, cổ tức, KQKD, IPO, phát hành, vĩ mô | 8 |
-| [09-fiin-market-price.md](market/09-fiin-market-price.md) | Giá lịch sử 97 trường, thanh khoản, BU/SD, **phái sinh `VN30F*` 99 trường**, **`iNav`/`iIndex` cho ETF** | 3 |
+| [09-fiin-market-price.md](market/09-fiin-market-price.md) | Giá lịch sử **99 trường** *(đếm lại 2026-09-03)* — **`closePrice` là giá thô lịch sử** cạnh `closeValue` đã điều chỉnh; thanh khoản, BU/SD, **phái sinh `VN30F*`**, **`iNav`/`iIndex` cho ETF** | 3 |
 | [10-fiin-dictionary.md](market/10-fiin-dictionary.md) | Từ điển mã trường + **bộ sàng lọc toàn thị trường** | 2 |
 | [11-bvsc-realtime.md](market/11-bvsc-realtime.md) | **Socket.IO** — bắt tay, đăng ký, 5 sự kiện, 86 trường, tần suất | 5 topic |
 | [appendix-A-field-codes.md](market/appendix-A-field-codes.md) | Bảng tra mã trường (`rtd11`, `rtq12`, `bsa1`…) | — |

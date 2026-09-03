@@ -143,8 +143,9 @@ Thất bại    ⟺  status == "Failed"  →  đọc mảng errors
 |---|---|
 | `Snapshot/*`, `MoneyFlow/*` | `0` *(số nguyên)* |
 | `Calendar/*`, `FinancialAnalysis/*` | `"Success"` *(chuỗi)* |
+| `PriceData/GetPriceData` | 🔴 **LẪN CẢ HAI trên cùng endpoint** *(đo 2026-09-03: 14/16 lời gọi `"Success"`, 2/16 `0` — hai response `0` đều nhanh bất thường ~0,65 s, nhiều khả năng từ cache/máy chủ đời khác sau cân bằng tải)* |
 
-Chỉ kiểm `status == "Success"` sẽ báo lỗi giả cho toàn bộ nhóm Snapshot. Chỉ kiểm `status == 0` sẽ báo lỗi giả cho nhóm Calendar.
+Chỉ kiểm `status == "Success"` sẽ báo lỗi giả cho toàn bộ nhóm Snapshot **và thử lại vô ích ~1/8 lời gọi `PriceData`**. Chỉ kiểm `status == 0` sẽ báo lỗi giả cho nhóm Calendar. Cách kiểm đúng cho mọi endpoint là công thức ở trên — `status ∈ {0, "Success"}` — không phải so với một giá trị.
 
 ### 6.2 Các dạng lỗi quan sát được
 
@@ -181,7 +182,7 @@ Toàn bộ API FiinTrade định danh doanh nghiệp bằng `organCode` — mã 
 
 Ví dụ: `VHM → NHN` · `ACV → ACVN` · `VGI → VTGI` · `MCH → MSCC` · `BSR → BSRC` · `STK → CENTURY`. Có **72 mã dùng mã số thuế** làm `organCode`: `TAH → 3801140300`, `TAB → 0107005554`, `BVL → 10708`.
 
-**Hành vi khi gọi sai:** không có lỗi. API trả `HTTP 200` với `items` rỗng.
+**Hành vi khi gọi sai:** không có lỗi. API trả `HTTP 200` với `items` rỗng *(đo 2026-08-15)*. ⚠️ **Đo lại 2026-09-03 trên `PriceData/GetPriceData`: nay trả lỗi có tên** — `{"status":"Failed","errors":["Code not valid: VHM"],"items":null,"totalCount":0}` — phân biệt được với lỗi tạm thời; các endpoint khác chưa đo lại, đừng suy từ một endpoint (§3.6 CLAUDE.md).
 
 ```
 GET /PriceData/GetPriceData?Code=VHM&...  →  200 ·    119 byte · items rỗng
@@ -253,7 +254,7 @@ Cũng đo cùng ngày: **`PageSize` của nhóm này không có trần** — ngu
 
 ### Bẫy 6 — `totalCount` không đáng tin ở một số endpoint
 
-Nhóm `TopMover/*` và một số endpoint khác trả `totalCount: 0` dù `items` có 30 bản ghi. Luôn dùng `items.length`, không dùng `totalCount`, trừ nhóm `Calendar/*` (nơi `totalCount` chính xác và cần thiết để phân trang).
+Nhóm `TopMover/*` và một số endpoint khác trả `totalCount: 0` dù `items` có 30 bản ghi. Luôn dùng `items.length`, không dùng `totalCount`, trừ nhóm `Calendar/*` (nơi `totalCount` chính xác và cần thiết để phân trang) và `PriceData/GetPriceData` *(đo 2026-09-03: BID `totalCount = 3.142 = 52 × 60 + 22`, trang 53 trả 22, trang 54 trả `[]` — chính xác, dùng được làm trần phân trang)*.
 
 ### Bẫy 7 — `TVC /history` bỏ qua `from`, chặn cứng ở 239 nến
 
@@ -267,7 +268,7 @@ Muốn nến 5/15/30/60 phút phải **tự gộp từ nến 1 phút** — API k
 
 ### Bẫy 8 — Giá lịch sử là giá ĐÃ điều chỉnh, và hai nguồn lệch nhau
 
-`TVC /history` và `PriceData/GetPriceData` đều trả **giá điều chỉnh hồi tố** cho cổ tức và chia tách, nhận biết bằng giá trị thập phân ở dữ liệu cũ (`37910,8925`). Giá thô chỉ có ở phiên hiện tại, qua `/datafeed/instruments` và luồng realtime.
+`TVC /history` và `PriceData/GetPriceData` đều trả **giá điều chỉnh hồi tố** cho cổ tức và chia tách, nhận biết bằng giá trị thập phân ở dữ liệu cũ (`37910,8925`). ~~Giá thô chỉ có ở phiên hiện tại, qua `/datafeed/instruments` và luồng realtime.~~ 🔴 **Đính chính 2026-09-03:** giá thô lịch sử **có** — `getPriceData` trả song song `closePrice`/`referencePrice` (thô, bội của bước giá) cạnh `closeValue`/`referenceValue` (điều chỉnh). Kiểm ba cách: tỷ số hai cột khớp cổ tức đã ghi tới 4 chữ số (DMX 0,9548 = (88.500 − 4.000)/88.500), 10/10 `closePrice` khớp tick BVSC trong ClickHouse, và bằng nhau đúng từ ngày không hưởng quyền. Chi tiết: [`09-fiin-market-price.md`](09-fiin-market-price.md#điều-chỉnh-giá). `openValue`/`highestValue`/`lowestValue` vẫn chỉ có bản điều chỉnh.
 
 Hai nguồn dùng **hệ số điều chỉnh khác nhau**, lệch ~0,005%:
 
@@ -419,13 +420,13 @@ Tính từ [lịch ETL §4.1–4.2](../../20-design/market-data-store.md), tách
 | Họ endpoint | Host | Nhịp | Lời gọi mỗi lần chạy |
 |---|---|---|---|
 | Danh bạ · cây ngành · `/quotes` · `/mapping` | `FIIN_CORE`, `BVSC` | Trước phiên, hằng ngày | 4 |
-| `PriceData/GetPriceData` Page 1 | `FIIN_TECH` | Sau 15:00, hằng ngày | 1.974 |
+| `PriceData/GetPriceData` Page 1 | `FIIN_TECH` | Sau 15:00, hằng ngày | **1.523** *(sửa 2026-09-04 — 1.974 cũ gồm 442 mã đã rời sàn, dọn 2026-09-03)* |
 | `Snapshot/*` — hồ sơ, sở hữu, cổ tức, định giá | `FIIN_FUND`, `FIIN_TOOLS` | **Kích hoạt theo sự kiện + quét sàn** *(đổi 2026-09-03; trước đây ghi "hằng ngày ~4.000", số đó tính 2 endpoint × 1.974 **mã** trong khi endpoint nhận `organCode` tức theo **doanh nghiệp** — 1.544 issuer)* | **≈ 200–260** |
 | **`Screener/GetScreenerItems` — phân trang 52 trang** | `FIIN_TOOLS` | Sau 15:00, hằng ngày | **52** |
 | `Calendar/*` — lịch sự kiện | `FIIN_MARKET` | Hằng ngày | ~10 |
 | **Cộng thường nhật** | | **hằng ngày** | **≈ 2.300** *(sửa 2026-09-03; bản cũ ghi 6.040 khi họ Snapshot còn chạy mọi mã mỗi ngày)* |
-| BCTC 3 loại × 1.974 mã | `FIIN_FUND` | Theo quý, rải | 5.922 |
-| `getPriceData` 52 trang × 1.974 mã | `FIIN_TECH` | **Một lần**, rải 1–2 tuần | 102.648 |
+| BCTC 3 loại × 1.974 mã *(số cũ; tập niêm yết nay 1.523 và BCTC theo doanh nghiệp — tính lại ở lát BCTC)* | `FIIN_FUND` | Theo quý, rải | 5.922 |
+| `getPriceData` mọi trang × 1.523 mã *(sửa 2026-09-04; độ sâu theo tuổi niêm yết, BID 53 trang)* | `FIIN_TECH` | **Một lần**, tuần tự, rải vài đêm | **~50.000–80.000** |
 
 **Vì sao chọn burst Screener để kiểm.** Ba nhóm hằng ngày kia lớn hơn về số lượng nhưng là **nhiều lời gọi độc lập trên nhiều mã**, rải được tuỳ ý. Riêng 52 trang Screener là **một chuỗi phân trang dính liền trên đúng một endpoint của đúng một host** — không rải được, phải đi liền mạch mới lấy đủ 1.549 mã — và là lời gọi **nặng nhất mỗi lượt** trong cả lịch. Nếu chỗ nào bị chặn trước thì là chỗ này.
 
@@ -497,6 +498,20 @@ x-miniprofiler-ids · x-powered-by
 |---|---|
 | Nhịp **8 luồng** của ETL hằng ngày | Lịch thiết kế **2026-08-14** là ~6.000 lời gọi trong 20–30 phút ≈ **200–300 request/phút** — gấp 7–10 lần nhịp đã đo. *(Cập nhật 2026-09-03: ngân sách ngày xuống **≈ 2.300** sau khi họ Snapshot chuyển sang kích hoạt theo sự kiện, nên áp lực nhịp giảm hẳn — nhưng nhịp 8 luồng **vẫn chưa ai đo**, kết luận này không đổi)* |
 | Trần **2 request/giây** đặt cho backfill 102.648 lời gọi | = 120 request/phút, vẫn gấp hơn 4 lần nhịp đã đo |
-| Nhóm lớn nhất còn lại của lịch ngày — `getPriceData` 1.974 lời gọi | Chỉ burst Screener được tái hiện. *(Snapshot ~4.000 đã rời khỏi lịch ngày 2026-09-03)* |
+| ~~Nhóm lớn nhất còn lại của lịch ngày — `getPriceData` 1.974 lời gọi~~ ✅ **đã đo 2026-09-04 — xem §10.7** | ~~Chỉ burst Screener được tái hiện.~~ Lượt thật đầu tiên của `etl price`: 1.523 lời gọi tuần tự, 38 phút, 0 retry *(Snapshot ~4.000 đã rời khỏi lịch ngày 2026-09-03)* |
 
 **Khuyến nghị vận hành:** nhịp tuần tự như thiết kế ETL mô tả là **mức đã kiểm** — dùng được ngay. Muốn nâng lên 8 luồng thì phải đo lại ở đúng nhịp đó trước khi bật chạy thật, và vẫn theo cùng nguyên tắc: chạy đúng tải kế hoạch rồi dừng, không dò trần.
+
+### 10.7 Đo lại 2026-09-04 — nhịp tuần tự KÉO DÀI của lịch ngày lát giá
+
+Lượt chạy thật đầu tiên của `python -m etl price` (hồ sơ: [ledger lát 3](../../90-records/plans/2026-09-03-price-daily-etl/ledger.md)) chính là phép đo, theo đúng nguyên tắc §10: chạy đúng tải kế hoạch rồi dừng.
+
+| Chỉ tiêu | Giá trị |
+|---|---|
+| Lời gọi | **1.523** × `PriceData/GetPriceData` trang 1, `PageSize=60`, tuần tự, một `httpx.Client`, giãn cách ≥ 0,5 s giữa hai lần bắt đầu |
+| Thời gian | **2.288 s** (00:40:55 → 01:19:03 giờ VN, sau phiên) |
+| Nhịp | **1,50 s/lời gọi ≈ 40 request/phút**, liên tục 38 phút — cao hơn burst Screener 52 trang (~29/phút, §10.3) |
+| Tín hiệu chặn | **không có** — 1.523/1.523 `status ∈ {0, "Success"}`, 0 retry, 0 `Failed` tạm thời, không `429`/`403`/`5xx` |
+| Dữ liệu | 91.165 phiên, 1.523/1.523 mã có dữ liệu, 0 mã `Code not valid` |
+
+**Kết luận (dạng "mức tải X an toàn", §4.3 CLAUDE.md):** ~40 request/phút tuần tự kéo dài 38 phút trên `FIIN_TECH` là **mức đã kiểm**. Nhịp 8 luồng vẫn **chưa đo** — và với ngân sách ngày còn 1.523 lời gọi thì **không còn nhu cầu** ([market-data-store §4.3](../../20-design/market-data-store.md)); backfill lịch sử cũng chạy tuần tự cùng nhịp này, rải nhiều đêm.

@@ -145,6 +145,11 @@ Register-DlckTask -TaskName "dlck-events" -AtTime "18:10" -ModuleArgs "etl event
 # đẻ issuer tối thiểu hàng loạt — lượt đó phải chạy tay có người nhìn.
 Assert-TaskCommand -TaskName "dlck-events" -MustContain "python -m etl events" -MustNotContain "--accept-new"
 
+Write-Host "Đăng ký price (15:40 ngày làm việc — sau screener 15:20 và OMO 15:30; ~45 phút tuần tự, xong trước 18:00 của OMO):"
+Register-DlckTask -TaskName "dlck-price" -AtTime "15:40" -ModuleArgs "etl price" -LogFile "price.log"
+# -MustNotContain: task tự động KHÔNG BAO GIỜ chạy backfill (25–40 giờ, chạy tay ngoài giờ có người nhìn).
+Assert-TaskCommand -TaskName "dlck-price" -MustContain "python -m etl price" -MustNotContain "--backfill"
+
 Write-Host "Đăng ký ingester theo phiên (08:30, tự thoát sau đối chứng ~15:05):"
 Register-DlckTask -TaskName "dlck-ingester" -AtTime "08:30" -ModuleArgs "ingester" -LogFile "ingester-task.log"
 Assert-TaskCommand -TaskName "dlck-ingester" -MustContain "python -m ingester " -MustNotContain "--measure"
@@ -172,7 +177,7 @@ Register-DlckTask -TaskName $measureTask -AtTime "08:30" -ModuleArgs "ingester -
                   -LogFile "ingester-measure.log"
 Assert-TaskCommand -TaskName $measureTask -MustContain "python -m ingester --measure "
 
-Write-Host "`nĐã kiểm lệnh của cả 9 task. Xem lại bất cứ lúc nào:"
+Write-Host "`nĐã kiểm lệnh của cả 10 task. Xem lại bất cứ lúc nào:"
 Write-Host '  Get-ScheduledTask -TaskName "dlck-*" | % { $_.TaskName + " -> " + $_.Actions[0].Arguments }'
 # Cảnh báo này KHÔNG phụ thuộc LogonType: `Register-ScheduledTask -Force` thay định
 # nghĩa task ở MỌI lượt chạy, và New-ScheduledTaskSettingsSet không có cờ giữ trạng thái
@@ -185,7 +190,7 @@ if ($script:disabledBefore.Count -gt 0) {
 }
 
 if ($LogonType -eq "S4U") {
-    Write-Host "`n✅ Cả 9 task đăng ký S4U (đã soi Principal thật từng task, không chỉ soi lệnh):"
+    Write-Host "`n✅ Cả 10 task đăng ký S4U (đã soi Principal thật từng task, không chỉ soi lệnh):"
     Write-Host "   chạy cả khi không đăng nhập, KHÔNG hiện cửa sổ cmd để bấm nhầm."
 } else {
     Write-Host "`n⚠️ Task chạy với tài khoản đang đăng nhập (Interactive). Muốn chạy cả khi"

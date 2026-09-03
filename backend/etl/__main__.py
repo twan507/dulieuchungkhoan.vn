@@ -34,7 +34,16 @@ def main(argv: list[str] | None = None) -> int:
         parser.add_argument("--accept-new", action="store_true")
         parsed = parser.parse_args(args[1:])
         return etl.events_job.run(accept_new=parsed.accept_new)
-    print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener, events)",
+    if args[0] == "price":
+        import etl.price_job
+        parser = argparse.ArgumentParser(prog="etl price")
+        parser.add_argument("--backfill", action="store_true")
+        parser.add_argument("--codes", type=lambda s: [t.strip().upper() for t in s.split(",") if t.strip()])
+        parser.add_argument("--max-minutes", type=float, dest="max_minutes")
+        parsed = parser.parse_args(args[1:])
+        return etl.price_job.run(backfill=parsed.backfill, codes=parsed.codes,
+                                 max_minutes=parsed.max_minutes)
+    print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener, events, price)",
           file=sys.stderr)
     return 2
 

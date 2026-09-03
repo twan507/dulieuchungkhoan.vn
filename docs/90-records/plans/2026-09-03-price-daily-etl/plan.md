@@ -10,6 +10,8 @@
 
 **Spec:** [`spec.md`](spec.md) — đọc trước, plan này chỉ nói *chính xác thế nào*. Số đo nền: [`measurements.md`](measurements.md).
 
+> ⚠️ **Code trong repo khác plan này ở bốn chỗ sau review hai trục 2026-09-04** *(plan là bản ghi tại-thời-điểm, không viết lại; chi tiết và lý do ở [`ledger.md`](ledger.md) mục "Review toàn nhánh")*: `price_store.apply(conn, security_id, rows, fetched_at)` thay cho list-một-phần-tử · `raw_close_mismatches(conn, bounds)` nhận cận **theo từng mã** qua `unnest` · `price_guard.check(..., empty=)` đếm mã trả rỗng vào vế (i) và `stats` có `empty`/`no_organ_code_count` · backfill có `dup_dates`/`raw_close_mismatch`, con trỏ nối theo vị trí, và `--codes` không có organCode lỗi rõ trước khi gọi nguồn. Task 1 còn thêm bắt `httpx.HTTPError` (sự cố máy ngủ).
+
 ## Ràng buộc toàn cục
 
 - **`PYTHONIOENCODING=utf-8`** trên mọi lệnh chạy Python — không đặt thì crash cp1252 khi in tiếng Việt.
@@ -80,9 +82,17 @@ class Clock:
         return self.t
 
 
-def fetcher(get, clock=None):
-    slept = []
-    return pf.Fetcher(get, sleep=slept.append, clock=clock or Clock()), slept
+def fetcher(get, latency=1.8):
+    """Fetcher với đồng hồ giả TRÔI theo latency mỗi lời gọi (trung vị thật 1,76 s > MIN_INTERVAL 0,5 s
+    nên bộ giãn cách không ngủ) — chỉ backoff mới hiện trong `slept`. Đồng hồ đứng yên sẽ làm
+    bộ giãn cách ngủ 0,5 s giữa mọi lời gọi và mọi assert về `slept` sai."""
+    clock, slept = Clock(), []
+
+    def timed_get(u):
+        clock.t += latency
+        return get(u)
+
+    return pf.Fetcher(timed_get, sleep=slept.append, clock=clock), slept
 
 
 def _code(u):
@@ -128,6 +138,37 @@ def test_transient_failure_retries_with_backoff_then_succeeds():
     assert f.retries == 2 and slept == [2, 4]
 
 
+def test_transport_exception_is_retried_like_a_bad_response_then_succeeds():
+    """Sự cố 2026-09-04 02:00: máy ngủ giữa lời gọi ⇒ httpx.ReadTimeout lọt qua vòng retry và giết
+    cả lượt backfill ở mã ĐẦU TIÊN. Exception vận chuyển phải đi cùng đường với response xấu."""
+    import httpx
+    state = {"fail": 2}
+
+    def get(u):
+        if state["fail"]:
+            state["fail"] -= 1
+            raise httpx.ReadTimeout("The read operation timed out")
+        return 200, env(3)
+
+    f, slept = fetcher(get)
+    assert len(f.pages("BID")) == 1
+    assert f.retries == 2 and slept == [2, 4]
+
+
+def test_transport_exception_every_time_becomes_a_fetch_error_not_a_crash():
+    import httpx
+
+    def get(u):
+        raise httpx.ConnectError("[Errno 11001] getaddrinfo failed")
+
+    f, slept = fetcher(get)
+    with pytest.raises(pf.FetchError, match="ConnectError"):
+        f.pages("BID")
+    assert slept == [2, 4, 8]
+    res = f.many(["A", "B"])                          # đường many: mã hỏng vào failed, không ném
+    assert res.failed == ["A", "B"] and res.pages == {}
+
+
 def test_exhausted_retries_raise_fetch_error_naming_code_and_page():
     body = '{"status":"Failed","errors":["Timeout performing GET (5000ms)"]}'   # 00-conventions §10.5
     f, slept = fetcher(lambda u: (200, body))
@@ -154,13 +195,7 @@ def test_pagination_stops_at_short_page_and_at_total_count_cap():
 
 
 def test_min_interval_between_call_starts_sleeps_the_remainder():
-    clock = Clock()
-
-    def get(u):
-        clock.t += 0.1                                # lời gọi mất 0,1 s
-        return 200, env(60, total=120)
-
-    f, slept = fetcher(get, clock)
+    f, slept = fetcher(lambda u: (200, env(60, total=120)), latency=0.1)   # lời gọi mất 0,1 s
     f.pages("BID", max_pages=None)                    # 2 lời gọi
     assert slept == [pytest.approx(0.4)]              # 0,5 s giữa hai lần BẮT ĐẦU ⇒ ngủ 0,4
 
@@ -298,7 +333,13 @@ class Fetcher:
     def _page(self, code: str, page: int) -> tuple[dict, str]:
         status, text = 0, ""
         for attempt in range(RETRIES + 1):
-            status, text = self._request(code, page)
+            try:
+                status, text = self._request(code, page)
+            except httpx.HTTPError as e:
+                # Timeout/đứt kết nối đi CÙNG đường với response xấu — thử lại rồi mới FetchError.
+                # Sự cố 2026-09-04 02:00: máy ngủ giữa lời gọi, ReadTimeout lọt ra ngoài và giết
+                # cả lượt backfill ở mã đầu tiên thay vì chỉ đánh dấu mã đó hỏng.
+                status, text = 0, f"{type(e).__name__}: {e}"
             d = _parse(status, text)
             if _valid(d):
                 return d, text
@@ -372,7 +413,7 @@ def open_fetcher(get=None, sleep=time.sleep, clock=time.monotonic):
 - [ ] **Bước 4: Chạy lại, xanh**
 
 Run: `PYTHONIOENCODING=utf-8 uv run pytest tests/etl/test_e21_price_fetch.py -v`
-Expected: `9 passed`
+Expected: `11 passed` *(9 lúc giao plan; 2 test exception vận chuyển thêm sau sự cố máy ngủ 2026-09-04 02:00 — xem ledger)*
 
 - [ ] **Bước 5: Commit**
 
@@ -814,8 +855,10 @@ SQL_UPSERT = (
     "INSERT INTO market.price_daily (security_id, trading_date, close_adj, close_raw,"
     "   open_value, highest_value, lowest_value, raw)"
     " VALUES (:sid, :d, :ca, :cr, :o, :h, :l,"
-    "   jsonb_build_object('fiintrade', jsonb_build_object('fetched_at', :fa,"
+    "   jsonb_build_object('fiintrade', jsonb_build_object('fetched_at', cast(:fa AS text),"
     "                                                      'payload', cast(:p AS jsonb))))"
+    # cast(:fa AS text) bắt buộc: jsonb_build_object là hàm variadic "any", tham số trần trong đó
+    # làm Postgres ném IndeterminateDatatype "could not determine data type of parameter $8".
     " ON CONFLICT (security_id, trading_date) DO UPDATE SET"
     "   close_adj = EXCLUDED.close_adj,"
     "   close_raw = coalesce(market.price_daily.close_raw, EXCLUDED.close_raw),"
