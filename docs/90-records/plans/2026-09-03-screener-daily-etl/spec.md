@@ -197,4 +197,4 @@ Fixture: hai file trong `samples/` chép sang `backend/tests/etl/fixtures/screen
 2. **Không ép 80** — ghi số đếm thật (§4.3) và đính chính mọi chỗ chép "80/193".
 3. **Guard vế (i) `closePrice > 0`** làm tín hiệu *"phiên có giao dịch"* thay cho giả định đã bị bác — kèm cổng AC5 cho lần ngày lễ đầu tiên.
 
-✅ Duyệt 2026-09-03 ⇒ plan trong cùng thư mục.
+✅ Duyệt 2026-09-03 ⇒ [`plan.md`](plan.md) cùng thư mục (viết cùng ngày, 8 task).
