@@ -51,7 +51,12 @@ def _page(get, sleep, endpoint: str, page: int) -> tuple[str, int]:
     retries = 0
     status, text = 0, ""
     for attempt in range(RETRIES + 1):
-        status, text = get(_url(endpoint, page))
+        try:
+            status, text = get(_url(endpoint, page))
+        except httpx.HTTPError as e:
+            # Timeout/đứt kết nối đi CÙNG đường với response xấu — thử lại rồi mới FetchError.
+            # Cùng lỗi lát 3 vá (e7f80f6): máy ngủ giữa lời gọi, ReadTimeout lọt ra ngoài vòng retry.
+            status, text = 0, f"{type(e).__name__}: {e}"
         if _valid(status, text):
             return text, retries
         if attempt == RETRIES:

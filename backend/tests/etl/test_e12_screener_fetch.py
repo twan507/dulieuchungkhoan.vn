@@ -50,3 +50,30 @@ def test_body_sends_exactly_one_criterion_and_page_size_30():
     sf.fetch(post=post, sleep=lambda s: None)
     assert seen["pageSize"] == 30 and seen["comGroupCode"] == "ALL" and seen["icbCode"] == "ALL"
     assert len(seen["parameters"]) == 1 and seen["parameters"][0]["code"] == "ClosePrice"
+
+
+def test_transport_exception_is_retried_like_a_bad_response_then_succeeds():
+    """Cùng lỗi lát 3 vá ở e7f80f6: httpx.ReadTimeout (máy ngủ giữa lời gọi) lọt qua vòng retry
+    và giết cả lượt. Exception vận chuyển phải đi cùng đường với response xấu."""
+    import httpx
+    state = {"fail": 2}
+
+    def post(body):
+        if state["fail"]:
+            state["fail"] -= 1
+            raise httpx.ReadTimeout("The read operation timed out")
+        return _ok(body["page"])
+
+    slept = []
+    pages, retries = sf.fetch(post=post, sleep=slept.append)
+    assert retries == 2 and slept == [2, 4] and len(pages) == 3
+
+
+def test_transport_exception_every_time_becomes_a_fetch_error_not_a_crash():
+    import httpx
+
+    def post(body):
+        raise httpx.ConnectError("[Errno 11001] getaddrinfo failed")
+
+    with pytest.raises(sf.FetchError, match="ConnectError"):
+        sf.fetch(post=post, sleep=lambda s: None)
