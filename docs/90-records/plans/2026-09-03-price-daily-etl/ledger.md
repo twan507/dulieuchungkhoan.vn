@@ -216,7 +216,7 @@ Cận theo từng mã và bộ đếm mới chạy thật trên kho production; 
 
 ### Còn ghi nhận, KHÔNG sửa ở nhánh này
 
-- **`events_fetch.py` và `screener_fetch.py` mang đúng lỗi `e7f80f6` vừa sửa** (exception vận chuyển lọt qua retry) — §4.4.3 rác có sẵn thì báo; roadmap bài học 3 đã ghi *"mang theo bản vá khi nhân bản"*. **Hai job production đang mang bug đã biết**, chỉ chưa gặp vì 9–52 lời gọi/lượt.
+- **`events_fetch.py` và `screener_fetch.py` mang đúng lỗi `e7f80f6` vừa sửa** (exception vận chuyển lọt qua retry) — §4.4.3 rác có sẵn thì báo, không sửa trong nhánh lát 3. ✅ **Đã vá sau merge theo yêu cầu chủ dự án** (`356cdc9`, merge `4b22e50`): mỗi fetcher hai test đỏ→xanh cùng khuôn e21; trọn bộ **442 passed, 2 skipped**.
 - `sa.create_engine(url)` nằm ngoài `try` ở cả 4 job — DSN hỏng in mật khẩu vào traceback; mẫu có sẵn, sửa toàn cục sau.
 - `save_progress` 1 UPDATE/mã ⇒ ~1.523 phiên bản dòng `etl_run` mỗi vòng backfill — cố ý theo spec §5.5e.
 - Mã làm nổ `SourceDown` không vào `failed_tickers` — lượt dừng nên vô hại.
