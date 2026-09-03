@@ -89,12 +89,28 @@ def test_minimal_issuer_falls_back_to_the_organ_code_when_no_name_at_all(db):
     chưa từng chạy — trong khi kho thật có 177 issuer rơi đúng ca này."""
     db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
     rows = en.normalize(pages("CashDividend")).rows
-    khong_ten = [type(r)(**{**r.__dict__, "organ_code": "ZZKHONGTEN", "name_hint": None})
-                 for r in rows[:1]]
+    khong_ten = [type(r)(**{**r.__dict__, "organ_code": "ZZKHONGTEN",
+                            "organ_name": None, "ticker": None}) for r in rows[:1]]
     by_organ, created = es.ensure_issuers(db, khong_ten)
     assert created == 1
     assert db.execute(sa.text("SELECT name FROM market.issuer WHERE issuer_id = :i"),
                       {"i": by_organ["ZZKHONGTEN"]}).scalar_one() == "ZZKHONGTEN"
+
+
+def test_a_real_name_beats_a_ticker_regardless_of_family_order(db):
+    """Nợ 3: cùng một `organ_code` xuất hiện ở họ CHỈ CÓ TICKER trước, rồi ở họ có tên thật.
+    Trước khi sửa, tên doanh nghiệp lấy theo dòng gặp trước ⇒ thành ticker."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
+    cash = en.normalize(pages("CashDividend")).rows[0]          # họ này không có trường tên
+    earn = en.normalize(pages("Earning")).rows[0]               # họ này có organShortName
+    truoc = type(cash)(**{**cash.__dict__, "organ_code": "ZZHANG", "organ_name": None,
+                          "ticker": "ZZT"})
+    sau = type(earn)(**{**earn.__dict__, "organ_code": "ZZHANG",
+                        "organ_name": "Tên Thật Của Doanh Nghiệp"})
+    by_organ, created = es.ensure_issuers(db, [truoc, sau])     # thứ tự: ticker TRƯỚC tên thật
+    assert created == 1
+    assert db.execute(sa.text("SELECT name FROM market.issuer WHERE issuer_id = :i"),
+                      {"i": by_organ["ZZHANG"]}).scalar_one() == "Tên Thật Của Doanh Nghiệp"
 
 
 def test_baseline_is_none_when_no_successful_run_exists(migrated_engine):

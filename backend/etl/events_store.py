@@ -50,10 +50,20 @@ def load_baseline(engine) -> dict[str, int] | None:
 
 
 def ensure_issuers(conn, rows: list[EventRow]) -> tuple[dict[str, int], int]:
-    names: dict[str, str | None] = {}
+    # Chọn tên theo HẠNG, không theo thứ tự họ: tên thật (bất kỳ họ nào) > ticker > organ_code.
+    # Ba họ Cash/StockDividend/ShareIssuance không trả trường tên nào, nên nếu lấy "non-null
+    # đầu tiên" thì một mã có ở CashDividend trước Earning sẽ mang ticker làm tên doanh nghiệp
+    # — chỉ vì thứ tự vòng lặp. Đo 2026-09-03 chưa có ca nào lệch trên 2.069 issuer, nhưng đó
+    # là may chứ không phải thiết kế.
+    ten_that: dict[str, str] = {}
+    ten_ticker: dict[str, str] = {}
     for r in rows:
-        if names.get(r.organ_code) is None:          # tên đầu tiên khác None thắng
-            names[r.organ_code] = r.name_hint
+        if r.organ_name and r.organ_code not in ten_that:
+            ten_that[r.organ_code] = r.organ_name
+        if r.ticker and r.organ_code not in ten_ticker:
+            ten_ticker[r.organ_code] = r.ticker
+    names = {r.organ_code: ten_that.get(r.organ_code) or ten_ticker.get(r.organ_code)
+             for r in rows}
     by_organ = {code: iid for code, iid in conn.execute(sa.text(
         "SELECT external_code, issuer_id FROM market.issuer_external_id"
         " WHERE source = 'fiintrade'")).all()}

@@ -20,7 +20,12 @@ DUP_SAMPLE = 20            # nêu tên tối đa 20 khoá — đủ chẩn đoá
 class EventRow:
     event_type: str
     organ_code: str
-    name_hint: str | None
+    # Tách LÀM HAI, không ép sẵn thành một `name_hint`: ba họ (Cash/StockDividend,
+    # ShareIssuance) không trả trường tên nào, nên gộp sớm thì một mã có mặt ở cả
+    # CashDividend lẫn Earning sẽ lấy TICKER — chỉ vì CashDividend đứng trước trong
+    # vòng lặp họ. Giữ riêng để `ensure_issuers` chọn theo HẠNG, không theo thứ tự.
+    organ_name: str | None          # organShortName / organName — tên thật, có thể None
+    ticker: str | None
     public_date: date | None
     exright_date: date | None
     record_date: date | None
@@ -71,7 +76,8 @@ def _row(event_type: str, it: dict) -> EventRow:
     return EventRow(
         event_type=event_type,
         organ_code=it["organCode"],
-        name_hint=it.get("organShortName") or it.get("organName") or it.get("ticker"),
+        organ_name=it.get("organShortName") or it.get("organName"),
+        ticker=it.get("ticker"),
         public_date=_date(it.get("publicDate")),
         exright_date=_date(it.get("exrightDate")),
         record_date=_date(it.get("recordDate")),

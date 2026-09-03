@@ -54,12 +54,13 @@ def test_identical_duplicate_records_collapse_to_one():
     assert len(n.rows) == 3 and n.dup_conflicts == 1
 
 
-def test_name_hint_falls_back_to_ticker_when_no_name_field_exists():
-    n = en.normalize(pages("ShareIssuance"))
-    ryg = next(r for r in n.rows if r.organ_code == "12681")
-    assert ryg.name_hint == "RYG"                     # họ này không trả trường tên nào
-    agm = next(r for r in en.normalize(pages("AGM")).rows if r.organ_code == "QNC")
-    assert agm.name_hint == "Xi măng Quảng Ninh"
+def test_organ_name_and_ticker_stay_separate_fields():
+    """Không ép sẵn thành một `name_hint`: ba họ không trả tên nào, gộp sớm thì thứ tự
+    vòng lặp họ quyết định tên doanh nghiệp (xem `events_store.ensure_issuers`)."""
+    ryg = next(r for r in en.normalize(pages("ShareIssuance")).rows if r.organ_code == "12681")
+    assert ryg.organ_name is None and ryg.ticker == "RYG"      # họ này không có trường tên
+    qnc = next(r for r in en.normalize(pages("AGM")).rows if r.organ_code == "QNC")
+    assert qnc.organ_name == "Xi măng Quảng Ninh" and qnc.ticker == "QNC"
 
 
 def test_earning_maps_report_period_and_has_no_stage_key():
