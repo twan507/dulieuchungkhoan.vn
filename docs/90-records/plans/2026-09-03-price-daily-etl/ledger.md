@@ -174,3 +174,53 @@ Get-ScheduledTask -TaskName "dlck-*" | Disable-ScheduledTask           # giữ D
 ```
 
 **AC1–AC7 ✅ — AC8 ⏳ admin.**
+
+---
+
+## Review toàn nhánh — hai trục độc lập, `opus`, 2026-09-04
+
+Hai reviewer chạy song song, không thấy nhau, báo riêng không xếp hạng chéo (§4.1.5). Cả hai tự chạy lại pytest và ra đúng `434 passed, 2 skipped`. Tổng cộng **8 lỗi thật đã sửa**, 1 lỗi test lộ ra khi sửa, và 7 ghi nhận.
+
+### Đã sửa — một commit sau `89d255e`
+
+| # | Trục | Phát hiện | Vì sao thật | Sửa |
+|---|---|---|---|---|
+| 1 | Chuẩn · **chặn merge** | `raw_close_mismatches` dùng **một cận ngày cho cả lượt** = min của mã thưa nhất — chính AC3 đã ra `2013-07-19` | Sau backfill đủ, vị từ `trading_date >= 2013-07-19` khớp ~100 % bảng ⇒ seq scan + detoast `raw` hàng triệu dòng **trong giao dịch ghi** của lượt 15:40. §4.4.4 *"còn đúng sau 3 tháng?"* — không | Cận **theo từng mã** qua `unnest(sids, lows)`; test seam 17 thêm ca cận 2026-09-01 bỏ qua dòng 28/08 |
+| 2 | Spec · **chặn merge** | Chú thích migration `0004` vẫn *"NULL với backfill (quá khứ không có giá thô ở nguồn nào)"* và *"close_raw ← datafeed EOD"* | `database/migrations/` không thuộc vùng lịch sử (§1.7); người đọc schema đọc thẳng vào đó; AC3 chứng minh 0 dòng `close_raw` NULL | Thêm khối `ĐÍNH CHÍNH 2026-09-04` có ngày, **không đổi DDL** |
+| 3 | Spec · **chặn merge** | Tóm tắt đầu `09-fiin-market-price.md` và `10-sources/README.md` còn *"97 trường"* trong khi chính lát này đo 99 và test chốt `len(payload) == 99` | Tầng reference tự mâu thuẫn; điều kiện §1.2 (có phép đo) đã thoả mà chỉ sửa 1/3 chỗ | Sửa cả hai, kèm *(đếm lại 2026-09-03)* |
+| 4 | Chuẩn + Spec | Mã trả `Success` với `items: []` **không có tên** trong stats và **không vào vế (i)** | Nguồn đổi hành vi (rỗng thay vì `Code not valid`) cho 10 % mã thì lượt đầu — chưa có mốc cho (ii) — cho qua im lặng. Cũng là lý do đẳng thức AC3 đúng "trivially" | `stats.empty` + `empty_tickers`; `guard.check(..., empty=)` cộng vào tử số (i); test ca biên 31/30 |
+| 5 | Chuẩn + Spec | `no_organ_code` chỉ có danh sách cắt 20, **không có tổng** | 30 mã mất organCode báo ra 20 và không ai biết thiếu — trái bài học 3 lát 1 | `stats.no_organ_code_count`; bất biến ghi vào backend/README: `with_data + empty + invalid + failed = codes` |
+| 6 | Spec | Backfill thiếu `dup_dates` và `raw_close_mismatch` — đúng nơi `close_raw` được điền lần đầu cho 12,5 năm | §5.4 nói bộ đếm là chốt duy nhất của backfill; mắt của quyết định §4.2 nhắm đúng lúc cần mở | Cộng dồn `dup_dates`; gọi `raw_close_mismatches` cho từng mã trong chính giao dịch của mã đó; test seam 21 assert cả hai |
+| 7 | Chuẩn + Spec | Test role `dlck_etl` chỉ chạy nhánh `--codes` (`subset`) ⇒ **không bao giờ** chạm `load_baseline`, `upsert_domain_state`, `store_refusal_evidence` dưới role | Đúng khuôn ba sự cố §3.5 — "luật viết hẹp, bug ở đường không ai test". AC3/AC5 thật đã chứng minh quyền, nhưng đó là ledger, không phải lưới hồi quy | Test chạy lượt toàn tập ×2 (đọc mốc), lượt bị từ chối, và backfill toàn tập dưới role |
+| 8 | Chuẩn | `apply(conn, batch, …)` nhận list mà mọi caller truyền đúng một phần tử (§4.4.2) | Chữ ký hứa khả năng gộp không ai dùng; `BATCH` chỉ có nghĩa ở backfill | `apply(conn, security_id, rows, fetched_at)` |
+| 9 | Chuẩn *(ghi nhận, sửa vì 2 dòng)* | `--codes` trỏ vào mã listed chưa có organCode ⇒ tập gọi rỗng ⇒ guard (0) nói *"nguồn hỏng"* | Chẩn đoán sai hướng | `_codes_or_raise`: lỗi rõ *"không mã nào có organCode"* trước khi gọi nguồn; test mới |
+| 10 | Chuẩn + Spec *(ghi nhận, sửa vì 3 dòng)* | Con trỏ backfill so chuỗi bằng Python `>` trong khi thứ tự do `ORDER BY` của Postgres | Hai collation; trùng nhau với ticker ASCII hiện tại, không nên treo tính đúng vào đó | `_resume_point` nối theo **vị trí** trong danh sách, chỉ lùi về so chuỗi khi mã con trỏ đã rời sàn |
+| 11 | Spec *(ghi nhận, sửa vì 2 dòng)* | Trùng organCode chỉ kiểm **trong tập `--codes` đã lọc** | Lượt re-crawl vài mã (đường lát 4 sẽ gọi) không thấy khi giả định §2.2.4 vỡ | Kiểm trên toàn tập listed trước khi lọc; test thêm ca `--codes ["ZZX"]` vẫn đỏ |
+| 12 | Chuẩn | Số test **399** còn ở `roadmap.md:29`, `README.md:69`, `README.md:92`, `database/README.md:84` — §8 spec quên chuỗi số test trong phép quét | §1.7 | Quét lại toàn repo → **436** |
+| 13 | Chuẩn | [4d] — chủ sở hữu trạng thái task — vẫn *"script đăng ký 9 task"* | Ba nơi không phải chủ đã đúng, bản chuẩn lại sai — bẫy hai nguồn sự thật §1.6 | Thêm mệnh đề: script 10 task, `dlck-price` chưa đăng ký thật, phải tắt lại ngay sau khi đăng ký |
+
+🔴 **Lỗi test lộ ra khi sửa #4:** hai test job toàn tập đỏ **chỉ khi chạy trọn bộ** — DB test có 2 cổ phiếu do `test_e10` để lại, fake fetch trả rỗng cho chúng, và nay `empty` được đếm ⇒ 2/5 = 40 % > 2 % từ chối. Nghĩa là trước review, hai test đó xanh **nhờ đúng cái lỗ vừa vá**. Không xoá dữ liệu của test khác (bài học lát 2); bọc `list_codes` thật để job chỉ thấy mã `ZZ*` — truy vấn thật vẫn chạy, `subset` vẫn `False`.
+
+**Kết quả: 434 → 436 test, tất cả xanh.** Smoke lại dưới credential production sau khi đổi code (`eae6140`):
+
+```
+python -m etl price --codes BID,VHM,TD6     exit 0, 4 s
+  {'codes': 3, 'with_data': 3, 'empty': 0, 'invalid': 0, 'failed': 0, 'no_organ_code_count': 0,
+   'rows_sent': 180, 'rows_changed': 0, 'dup_dates': 0, 'raw_close_mismatch': 0, 'subset': True}
+python -m etl price --backfill --codes DMX  exit 0, 1 s
+  {'codes_done': 1, 'pages': 1, 'rows_sent': 18, 'rows_changed': 0, 'dup_dates': 0,
+   'raw_close_mismatch': 0, 'subset': True}
+```
+
+Cận theo từng mã và bộ đếm mới chạy thật trên kho production; `rows_changed = 0` ở cả hai vì payload chưa đổi kể từ AC4.
+
+### Còn ghi nhận, KHÔNG sửa ở nhánh này
+
+- **`events_fetch.py` và `screener_fetch.py` mang đúng lỗi `e7f80f6` vừa sửa** (exception vận chuyển lọt qua retry) — §4.4.3 rác có sẵn thì báo; roadmap bài học 3 đã ghi *"mang theo bản vá khi nhân bản"*. **Hai job production đang mang bug đã biết**, chỉ chưa gặp vì 9–52 lời gọi/lượt.
+- `sa.create_engine(url)` nằm ngoài `try` ở cả 4 job — DSN hỏng in mật khẩu vào traceback; mẫu có sẵn, sửa toàn cục sau.
+- `save_progress` 1 UPDATE/mã ⇒ ~1.523 phiên bản dòng `etl_run` mỗi vòng backfill — cố ý theo spec §5.5e.
+- Mã làm nổ `SourceDown` không vào `failed_tickers` — lượt dừng nên vô hại.
+- `market-data-store.md §5.2` khối DDL minh hoạ còn `organ_code text NOT NULL` — nợ từ lần tách `issuer`/`security`, chủ dự án quyết.
+- `Decimal(str(v))` đi qua `float` một nhịp — đo trên fixture 0/N literal lệch; chữ spec rộng hơn cơ chế.
+- Roadmap/index ghi "merge `main`" — đúng sau bước merge cuối ledger này.
+- `service-topology §5` giữ "cả 9 task" cho task **đã đăng ký thật** — cố ý, phân biệt với 10 task trong script.
