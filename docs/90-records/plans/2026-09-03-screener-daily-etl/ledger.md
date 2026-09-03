@@ -145,7 +145,7 @@ Nhánh `feat/screener-daily-etl` (25 commit) đã **merge `main`** bằng `--no-
 | AC2 test | ✅ | **351 passed, 2 skipped** — controller tự chạy, kể cả lượt **đảo thứ tự file** |
 | AC3 lượt thật sau 15:05 | ✅ | 15:06, exit 0, 1.541 dòng, 52 trang, 67 s, `priced` 1545/1545 |
 | AC4 idempotent | ✅ | 15:08, lượt hai, kho không đổi |
-| AC5 ngày không giao dịch | ⏳ **mở** | chạy trước 09:00 một ngày bất kỳ; phải exit 1, 0 dòng |
+| **AC5 ngày không giao dịch** | ✅ **2026-09-03 15:29, trên DB THẬT** | exit 1 · kho không đổi · `etl_run` 66 `failed` · 1 dòng bằng chứng — xem dưới. ⚠️ Giả định §2.2.1 *(ngày lễ lúc 15:20)* vẫn treo |
 | **AC6 đăng ký task** | ✅ **2026-09-03 15:2x** | chủ dự án chạy `register-tasks.ps1 -LogonType S4U` trong cửa sổ admin, nối liền lệnh tắt. Nghiệm thu bằng soi **Principal thật**, không tin lệnh vừa gọi — xem dưới |
 
 **Ba lỗi của chính tôi mà quá trình bắt được, đều trước khi ghi lịch sử:**
@@ -166,7 +166,8 @@ Cả ba lộ ra **trước lượt AC3**, nên không dòng dữ liệu nào man
 Chủ dự án chạy trong cửa sổ admin, **nối liền đăng ký với lệnh tắt trong một dòng** (bắt buộc: `-Force` bật lại mọi task đang cố ý `Disabled`, và lúc chạy `dlck-omo-1530` chỉ còn 6 phút):
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File …\scriptsegister-tasks.ps1 -LogonType S4U; Get-ScheduledTask -TaskName 'dlck-*' | Disable-ScheduledTask | Out-Null
+pwsh -NoProfile -ExecutionPolicy Bypass -File …\scripts
+egister-tasks.ps1 -LogonType S4U; Get-ScheduledTask -TaskName 'dlck-*' | Disable-ScheduledTask | Out-Null
 ```
 
 Script in đủ 8 dòng `+ dlck-…`, không `throw`, và cảnh báo đúng 7 task bị `-Force` bật lại. Soi Principal thật từng task:
@@ -188,3 +189,34 @@ dlck-screener         Disabled       S4U tuanb   Limited      ← MỚI
 🔴 **Một lỗi bắt được nhờ đọc output thay vì tin nó:** dòng tổng kết cuối script còn ghi *"Cả **7** task đăng ký S4U"* trong khi dòng ngay trên đã là *"cả **8** task"* — con số cứng sót lại lúc thêm `dlck-screener`. Đã sửa. Bài học: **thêm task thì phải quét MỌI con số cứng trong script**, không chỉ chỗ hiển nhiên.
 
 **Cả 8 task giữ `Disabled`** theo [4d] — giai đoạn dev. AC5 vẫn mở: chạy `etl screener` trước 09:00 một ngày bất kỳ, phải bị từ chối.
+
+
+## AC5 — nghiệm thu 2026-09-03 15:29, trên DB THẬT
+
+Không đợi tới sáng mai được vì lúc chạy nguồn đang có giá đủ (1545/1545 sau phiên) ⇒ guard sẽ cho qua. Nhưng AC5 tách được hai vế, và vế (a) đã đo cùng ngày:
+
+| Vế | Cách chứng minh |
+|---|---|
+| (a) nguồn **thật** trả `closePrice = 0` khi chưa có phiên | ✅ đo trực tiếp **08:38 cùng ngày** — 0/30 mã có giá, `tradingDate` đã là 2026-09-03 (mẫu lưu ở `samples/page1-20260903-preopen.json`) |
+| (b) job **thật** gặp trạng thái đó thì từ chối, 0 dòng, có bằng chứng | ✅ tiêm chính response pre-open **thật** đó vào `screener_fetch.fetch`, chạy `screener_job.run()` dưới `ETL_DATABASE_URL` **production**, đâm vào kho thật |
+
+```
+screener từ chối: ['chỉ 0/30 mã có closePrice > 0 — không phải ngày giao dịch',
+                   'totalCount 30 sụt quá 2% so mốc 1545',
+                   '1/30 mã không ghép được security_id — quá 2%']
+exit code = 1
+```
+
+| Kiểm trên DB | Kết quả |
+|---|---|
+| `market.screener_daily` | **1.541 dòng, KHÔNG đổi**; `max(ingested_at)` vẫn là lượt AC4 ⇒ guard chặn **trước** commit, rollback sạch |
+| `ops.etl_run` | `run_id 66` · `status=failed` · `error` mang đúng lý do vế (i) · `stats IS NULL` |
+| `staging.raw_payload` | **đúng 1 dòng** `screener:page1`, 72 kB, `meta.run_id=66`, `meta.reasons` đủ — **Ruling 16 chạy đúng**, không đổ cả 52 trang |
+
+Ba lý do cùng bắn; **vế (i) đứng đầu** — hai vế sau là hệ quả của việc tiêm một trang 30 mã đối chiếu mốc 1.545, không phải lỗi.
+
+📌 **`run_id 66` là lượt nghiệm thu có chủ đích, KHÔNG phải sự cố production** — ai đọc `ops.etl_run` về sau đừng hiểu nhầm. Giữ lại thay vì xoá vì nó chính là bằng chứng của AC5.
+
+🔴 **Cái này KHÔNG chứng minh giả định §2.2.1.** Đã chứng minh: *job gặp trạng thái toàn giá 0 thì từ chối đúng*, và *nguồn trả 0 khi chưa mở cửa*. **Chưa chứng minh:** nguồn trả gì **sau 15:00 của một ngày lễ thật** — chỉ ngày lễ mới trả lời được. Giữ mục treo: lượt chạy ngày lễ đầu tiên phải có người soi, và nếu nguồn trả giá phiên trước thay vì 0 thì guard sẽ **cho qua** và ghi dòng ma — khi đó phải đổi tín hiệu, không phải đổi ngưỡng.
+
+**Toàn bộ AC của lát 1 đã đóng: AC1 ✅ AC2 ✅ AC3 ✅ AC4 ✅ AC5 ✅ AC6 ✅.**

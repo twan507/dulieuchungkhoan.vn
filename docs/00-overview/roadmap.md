@@ -138,7 +138,7 @@ sau đó BCTC           kích hoạt theo `getCorporateEarning` của lát 2
 2. **Guard đặt ngưỡng cách xa vùng dữ liệu thật, đừng sát mép.** Ngưỡng *"có phiên"* ban đầu đặt 50 % từ mẫu **trang 1**; lượt chạy thật cho thấy giữa phiên toàn thị trường chỉ **53,8 %** — hơn ngưỡng 3,8 điểm. Hạ về 20 % sau khi đo đủ ba mức **0 / 53,8 / 100 %** trong cùng một ngày.
 3. **Bộ đếm lỗi phải nêu tên, không chỉ đếm.** `unmapped: 4` để suốt buổi không biết mã nào, đoán sai hai lần; thêm `unmapped_tickers` xong là truy ra nguyên nhân trong đúng một truy vấn.
 
-**Việc còn treo của lát 1** *(không chặn lát 2)*: **AC5** — chạy `etl screener` **trước 09:00** một ngày bất kỳ, phải bị guard từ chối với lý do *"không phải ngày giao dịch"*; **AC6** — đăng ký `dlck-screener` (đã thêm vào `scripts/register-tasks.ps1`, cần cửa sổ **Run as Administrator**, đăng ký xong **để `Disabled`** cùng cả đội). Lát 2 (giá) mới cần lớp `core/http` + token bucket và phép đo nhịp 8 luồng mà [§10.6 quy ước chung](../10-sources/market/00-conventions.md) đòi.
+**Lát 1 đã đóng trọn: AC1–AC6 ✅** *(2026-09-03)*. Còn đúng một mục treo, và nó chờ **ngày lễ thật**, không phải việc để làm: giả định spec §2.2.1 — *nguồn trả gì sau 15:00 của một ngày lễ?* Đã đo được *trước mở cửa* trả 0, nhưng ngày lễ thì chưa ai đo. Lượt chạy ngày lễ đầu tiên **phải có người soi**: nếu nguồn trả giá phiên trước thay vì 0 thì guard sẽ cho qua và ghi dòng ma — khi đó phải **đổi tín hiệu**, không phải đổi ngưỡng. Lát 2 (giá) mới cần lớp `core/http` + token bucket và phép đo nhịp 8 luồng mà [§10.6 quy ước chung](../10-sources/market/00-conventions.md) đòi.
 
 ## 4. Việc đã có đáp án, chỉ cần áp dụng
 
