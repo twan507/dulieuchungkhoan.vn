@@ -140,7 +140,7 @@ Vế (i) là lý do tồn tại của guard này; (ii), (iii) và (iv) là bảo
 ### 5.5 `screener_merge` + `screener_store`
 
 - Ghép theo `(ticker, exchange)` với `market.security WHERE status = 'listed'` — đúng unique index đã có. Không ghép qua `organCode → issuer` vì một issuer có thể có nhiều security.
-- `apply`: `INSERT … ON CONFLICT (security_id, trading_date) DO UPDATE SET payload = EXCLUDED.payload, ingested_at = now()` — **UPSERT theo PK**, đúng ngữ nghĩa step-03 §3 *("chạy lại trong ngày đè bản của chính ngày đó")*.
+- `apply`: `INSERT … ON CONFLICT (security_id, trading_date) DO UPDATE SET payload = EXCLUDED.payload, ingested_at = clock_timestamp()` *(`clock_timestamp()` thay `now()` — Ruling 2 trong ledger: `now()` đóng băng theo transaction nên test một-transaction không thấy lượt hai; production mỗi lượt một transaction, tương đương)* — **UPSERT theo PK**, đúng ngữ nghĩa step-03 §3 *("chạy lại trong ngày đè bản của chính ngày đó")*.
 - `stats` ghi vào `ops.etl_run`: `counts.items`, `counts.pages`, `counts.priced`, `counts.trading_dates`, `rows_written`, `unmapped`, `unknown_com_group`, `null_blocks`, `dup_conflicts`, `retries`, `trading_date`.
 
 ### 5.6 Lịch và vận hành
