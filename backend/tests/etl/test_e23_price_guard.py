@@ -26,6 +26,15 @@ def test_future_or_regressing_latest_date_is_refused_with_the_dates_named():
     assert not back.ok and "2026-09-02" in back.reasons[0] and "2026-09-03" in back.reasons[0]
 
 
+def test_codes_that_answered_with_no_rows_count_as_missing_too():
+    """Review 2026-09-04: mã trả Success nhưng items rỗng không phải sai, không phải hỏng — mà vẫn là
+    'không có dữ liệu'. Không đếm nó thì vế (i) im lặng ở lượt đầu tiên (chưa có mốc cho vế (ii))."""
+    bad = pg.check(1523, 1492, 0, 0, D, TODAY, None, empty=31)
+    ok = pg.check(1523, 1493, 0, 0, D, TODAY, None, empty=30)
+    assert not bad.ok and "31/1523" in bad.reasons[0] and "31 mã trả rỗng" in bad.reasons[0]
+    assert ok.ok
+
+
 def test_no_data_at_all_is_refused_even_without_a_baseline():
     v = pg.check(1523, 0, 0, 0, None, TODAY, None)
     assert not v.ok and "nguồn hỏng" in v.reasons[0]

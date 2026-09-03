@@ -62,43 +62,54 @@ def list_codes(conn, tickers: list[str] | None = None) -> CodeList:
         "   ON x.issuer_id = s.issuer_id AND x.source = 'fiintrade'"
         " WHERE s.security_type = 'stock' AND s.status = 'listed'"
         " ORDER BY s.ticker")).all()
+    # Giả định spec §2.2.4 (một organCode → đúng một cổ phiếu listed) canh trên TOÀN tập,
+    # trước khi lọc --codes — lượt re-crawl vài mã cũng phải thấy khi giả định vỡ (review 2026-09-04).
+    by_organ: dict[str, list[str]] = {}
+    for r in rows:
+        if r.external_code:
+            by_organ.setdefault(r.external_code, []).append(r.ticker)
+    dup = {k: v for k, v in by_organ.items() if len(v) > 1}
+    if dup:
+        raise ValueError(f"một organCode trỏ tới nhiều cổ phiếu niêm yết: {dup}")
     if tickers is not None:
         want = set(tickers)
         unknown = sorted(want - {r.ticker for r in rows})
         if unknown:
             raise ValueError(f"--codes có mã không phải cổ phiếu đang niêm yết: {unknown}")
         rows = [r for r in rows if r.ticker in want]
-    codes = [Code(r.security_id, r.ticker, r.external_code) for r in rows if r.external_code]
-    by_organ: dict[str, list[str]] = {}
-    for c in codes:
-        by_organ.setdefault(c.organ_code, []).append(c.ticker)
-    dup = {k: v for k, v in by_organ.items() if len(v) > 1}
-    if dup:
-        raise ValueError(f"một organCode trỏ tới nhiều cổ phiếu niêm yết: {dup}")
-    return CodeList(codes, [r.ticker for r in rows if not r.external_code])
+    return CodeList([Code(r.security_id, r.ticker, r.external_code) for r in rows if r.external_code],
+                    [r.ticker for r in rows if not r.external_code])
 
 
-def apply(conn, batch: list[tuple[int, list[PriceRow]]], fetched_at: str) -> dict:
-    params = [{"sid": sid, "d": r.trading_date, "ca": r.close_adj, "cr": r.close_raw,
+def apply(conn, security_id: int, rows: list[PriceRow], fetched_at: str) -> dict:
+    params = [{"sid": security_id, "d": r.trading_date, "ca": r.close_adj, "cr": r.close_raw,
                "o": r.open_value, "h": r.highest_value, "l": r.lowest_value,
-               "fa": fetched_at, "p": json.dumps(r.payload, ensure_ascii=False)}
-              for sid, rows in batch for r in rows]
+               "fa": fetched_at, "p": json.dumps(r.payload, ensure_ascii=False)} for r in rows]
     stmt = sa.text(SQL_UPSERT)
     changed = 0
-    for i in range(0, len(params), BATCH):
+    for i in range(0, len(params), BATCH):            # lô chỉ có nghĩa với backfill (BID 3.142 phiên)
         changed += conn.execute(stmt, params[i:i + BATCH]).rowcount
     return {"rows_sent": len(params), "rows_changed": changed}
 
 
-def raw_close_mismatches(conn, security_ids: list[int], since: date) -> tuple[int, list[str]]:
-    """Mắt của quyết định spec §4.2: `close_raw` đã điền có còn khớp `closePrice` mới nhất không."""
+def raw_close_mismatches(conn, bounds: list[tuple[int, date]]) -> tuple[int, list[str]]:
+    """Mắt của quyết định spec §4.2: `close_raw` đã điền có còn khớp `closePrice` mới nhất không.
+
+    `bounds` = (security_id, ngày thấp nhất VỪA GHI của mã đó) — cận theo TỪNG mã. Một cận chung
+    cho cả lượt là min của mã thưa nhất (lượt AC3: 2013-07-19), sau backfill sẽ quét cả bảng và
+    detoast `raw` của hàng triệu dòng ngay trong giao dịch ghi (review 2026-09-04).
+    """
+    if not bounds:
+        return 0, []
     rows = conn.execute(sa.text(
         "SELECT s.ticker, p.trading_date, p.close_raw,"
         "       (p.raw->'fiintrade'->'payload'->>'closePrice')::numeric AS src"
-        " FROM market.price_daily p JOIN market.security s USING (security_id)"
-        " WHERE p.security_id = ANY(:ids) AND p.trading_date >= :since"
-        "   AND p.close_raw IS DISTINCT FROM (p.raw->'fiintrade'->'payload'->>'closePrice')::numeric"
-        " ORDER BY s.ticker, p.trading_date"), {"ids": security_ids, "since": since}).all()
+        " FROM unnest(cast(:sids AS bigint[]), cast(:lows AS date[])) AS w(sid, low)"
+        " JOIN market.price_daily p ON p.security_id = w.sid AND p.trading_date >= w.low"
+        " JOIN market.security s ON s.security_id = p.security_id"
+        " WHERE p.close_raw IS DISTINCT FROM (p.raw->'fiintrade'->'payload'->>'closePrice')::numeric"
+        " ORDER BY s.ticker, p.trading_date"),
+        {"sids": [b[0] for b in bounds], "lows": [b[1] for b in bounds]}).all()
     return len(rows), [f"{t} {d} close_raw={cr} closePrice={src}" for t, d, cr, src in rows[:SAMPLE]]
 
 

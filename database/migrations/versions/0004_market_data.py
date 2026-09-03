@@ -24,6 +24,11 @@ def upgrade() -> None:
           close_adj     numeric,        -- giá ĐÃ điều chỉnh (nguồn tự điều chỉnh khi có sự kiện quyền)
           close_raw     numeric,        -- giá THÔ khớp sàn — sự thật lịch sử, KHÔNG BAO GIỜ sửa;
                                         -- NULL với backfill (quá khứ không có giá thô ở nguồn nào)
+                                        -- ĐÍNH CHÍNH 2026-09-04 (chú thích, không đổi DDL): dòng trên SAI —
+                                        -- getPriceData.closePrice LÀ giá thô lịch sử (kiểm 3 cách, spec lát 3
+                                        -- §4.2), nên close_raw được etl price điền MỘT LẦN cho cả 12,5 năm;
+                                        -- writer datafeed EOD nay chỉ còn vai trò đối chứng. Chủ sở hữu
+                                        -- nội dung: docs/20-design/market-data-store.md §5.2.
           open_value    numeric,
           highest_value numeric,
           lowest_value  numeric,

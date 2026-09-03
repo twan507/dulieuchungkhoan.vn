@@ -138,7 +138,12 @@ Hồ sơ và ba quyết định thiết kế (tuần tự thay vì 8 luồng · 
 | Chế độ | Sổ `ops.etl_run.job` | Giao dịch | Guard |
 |---|---|---|---|
 | hằng ngày | `market.price_daily` | một giao dịch cho cả lượt, guard **trước** commit | (0) không mã nào có dữ liệu · (i) mã sai + mã hỏng > 2 % · (ii) số mã có dữ liệu sụt > 2 % so lượt success toàn tập gần nhất · (iii) ngày mới nhất ở tương lai · (iv) ngày mới nhất lùi so mốc |
-| `--backfill` | `market.price_backfill` | mỗi mã một giao dịch; `stats.cursor` ghi sau từng mã | không guard tổng — chỉ ngắt khẩn khi **10 mã liên tiếp** hỏng |
+| `--backfill` | `market.price_backfill` | mỗi mã một giao dịch; `stats.cursor` ghi sau từng mã (mã hỏng/sai **vẫn đẩy con trỏ đi** — làm lại ở vòng sau, dấu vết ở `failed_tickers`/`invalid_tickers`) | không guard tổng — chỉ ngắt khẩn khi **10 mã liên tiếp** hỏng; vẫn đếm `dup_dates` và `raw_close_mismatch` từng mã |
+
+Bốn bộ đếm "không có dữ liệu" của lượt hằng ngày, đều nêu tên ≤ 20 mã: `invalid` (nguồn trả `Code not valid`) ·
+`failed` (hỏng sau 3 retry, kể cả timeout/đứt kết nối) · `empty` (trả `Success` nhưng 0 phiên) · `no_organ_code_count`
+(cổ phiếu niêm yết chưa có `issuer_external_id('fiintrade')` — không gọi được, không tính vào `codes`). Bất biến:
+`with_data + empty + invalid + failed = codes`; guard (i) cộng ba số giữa vào tử số.
 
 🔴 **Backfill qua đêm đòi máy KHÔNG NGỦ.** Sự cố 2026-09-04 02:00: Windows vào sleep giữa một lời gọi, thức lúc
 05:56 ⇒ `httpx.ReadTimeout`; lượt đó ghi `failed` (con trỏ giữ nguyên nhờ `save_progress` sau từng mã, lượt sau đi

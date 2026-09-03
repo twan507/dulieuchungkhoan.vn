@@ -12,7 +12,7 @@ Header bắt buộc: `Origin: https://fiinapp.bvsc.com.vn`
 
 ## `getPriceData`
 
-**Tóm tắt:** Lịch sử giá theo ngày với **97 trường** — bao gồm dòng tiền tách theo nhóm nhà đầu tư và cờ sự kiện doanh nghiệp.
+**Tóm tắt:** Lịch sử giá theo ngày với **99 trường** *(đếm lại 2026-09-03; bản 2026-08-15 ghi 97)* — bao gồm dòng tiền tách theo nhóm nhà đầu tư, cờ sự kiện doanh nghiệp, và **cả giá thô lẫn giá đã điều chỉnh** cho đóng cửa/tham chiếu.
 
 **Mô tả:** Endpoint giàu dữ liệu nhất toàn hệ thống. Không chỉ là OHLCV — mỗi phiên còn kèm phân rã giao dịch theo bốn nhóm nhà đầu tư (cá nhân trong nước, tổ chức trong nước, nước ngoài, tự doanh), tách riêng khớp lệnh và thoả thuận, cùng các cờ trạng thái doanh nghiệp.
 

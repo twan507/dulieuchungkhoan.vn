@@ -10,6 +10,8 @@
 
 **Spec:** [`spec.md`](spec.md) — đọc trước, plan này chỉ nói *chính xác thế nào*. Số đo nền: [`measurements.md`](measurements.md).
 
+> ⚠️ **Code trong repo khác plan này ở bốn chỗ sau review hai trục 2026-09-04** *(plan là bản ghi tại-thời-điểm, không viết lại; chi tiết và lý do ở [`ledger.md`](ledger.md) mục "Review toàn nhánh")*: `price_store.apply(conn, security_id, rows, fetched_at)` thay cho list-một-phần-tử · `raw_close_mismatches(conn, bounds)` nhận cận **theo từng mã** qua `unnest` · `price_guard.check(..., empty=)` đếm mã trả rỗng vào vế (i) và `stats` có `empty`/`no_organ_code_count` · backfill có `dup_dates`/`raw_close_mismatch`, con trỏ nối theo vị trí, và `--codes` không có organCode lỗi rõ trước khi gọi nguồn. Task 1 còn thêm bắt `httpx.HTTPError` (sự cố máy ngủ).
+
 ## Ràng buộc toàn cục
 
 - **`PYTHONIOENCODING=utf-8`** trên mọi lệnh chạy Python — không đặt thì crash cp1252 khi in tiếng Việt.

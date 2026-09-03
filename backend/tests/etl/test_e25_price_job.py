@@ -40,6 +40,20 @@ def _wire(monkeypatch, invalid=()):
 
     monkeypatch.setattr("etl.price_fetch.open_fetcher", fake_open_fetcher)
 
+    # Job toàn tập (không --codes) đi qua MỌI cổ phiếu listed của DB test — kể cả mã test khác
+    # commit và không dọn (test_e10). Fake fetch trả rỗng cho chúng, và từ review 2026-09-04 mã
+    # rỗng ĐƯỢC ĐẾM vào guard (i) ⇒ 2/5 > 2 % từ chối. Không xoá dữ liệu của test khác (bài học
+    # lát 2); thay vào đó bọc list_codes THẬT rồi giữ lại đúng mã ZZ* — truy vấn thật vẫn chạy,
+    # `subset` vẫn False nên baseline/domain_state vẫn đi qua.
+    real_list_codes = price_store.list_codes
+
+    def only_mine(conn, tickers=None):
+        cl = real_list_codes(conn, tickers)
+        return price_store.CodeList([c for c in cl.codes if c.ticker.startswith("ZZ")],
+                                    [t for t in cl.no_organ_code if t.startswith("ZZ")])
+
+    monkeypatch.setattr("etl.price_store.list_codes", only_mine)
+
 
 def _cleanup(engine):
     """Dọn ĐÚNG thứ mình cắm (mã ZZ*), không dọn cả bảng — bài học review lát 2 (#5)."""
@@ -102,6 +116,7 @@ def test_daily_run_writes_rows_records_stats_and_domain_state_then_is_idempotent
     assert _rows(price_db) == 24 and status == "success"                 # 5 + 18 + 1 phiên của ba fixture
     assert stats["with_data"] == 3 and stats["rows_sent"] == 24 and stats["rows_changed"] == 24
     assert stats["invalid"] == 0 and stats["failed"] == 0 and stats["raw_close_mismatch"] == 0
+    assert stats["empty"] == 0 and stats["no_organ_code_count"] == 0            # review 2026-09-04
     assert stats["latest_trading_date"] == "2026-09-03" and wm == "2026-09-03"
     assert "subset" not in stats
     assert price_job.run() == 0                                          # lượt hai: không dòng nào đổi
@@ -138,6 +153,7 @@ def test_backfill_budget_stops_after_one_code_and_the_next_run_resumes_to_the_en
     assert price_job.run(backfill=True) == 0
     _, s2, _ = _last(price_db, "market.price_backfill")
     assert (s2["cursor"], s2["codes_done"], s2["pass_complete"]) == (order[-1], len(order) - 1, True)
+    assert s2["dup_dates"] == 0 and s2["raw_close_mismatch"] == 0             # backfill cũng có hai mắt này
     assert _rows(price_db) == 24
     assert price_job.run(backfill=True, max_minutes=0) == 0            # hết vòng ⇒ vòng mới từ mã đầu
     _, s3, _ = _last(price_db, "market.price_backfill")
@@ -167,8 +183,29 @@ def test_job_runs_under_the_etl_role(price_db, monkeypatch):
         return eng
 
     monkeypatch.setattr(price_job.sa, "create_engine", create_engine_with_role)
-    assert price_job.run(codes=MINE) == 0
-    assert price_job.run(backfill=True, codes=["ZZA"]) == 0
+    # Review 2026-09-04: lượt --codes là `subset`, KHÔNG đi qua load_baseline (đọc etl_run),
+    # upsert_domain_state (ghi data_domain_state) và store_refusal_evidence (ghi staging) —
+    # đúng ba đường §3.5 từng cắn. Phải chạy lượt TOÀN TẬP, lượt bị từ chối, và backfill toàn tập.
+    assert price_job.run() == 0
+    assert price_job.run() == 0                                   # lượt hai đọc mốc qua load_baseline
+    _wire(monkeypatch, invalid=("ZZBORG",))
+    monkeypatch.setattr(price_job.sa, "create_engine", create_engine_with_role)
+    assert price_job.run(codes=MINE) == 1                         # store_refusal_evidence dưới role
+    _wire(monkeypatch)
+    monkeypatch.setattr(price_job.sa, "create_engine", create_engine_with_role)
+    assert price_job.run(backfill=True) == 0                      # save_progress + load_cursor dưới role
+
+
+def test_codes_without_any_organ_code_fail_loudly_not_as_a_source_outage(price_db, monkeypatch):
+    """Review 2026-09-04: --codes trỏ vào mã niêm yết chưa có organCode ⇒ tập gọi rỗng. Guard (0)
+    sẽ nói "nguồn hỏng" — sai hướng chẩn đoán. Phải lỗi rõ ở tham số, trước khi gọi nguồn."""
+    _wire(monkeypatch)
+    with price_db.begin() as c:
+        c.execute(sa.text("INSERT INTO market.security (ticker, exchange, security_type)"
+                          " VALUES ('ZZN', 'HOSE', 'stock')"))
+    assert price_job.run(codes=["ZZN"]) == 2
+    _, _, err = _last(price_db, "market.price_daily")
+    assert "organCode" in err and "nguồn hỏng" not in err
 
 
 def test_cli_parses_backfill_codes_and_max_minutes(monkeypatch):

@@ -17,14 +17,16 @@ class GuardVerdict:
 
 
 def check(codes: int, with_data: int, invalid: int, failed: int, latest: date | None,
-          today: date, baseline: dict | None) -> GuardVerdict:
+          today: date, baseline: dict | None, *, empty: int = 0) -> GuardVerdict:
     reasons: list[str] = []
     if with_data == 0:                                                              # (0)
         reasons.append("không mã nào có dữ liệu — nguồn hỏng")
-    missing = invalid + failed
+    # `empty` = mã trả Success nhưng items rỗng — không sai, không hỏng, vẫn là "không có dữ liệu".
+    # Không đếm nó thì vế (i) im lặng ở lượt đầu tiên, khi vế (ii) chưa có mốc (review 2026-09-04).
+    missing = invalid + failed + empty
     if codes and missing > codes * MISSING_RATIO:                                   # (i)
-        reasons.append(f"{missing}/{codes} mã không có dữ liệu ({invalid} mã sai, {failed} mã hỏng)"
-                       f" — quá {MISSING_RATIO:.0%}")
+        reasons.append(f"{missing}/{codes} mã không có dữ liệu ({invalid} mã sai, {failed} mã hỏng,"
+                       f" {empty} mã trả rỗng) — quá {MISSING_RATIO:.0%}")
     base_n = (baseline or {}).get("with_data")
     if base_n and with_data < base_n * (1 - DROP_RATIO):                            # (ii)
         reasons.append(f"chỉ {with_data} mã có dữ liệu — sụt quá {DROP_RATIO:.0%} so mốc {base_n}")
