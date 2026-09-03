@@ -114,3 +114,10 @@ def test_cli_dispatch_and_help_lists_screener(monkeypatch, migrated_engine, caps
     assert etl_main(["screener"]) == 0
     assert etl_main(["nope"]) == 2
     assert "screener" in capsys.readouterr().err
+
+
+def test_missing_env_returns_2(monkeypatch):
+    """Thiếu `ETL_DATABASE_URL` ⇒ exit 2, không chạm DB (spec §5.1: mọi lỗi → exit 2)."""
+    monkeypatch.delenv("ETL_DATABASE_URL", raising=False)
+    monkeypatch.setattr(job_mod, "load_dotenv", lambda: None)
+    assert job_mod.run() == 2

@@ -30,12 +30,6 @@ def _body(page: int) -> dict:
             "parameters": [CRITERION]}
 
 
-def _httpx_post(body: dict) -> tuple[int, str]:
-    with httpx.Client(timeout=60.0) as client:
-        r = client.post(URL, json=body, headers={"Origin": FIIN_ORIGIN})
-        return r.status_code, r.text
-
-
 def _valid(status: int, text: str) -> bool:
     if status != 200:
         return False
@@ -59,8 +53,7 @@ def _page(post, sleep, page: int) -> tuple[str, int]:
     raise FetchError(f"trang {page} hỏng sau {RETRIES + 1} lần (HTTP {status}): {text[:200]}")
 
 
-def fetch(post=None, sleep=time.sleep) -> tuple[list[str], int]:
-    post = post or _httpx_post
+def _pages(post, sleep) -> tuple[list[str], int]:
     first, retries = _page(post, sleep, 1)
     total = int(json.loads(first)["totalCount"])
     pages = [first]
@@ -69,3 +62,15 @@ def fetch(post=None, sleep=time.sleep) -> tuple[list[str], int]:
         pages.append(text)
         retries += r
     return pages, retries
+
+
+def fetch(post=None, sleep=time.sleep) -> tuple[list[str], int]:
+    if post is not None:                                  # test tiêm post giả, không mở kết nối
+        return _pages(post, sleep)
+    # MỘT client cho trọn 52 trang (khuôn `refdata_fetch`) — mở lại mỗi trang là 52 lần
+    # bắt tay TLS trên cùng một host, không được gì.
+    with httpx.Client(timeout=60.0) as client:
+        def post_one(body: dict) -> tuple[int, str]:
+            r = client.post(URL, json=body, headers={"Origin": FIIN_ORIGIN})
+            return r.status_code, r.text
+        return _pages(post_one, sleep)
