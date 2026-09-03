@@ -1,6 +1,8 @@
 # Spec — `etl screener`: lát 1 của [7] ETL REST hằng ngày
 
-> 🟡 **CHƯA DUYỆT.** Viết 2026-09-03 sau brainstorm (bắt đầu 2026-08-28, nạp lại context 2026-09-03). §4.1 đòi spec được chủ dự án duyệt trước khi có plan và dòng code nào. Ba điểm cần duyệt tường minh nằm ở §9.
+> ✅ **ĐÃ DUYỆT 2026-09-03** — chủ dự án chốt cả ba điểm §9 theo đúng đề xuất. Viết cùng ngày sau brainstorm (bắt đầu 2026-08-28, nạp lại context 2026-09-03).
+>
+> ⚠️ **Ràng buộc phát sinh cùng lúc duyệt:** toàn bộ 7 task ghi dữ liệu đã `Disabled` 2026-09-03 ~08:55 (ưu tiên dev — roadmap [4d]). Vì vậy **AC6 đổi**: `dlck-screener` đăng ký + assert xong thì **để `Disabled`**, không bật; *"lượt tự động đầu tiên"* dời tới khi cả đội bật lại. AC3/AC4 (chạy tay một lượt thật dưới `ETL_DATABASE_URL`) vẫn làm — đó là nghiệm thu dev, không phải job định kỳ.
 
 ## 1. Vì sao lát này, và lát này là gì
 
@@ -174,7 +176,7 @@ Fixture: hai file trong `samples/` chép sang `backend/tests/etl/fixtures/screen
 | **AC3** | **Chạy tay một lượt thật dưới `ETL_DATABASE_URL` sau 15:05 của một ngày giao dịch** — trước khi đăng ký task (§3.5: chạy tay đúng lệnh dưới đúng credential trước khi tự động hoá) | log + `SELECT count(*), min(trading_date), max(trading_date) FROM market.screener_daily` ≈ 1.545 dòng một ngày |
 | **AC4** | Chạy lại ngay lượt thứ hai cùng ngày ⇒ số dòng không đổi, `etl_run` có 2 lượt `success` | cùng câu SQL |
 | **AC5** | 🔴 **Cổng giả định §2.2.1:** lượt chạy **ngày không giao dịch đầu tiên** (ngày lễ, hoặc chạy tay trước 09:00 một ngày thường) phải **từ chối** với lý do vế (i), 0 dòng ghi. Chưa có phép này thì task vẫn được bật, nhưng mục này để mở trong ledger | log + `SELECT * FROM ops.etl_run WHERE job='market.screener' ORDER BY run_id DESC LIMIT 1` |
-| **AC6** | Task `dlck-screener` đăng ký, `Assert-TaskCommand` + `Assert-TaskPrincipal` qua; lượt tự động đầu tiên `success` | `Get-ScheduledTaskInfo` + dòng `etl_run` |
+| **AC6** | Task `dlck-screener` đăng ký, `Assert-TaskCommand` + `Assert-TaskPrincipal` qua, rồi **`Disable-ScheduledTask`** vì cả đội đang tạm dừng (xem ràng buộc đầu spec). Lượt tự động đầu tiên `success` → **hoãn**, ghi vào ledger khi [4d] bật lại | `Get-ScheduledTask` cho thấy `Disabled` + lệnh đúng |
 
 ## 8. Checklist tài liệu sống — cùng lượt với code (§1.6, §1.7)
 
@@ -195,4 +197,4 @@ Fixture: hai file trong `samples/` chép sang `backend/tests/etl/fixtures/screen
 2. **Không ép 80** — ghi số đếm thật (§4.3) và đính chính mọi chỗ chép "80/193".
 3. **Guard vế (i) `closePrice > 0`** làm tín hiệu *"phiên có giao dịch"* thay cho giả định đã bị bác — kèm cổng AC5 cho lần ngày lễ đầu tiên.
 
-Duyệt xong ⇒ sang plan (`writing-plans`) trong cùng thư mục.
+✅ Duyệt 2026-09-03 ⇒ plan trong cùng thư mục.
