@@ -83,6 +83,8 @@ Kiến thức dựng lại nằm rải ở nhiều file — đây là chuỗi n�
    npm run dev-start          # scripts/stack.mjs — đã kèm --profile realtime
    ```
 
+   ⚠️ **Trên máy dev hiện tại thì KHÔNG chạy lệnh này sau reboot** — stack thật là project `infra` (xem *"Hai bộ volume"* bên dưới), `dev-start` sẽ dựng bộ thứ hai đụng cổng. Sau reboot chỉ cần mở Docker Desktop (không tự khởi động — sự cố 2026-09-03, [service-topology §5](docs/20-design/service-topology.md)); ba container tự lên nhờ `restart: unless-stopped`.
+
 3. **Bootstrap hai kho, đúng ba bước** — [`database/README.md`](database/README.md) mục *Bootstrap DB mới*: `alembic upgrade head` + `core.ch_migrate upgrade` → một lượt `etl refdata` (nạp danh bạ, danh mục mã, cây ICB từ API thật) → `alembic downgrade 0012` rồi `upgrade head`.
 
    🔴 **Bước ba không được bỏ.** Migration `0013` seed 161 dòng gán ngành tay bằng cách phân giải ticker → `issuer_id` qua `market.security`; bảng đó còn **rỗng** lúc `0013` chạy ở bước một ⇒ nạp **0 dòng, không exception, không cảnh báo nào**, và job `etl refdata` sau đó vẫn báo y hệt trạng thái khoẻ mạnh.
