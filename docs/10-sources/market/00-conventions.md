@@ -418,10 +418,10 @@ Tính từ [lịch ETL §4.1–4.2](../../20-design/market-data-store.md), tách
 |---|---|---|---|
 | Danh bạ · cây ngành · `/quotes` · `/mapping` | `FIIN_CORE`, `BVSC` | Trước phiên, hằng ngày | 4 |
 | `PriceData/GetPriceData` Page 1 | `FIIN_TECH` | Sau 15:00, hằng ngày | 1.974 |
-| `Snapshot/*` — hồ sơ, sở hữu | `FIIN_FUND` | Sau 15:00, hằng ngày | ~4.000 |
+| `Snapshot/*` — hồ sơ, sở hữu, cổ tức, định giá | `FIIN_FUND`, `FIIN_TOOLS` | **Kích hoạt theo sự kiện + quét sàn** *(đổi 2026-09-03; trước đây ghi "hằng ngày ~4.000", số đó tính 2 endpoint × 1.974 **mã** trong khi endpoint nhận `organCode` tức theo **doanh nghiệp** — 1.544 issuer)* | **≈ 200–260** |
 | **`Screener/GetScreenerItems` — phân trang 52 trang** | `FIIN_TOOLS` | Sau 15:00, hằng ngày | **52** |
 | `Calendar/*` — lịch sự kiện | `FIIN_MARKET` | Hằng ngày | ~10 |
-| **Cộng thường nhật** | | **hằng ngày** | **≈ 6.040** |
+| **Cộng thường nhật** | | **hằng ngày** | **≈ 2.300** *(sửa 2026-09-03; bản cũ ghi 6.040 khi họ Snapshot còn chạy mọi mã mỗi ngày)* |
 | BCTC 3 loại × 1.974 mã | `FIIN_FUND` | Theo quý, rải | 5.922 |
 | `getPriceData` 52 trang × 1.974 mã | `FIIN_TECH` | **Một lần**, rải 1–2 tuần | 102.648 |
 
@@ -493,8 +493,8 @@ x-miniprofiler-ids · x-powered-by
 
 | Chưa kiểm | Vì sao quan trọng |
 |---|---|
-| Nhịp **8 luồng** của ETL hằng ngày | Lịch thiết kế là ~6.000 lời gọi trong 20–30 phút ≈ **200–300 request/phút** — gấp 7–10 lần nhịp đã đo |
+| Nhịp **8 luồng** của ETL hằng ngày | Lịch thiết kế **2026-08-14** là ~6.000 lời gọi trong 20–30 phút ≈ **200–300 request/phút** — gấp 7–10 lần nhịp đã đo. *(Cập nhật 2026-09-03: ngân sách ngày xuống **≈ 2.300** sau khi họ Snapshot chuyển sang kích hoạt theo sự kiện, nên áp lực nhịp giảm hẳn — nhưng nhịp 8 luồng **vẫn chưa ai đo**, kết luận này không đổi)* |
 | Trần **2 request/giây** đặt cho backfill 102.648 lời gọi | = 120 request/phút, vẫn gấp hơn 4 lần nhịp đã đo |
-| Hai nhóm lớn nhất của lịch ngày — `getPriceData` 1.974 và Snapshot ~4.000 lời gọi | Chỉ burst Screener được tái hiện |
+| Nhóm lớn nhất còn lại của lịch ngày — `getPriceData` 1.974 lời gọi | Chỉ burst Screener được tái hiện. *(Snapshot ~4.000 đã rời khỏi lịch ngày 2026-09-03)* |
 
 **Khuyến nghị vận hành:** nhịp tuần tự như thiết kế ETL mô tả là **mức đã kiểm** — dùng được ngay. Muốn nâng lên 8 luồng thì phải đo lại ở đúng nhịp đó trước khi bật chạy thật, và vẫn theo cùng nguyên tắc: chạy đúng tải kế hoạch rồi dừng, không dò trần.
