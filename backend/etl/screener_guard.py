@@ -8,7 +8,13 @@ from dataclasses import dataclass
 
 DROP_RATIO = 0.02
 UNMAPPED_RATIO = 0.02
-MIN_PRICED_RATIO = 0.5
+MIN_PRICED_RATIO = 0.2
+# 🔴 Hạ 0.5 → 0.2 sau lượt chạy thật 2026-09-03 13:38. Ngưỡng 0.5 đặt từ số đo trang 1
+# (30/30 sau phiên vs 0/30 trước mở cửa) — toàn thị trường GIỮA PHIÊN chỉ 831/1545 = 53,8%
+# (nhiều mã UPCOM chưa khớp lệnh), tức chỉ hơn ngưỡng 3,8 điểm. Hai hậu quả lệch hẳn nhau:
+# từ chối nhầm một phiên thật = MẤT VĨNH VIỄN ảnh chụp ngày đó (Screener không có backfill),
+# còn nhận nhầm một ngày nghỉ = vài dòng ma xoá được. Nên ngưỡng phải cách xa vùng phiên thật:
+# 0.2 nằm giữa 0% (không phiên, đo 2 lần) và 53,8% (phiên thật tệ nhất đo được).
 
 
 @dataclass(frozen=True)

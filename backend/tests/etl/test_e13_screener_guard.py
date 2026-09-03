@@ -37,13 +37,11 @@ def test_unmapped_ratio_refused_beyond_two_percent():
 
 
 def test_priced_ratio_boundary():
-    """Vế (i) là TỶ LỆ ≥ 50 %: một nhúm mã có giá không đủ mở cửa cho cả bộ 1.545 dòng.
-
-    Ngưỡng tính tay: 1.545 × 0,5 = 772,5 ⇒ 772 (49,97 %) từ chối, 773 (50,03 %) qua.
-    """
-    assert sg.check(1545, 1545, 772, 0, None).ok is False
-    assert sg.check(1545, 1545, 773, 0, None).ok is True
-
+    """Ngưỡng 20% — đặt cách xa vùng phiên thật sau lượt chạy 2026-09-03 (xem screener_guard)."""
+    assert sg.check(1545, 1545, 308, 0, None).ok is False        # 19,94%
+    assert sg.check(1545, 1545, 310, 0, None).ok is True         # 20,06%
+    # phiên thật tệ nhất đo được (giữa phiên 2026-09-03) phải qua thoải mái
+    assert sg.check(1545, 1545, 831, 0, None).ok is True         # 53,8%
 
 def test_unknown_com_group_ratio_refused_beyond_two_percent():
     """Vế (iv): nguồn đổi tên sàn thì mất trọn một sàn — không được im lặng."""

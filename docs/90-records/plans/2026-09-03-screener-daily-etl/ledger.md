@@ -89,3 +89,25 @@ Nghiệm thu: `tests/etl` **93 passed** · cả bộ **351 passed, 2 skipped** �
 - **Ruling 20:** `isa3`/`isa5` → `keep=False`, nguồn chuẩn **BCTC đầy đủ**, block `Trùng BCTC (đo 2026-09-03)`. Biến thể TTM/Y (`isa3TTM`…) **giữ nguyên** vì BCTC không cấp kỳ TTM — đúng lý do cụm TTM/Y được giữ trọn từ đầu. ⇒ keep **77 → 75**; `financial` còn **5 mã** (`fryq30` `rtd39` `rtd53` `rtd54` `rtq81`), đều họ tỷ số/thị trường mà cả `stockScreenerItem` lẫn BCTC đều không có. *Nếu sai:* mất doanh thu/lãi gộp theo ngày từ Screener — nhưng BCTC có đủ hai chỉ tiêu này theo quý, và lấy hai nguồn cho cùng chỉ tiêu chính là "trộn nguồn" mà `architecture.md` §3.4 cấm.
 
 Nghiệm thu vòng hai: cả bộ **351 passed, 2 skipped** · generator sinh lại **byte-bằng-byte** · payload DDB **75 khoá** (`stockScreenerItem` 70 + `financial` 5), 0 trùng lặp.
+
+## Task 7 — chạy thật 2026-09-03 (GIỮA PHIÊN, theo yêu cầu chủ dự án)
+
+Chủ dự án chốt: giai đoạn dev không cần dữ liệu EOD, cần ETL chạy đúng. Nên hai lượt dưới đây chạy lúc **13:38 và 13:40**, giữa phiên — **KHÔNG đóng AC3** (AC3 đòi sau 15:05, khi nguồn đã chốt giá phiên). Chúng nghiệm thu **đường chạy**, không nghiệm thu ảnh chụp EOD.
+
+```
+lượt 1  13:38:28  exit 0  {'counts': {'items': 1545, 'pages': 52, 'priced': 831, 'trading_dates': 1},
+                           'rows_written': 1541, 'unmapped': 4, 'unknown_com_group': 0,
+                           'null_blocks': 5, 'dup_conflicts': 3348, 'retries': 0,
+                           'trading_date': '2026-09-03'}   — 69,8 s
+lượt 2  13:40:17  exit 0  y hệt, priced 832  → kho VẪN 1.541 dòng, 1 trading_date  (idempotent ✅)
+```
+
+Kiểm trên DB: `screener_daily` **1.541 dòng / 1.541 mã / 1 ngày** · `etl_run` hai lượt `success` · `data_domain_state('market.scores','fiintrade')` watermark `2026-09-03` · payload **70 `stockScreenerItem` + 5 `financial` = 75 khoá**, đúng thiết kế. Giá trị thật hợp lý: ACB ROE 16,3 % P/E 8,4 · FPT 26,5 % / 12,5 · VNM 33,9 % / 11,9 · HPG 17,4 % / 8,0.
+
+**Ba phát hiện của lượt chạy thật:**
+
+1. 🔴 **Ngưỡng guard quá sát — đã sửa.** Toàn thị trường giữa phiên chỉ **831/1545 = 53,8 %** có giá (nhiều mã UPCOM chưa khớp), trong khi `MIN_PRICED_RATIO` đặt **0.5** — chỉ hơn 3,8 điểm. Ngưỡng cũ suy từ số đo **trang 1** (30/30 sau phiên vs 0/30 trước mở cửa), không đại diện toàn thị trường. **Ruling 21: hạ 0.5 → 0.2.** Hai hậu quả lệch hẳn nhau: từ chối nhầm một phiên thật = **mất vĩnh viễn** ảnh chụp ngày đó (Screener không backfill), nhận nhầm ngày nghỉ = vài dòng ma xoá được. 0.2 nằm giữa 0 % (không phiên, đo 2 lần) và 53,8 % (phiên thật tệ nhất đo được). *Nếu sai:* một ngày nghỉ mà nguồn vẫn trả >20 % mã có giá sẽ lọt — chưa quan sát thấy ca nào như vậy.
+2. ✅ **Ca `status:"Success"` + `items:null` CÓ THẬT** — gặp ngay ở lời gọi thăm dò lúc 13:37. Đây đúng ca reviewer Task 3 nêu ra và `_valid()` đã chặn bằng `isinstance(items, list)`. Hai lượt chạy sau đó `retries = 0`.
+3. **4 mã `unmapped` truy được nguyên nhân:** `refdata` đỏ 3 ngày liên tiếp (01·02·03/09, `guard refused: sắp lật delisted 438 mã`) nên danh bạ đứng ở **31/08**; 4 mã Screener mới chưa có trong `market.security`. Không phải lỗi lát này — lượt dọn `--accept-drop` chạy xong là hết.
+
+**Còn lại của lát:** AC3/AC5 thật (sau 15:05 và trước 09:00 hôm sau) · Task 8 (đăng ký task, cần cửa sổ admin).
