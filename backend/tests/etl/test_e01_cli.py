@@ -23,3 +23,18 @@ def test_cli_dispatches_refdata_with_accept_drop(monkeypatch):
     assert m.main(["refdata"]) == 0
     assert m.main(["refdata", "--accept-drop"]) == 0
     assert calls == [False, True]
+
+
+def test_events_subcommand_passes_accept_new_through(monkeypatch, capsys):
+    import etl.events_job
+    from etl.__main__ import main
+    seen = {}
+
+    def fake_run(accept_new=False):
+        seen["accept_new"] = accept_new
+        return 0
+
+    monkeypatch.setattr(etl.events_job, "run", fake_run)
+    assert main(["events", "--accept-new"]) == 0 and seen["accept_new"] is True
+    assert main(["events"]) == 0 and seen["accept_new"] is False
+    assert main(["nope"]) == 2 and "events" in capsys.readouterr().err
