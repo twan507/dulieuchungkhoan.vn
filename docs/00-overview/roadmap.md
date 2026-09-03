@@ -116,7 +116,7 @@ Bốn mục đang nằm trong danh sách **"Còn để ngỏ"** của pipeline t
 | Khung ngành cho skill | Cùng nguồn trên, nối theo hợp đồng ở [§3.2](architecture.md) |
 | Bảng ánh xạ mã chỉ tiêu BCTC | **729 mã đã giải mã** từ bundle JS FiinTrade — xem [Phụ lục A §A.5](../10-sources/market/appendix-A-field-codes.md) |
 | Đơn vị của các mã chỉ tiêu | **727/729 mã có `don_vi_du_lieu`**, 392 xác thực bằng đẳng thức kế toán |
-| Lấy trường nào từ nguồn nào | [chọn trường cho ETL thị trường](../20-design/market-field-selection.md) — Screener 80/193 (ước lượng 2026-08-14; đếm 2026-09-03: 77/193), Snapshot 16/54, giá từ BVSC |
+| Lấy trường nào từ nguồn nào | [chọn trường cho ETL thị trường](../20-design/market-field-selection.md) — Screener 80/193 (ước lượng 2026-08-14; đếm 2026-09-03: 81/193 sau khi lưu thêm 4 mã `cần kiểm API`), Snapshot 16/54, giá từ BVSC |
 
 ## 5. Việc còn thật sự để ngỏ
 

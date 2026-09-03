@@ -270,18 +270,23 @@ add(["averageValue1Week", "averageValue2Week", "averageValue1Month", "averageVal
     block="GTGD bình quân")
 
 # ───────────────────────── Screener — CAN KIEM API ─────────────────────────
-add(["rtd53", "rtq81"], "Screener", None, None,
+# Bon ma nay tung mang `keep=None` (can kiem API) nen ETL BO chung, du chung co that va co gia tri —
+# cung tinh huong voi 13 ma da duoc chu du an duyet "luu truoc, giai ma sau" (spec etl screener §4.2).
+# Ruling 15 (review cuoi 2026-09-03) ap cung luat do: keep=True, status "chua giai ma".
+add(["rtd53", "rtq81"], "Screener", "Screener", True,
     "có trong từ điển 729 mã nhưng mang trạng thái CHƯA GIẢI MÃ — không nguồn nào có tên, chưa biết là "
     "chỉ tiêu gì nên chưa xếp được vào nhóm nào. **Đo 2026-08-15**: cả hai CÓ THẬT trong khối `financial` "
     "và có giá trị (FPT `rtd53`=5426,73780245 `rtq81`=−0,03335415 · VNM 4702,49259309 và 0,22632399 · "
-    "BID cả hai `null`) — nhưng số đo chỉ chứng minh trường tồn tại, KHÔNG cho ra tên, nên vẫn chưa xếp được",
-    status="cần kiểm API", block="Chưa giải mã")
-add(["rtd39", "rtd54"], "Screener", None, None,
+    "BID cả hai `null`) — nhưng số đo chỉ chứng minh trường tồn tại, KHÔNG cho ra tên, nên vẫn chưa xếp được"
+    " — **2026-09-03: lưu trước, giải mã sau (cùng luật với 13 mã §4.2 spec etl screener)**",
+    status="chưa giải mã", block="Chưa giải mã")
+add(["rtd39", "rtd54"], "Screener", "Screener", True,
     "có mặt trong khối `financial` của response nhưng KHÔNG có trong từ điển 729 mã — chưa biết là chỉ tiêu gì. "
     "**Đo 2026-08-15**: đã dump khoá khối `financial` — cả hai CÓ THẬT và có giá trị "
     "(`rtd39` BID 3,42582495 · FPT 15,93348656 · VNM 15,38168732; `rtd54` FPT 12,5858301 · VNM 13,09943584 · "
-    "BID `null`). Vế *có thật không* đã xong; vế *là chỉ tiêu gì* thì số đo không trả lời được nên vẫn giữ",
-    status="cần kiểm API", block="Chưa giải mã")
+    "BID `null`). Vế *có thật không* đã xong; vế *là chỉ tiêu gì* thì số đo không trả lời được nên vẫn giữ"
+    " — **2026-09-03: lưu trước, giải mã sau (cùng luật với 13 mã §4.2 spec etl screener)**",
+    status="chưa giải mã", block="Chưa giải mã")
 
 # ───────────────────────── Snapshot — GIU 16 ─────────────────────────
 add(["ceo", "competitors", "majorHoldings", "comTypeCode"], "Snapshot", "Snapshot", True,
@@ -400,7 +405,8 @@ assert sn_cond_drop == 0, (
 
 # doi soat theo nhom BO cua Screener (so cua quyet dinh 2026-08-14 vs so liet ke duoc)
 SCR_DROP_GROUPS = [
-    ("Trùng BVSC (giá, KL, sổ lệnh, khối ngoại, thoả thuận)", 31, "Trùng BVSC"),
+    ("Trùng BVSC (giá, KL, sổ lệnh, khối ngoại, thoả thuận) — 29 khoá còn lại **đã có tên** từ số đo "
+     "2026-08-28, đếm ở dòng *Ngoài nhóm* bên dưới", 31, "Trùng BVSC"),
     ("Chỉ báo kỹ thuật — tính từ giá BVSC", 20, "Chỉ báo kỹ thuật"),
     ("Nhóm chấm điểm riêng của FiinTrade", 20, "Chấm điểm:FT"),
     ("Biến động giá 1d–52w, YTD", 11, "Biến động giá"),
@@ -408,13 +414,13 @@ SCR_DROP_GROUPS = [
     ("Thành phần chấm điểm VGM", 6, "Chấm điểm:VGM"),
     ("Trùng BCTC đầy đủ", 5, "Trùng BCTC"),
     # So 4 la con so cua QUYET DINH GOC 2026-08-14, khong phai so do — giu nguyen de cot
-    # "Da chot" phan anh dung quyet dinh do. Cot "Liet ke duoc" tra 0 vi count_scr_drop("ATO/ATC")
-    # tra cung 0: khong co dong ROWS nao mang block nay.
-    # Do 2026-08-15 tren 193 khoa that: chi thay 2 khoa ATO (`atoPrice`, `atoVolume`, khoi
-    # `priceInfo`) va KHONG co khoa ATC nao. Tuc quyet dinh goc dem 4 truong ma response chi
-    # co 2. Chua doi phan loai (van la 0 dong liet ke duoc) vi chua biet quyet dinh dinh dem
-    # 4 truong NAO; ghi lai o §7.5 diem 2 de lan sau khoi do lai.
-    ("ATO/ATC", 4, "ATO/ATC"),
+    # "Da chot" phan anh dung quyet dinh do. Cot "Liet ke duoc" VAN tra 0, nhung khong con vi
+    # "khong co dong nao": hai khoa ATO that (`atoPrice`, `atoVolume`) nay DA co dong, nam trong
+    # block "Trung BVSC (do 2026-08-28)" va duoc dem o dong *Ngoai nhom*. Dem lai o day la dem
+    # hai lan. Do 2026-08-15 + 2026-08-28: chi co 2 khoa ATO, KHONG co khoa ATC nao trong 193
+    # khoa — tuc quyet dinh goc dem 4 truong ma response chi co 2 (§7.5 diem 2).
+    ("ATO/ATC — hai khoá ATO thật (`atoPrice`, `atoVolume`) **đã có tên** 2026-08-28, đếm ở dòng "
+     "*Ngoài nhóm*; response không có khoá ATC nào", 4, "ATO/ATC"),
     ("Khối lượng bình quân 5/10/20 phiên, 3 tháng", 4, "KL bình quân"),
     ("Sức mạnh tương đối", 2, "Sức mạnh tương đối"),
     ("Trùng MoneyFlow", 2, "Trùng MoneyFlow"),
@@ -445,11 +451,31 @@ SCR_KEEP_GROUPS = [
           and r["code"] in ("corpOwnership", "organizationOwnership")])),
     ("Khối TTM/Y trọn cụm", 13,
      len([r for r in ROWS if r["source"] == "Screener" and r["block"] == "TTM/Y"])),
-    ("Phần còn lại của 80 trường — không nguồn nào nêu đích danh", 9, 0),
+    ("Phần còn lại của 80 trường — không nguồn nào nêu đích danh; **số đo 2026-08-28 đã đặt tên**, "
+     "đếm ở hai dòng *Ngoài nhóm* bên dưới", 9, 0),
     ("`freeFloatRate` + `foreignerPercentage` — *chốt bằng số đo 2026-08-15*", None,
      len([r for r in ROWS if r["source"] == "Screener" and r["keep"]
           and r["code"] in ("freeFloatRate", "foreignerPercentage")])),
 ]
+
+# 66 khoa lan dau co ten (do 2026-08-28) mang block RIENG, khong nhom nao cua quyet dinh
+# 2026-08-14 phu — thieu dong nay thi hai bang doi soat §7.1/§7.2 khong khep (64 vs 112,
+# 59 vs 77). Dem tu ROWS chu khong viet so cung; assert ben duoi bat neu lech.
+SCR_NEW_DROP_BLOCKS = [("metadata", "Metadata (đo 2026-08-28)"),
+                       ("trùng BVSC", "Trùng BVSC (đo 2026-08-28)"),
+                       ("biến động giá", "Biến động giá (đo 2026-08-28)"),
+                       ("chấm điểm", "Chấm điểm (đo 2026-08-28)"),
+                       ("kỹ thuật", "Chỉ báo kỹ thuật (đo 2026-08-28)")]
+
+
+def n_scr_block(block, keep):
+    return len([r for r in ROWS if r["source"] == "Screener" and r["keep"] is keep and r["block"] == block])
+
+
+scr_new_drop = sum(n_scr_block(b, False) for _, b in SCR_NEW_DROP_BLOCKS)
+scr_new_drop_parts = " · ".join("%s %d" % (label, n_scr_block(b, False)) for label, b in SCR_NEW_DROP_BLOCKS)
+scr_new_keep = n_scr_block("Tỷ số (đo 2026-08-28)", True)
+scr_undecoded_keep = n_scr_block("Chưa giải mã", True)
 
 SN_GROUPS = [
     ("Giữ — 16 trường độc quyền", 16, sn_keep - 2),
@@ -481,6 +507,8 @@ def group_tables(source, keep=..., status=...):
             blocks[r["block"]] = []
             order.append(r["block"])
         blocks[r["block"]].append(r)
+    if not rows:
+        return "_(rỗng — không còn dòng nào ở nhóm này.)_"
     parts = []
     for b in order:
         parts.append("**%s** — %d trường\n\n%s" % (b, len(blocks[b]), table(blocks[b])))
@@ -489,7 +517,8 @@ def group_tables(source, keep=..., status=...):
 
 md = """# Chọn trường cho ETL thị trường — bảng tường minh theo từng mã
 
-**Ngày:** 2026-08-14 · **Đo lại và chốt thêm:** 2026-08-15 · **Trạng thái:** ✅ đã chốt ·
+**Ngày:** 2026-08-14 · **Đo lại và chốt thêm:** 2026-08-15 · **Cập nhật:** 2026-09-03 ·
+**Trạng thái:** ✅ đã chốt ·
 **Trải từ quyết định chọn nguồn ngày 2026-08-14**
 
 **File sinh tự động** từ [`gen_field_selection.py`](gen_field_selection.py) — sửa qua script rồi chạy lại, không sửa tay. Bản [`market-field-selection.json`](market-field-selection.json) sinh cùng nguồn.
@@ -592,6 +621,11 @@ Chỉ báo kỹ thuật **tự tính từ chuỗi giá này**, không lấy củ
 
 {scr_chk}
 
+✅ **Trống từ 2026-09-03.** Bốn mã `rtd39` `rtd53` `rtd54` `rtq81` chuyển sang **lấy** với trạng thái
+*chưa giải mã* — cùng luật chủ dự án đã duyệt cho 13 mã ở §4.1: *lưu trước, giải mã sau*. Chúng có thật,
+có giá trị số, và số đo đã dùng hết công dụng; chờ tên thì không phải chờ trong tình trạng KHÔNG LƯU, vì
+Screener không backfill được — không lưu là mất theo ngày. Xem §9.
+
 ✅ **`freeFloatRate` và `foreignerPercentage` đã chốt bằng số đo 2026-08-15 — không còn treo.** Trước đây hai
 mã này phải chốt cùng lúc với §5.2 (Snapshot bỏ chúng với nguồn chuẩn *dự kiến* là Screener), và rủi ro là
 **không nguồn nào lưu**. Lời gọi thật đã trả lời: cả hai có mặt trong khối `stockScreenerItem`, giá trị trùng
@@ -674,9 +708,11 @@ liệt kê được từ tài liệu nguồn. **Lệch không bị ép cho khớ
 | — trong đó `cần kiểm API` | {scr_chk_n} |
 | **Chưa liệt kê được** (không tài liệu nguồn nào nêu mã) | **{scr_missing}** |
 
-Phép cộng khép kín: thiếu {scr_keep_lech_n} trường ở nhóm giữ + thiếu {scr_drop_lech_n} trường ở nhóm bỏ =
-{scr_gap_total} trường chưa phân loại, bằng đúng {scr_missing} trường chưa liệt kê được + {scr_chk_n} trường
-`cần kiểm API`. Không có trường nào bị đếm hai lần.
+Phép cộng khép kín: 193 khoá quan sát được = {scr_keep_n} lấy + {scr_drop_n} bỏ + {scr_chk_n} cần kiểm API,
+không còn khoá nào chưa liệt kê ({scr_missing}). So với ước lượng theo nhóm ngày 2026-08-14 (80 giữ · 113 bỏ):
+nhóm giữ **{scr_keep_lech}**, nhóm bỏ **{scr_drop_lech}** — lệch ghi ở đó, không ép. Không có trường nào bị
+đếm hai lần: 66 khoá đặt tên 2026-08-28 nằm ở các dòng *Ngoài nhóm* của §7.1/§7.2, không nằm trong nhóm nào
+của quyết định 2026-08-14.
 
 ### 7.4 Snapshot
 
@@ -697,15 +733,18 @@ trống này)* còn {sn_gap_left}, bằng đúng {sn_chk_n} dòng `cần kiểm 
 
 ### 7.5 Ba chỗ lệch, nguyên nhân đã truy được
 
-1. **Screener thiếu {scr_missing} mã.** Không tài liệu nguồn nào liệt kê đủ 193 trường của response. Chỉ có:
-   83 tiêu chí của `GetScreenerParameters`, các mã được nêu đích danh khi chốt nguồn, và vài mã trong mô tả
-   5 khối response (`priceInfo` 43 · `stockScreenerItem` 129 · `performance` 12 · `financial` 21 ·
-   `technical` 18). Phần lớn 129 trường của `stockScreenerItem` không có mã nào được ghi ra.
-2. **Nhóm ATO/ATC (4 trường) vẫn không liệt kê được dòng nào** — quyết định nêu nhóm nhưng không nêu mã.
-   Số đo 2026-08-15 tìm được **hai** khoá ATO thật trong khối `priceInfo`: `atoPrice` và `atoVolume` (BID
-   38.700 · 26.700), **không có khoá ATC nào** trong 193 khoá. Nghĩa là nhóm "ATO/ATC 4 trường" của quyết
-   định 2026-08-14 không có đủ 4 mã tương ứng trong response. Chưa thêm dòng vào bảng vì chưa biết quyết
-   định định đếm 4 trường nào; ghi lại đây để lần sau khỏi đo lại.
+1. **Screener: {scr_missing} mã chưa liệt kê — 66 khoá trước đây không tài liệu nguồn nào nêu đã được đặt
+   tên từ response thật 2026-08-28.** Chỗ hở là ở tài liệu nguồn, không ở response: không tài liệu nào liệt
+   kê đủ 193 trường — chỉ có 83 tiêu chí của `GetScreenerParameters`, các mã được nêu đích danh khi chốt
+   nguồn, và vài mã trong mô tả 5 khối (`priceInfo` 43 · `stockScreenerItem` 129 · `performance` 12 ·
+   `financial` 21 · `technical` 18); phần lớn 129 trường của `stockScreenerItem` không có mã nào được ghi ra.
+   Cách bịt: đọc tên thẳng từ hai response thật (`samples/` của spec `etl screener` 2026-09-03).
+2. **Nhóm ATO/ATC (4 trường) chỉ có hai mã thật, và hai mã đó nay đã có dòng** — quyết định nêu nhóm nhưng
+   không nêu mã. Số đo 2026-08-15 tìm được **hai** khoá ATO thật trong khối `priceInfo`: `atoPrice` và
+   `atoVolume` (BID 38.700 · 26.700), **không có khoá ATC nào** trong 193 khoá. Nghĩa là nhóm "ATO/ATC 4
+   trường" của quyết định 2026-08-14 không có đủ 4 mã tương ứng trong response. Từ 2026-08-28 cả hai đã có
+   dòng trong §4.2 (nhóm *Trùng BVSC*, đếm ở dòng *Ngoài nhóm* của §7.1), nên hàng "ATO/ATC" của bảng đối
+   soát cố ý giữ số 0 để khỏi đếm hai lần — không phải vì thiếu dòng.
 3. **Snapshot thiếu {sn_missing} trường trên 54.** Tài liệu endpoint mô tả `summary` 28 trường và một ví dụ
    khối `quarterly` **của bản ngân hàng**; bản phi ngân hàng có bộ chỉ tiêu khác. Số 54 là số đo, không phải
    danh sách được viết ra ở đâu. ✅ Đo 2026-08-15 xác nhận đúng như vậy: BID (`GetSnapshot`, ngân hàng) ra
@@ -731,8 +770,9 @@ có mặt** trong 193 khoá response, sau khi hạ chữ cái đầu. Giả đ�
   lại: 173 mã nhưng chỉ **83 mã** truy được qua `GetScreenerParameters`, phần còn lại lấy từ bundle. Hai mã
   này rơi đúng vào vùng 90 mã không có nguồn API xác nhận. ✅ **Đã đo khối `financial` ngày 2026-08-15: cả
   hai có thật và có giá trị số** (`rtd39` BID 3,42582495 · FPT 15,93348656; `rtd54` FPT 12,5858301, BID
-  `null`). Vế *có thật không* đã xong. Vế *là chỉ tiêu gì* thì số đo không trả lời được, nên hai mã vẫn nằm
-  ở §8 — nhưng nay là chờ **tên**, không còn là chờ **bằng chứng tồn tại**.
+  `null`). Vế *có thật không* đã xong. Vế *là chỉ tiêu gì* thì số đo không trả lời được — nên từ 2026-09-03
+  hai mã chuyển sang **lấy, trạng thái *chưa giải mã*** (§4.1): chờ **tên**, không chờ **bằng chứng tồn
+  tại**, và trong lúc chờ thì vẫn lưu.
 
 Số đo 2026-08-15 còn dựng được đủ 21 khoá của khối `financial`, trước đây tài liệu chỉ nêu một phần:
 `organCode` `rtd7` `rtd11` `rtd14` `rtd19` `rtd21` `rtd25` `rtd39` `rtd51` `rtd53` `rtd54` `rtq12` `rtq81`
@@ -740,9 +780,10 @@ Số đo 2026-08-15 còn dựng được đủ 21 khoá của khối `financial`
 
 ## 8 · Danh sách cần kiểm API — {chk_total} trường
 
-Danh sách này **đã rút từ 16 xuống {chk_total} sau đợt đo 2026-08-15**. Mười dòng được chốt bằng số đo thật;
-{chk_total} dòng còn lại thì số đo đã dùng hết công dụng — chúng chờ một cái **tên chỉ tiêu** hoặc một
-**quyết định lúc cài ETL**, không phải chờ một lời gọi API nào nữa.
+Danh sách này **đã rút từ 16 xuống 6 sau đợt đo 2026-08-15** (mười dòng chốt bằng số đo thật), rồi xuống
+**{chk_total} sau review cuối 2026-09-03**: bốn mã Screener `rtd39` `rtd53` `rtd54` `rtq81` chuyển sang
+*lưu trước, giải mã sau* (§4.3). {chk_total} dòng còn lại thì số đo đã dùng hết công dụng — chúng chờ một
+cái **tên chỉ tiêu** hoặc một **quyết định lúc cài ETL**, không phải chờ một lời gọi API nào nữa.
 
 | Mã | Nguồn | Vì sao chưa chốt được | Phép kiểm sẽ kết luận |
 |---|---|---|---|
@@ -754,9 +795,10 @@ Hai phép kiểm dự kiến gỡ khoảng trống §7.5 **đã chạy ngày 202
    `ALL` rồi `VN30`, `pageSize` 30)*. Ra đúng **193 khoá phân biệt / 223 lượt xuất hiện**, giống nhau ở cả
    hai `comGroupCode`. Chốt được giả định §7.6 (83/83 tiêu chí đều có trong response), giải được cách chuẩn
    hoá hoa/thường, và cho thấy nhóm ATO chỉ có 2 khoá (`atoPrice`, `atoVolume`) chứ không phải 4 (§7.5).
-   Vẫn còn **{scr_missing} mã chưa liệt kê được** — phần lớn nằm trong 129 khoá của `stockScreenerItem` mà
-   không tài liệu nguồn nào ghi mã ra; số đo cho biết chúng TÊN gì nhưng không cho biết chúng LÀ gì, nên
-   chưa xếp lấy/bỏ được.
+   Sau lượt đo đó vẫn còn 66 mã chưa liệt kê được — phần lớn nằm trong 129 khoá của `stockScreenerItem` mà
+   không tài liệu nguồn nào ghi mã ra. **Đo lại 2026-08-28 đã đóng nốt chỗ này: {scr_missing} mã còn chưa
+   liệt kê.** Số đo cho biết chúng TÊN gì chứ không cho biết chúng LÀ gì, nên 13 mã tỷ số vẫn mang trạng
+   thái *chưa giải mã* — lưu trước, giải mã sau.
 2. **`GetSnapshot` (BID) và `GetSnapshotNoneBank` (FPT, VNM), dump khoá cả ba khối.** Bản ngân hàng ra đúng
    **54** khoá (`summary` 28 + `quarterly`/`yearly` 27); bản phi ngân hàng ra **56** (`summary` 28 +
    `quarterly`/`yearly` 28) — tức hai bản thật sự khác bộ chỉ tiêu, đúng như §7.5 điểm 3 dự đoán. Con số 54
@@ -767,16 +809,15 @@ Hai phép kiểm dự kiến gỡ khoảng trống §7.5 **đã chạy ngày 202
 | Ngày | Thay đổi |
 |---|---|
 | 2026-08-14 | Bản đầu — trải quyết định chọn nguồn ngày 2026-08-14 ra từng mã trường. 213 dòng: 57+34+16 lấy · 92 bỏ · 14 chưa rõ. 16 dòng mang trạng thái `cần kiểm API` (gồm 2 dòng đã xếp *bỏ* nhưng bỏ có điều kiện) |
-| 2026-08-15 | **Đo thật, chốt 10/16 dòng `cần kiểm API`.** Gọi `GetScreenerParameters` (83 tiêu chí), `GetScreenerItems` 1 tiêu chí trên `ALL` và `VN30` (193 khoá), BVSC `/quotes?symbols=ALL` (2.534 bản ghi) và `/datafeed/instruments` (62 khoá), `GetSnapshot`/`GetSnapshotNoneBank` (54 / 56 khoá). Kết quả: `foreignerPercentage` + `freeFloatRate` → **lấy** ở Screener nên Snapshot bỏ hết điều kiện · `averageValue*` 4 mã → **bỏ** · `outstandingShare` + `freeFloat` → **lấy** ở Snapshot *(FPT lệch `ListedShare` 10.819.301 CP)* · `rtd39`/`rtd54` xác nhận có thật. Sửa **mã trường về đúng hoa/thường thật** — `getScreenerItems` chỉ hạ chữ cái đầu, viết thường toàn bộ sẽ trượt 31/83 khoá. Giải ba chỗ vênh: 223 = tổng 5 khối vs 193 khoá phân biệt · BVSC 62 đúng, 50 sai · `foreignerRoom` của Screener = `foreignRemain` của BVSC chứ không phải `foreignRoom`. Còn {chk_total} dòng `cần kiểm API`: {total_rows} dòng · {keep_total} lấy · {drop_total} bỏ · {chk_unknown} chưa rõ |
+| 2026-08-15 | **Đo thật, chốt 10/16 dòng `cần kiểm API`.** Gọi `GetScreenerParameters` (83 tiêu chí), `GetScreenerItems` 1 tiêu chí trên `ALL` và `VN30` (193 khoá), BVSC `/quotes?symbols=ALL` (2.534 bản ghi) và `/datafeed/instruments` (62 khoá), `GetSnapshot`/`GetSnapshotNoneBank` (54 / 56 khoá). Kết quả: `foreignerPercentage` + `freeFloatRate` → **lấy** ở Screener nên Snapshot bỏ hết điều kiện · `averageValue*` 4 mã → **bỏ** · `outstandingShare` + `freeFloat` → **lấy** ở Snapshot *(FPT lệch `ListedShare` 10.819.301 CP)* · `rtd39`/`rtd54` xác nhận có thật. Sửa **mã trường về đúng hoa/thường thật** — `getScreenerItems` chỉ hạ chữ cái đầu, viết thường toàn bộ sẽ trượt 31/83 khoá. Giải ba chỗ vênh: 223 = tổng 5 khối vs 193 khoá phân biệt · BVSC 62 đúng, 50 sai · `foreignerRoom` của Screener = `foreignRemain` của BVSC chứ không phải `foreignRoom`. Còn 6 dòng `cần kiểm API`: 213 dòng · 111 lấy · 96 bỏ · 6 chưa rõ |
+| 2026-09-03 | **Đặt tên 66 khoá Screener từ response thật, bảng về đủ 193/193.** Hai lời gọi `GetScreenerItems` ngày 2026-08-28 (sau phiên) và 2026-09-03 (trước mở cửa) — response lưu ở [`samples/`](../90-records/plans/2026-09-03-screener-daily-etl/samples/) của spec `etl screener`. 48 khoá xếp bằng luật đã chốt (metadata · trùng BVSC · biến động giá · chấm điểm · kỹ thuật), 18 mã tỷ số xếp **lấy** theo duyệt của chủ dự án, 13 trong đó mang trạng thái *chưa giải mã* (lưu trước, giải mã sau). §7.3 "chưa liệt kê" về **0**. Số giữ **59 → 77**; con số **80** của quyết định 2026-08-14 nay ghi đúng bản chất là **ước lượng theo nhóm**, không phải số đếm — không ép cho khớp. Review cuối cùng ngày chuyển nốt 4 mã `cần kiểm API` (`rtd39` `rtd53` `rtd54` `rtq81`) sang **lấy** theo cùng luật *lưu trước, giải mã sau* ⇒ giữ **81**, `cần kiểm API` của Screener về **0**. Hai bảng đối soát §7.1/§7.2 thêm dòng *Ngoài nhóm* cho các khoá không thuộc nhóm nào của quyết định 2026-08-14, và có assert bắt khi cột "Liệt kê được" không cộng bằng tổng: {total_rows} dòng · {keep_total} lấy · {drop_total} bỏ · {chk_unknown} chưa rõ |
 """
 
 chk_rows = []
 for r in [x for x in ROWS if x["status"] == "cần kiểm API"]:
-    if r["code"] in ("rtd39", "rtd54"):
-        test = ("**số đo đã dùng hết công dụng** — dump khối `financial` ngày 2026-08-15 xác nhận trường có "
-                "thật, nên việc còn lại là bổ sung vào từ điển 729 mã một cái TÊN. Không lời gọi nào cho ra "
-                "tên; chỉ giải được khi FiinGroup trả lời hoặc bundle JS mới có")
-    elif r["code"] in ("rtd53", "rtq81"):
+    # Nhanh rtd39/rtd54 da bo: tu 2026-09-03 bon ma Screener `can kiem API` chuyen sang
+    # keep=True / "chua giai ma", nen khong con dong nao cua chung vao bang nay.
+    if r["code"] in ("rtd53", "rtq81"):
         test = ("chưa có phép kiểm nào kết luận được — 5 cách đã thử đều không ra tên, và số đo 2026-08-15 "
                 "chỉ thêm được dải giá trị chứ không thêm tên; chỉ giải được khi FiinGroup trả lời hoặc "
                 "bundle mới có tên")
@@ -785,10 +826,23 @@ for r in [x for x in ROWS if x["status"] == "cần kiểm API"]:
     chk_rows.append("| `%s` | %s | %s | %s |" % (r["code"], r["source"], esc(r["reason"]), test))
 
 scr_drop_rows = "\n".join(
-    "| %s | %s | %d | %s |" % (name, cnt_txt(cnt), count_scr_drop(tag), lech(cnt, count_scr_drop(tag)))
-    for name, cnt, tag in SCR_DROP_GROUPS)
+    ["| %s | %s | %d | %s |" % (name, cnt_txt(cnt), count_scr_drop(tag), lech(cnt, count_scr_drop(tag)))
+     for name, cnt, tag in SCR_DROP_GROUPS]
+    + ["| Ngoài nhóm — %d khoá lần đầu có tên (đo 2026-08-28: %s) | — | %d | ngoài nhóm |"
+       % (scr_new_drop, scr_new_drop_parts, scr_new_drop)])
 scr_keep_rows = "\n".join(
-    "| %s | %s | %d | %s |" % (name, cnt_txt(cnt), got, lech(cnt, got)) for name, cnt, got in SCR_KEEP_GROUPS)
+    ["| %s | %s | %d | %s |" % (name, cnt_txt(cnt), got, lech(cnt, got)) for name, cnt, got in SCR_KEEP_GROUPS]
+    + ["| Ngoài nhóm — %d mã tỷ số lần đầu có tên (đo 2026-08-28) | — | %d | ngoài nhóm |"
+       % (scr_new_keep, scr_new_keep),
+       "| Ngoài nhóm — %d mã `cần kiểm API` chuyển sang **lưu trước, giải mã sau** (2026-09-03)"
+       " | — | %d | ngoài nhóm |" % (scr_undecoded_keep, scr_undecoded_keep)])
+
+# Hai bang doi soat PHAI khep: cong cot "Liet ke duoc" = tong that. Them mot block moi ma quen
+# dong "Ngoai nhom" thi assert nay do ngay, thay vi de bang tu noi doi mot cach lang le.
+_drop_sum = sum(count_scr_drop(tag) for _, _, tag in SCR_DROP_GROUPS) + scr_new_drop
+assert _drop_sum == scr_drop, "Bang §7.1 khong khep: %d dong liet ke vs %d dong bo that" % (_drop_sum, scr_drop)
+_keep_sum = sum(got for _, _, got in SCR_KEEP_GROUPS) + scr_new_keep + scr_undecoded_keep
+assert _keep_sum == scr_keep, "Bang §7.2 khong khep: %d dong liet ke vs %d dong giu that" % (_keep_sum, scr_keep)
 sn_rows = "\n".join(
     ["| %s | %s | %d | %s |" % (name, cnt_txt(cnt), got, lech(cnt, got)) for name, cnt, got in SN_GROUPS]
     # 4 dong `can kiem API` nam ngoai bon nhom tren: quyet dinh chua xep chung vao

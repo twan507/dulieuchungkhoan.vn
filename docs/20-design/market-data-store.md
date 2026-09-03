@@ -211,7 +211,7 @@ Bốn luật rút ra từ những lần trả giá, mỗi luật chống một c
 | Danh bạ, ngành ICB, `/quotes`, `/mapping` | Trước phiên | 4 |
 | `getPriceData` Page 1 | Sau 15:00 | 1.974 |
 | Snapshot ngày: **lưu 16/54 trường** — hồ sơ DN, sở hữu chi tiết | Sau 15:00 | ~4.000 |
-| `GetScreenerItems` — **lưu 80/193 trường** (ước lượng 2026-08-14; đếm 2026-09-03: 77/193) *(gửi 1 tiêu chí, nhiều hơn sẽ timeout)* — **lát 1 của nhóm này: `etl screener` 15:20, [spec 2026-09-03](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) đã duyệt 2026-09-03** | Sau 15:00 | 52 |
+| `GetScreenerItems` — **lưu 80/193 trường** (ước lượng 2026-08-14; đếm 2026-09-03: 81/193 sau khi lưu thêm 4 mã `cần kiểm API`) *(gửi 1 tiêu chí, nhiều hơn sẽ timeout)* — **lát 1 của nhóm này: `etl screener` 15:20, [spec 2026-09-03](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) đã duyệt 2026-09-03** | Sau 15:00 | 52 |
 | Lịch sự kiện *(dùng `FromDate` lấy phần mới)* | Hằng ngày | ~10 |
 | BCTC + PDF | **Kích hoạt** theo `GetCorporateEarning` | ~100–300/quý |
 | Re-crawl giá một mã | **Kích hoạt** theo sự kiện quyền của mã đó | tuỳ |
@@ -454,7 +454,7 @@ SELECT create_hypertable('snapshot_daily', 'trading_date');
 CREATE TABLE screener_daily (
   security_id  bigint NOT NULL REFERENCES market.security,
   trading_date date NOT NULL,
-  payload      jsonb NOT NULL,   -- trường có `keep` trong market-field-selection (77/193, đếm 2026-09-03),
+  payload      jsonb NOT NULL,   -- trường có `keep` trong market-field-selection (81/193, đếm 2026-09-03),
                                  -- lồng theo khối nguồn — sau lọc chỉ còn `stockScreenerItem` và `financial`
   PRIMARY KEY (security_id, trading_date)
 );
@@ -708,7 +708,7 @@ Chiến lược chính là **bám sát và thích ứng liên tục với nguồ
 |---|---|---|
 | **A — Phổ quát** | OHLCV ngày và phút · khối lượng, giá trị · danh mục mã, sàn · chỉ số · sự kiện doanh nghiệp *(gốc từ VSD)* | ✅ Dễ. Nguồn nào cũng có, định nghĩa gần như đồng nhất |
 | **B — Có ở nhiều nguồn, định nghĩa khác nhau** | Báo cáo tài chính · phân ngành · dòng tiền theo nhóm NĐT · khối ngoại · thoả thuận | ⚠️ Được, nhưng **phải ánh xạ**. Mỗi nguồn có bộ mã chỉ tiêu và cách gộp khoản mục riêng |
-| **C — Độc quyền FiinGroup** | Điểm VGM · 32 chỉ tiêu `RateIndicator` · mô hình định giá (`estimatedEPS`, `forecastEPS`, `recommendMethod`) · `ZMFScore` · 77/193 trường screener (đếm 2026-09-03) | ❌ Mất là mất. Không nguồn nào khác có |
+| **C — Độc quyền FiinGroup** | Điểm VGM · 32 chỉ tiêu `RateIndicator` · mô hình định giá (`estimatedEPS`, `forecastEPS`, `recommendMethod`) · `ZMFScore` · 81/193 trường screener (đếm 2026-09-03) | ❌ Mất là mất. Không nguồn nào khác có |
 
 Tầng A và B chiếm phần lớn giá trị sử dụng. Tầng C thì chấp nhận **đóng băng**: giữ nguyên lịch sử đã tích luỹ, các ngày sau để `NULL`. Đây chính là mô hình *"phần thiếu kệ nó, phần đủ cứ chạy"*.
 

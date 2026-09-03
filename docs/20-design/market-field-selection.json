@@ -2234,40 +2234,40 @@
     "name_vi": null,
     "name_src": "—",
     "source": "Screener",
-    "nguon_chuan": null,
-    "keep": null,
-    "reason": "có trong từ điển 729 mã nhưng mang trạng thái CHƯA GIẢI MÃ — không nguồn nào có tên, chưa biết là chỉ tiêu gì nên chưa xếp được vào nhóm nào. **Đo 2026-08-15**: cả hai CÓ THẬT trong khối `financial` và có giá trị (FPT `rtd53`=5426,73780245 `rtq81`=−0,03335415 · VNM 4702,49259309 và 0,22632399 · BID cả hai `null`) — nhưng số đo chỉ chứng minh trường tồn tại, KHÔNG cho ra tên, nên vẫn chưa xếp được",
-    "status": "cần kiểm API"
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "có trong từ điển 729 mã nhưng mang trạng thái CHƯA GIẢI MÃ — không nguồn nào có tên, chưa biết là chỉ tiêu gì nên chưa xếp được vào nhóm nào. **Đo 2026-08-15**: cả hai CÓ THẬT trong khối `financial` và có giá trị (FPT `rtd53`=5426,73780245 `rtq81`=−0,03335415 · VNM 4702,49259309 và 0,22632399 · BID cả hai `null`) — nhưng số đo chỉ chứng minh trường tồn tại, KHÔNG cho ra tên, nên vẫn chưa xếp được — **2026-09-03: lưu trước, giải mã sau (cùng luật với 13 mã §4.2 spec etl screener)**",
+    "status": "chưa giải mã"
   },
   {
     "code": "rtq81",
     "name_vi": null,
     "name_src": "—",
     "source": "Screener",
-    "nguon_chuan": null,
-    "keep": null,
-    "reason": "có trong từ điển 729 mã nhưng mang trạng thái CHƯA GIẢI MÃ — không nguồn nào có tên, chưa biết là chỉ tiêu gì nên chưa xếp được vào nhóm nào. **Đo 2026-08-15**: cả hai CÓ THẬT trong khối `financial` và có giá trị (FPT `rtd53`=5426,73780245 `rtq81`=−0,03335415 · VNM 4702,49259309 và 0,22632399 · BID cả hai `null`) — nhưng số đo chỉ chứng minh trường tồn tại, KHÔNG cho ra tên, nên vẫn chưa xếp được",
-    "status": "cần kiểm API"
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "có trong từ điển 729 mã nhưng mang trạng thái CHƯA GIẢI MÃ — không nguồn nào có tên, chưa biết là chỉ tiêu gì nên chưa xếp được vào nhóm nào. **Đo 2026-08-15**: cả hai CÓ THẬT trong khối `financial` và có giá trị (FPT `rtd53`=5426,73780245 `rtq81`=−0,03335415 · VNM 4702,49259309 và 0,22632399 · BID cả hai `null`) — nhưng số đo chỉ chứng minh trường tồn tại, KHÔNG cho ra tên, nên vẫn chưa xếp được — **2026-09-03: lưu trước, giải mã sau (cùng luật với 13 mã §4.2 spec etl screener)**",
+    "status": "chưa giải mã"
   },
   {
     "code": "rtd39",
     "name_vi": null,
     "name_src": "—",
     "source": "Screener",
-    "nguon_chuan": null,
-    "keep": null,
-    "reason": "có mặt trong khối `financial` của response nhưng KHÔNG có trong từ điển 729 mã — chưa biết là chỉ tiêu gì. **Đo 2026-08-15**: đã dump khoá khối `financial` — cả hai CÓ THẬT và có giá trị (`rtd39` BID 3,42582495 · FPT 15,93348656 · VNM 15,38168732; `rtd54` FPT 12,5858301 · VNM 13,09943584 · BID `null`). Vế *có thật không* đã xong; vế *là chỉ tiêu gì* thì số đo không trả lời được nên vẫn giữ",
-    "status": "cần kiểm API"
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "có mặt trong khối `financial` của response nhưng KHÔNG có trong từ điển 729 mã — chưa biết là chỉ tiêu gì. **Đo 2026-08-15**: đã dump khoá khối `financial` — cả hai CÓ THẬT và có giá trị (`rtd39` BID 3,42582495 · FPT 15,93348656 · VNM 15,38168732; `rtd54` FPT 12,5858301 · VNM 13,09943584 · BID `null`). Vế *có thật không* đã xong; vế *là chỉ tiêu gì* thì số đo không trả lời được nên vẫn giữ — **2026-09-03: lưu trước, giải mã sau (cùng luật với 13 mã §4.2 spec etl screener)**",
+    "status": "chưa giải mã"
   },
   {
     "code": "rtd54",
     "name_vi": null,
     "name_src": "—",
     "source": "Screener",
-    "nguon_chuan": null,
-    "keep": null,
-    "reason": "có mặt trong khối `financial` của response nhưng KHÔNG có trong từ điển 729 mã — chưa biết là chỉ tiêu gì. **Đo 2026-08-15**: đã dump khoá khối `financial` — cả hai CÓ THẬT và có giá trị (`rtd39` BID 3,42582495 · FPT 15,93348656 · VNM 15,38168732; `rtd54` FPT 12,5858301 · VNM 13,09943584 · BID `null`). Vế *có thật không* đã xong; vế *là chỉ tiêu gì* thì số đo không trả lời được nên vẫn giữ",
-    "status": "cần kiểm API"
+    "nguon_chuan": "Screener",
+    "keep": true,
+    "reason": "có mặt trong khối `financial` của response nhưng KHÔNG có trong từ điển 729 mã — chưa biết là chỉ tiêu gì. **Đo 2026-08-15**: đã dump khoá khối `financial` — cả hai CÓ THẬT và có giá trị (`rtd39` BID 3,42582495 · FPT 15,93348656 · VNM 15,38168732; `rtd54` FPT 12,5858301 · VNM 13,09943584 · BID `null`). Vế *có thật không* đã xong; vế *là chỉ tiêu gì* thì số đo không trả lời được nên vẫn giữ — **2026-09-03: lưu trước, giải mã sau (cùng luật với 13 mã §4.2 spec etl screener)**",
+    "status": "chưa giải mã"
   },
   {
     "code": "ceo",

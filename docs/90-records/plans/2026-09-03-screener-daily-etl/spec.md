@@ -35,7 +35,7 @@ Lát này: một subcommand `python -m etl screener` ghi **`market.screener_dail
 - `trading_date` **không** thể lấy thô từ `tradingDate` rồi ghi: ngày lễ nguồn vẫn đóng dấu *ngày hôm đó* với giá 0 ⇒ UPSERT theo PK sẽ **đẻ dòng ma cho ngày không giao dịch**. Giả định ban đầu của brainstorm (*"ngày lễ `tradingDate` đứng ở phiên cũ nên UPSERT tự đè"*) **đã bị số đo bác bỏ** — đây là lý do spec có §5.4.
 - *"Payload trùng lượt trước ⇒ ngày lễ"* cũng **không dùng được**: tỷ số tài chính đổi hằng ngày kể cả không có phiên.
 - Tín hiệu phân biệt dùng được: **`closePrice > 0`** (30/30 vs 0/30). `totalVolume` không dùng được vì mã kém thanh khoản = 0 ngay trong ngày có phiên.
-- 27 khoá trùng ⇒ **giữ nguyên 5 khối lồng**, không làm phẳng. Phẳng + tiền tố to hơn 66% mà không được gì.
+- 27 khoá trùng ⇒ **giữ nguyên khối lồng của nguồn**, không làm phẳng. Phẳng + tiền tố to hơn 66% mà không được gì. *(Số đo trên là của cả 193 khoá, tức 5 khối; sau khi lọc theo `keep` thì chỉ còn hai khối `stockScreenerItem` và `financial` có khoá — xem đính chính §5.3.)*
 
 ### 2.2 Giả định — CHƯA kiểm, ghi để người sau biết mình đứng trên gì
 
@@ -83,7 +83,7 @@ Không rơi vào nhóm bỏ nào; cùng họ với *"55 mã tỷ số không ngu
 
 ### 4.3 🔴 Không ép con số 80
 
-59 + 18 = **77**, không phải 80. "80" là ước lượng theo *nhóm* ngày 2026-08-14, không phải số đếm. Tiêu chí nghiệm thu là **193/193 dòng có mặt** (AC1); số `keep` là *kết quả*, không phải chỉ tiêu. Ra 77 thì ghi 77 và đính chính "80" ở mọi chỗ đang chép nó (§8). Ép cho khớp 80 chính là *"sửa số mà không đo"* (CLAUDE.md §1.2).
+59 + 18 = **77**, không phải 80. "80" là ước lượng theo *nhóm* ngày 2026-08-14, không phải số đếm. Tiêu chí nghiệm thu là **193/193 dòng có mặt** (AC1); số `keep` là *kết quả*, không phải chỉ tiêu. Ra 77 thì ghi 77 và đính chính "80" ở mọi chỗ đang chép nó (§8). **Số chốt sau review cuối 2026-09-03: 81/193** — Ruling 15 áp cùng luật *lưu trước, giải mã sau* cho 4 mã `rtd39` `rtd53` `rtd54` `rtq81` vốn mang `keep = None` (`cần kiểm API`) nên bị ETL bỏ, dù chúng có thật và có giá trị. Ép cho khớp 80 chính là *"sửa số mà không đo"* (CLAUDE.md §1.2).
 
 ## 5. Phần B — job `python -m etl screener`
 
