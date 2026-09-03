@@ -1,0 +1,266 @@
+{
+ "dmx": {
+  "code": "MWJSC",
+  "exright_date": "2026-08-18",
+  "valuePerShare": 4000,
+  "rows": [
+   {
+    "tradingDate": "2026-08-21T00:00:00",
+    "closePrice": 79700.0,
+    "closeValue": 79700.0,
+    "referencePrice": 81800.0,
+    "referenceValue": 81800.0,
+    "openValue": 81500.0,
+    "highestValue": 81500.0,
+    "lowestValue": 78200.0
+   },
+   {
+    "tradingDate": "2026-08-20T00:00:00",
+    "closePrice": 81800.0,
+    "closeValue": 81800.0,
+    "referencePrice": 83600.0,
+    "referenceValue": 83600.0,
+    "openValue": 82900.0,
+    "highestValue": 82900.0,
+    "lowestValue": 80800.0
+   },
+   {
+    "tradingDate": "2026-08-19T00:00:00",
+    "closePrice": 83600.0,
+    "closeValue": 83600.0,
+    "referencePrice": 83000.0,
+    "referenceValue": 83000.0,
+    "openValue": 82300.0,
+    "highestValue": 83600.0,
+    "lowestValue": 80800.0
+   },
+   {
+    "tradingDate": "2026-08-18T00:00:00",
+    "closePrice": 83000.0,
+    "closeValue": 83000.0,
+    "referencePrice": 84500.0,
+    "referenceValue": 84500.0,
+    "openValue": 84000.0,
+    "highestValue": 84000.0,
+    "lowestValue": 80100.0
+   },
+   {
+    "tradingDate": "2026-08-17T00:00:00",
+    "closePrice": 88500.0,
+    "closeValue": 84499.8,
+    "referencePrice": 89800.0,
+    "referenceValue": 85741.04,
+    "openValue": 85741.04,
+    "highestValue": 85741.04,
+    "lowestValue": 83926.92
+   },
+   {
+    "tradingDate": "2026-08-14T00:00:00",
+    "closePrice": 89800.0,
+    "closeValue": 85741.04,
+    "referencePrice": 90000.0,
+    "referenceValue": 85932.0,
+    "openValue": 85932.0,
+    "highestValue": 86504.88,
+    "lowestValue": 84213.36
+   },
+   {
+    "tradingDate": "2026-08-13T00:00:00",
+    "closePrice": 90000.0,
+    "closeValue": 85932.0,
+    "referencePrice": 90000.0,
+    "referenceValue": 85932.0,
+    "openValue": 86504.88,
+    "highestValue": 86504.88,
+    "lowestValue": 85454.6
+   },
+   {
+    "tradingDate": "2026-08-12T00:00:00",
+    "closePrice": 90000.0,
+    "closeValue": 85932.0,
+    "referencePrice": 88100.0,
+    "referenceValue": 84117.88,
+    "openValue": 85454.6,
+    "highestValue": 86027.48,
+    "lowestValue": 84022.4
+   },
+   {
+    "tradingDate": "2026-08-11T00:00:00",
+    "closePrice": 88100.0,
+    "closeValue": 84117.88,
+    "referencePrice": 88100.0,
+    "referenceValue": 84117.88,
+    "openValue": 85741.04,
+    "highestValue": 85836.52,
+    "lowestValue": 81921.84
+   },
+   {
+    "tradingDate": "2026-08-10T00:00:00",
+    "closePrice": 88100.0,
+    "closeValue": 84117.88,
+    "referencePrice": 84000.0,
+    "referenceValue": 80203.2,
+    "openValue": 80680.6,
+    "highestValue": 84213.36,
+    "lowestValue": 80680.6
+   },
+   {
+    "tradingDate": "2026-08-07T00:00:00",
+    "closePrice": 84000.0,
+    "closeValue": 80203.2,
+    "referencePrice": 82000.0,
+    "referenceValue": 78293.6,
+    "openValue": 78293.6,
+    "highestValue": 81158.0,
+    "lowestValue": 77816.2
+   },
+   {
+    "tradingDate": "2026-08-06T00:00:00",
+    "closePrice": 82000.0,
+    "closeValue": 78293.6,
+    "referencePrice": 80000.0,
+    "referenceValue": 76384.0,
+    "openValue": 78293.6,
+    "highestValue": 79248.4,
+    "lowestValue": 76670.44
+   }
+  ]
+ },
+ "bfc": {
+  "code": "BDFC",
+  "exright_date": "2026-08-11",
+  "valuePerShare": 3500,
+  "rows": [
+   {
+    "tradingDate": "2026-08-21T00:00:00",
+    "closePrice": 48250.0,
+    "closeValue": 48250.0,
+    "referencePrice": 47800.0,
+    "referenceValue": 47800.0,
+    "openValue": 48000.0,
+    "highestValue": 48600.0,
+    "lowestValue": 47600.0
+   },
+   {
+    "tradingDate": "2026-08-20T00:00:00",
+    "closePrice": 47800.0,
+    "closeValue": 47800.0,
+    "referencePrice": 47900.0,
+    "referenceValue": 47900.0,
+    "openValue": 48100.0,
+    "highestValue": 48100.0,
+    "lowestValue": 47300.0
+   },
+   {
+    "tradingDate": "2026-08-19T00:00:00",
+    "closePrice": 47900.0,
+    "closeValue": 47900.0,
+    "referencePrice": 47700.0,
+    "referenceValue": 47700.0,
+    "openValue": 47700.0,
+    "highestValue": 48000.0,
+    "lowestValue": 47450.0
+   },
+   {
+    "tradingDate": "2026-08-18T00:00:00",
+    "closePrice": 47700.0,
+    "closeValue": 47700.0,
+    "referencePrice": 47700.0,
+    "referenceValue": 47700.0,
+    "openValue": 47500.0,
+    "highestValue": 48500.0,
+    "lowestValue": 47500.0
+   },
+   {
+    "tradingDate": "2026-08-17T00:00:00",
+    "closePrice": 47700.0,
+    "closeValue": 47700.0,
+    "referencePrice": 48200.0,
+    "referenceValue": 48200.0,
+    "openValue": 48200.0,
+    "highestValue": 48300.0,
+    "lowestValue": 47550.0
+   },
+   {
+    "tradingDate": "2026-08-14T00:00:00",
+    "closePrice": 48200.0,
+    "closeValue": 48200.0,
+    "referencePrice": 47500.0,
+    "referenceValue": 47500.0,
+    "openValue": 47450.0,
+    "highestValue": 48800.0,
+    "lowestValue": 46250.0
+   },
+   {
+    "tradingDate": "2026-08-13T00:00:00",
+    "closePrice": 47500.0,
+    "closeValue": 47500.0,
+    "referencePrice": 48300.0,
+    "referenceValue": 48300.0,
+    "openValue": 48700.0,
+    "highestValue": 48700.0,
+    "lowestValue": 47400.0
+   },
+   {
+    "tradingDate": "2026-08-12T00:00:00",
+    "closePrice": 48300.0,
+    "closeValue": 48300.0,
+    "referencePrice": 48850.0,
+    "referenceValue": 48850.0,
+    "openValue": 48700.0,
+    "highestValue": 48700.0,
+    "lowestValue": 48150.0
+   },
+   {
+    "tradingDate": "2026-08-11T00:00:00",
+    "closePrice": 48850.0,
+    "closeValue": 48850.0,
+    "referencePrice": 49600.0,
+    "referenceValue": 49600.0,
+    "openValue": 49450.0,
+    "highestValue": 50000.0,
+    "lowestValue": 48550.0
+   },
+   {
+    "tradingDate": "2026-08-10T00:00:00",
+    "closePrice": 53100.0,
+    "closeValue": 49600.71,
+    "referencePrice": 52900.0,
+    "referenceValue": 49413.89,
+    "openValue": 49787.53,
+    "highestValue": 49974.35,
+    "lowestValue": 49320.48
+   },
+   {
+    "tradingDate": "2026-08-07T00:00:00",
+    "closePrice": 52900.0,
+    "closeValue": 49413.89,
+    "referencePrice": 51800.0,
+    "referenceValue": 48386.38,
+    "openValue": 48386.38,
+    "highestValue": 49600.71,
+    "lowestValue": 48199.56
+   },
+   {
+    "tradingDate": "2026-08-06T00:00:00",
+    "closePrice": 51800.0,
+    "closeValue": 48386.38,
+    "referencePrice": 51600.0,
+    "referenceValue": 48199.56,
+    "openValue": 49413.89,
+    "highestValue": 49413.89,
+    "lowestValue": 47825.92
+   },
+   {
+    "tradingDate": "2026-08-05T00:00:00",
+    "closePrice": 51600.0,
+    "closeValue": 48199.56,
+    "referencePrice": 51800.0,
+    "referenceValue": 48386.38,
+    "openValue": 48386.38,
+    "highestValue": 48666.61,
+    "lowestValue": 47825.92
+   }
+  ]
+ }
+}
