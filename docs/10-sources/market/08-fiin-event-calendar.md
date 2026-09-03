@@ -379,6 +379,28 @@ GET FIIN_MARKET/Calendar/GetCalendarWatchList?Page=1&PageSize=50&language=vi
 
 ---
 
+## 🔴 Độ ĐẦY ĐỦ của lịch — đo 2026-09-03 bằng nguồn độc lập
+
+> Câu hỏi *"lịch có sót không"* **không trả lời được từ chính lịch**. Ba phép đo dưới đây đối chiếu lịch với một nguồn khác của cùng sự kiện.
+
+| Họ | Đối chiếu với | Mẫu | Độ phủ | Chỗ sót |
+|---|---|---|---|---|
+| `getCorporateCashDividend` | `CashDividendAnalysis/GetAnalysis` — lịch sử chi trả từng DN | 10 mã · 291 bản ghi | **98,6 %** | 2 sót thật: HPG 2016-03 · **SSI 2026-08 (THÁNG TRƯỚC)** |
+| `getCorporateEarning` | kỳ báo cáo thật trong `GetIncomeStatement` | 6 mã · 336 kỳ | **96,4 %** | 12 sót thật — **tất cả ≤ 2022; từ 2023 tới nay 0 sót** |
+| `getCorporateShareIssuance` | `getCorporateStockDividend` (mọi CP thưởng phải có ở cả hai) | 5 mã | **100 %** | không |
+
+**Ba kết luận cho người thiết kế ETL:**
+
+1. **Lịch KHÔNG đầy đủ tuyệt đối.** Tỷ lệ sót 0–3,6 % tuỳ họ. Kiến trúc chỉ dựa vào trigger từ lịch sẽ **mất im lặng** đúng bằng tỷ lệ đó.
+2. **Sót của `Earning` là lỗ backfill lịch sử, không phải feed hỏng** — không kỳ nào từ 2023 tới nay bị sót trên 6 mã. Trigger theo `Earning` vì thế đáng tin *cho tương lai*, nhưng đừng dùng lịch để dựng lại quá khứ.
+3. 🔴 **`CashDividend` có sót ở vùng GẦN ĐÂY** (SSI, đợt tháng 8/2026, kiểm 2026-09-03: lịch dừng ở 2025-09-25, không có bản ghi `exrightDate` rỗng nào). Không phân biệt được "trễ vài tuần" với "sót hẳn" nếu không đợi thêm — nhưng **trễ cũng đủ làm trigger bắn muộn**.
+
+⚠️ **Nguồn đối chiếu cũng không sạch:** `GetAnalysis` trả `exrightYear = 1753` (giá trị mốc tối thiểu của SQL Server) cho GMD và PNJ — tức bản ghi không có ngày chốt quyền. Nên **không nguồn nào là chuẩn tuyệt đối**; đối chiếu chéo hai chiều mới ra sự thật. Đây là việc của bộ giám sát hợp đồng dữ liệu.
+
+**Ranh giới phủ:** kỳ `(2015, 1)` vắng ở cả 6/6 mã ⇒ lịch bắt đầu từ giữa 2015, không phải sót.
+
+---
+
 ## Tổng hợp độ phủ nhóm Calendar
 
 | Endpoint | Bản ghi lịch sử | Thời gian | Ổn định |

@@ -102,7 +102,22 @@ Phiên 2026-08-27 chạy cả hai: `t` khớp **205.130 = 205.130** và `ptm` kh
 
 **[6] là nút thắt thật của cả hệ** — và **đã thông 2026-08-26 đêm**: job `python -m etl refdata` chạy thật 2 lượt (idempotent), 2.015 security · 1.550 issuer · 176 mã ICB vào kho, task `dlck-refdata` 08:00/ngày; hồ sơ: [plans/2026-08-26-reference-data-etl/](../90-records/plans/2026-08-26-reference-data-etl/). ✅ **Phần NGÀNH: đã nạp DB 2026-08-28** — migration `0011` (đổi 6 code + 7 tên ngành) · `0012` (bảng `market.issuer_industry_override` + view `market.v_issuer_industry`) · `0013` (seed **55 dòng** lớp 1 + **161 dòng** lớp 2), chủ sở hữu nội dung [industry-mapping.md](../20-design/industry-mapping.md) + bản máy đọc `.json`. Nghiệm thu trên DB thật dưới role `dlck_etl` *(hồ sơ: [ledger](../90-records/plans/2026-08-27-industry-two-layer-mapping/ledger.md))*: job `etl refdata` hai lượt idempotent, **1.526/1.550 issuer có ngành, 24 quỹ/ETF không có ngành theo đúng thiết kế** (`com_type_code='QU'`, `icb_code='8985'` — dòng ICB `8980` cố ý không nạp); năm bất biến của spec đều đạt trên DB thật (`A=0 · B=0 · C=161 · D=55 · E=none`). Hệ quả: tầng lọc tin theo ngành của [10] và khung ngành cho skill **hết bị chặn**.
 
-**[7] tách thành chuỗi lát — quyết định chủ dự án 2026-08-28.** [7] thực ra là bốn họ (Screener 52 · giá 1.974 · snapshot ~4.000 · lịch sự kiện ~10 lời gọi/ngày) cộng một lớp HTTP chưa có; gói một spec thì một tiêu chí hỏng chặn cả bốn. **Lát 1 = `etl screener`**, vì đó là họ duy nhất đã đo an toàn đúng tải kế hoạch. Spec [2026-09-03](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) — ✅ **duyệt 2026-09-03** (ba điểm §9 theo đúng đề xuất); plan đang viết cùng thư mục. Task `dlck-screener` sẽ đăng ký nhưng **để `Disabled`** cùng cả đội cho tới khi [4d] bật lại. Lát 2 (giá) mới cần lớp `core/http` + token bucket và phép đo nhịp 8 luồng mà [§10.6 quy ước chung](../10-sources/market/00-conventions.md) đòi.
+**[7] tách thành chuỗi lát — quyết định chủ dự án 2026-08-28.** [7] thực ra là bốn họ (Screener 52 · giá 1.974 · snapshot ~4.000 · lịch sự kiện ~10 lời gọi/ngày) cộng một lớp HTTP chưa có *(con số snapshot ~4.000 đã sai — sửa 2026-09-03, xem dưới)*; gói một spec thì một tiêu chí hỏng chặn cả bốn. **Lát 1 = `etl screener`**, vì đó là họ duy nhất đã đo an toàn đúng tải kế hoạch. Spec [2026-09-03](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) — ✅ **duyệt 2026-09-03**; code + review xong cùng ngày, **đã chạy thật ghi 1.541 dòng** (AC3 chính thức chờ sau 15:05). Task `dlck-screener` sẽ đăng ký nhưng **để `Disabled`** cùng cả đội cho tới khi [4d] bật lại.
+
+🔴 **Thứ tự lát ĐÃ ĐẢO — chốt 2026-09-03 sau khi soi họ Snapshot và đo độ phủ lịch sự kiện.** Thứ tự cũ (giá → snapshot → lịch sự kiện) sai theo phụ thuộc thật:
+
+```
+lát 1  screener       ✅ xong
+lát 2  lịch sự kiện   ← ĐẨY LÊN. ~10 lời gọi/ngày, rẻ nhất cả nhóm, mà MỞ KHOÁ
+                        cho snapshot, BCTC và re-crawl giá theo sự kiện quyền
+lát 3  giá theo ngày  1.974 lời gọi; cần lớp core/http + đo nhịp 8 luồng
+lát 4  họ snapshot    kích hoạt theo lát 2 + quét sàn — xem market-data-store §4.1b
+sau đó BCTC           kích hoạt theo `getCorporateEarning` của lát 2
+```
+
+**Hai quyết định kèm theo, cùng ngày:** (a) bỏ hai kind chấm điểm `company_score` và `rate_indicator` khỏi `snapshot_daily` — migration `0015`, vì nội dung thật là điểm chữ (`C`/`B`/`D`) và cờ `0.00`/`1.00`, đúng nhóm *không dùng điểm bên thứ ba* đã loại; (b) họ Snapshot **không chạy hằng ngày** mà kích hoạt theo sự kiện kèm quét sàn, vì **không trường nào trong 18 trường ta lưu đổi theo ngày**. Ngân sách ngày vì thế xuống **≈ 2.300 lời gọi** thay vì ~6.000 — bài toán nhịp 8 luồng của lát giá dễ thở hơn nhiều so với ước lượng cũ.
+
+⚠️ **Lịch sự kiện KHÔNG đầy đủ tuyệt đối** — đo 2026-09-03 bằng nguồn độc lập ([`08-fiin-event-calendar.md`](../10-sources/market/08-fiin-event-calendar.md)): `ShareIssuance` 100 % · `Earning` 96,4 % *(sót chỉ ở ≤ 2022)* · `CashDividend` 98,6 % **có sót ở vùng gần đây**. Nên trigger phải đi kèm quét sàn; quét sàn đồng thời là **thước đo** lỗ của lịch. Lát 2 (giá) mới cần lớp `core/http` + token bucket và phép đo nhịp 8 luồng mà [§10.6 quy ước chung](../10-sources/market/00-conventions.md) đòi.
 
 ## 4. Việc đã có đáp án, chỉ cần áp dụng
 
@@ -116,7 +131,7 @@ Bốn mục đang nằm trong danh sách **"Còn để ngỏ"** của pipeline t
 | Khung ngành cho skill | Cùng nguồn trên, nối theo hợp đồng ở [§3.2](architecture.md) |
 | Bảng ánh xạ mã chỉ tiêu BCTC | **729 mã đã giải mã** từ bundle JS FiinTrade — xem [Phụ lục A §A.5](../10-sources/market/appendix-A-field-codes.md) |
 | Đơn vị của các mã chỉ tiêu | **727/729 mã có `don_vi_du_lieu`**, 392 xác thực bằng đẳng thức kế toán |
-| Lấy trường nào từ nguồn nào | [chọn trường cho ETL thị trường](../20-design/market-field-selection.md) — Screener 80/193, Snapshot 16/54, giá từ BVSC |
+| Lấy trường nào từ nguồn nào | [chọn trường cho ETL thị trường](../20-design/market-field-selection.md) — Screener 80/193 (ước lượng 2026-08-14; đếm 2026-09-03: **75/193** — 66 khoá đặt tên từ response thật, trừ 4 nhãn xếp hạng và 2 dòng KQKD trùng BCTC), Snapshot 16/54, giá từ BVSC |
 
 ## 5. Việc còn thật sự để ngỏ
 

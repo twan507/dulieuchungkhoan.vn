@@ -10,7 +10,7 @@
 
 **Đang có:** [`agent/skills/`](agent/skills/) — hai skill sản phẩm `vn-stock-advisor` · `vn-stock-knowledge` (3.046 dòng, đã test 6 vòng). ⚠️ **Trước khi sửa bất cứ gì trong đó, bắt buộc đọc [`docs/30-skills/maintenance.md`](../docs/30-skills/maintenance.md).** `agent/` sau này chứa luôn system prompt và glue function-calling.
 
-**Trạng thái phần code:** `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
+**Trạng thái phần code:** `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)) · job `etl screener` (52 trang `GetScreenerItems` → `market.screener_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-screener-daily-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
 
 ---
 
@@ -66,10 +66,34 @@ Cần `ETL_DATABASE_URL` (user thuộc role `dlck_etl`). Idempotent: lượt hai
 
 **Chốt chặn luật BCTC — khoá `bctc_violations` trong `ops.etl_run.stats`.** Mỗi lượt job đếm số doanh nghiệp vi phạm luật hai chiều `com_type_code` NH/CK/BH ⟺ ngành NGANHANG/CHUNGKHOAN/BAOHIEM (qua `market.v_issuer_industry`), ghi vào `stats["bctc_violations"]`, phát `WARNING etl.refdata_store %d doanh nghiệp vi phạm luật BCTC (com_type_code ⟺ ngành tài chính) — xem market.v_issuer_industry` khi khác 0 — **không chặn job**. Trạng thái khoẻ mạnh là **0**; gặp WARNING này thì tra `market.v_issuer_industry` theo `com_type_code` để tìm đúng doanh nghiệp lệch (thường là mã mới niêm yết gán sai lớp 1, hoặc lớp 2 đè tay vào nhầm ngành tài chính).
 
+## Chạy job screener (bảng sàng lọc theo ngày)
+
+```bash
+cd backend
+set -a; . ../.env; set +a; PYTHONIOENCODING=utf-8 uv run python -m etl screener
+```
+
+Cần `ETL_DATABASE_URL` (user thuộc role `dlck_etl`). Một lượt = 52 trang tuần tự (~2–3 phút), ghi
+`market.screener_daily` UPSERT theo `(security_id, trading_date)` — chạy lại trong ngày đè bản của chính
+ngày đó, không đẻ dòng mới.
+
+**Hợp đồng mã thoát** — đọc `ops.etl_run` để biết chuyện gì đã xảy ra, đừng đoán từ log:
+
+| Mã | Nghĩa |
+|---:|---|
+| `0` | ghi xong, `etl_run.status = success`, `data_domain_state('market.scores','fiintrade')` cập nhật watermark |
+| `1` | **chốt chặn từ chối** — rollback trọn, 0 dòng ghi; `etl_run.status = failed` với lý do, bằng chứng trang 1 vào `staging.raw_payload` (`screener:page1`). Ngày lễ rơi vào đây và **đó là hành vi đúng** |
+| `2` | lỗi thật (thiếu `ETL_DATABASE_URL`, nguồn hỏng sau retry, DB lỗi) — `etl_run.status = failed`, không ghi kho |
+
+🔴 **Nguồn đóng dấu `tradingDate` = hôm nay ngay từ trước mở cửa, với `closePrice = 0`** (đo 2026-09-03).
+Chốt chặn vế (i) đòi **≥ 50 % số mã gom được có `closePrice > 0`**; không có vế này thì mỗi ngày nghỉ đẻ
+~1.545 dòng ma. Ba vế còn lại: đủ trang · tỷ lệ không ghép được `security_id` ≤ 2 % · tỷ lệ `comGroupCode`
+lạ ≤ 2 %.
+
 ## Lịch chạy (Windows Task Scheduler)
 
 ```bash
 pwsh scripts/register-tasks.ps1
 ```
 
-Đăng ký **7 task**, tất cả hằng ngày làm việc: 4 mốc OMO (11:30 · 15:30 · 18:00 · 21:30) · `dlck-refdata` 08:00 (danh bạ tươi trước phiên) · `dlck-ingester` 08:30 (ghi thật — gate mở 2026-08-26) · `dlck-ingester-measure` 08:30 (bắt frame thô song song làm lưới an toàn + đường nghiệm thu, thường trực từ 2026-08-27; bản đo giữ 30 ngày, job tự dọn). Bật/tắt tay bằng cmdlet `Enable-ScheduledTask` / `Disable-ScheduledTask`, **không dùng `schtasks.exe`** — xem cảnh báo đầu [`scripts/register-tasks.ps1`](../scripts/register-tasks.ps1).
+Đăng ký **8 task**, tất cả hằng ngày làm việc: 4 mốc OMO (11:30 · 15:30 · 18:00 · 21:30) · `dlck-refdata` 08:00 (danh bạ tươi trước phiên) · `dlck-ingester` 08:30 (ghi thật — gate mở 2026-08-26) · `dlck-screener` 15:20 (sau khi ingester đóng 15:05, tránh 15:30 của OMO — đăng ký ở Task 8 của [plan screener](../docs/90-records/plans/2026-09-03-screener-daily-etl/plan.md), để `Disabled` cùng cả đội) · `dlck-ingester-measure` 08:30 (bắt frame thô song song làm lưới an toàn + đường nghiệm thu, thường trực từ 2026-08-27; bản đo giữ 30 ngày, job tự dọn). Bật/tắt tay bằng cmdlet `Enable-ScheduledTask` / `Disable-ScheduledTask`, **không dùng `schtasks.exe`** — xem cảnh báo đầu [`scripts/register-tasks.ps1`](../scripts/register-tasks.ps1).

@@ -201,6 +201,8 @@ Không lọc theo một tiêu chí thì đặt `selectedValue` bằng đúng `va
 > - **Trước mở cửa, `tradingDate` đã mang ngày hôm nay** (`2026-09-03T08:22:46`) với `closePrice = 0`, `matchVolume = 0`, `totalVolume = 0`, `referenceDate = 2026-08-28` *(⇒ HOSE nghỉ 31/08–02/09)*. Ngày không giao dịch nguồn vẫn đóng dấu ngày đó — **không được dùng `tradingDate` làm bằng chứng có phiên**; tín hiệu dùng được là `closePrice > 0` (30/30 sau phiên vs 0/30 trước mở cửa). `totalVolume` không dùng được: 10/30 mã = 0 ngay trong ngày có phiên.
 > - `marketStatus` = `null` ở cả hai lần — vô dụng. Một khối có thể **`null` nguyên khối** (`V68.technical`). 20,1% giá trị trong khối là `null`.
 > - Tỷ số tài chính **đổi giữa hai lần** (103 + 733 giá trị) dù không có phiên nào ở giữa — *"payload trùng lượt trước"* không phải tín hiệu ngày nghỉ.
+> - 🔴 **Cùng một mã ở hai khối có thể trả HAI GIÁ TRỊ KHÁC NHAU** *(đo 2026-09-03)*: 10 mã có ở cả `stockScreenerItem` lẫn `financial`; 7 mã `rtd*` trùng khít, nhưng `rtq12` (ROE TTM) · `rtq27` (Biên EBIT TTM) · `rtq83` (T.trưởng LN ròng YoY) **lệch 52/90 cặp, kể cả đổi dấu**. Bundle JS của FiinTrade đọc ROE từ `"stockScreenerItem.rtq12"`, và đối chiếu đẳng thức ROE = LNST(TTM) × P/B ÷ vốn hoá cho `stockScreenerItem` sai số trung vị **8,1 %** vs `financial` **23,0 %** ⇒ **`stockScreenerItem` là khối chuẩn**. Ai làm phẳng 5 khối mà không chọn khối sẽ nhận giá trị tuỳ thứ tự duyệt.
+> - 🔴 **Bốn khoá trả CHUỖI, không phải số** *(đo 2026-09-03)*: `roe` · `grossMargin` · `profitGrowth` · `revenueGrowth` = `'Tốt'` · `'Trung bình'` · `'Cảnh báo'` — là **nhãn xếp hạng**, không phải tỷ số, bất kể tên khoá gợi ý gì.
 
 **193 trường phân biệt mỗi mã**, chia 5 khối cộng lại 223 lượt:
 
@@ -287,7 +289,7 @@ Số đo không phải bằng chứng duy nhất: [`04-fiin-company-profile.md`]
 
 ✅ **Đã giải chỗ vênh 223-vs-193** *(đo 2026-08-15)*: 223 là tổng kích thước 5 khối, 193 là số khoá phân biệt — xem ô cảnh báo ở [Response 200](#response-200-1). Không phải do loại hình doanh nghiệp: `comGroupCode=ALL` và `VN30` đều ra đúng 193. Con số dưới đây tính trên 193 trường đó.
 
-dulieuchungkhoan.vn chỉ lưu **80/193 trường**. 113 trường bị bỏ vì trùng BVSC, trùng BCTC, hoặc tính lại được từ giá; 20 trường nhóm chấm điểm bỏ theo quyết định của chủ dự án; số còn lại là metadata không dùng.
+dulieuchungkhoan.vn chỉ lưu **80/193 trường** (ước lượng 2026-08-14; đếm 2026-09-03: **75/193** — 66 khoá đặt tên từ response thật, trừ 4 nhãn xếp hạng và 2 dòng KQKD trùng BCTC). 113 trường bị bỏ *(ước lượng 2026-08-14; đếm 2026-09-03: **75/193** — 66 khoá đặt tên từ response thật, trừ 4 nhãn xếp hạng và 2 dòng KQKD trùng BCTC)* vì trùng BVSC, trùng BCTC, hoặc tính lại được từ giá; 20 trường nhóm chấm điểm bỏ theo quyết định của chủ dự án; số còn lại là metadata không dùng.
 
 Phần giữ lại là **55 mã tỷ số tài chính không nguồn nào khác có** (P/S, Giá/Dòng tiền, nhóm cổ tức, nhóm đòn bẩy, nhóm tăng trưởng), Beta, hai chỉ tiêu sở hữu tổ chức, và trọn cụm TTM/Y.
 

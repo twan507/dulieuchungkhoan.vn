@@ -35,7 +35,7 @@ Lát này: một subcommand `python -m etl screener` ghi **`market.screener_dail
 - `trading_date` **không** thể lấy thô từ `tradingDate` rồi ghi: ngày lễ nguồn vẫn đóng dấu *ngày hôm đó* với giá 0 ⇒ UPSERT theo PK sẽ **đẻ dòng ma cho ngày không giao dịch**. Giả định ban đầu của brainstorm (*"ngày lễ `tradingDate` đứng ở phiên cũ nên UPSERT tự đè"*) **đã bị số đo bác bỏ** — đây là lý do spec có §5.4.
 - *"Payload trùng lượt trước ⇒ ngày lễ"* cũng **không dùng được**: tỷ số tài chính đổi hằng ngày kể cả không có phiên.
 - Tín hiệu phân biệt dùng được: **`closePrice > 0`** (30/30 vs 0/30). `totalVolume` không dùng được vì mã kém thanh khoản = 0 ngay trong ngày có phiên.
-- 27 khoá trùng ⇒ **giữ nguyên 5 khối lồng**, không làm phẳng. Phẳng + tiền tố to hơn 66% mà không được gì.
+- 27 khoá trùng ⇒ **giữ nguyên khối lồng của nguồn**, không làm phẳng. Phẳng + tiền tố to hơn 66% mà không được gì. *(Số đo trên là của cả 193 khoá, tức 5 khối; sau khi lọc theo `keep` thì chỉ còn hai khối `stockScreenerItem` và `financial` có khoá — xem đính chính §5.3.)*
 
 ### 2.2 Giả định — CHƯA kiểm, ghi để người sau biết mình đứng trên gì
 
@@ -83,7 +83,7 @@ Không rơi vào nhóm bỏ nào; cùng họ với *"55 mã tỷ số không ngu
 
 ### 4.3 🔴 Không ép con số 80
 
-59 + 18 = **77**, không phải 80. "80" là ước lượng theo *nhóm* ngày 2026-08-14, không phải số đếm. Tiêu chí nghiệm thu là **193/193 dòng có mặt** (AC1); số `keep` là *kết quả*, không phải chỉ tiêu. Ra 77 thì ghi 77 và đính chính "80" ở mọi chỗ đang chép nó (§8). Ép cho khớp 80 chính là *"sửa số mà không đo"* (CLAUDE.md §1.2).
+59 + 18 = **77**, không phải 80. *(Số cuối trong ngày là **75**: review cuối thêm 4 mã `cần kiểm API` ⇒ 81, rồi vòng giải mã 2026-09-03 bỏ 4 nhãn xếp hạng ⇒ 77 và 2 dòng KQKD trùng BCTC ⇒ 75. Mỗi lần đổi đều vì **đo lại**, không lần nào vì ép cho khớp.)* "80" là ước lượng theo *nhóm* ngày 2026-08-14, không phải số đếm. Tiêu chí nghiệm thu là **193/193 dòng có mặt** (AC1); số `keep` là *kết quả*, không phải chỉ tiêu. Ra 77 thì ghi 77 và đính chính "80" ở mọi chỗ đang chép nó (§8). **Số chốt sau review cuối 2026-09-03: 81/193** — Ruling 15 áp cùng luật *lưu trước, giải mã sau* cho 4 mã `rtd39` `rtd53` `rtd54` `rtq81` vốn mang `keep = None` (`cần kiểm API`) nên bị ETL bỏ, dù chúng có thật và có giá trị. Ép cho khớp 80 chính là *"sửa số mà không đo"* (CLAUDE.md §1.2).
 
 ## 5. Phần B — job `python -m etl screener`
 
@@ -100,7 +100,7 @@ open_run(engine, JOB)                       JOB = "market.screener"
       if not verdict.ok: raise GuardRefused  → giao dịch tự rollback
       stats = screener_store.apply(conn, t)  UPSERT theo PK
   close_run(success, stats) · upsert_domain_state('market.scores','fiintrade', watermark=trading_date)
-except GuardRefused → store_refusal_evidence (giao dịch riêng, staging.raw_payload source='screener') · close_run('failed') · exit 1
+except GuardRefused → store_refusal_evidence (giao dịch riêng, staging.raw_payload source='screener') — trang 1 (đủ cho vế (i)/(iii)), mọi trang khi lý do là thiếu trang · close_run('failed') · exit 1
 except Exception   → close_run('failed', error) · exit 2
 ```
 
@@ -119,33 +119,36 @@ Một item → `ScreenerRow(ticker, exchange, organ_code, trading_date, payload)
 
 - `exchange` từ `priceInfo.comGroupCode`: `VNINDEX → HOSE`, `HNXIndex → HNX`, `UpcomIndex → UPCOM`. Giá trị khác ⇒ đếm `unknown_com_group`, bỏ dòng.
 - `trading_date = date(priceInfo.tradingDate)` — **cắt phần ngày**; đây là timestamp riêng từng mã (14:45–15:00), không dùng thô.
-- `payload` = 5 khối lồng, mỗi khối chỉ giữ khoá có `keep = True` trong `market-field-selection.json` (`source = "Screener"`); khối `null` hoặc không còn khoá nào ⇒ **bỏ khối**, không nổ. Khoá `keep` đọc từ file JSON lúc import — không hardcode danh sách trong code.
+- `payload` = khối lồng của nguồn, mỗi khối chỉ giữ khoá có `keep = True` trong `market-field-selection.json` (`source = "Screener"`); khối `null` hoặc không còn khoá nào ⇒ **bỏ khối**, không nổ. Khoá `keep` đọc từ file JSON lúc import — không hardcode danh sách trong code.
 - Không đổi đơn vị, không tính lại gì — *"Không tự tính lại chỉ tiêu nguồn đã cấp"* (step-03).
+
+> **Đính chính sau review cuối 2026-09-03 — ĐÃ CHỐT cùng ngày:** 10 khoá keep nằm ở cả `stockScreenerItem` lẫn `financial`; 7 mã `rtd*` hai bản luôn bằng nhau, nhưng **`rtq12` · `rtq27` · `rtq83` khác nhau ở 52/90 cặp trên mẫu 28/08, kể cả đổi dấu**. Spec ban đầu chỉ xét kích thước, không xét hai bản có bằng nhau không — đó là lỗ hổng của spec. **Khối chuẩn = `stockScreenerItem`**, mỗi mã lưu đúng MỘT bản (`BLOCK_PRIORITY` trong `screener_normalize`); `financial` chỉ giữ **5** mã riêng nó có (`fryq30` `rtd39` `rtd53` `rtd54` `rtq81`) — `isa3`/`isa5` bỏ cùng ngày vì là dòng kết quả kinh doanh, trùng BCTC đầy đủ theo luật đang đứng. Hai bằng chứng độc lập: (1) bundle JS của chính FiinTrade khai `"stockScreenerItem.rtq12"` cho ROE, mọi mã keep khác cũng khai khối đó; (2) đẳng thức ROE = LNST(TTM) × P/B ÷ vốn hoá — `stockScreenerItem` sai số trung vị **8,1 %** (4 mã khớp trong 2 %), `financial` **23,0 %** (**0** mã khớp trong 2 %). ⚠️ Bằng chứng (2) chỉ chạy được cho `rtq12`; `rtq27`/`rtq83` theo cùng luật vì bundle xếp cùng nhóm — **suy luận, chưa đo riêng** *(thử `rtq83` = `isa20TTM/isa20Y − 1` thì CẢ HAI bản đều lệch >76 %, tức công thức thử sai, không kết luận được)*. `dup_conflicts` giữ nguyên làm **chỉ báo sức khoẻ nguồn**. Sau lọc chỉ còn hai khối có khoá keep.
 
 ### 5.4 `screener_guard` — thuần, đánh giá trước commit
 
-Ba vế, **vế nào hỏng cũng từ chối**:
+Bốn vế, **vế nào hỏng cũng từ chối**:
 
 | # | Vế | Vì sao |
 |---|---|---|
-| (i) | **Phiên có giao dịch**: số mã có `priceInfo.closePrice > 0` phải **> 0** | Ngày lễ nguồn vẫn đóng dấu hôm nay với giá 0 (đo 03/09). Không có vế này, mỗi ngày lễ đẻ 1.545 dòng ma |
+| (i) | **Phiên có giao dịch**: số mã có `priceInfo.closePrice > 0` phải **≥ 20 % số mã gom được** (`MIN_PRICED_RATIO = 0.2` — hạ từ 0.5 sau lượt chạy thật 2026-09-03: toàn thị trường **giữa phiên** chỉ 831/1545 = **53,8 %** có giá, chỉ hơn ngưỡng cũ 3,8 điểm. Từ chối nhầm một phiên thật là **mất vĩnh viễn** ảnh chụp ngày đó; nhận nhầm ngày nghỉ chỉ là vài dòng ma xoá được — nên ngưỡng phải cách xa vùng phiên thật — đo được 30/30 sau phiên vs 0/30 trước mở cửa; ngưỡng tỷ lệ thay cho "> 0" sau review cuối 2026-09-03: một mã lẻ có giá trong ngày lễ không được phép mở cửa ghi 1.545 dòng ma) | Ngày lễ nguồn vẫn đóng dấu hôm nay với giá 0 (đo 03/09). Không có vế này, mỗi ngày lễ đẻ 1.545 dòng ma |
 | (ii) | **Đủ trang**: số item gom được == `totalCount` của trang 1, và `totalCount ≥ (1 − 2%) × mốc` | Mốc = `stats.counts.items` của lượt `success` gần nhất trong `ops.etl_run` — khuôn `refdata_guard` tầng 1, `DROP_RATIO = 0.02`. Lượt đầu không mốc thì bỏ vế sụt |
 | (iii) | **Ghép được**: tỷ lệ dòng không tìm thấy `security_id` ≤ 2% | Mã có trong Screener mà chưa có trong `market.security` là bất thường (refdata chạy 08:00 cùng ngày) |
+| (iv) | **Sàn lạ**: số dòng bị bỏ vì `comGroupCode` không thuộc {VNINDEX, HNXIndex, UpcomIndex} ≤ 2 % | Nguồn đổi tên sàn thì không được im lặng mất trọn một sàn (review cuối 2026-09-03) |
 
-Vế (i) là lý do tồn tại của guard này; (ii) và (iii) là bảo hiểm rẻ theo khuôn có sẵn.
+Vế (i) là lý do tồn tại của guard này; (ii), (iii) và (iv) là bảo hiểm rẻ theo khuôn có sẵn.
 
 ### 5.5 `screener_merge` + `screener_store`
 
 - Ghép theo `(ticker, exchange)` với `market.security WHERE status = 'listed'` — đúng unique index đã có. Không ghép qua `organCode → issuer` vì một issuer có thể có nhiều security.
-- `apply`: `INSERT … ON CONFLICT (security_id, trading_date) DO UPDATE SET payload = EXCLUDED.payload, ingested_at = now()` — **UPSERT theo PK**, đúng ngữ nghĩa step-03 §3 *("chạy lại trong ngày đè bản của chính ngày đó")*.
-- `stats` ghi vào `ops.etl_run`: `counts.items`, `counts.pages`, `rows_written`, `unmapped`, `unknown_com_group`, `null_blocks`, `retries`, `trading_date`.
+- `apply`: `INSERT … ON CONFLICT (security_id, trading_date) DO UPDATE SET payload = EXCLUDED.payload, ingested_at = clock_timestamp()` *(`clock_timestamp()` thay `now()` — Ruling 2 trong ledger: `now()` đóng băng theo transaction nên test một-transaction không thấy lượt hai; production mỗi lượt một transaction, tương đương)* — **UPSERT theo PK**, đúng ngữ nghĩa step-03 §3 *("chạy lại trong ngày đè bản của chính ngày đó")*.
+- `stats` ghi vào `ops.etl_run`: `counts.items`, `counts.pages`, `counts.priced`, `counts.trading_dates`, `rows_written`, `unmapped`, `unknown_com_group`, `null_blocks`, `dup_conflicts`, `retries`, `trading_date`.
 
 ### 5.6 Lịch và vận hành
 
 - Task `dlck-screener` **15:20** Thứ 2–6, đăng ký qua `Register-DlckTask` trong `scripts/register-tasks.ps1` + `Assert-TaskCommand -MustContain "python -m etl screener"`. 15:20 vì ingester ghi xong 15:05, và **tránh 15:30 của OMO** (đang tắt, sẽ bật lại theo roadmap [4d]).
 - Chạy thật dưới `ETL_DATABASE_URL` (role `dlck_etl`) — role đã có `SELECT, INSERT, UPDATE, DELETE` trên `market.*`, `staging.*`, `ops.*` (`0009`), không cần grant mới.
 - Thời lượng dự kiến: 52 × ~2,4 s ≈ **2–3 phút**.
-- Ngày lễ: guard (i) từ chối ⇒ `etl_run.status = 'failed'`, error *"không có mã nào có closePrice > 0 — không phải ngày giao dịch"*, bằng chứng vào `staging.raw_payload`. **Đó là hành vi đúng**, không phải sự cố — cùng triết lý với job huỷ niêm yết báo đỏ 01/09.
+- Ngày lễ: guard (i) từ chối ⇒ `etl_run.status = 'failed'`, error *"chỉ 0/1.545 mã có closePrice > 0 — không phải ngày giao dịch"*, bằng chứng vào `staging.raw_payload`. **Đó là hành vi đúng**, không phải sự cố — cùng triết lý với job huỷ niêm yết báo đỏ 01/09.
 
 ## 6. Seam test *(chốt cùng plan — §4.5.2; expected từ mẫu thật ở `samples/`, không tính lại theo code)*
 
@@ -182,7 +185,7 @@ Fixture: hai file trong `samples/` chép sang `backend/tests/etl/fixtures/screen
 
 | File | Sửa gì |
 |---|---|
-| [`20-design/market-data-store.md`](../../../20-design/market-data-store.md) §5.5 | `screener_daily` đang ghi *"223 trường, 5 khối lồng"* và *"chuỗi điểm VGM"* — **đá** §4.1 cùng file (80/193) và quyết định bỏ nhóm chấm điểm. Sửa thành *"80/193 trường đã chọn (market-field-selection), 5 khối lồng"*, bỏ ví dụ VGM; §4.1 thêm dòng lịch 15:20 |
+| [`20-design/market-data-store.md`](../../../20-design/market-data-store.md) §5.5 | `screener_daily` đang ghi *"223 trường, 5 khối lồng"* và *"chuỗi điểm VGM"* — **đá** §4.1 cùng file (80/193) và quyết định bỏ nhóm chấm điểm. Sửa thành *"80/193 trường đã chọn (market-field-selection), 5 khối lồng"*, bỏ ví dụ VGM; §4.1 thêm dòng lịch 15:20 *(đợt sửa review cuối 2026-09-03 làm khác: 81/193, PK `(security_id, trading_date)` khớp migration 0004, và ghi rõ sau lọc chỉ còn hai khối — xem §5.3)* |
 | [`10-sources/market/10-fiin-dictionary.md`](../../../10-sources/market/10-fiin-dictionary.md) | *(tầng reference — được sửa vì đã đo lại 2026-08-28/09-03)*: response có thêm `page` `pageSize` `packageId` `errors`; `tradingDate` là timestamp **riêng từng mã**; **trước mở cửa đã là ngày hôm nay với giá 0** — bẫy cho mọi ETL dùng endpoint này |
 | [`20-design/gen_field_selection.py`](../../../20-design/gen_field_selection.py) → `.md`/`.json` | §4 — thêm 66 khoá; §7.3/§7.5 của file sinh sẽ tự về 0 "chưa liệt kê" |
 | Mọi chỗ chép **"80/193"** | `git grep "80/193"` — sửa thành số đếm thật hoặc ghi *"80 (ước lượng 2026-08-14) → N (đếm 2026-09-xx)"* |
@@ -196,5 +199,6 @@ Fixture: hai file trong `samples/` chép sang `backend/tests/etl/fixtures/screen
 1. **18 mã tỷ số §4.2 → `keep = True`**, 13 mã trong đó ghi `chưa giải mã` (lưu trước, hiểu sau).
 2. **Không ép 80** — ghi số đếm thật (§4.3) và đính chính mọi chỗ chép "80/193".
 3. **Guard vế (i) `closePrice > 0`** làm tín hiệu *"phiên có giao dịch"* thay cho giả định đã bị bác — kèm cổng AC5 cho lần ngày lễ đầu tiên.
+4. ~~**Khối chuẩn cho `rtq12` · `rtq27` · `rtq83`**~~ — ✅ **chốt 2026-09-03: `stockScreenerItem`** (§5.3). Còn treo, không chặn: `rtq27`/`rtq83` mới có bằng chứng gián tiếp — đo riêng khi tìm được công thức đối chiếu đúng.
 
 ✅ Duyệt 2026-09-03 ⇒ [`plan.md`](plan.md) cùng thư mục (viết cùng ngày, 8 task).

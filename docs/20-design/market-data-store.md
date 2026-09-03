@@ -210,13 +210,42 @@ Bốn luật rút ra từ những lần trả giá, mỗi luật chống một c
 |---|---|---|
 | Danh bạ, ngành ICB, `/quotes`, `/mapping` | Trước phiên | 4 |
 | `getPriceData` Page 1 | Sau 15:00 | 1.974 |
-| Snapshot ngày: **lưu 16/54 trường** — hồ sơ DN, sở hữu chi tiết | Sau 15:00 | ~4.000 |
-| `GetScreenerItems` — **lưu 80/193 trường** *(gửi 1 tiêu chí, nhiều hơn sẽ timeout)* — **lát 1 của nhóm này: `etl screener` 15:20, [spec 2026-09-03](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) đã duyệt 2026-09-03** | Sau 15:00 | 52 |
+| **Họ Snapshot — KHÔNG chạy hằng ngày** *(chốt 2026-09-03, xem §4.1b)*: `snapshot` `valuation` `ownership` `dividend`; hai kind chấm điểm đã bỏ khỏi lược đồ (migration `0015`) | **Kích hoạt theo sự kiện + quét sàn định kỳ** | **≈ 200–260** |
+| `GetScreenerItems` — **lưu 80/193 trường** (ước lượng 2026-08-14; đếm 2026-09-03: **75/193** — 66 khoá đặt tên từ response thật, trừ 4 nhãn xếp hạng và 2 dòng KQKD trùng BCTC) *(gửi 1 tiêu chí, nhiều hơn sẽ timeout)* — **lát 1 XONG 2026-09-03: `etl screener` 15:20 — chạy thật sau phiên, 1.541 dòng/ngày, 52 trang ~30–70 s** ([spec](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) · [ledger](../90-records/plans/2026-09-03-screener-daily-etl/ledger.md)) | Sau 15:00 | 52 |
 | Lịch sự kiện *(dùng `FromDate` lấy phần mới)* | Hằng ngày | ~10 |
 | BCTC + PDF | **Kích hoạt** theo `GetCorporateEarning` | ~100–300/quý |
 | Re-crawl giá một mã | **Kích hoạt** theo sự kiện quyền của mã đó | tuỳ |
 
-**Hằng ngày ≈ 6.000 lời gọi ≈ 20–30 phút** với 8 luồng.
+**Hằng ngày ≈ 2.300 lời gọi** *(4 danh bạ + 1.974 giá + 52 Screener + ~10 lịch sự kiện + ~200–260 họ Snapshot)* — **thấp hơn con số ~6.000 của bản 2026-08-14**, vì họ Snapshot chuyển từ chạy-mọi-mã-mỗi-ngày sang kích hoạt theo sự kiện.
+
+### 4.1b Vì sao họ Snapshot không chạy hằng ngày — chốt 2026-09-03
+
+Soi nội dung thật cả 6 endpoint và **18 trường ta thật sự lưu** cho thấy: **không trường nào đổi theo ngày.** Các trường đổi theo giá (`rtd11` vốn hoá · `rtd14` EPS · `rtd21` P/E · `rtd25` P/B) đã cố ý **không lấy** từ Snapshot vì Screener có rồi trong 52 lời gọi. Phần còn lại chia đúng ba nguồn thay đổi, và `quarter`/`year` nằm ngay trong tập lưu — nguồn tự đóng dấu kỳ:
+
+| Nhóm trường | Đổi khi | Kích hoạt bằng |
+|---|---|---|
+| `rtq10` `rtq44` `rqq41` `rtq137` `quarter` `year` | ra báo cáo quý | `getCorporateEarning` |
+| `outstandingShare` `freeFloat` | phát hành thêm CP | `getCorporateShareIssuance` |
+| `foreignerVolumn` `statePercentage` `stateVolumn` `majorHoldings` `totalForeignRoom` `maximumForeignPercentage` | có công bố sở hữu | **không có loại sự kiện nào** — dùng Screener làm máy dò (`corpOwnership` · `organizationOwnership` · `freeFloatRate` có hằng ngày) |
+| `ceo` `comTypeCode` `valuePerShare` `competitors` | hiếm | quét sàn |
+
+🔴 **Chỉ trigger là KHÔNG đủ — lịch sự kiện có sót, đã đo.** Độ phủ đo 2026-09-03 ([`08-fiin-event-calendar.md`](../10-sources/market/08-fiin-event-calendar.md)): `ShareIssuance` 100 % · `Earning` 96,4 % *(mọi chỗ sót ≤ 2022, từ 2023 tới nay sạch)* · `CashDividend` 98,6 % **và có một chỗ sót ở vùng gần đây** (SSI, đợt 2026-08). Nên kiến trúc là **hai lớp**:
+
+```
+lịch sự kiện (~10 lời gọi/ngày)  →  kích hoạt fetch ngay        ← đường nhanh, bắt ~96–100 %
+quét sàn định kỳ toàn bộ         →  bắt phần lịch bỏ sót        ← lưới, và là THƯỚC ĐO
+```
+
+| Kind | Trigger | Nhịp quét sàn | Vì sao nhịp đó |
+|---|---|---|---|
+| `snapshot` | `Earning` + `ShareIssuance` | **quý** | feed gần đây sạch 100 %/96,4 %; sàn chỉ để phòng |
+| `dividend` | `CashDividend` + `StockDividend` | **tháng** | có sót ở vùng gần đây ⇒ sàn phải dày hơn |
+| `ownership` | *(không có sự kiện)* — Screener dò tỷ lệ | **tháng** | chỉ có máy dò gián tiếp |
+| `valuation` | *(không có sự kiện)* — dự phóng đổi khi phân tích viên cập nhật | **tháng** | `riskFreeRate` khác nhau giữa các mã ⇒ mỗi mã được cập nhật vào lúc khác nhau |
+
+**Quét sàn vừa là lưới vừa là thước đo:** mỗi lần nó tìm ra thay đổi mà trigger không bắn = **một lỗ của lịch, đếm được**. Sau vài tháng có số thật thì siết hay nới nhịp bằng dữ liệu, không bằng cảm giác. Đây là việc của [§7.1 giám sát hợp đồng dữ liệu](#71-giám-sát-hợp-đồng-dữ-liệu).
+
+⚠️ **Ràng buộc thứ tự:** kiến trúc này đòi **lát lịch sự kiện chạy TRƯỚC lát Snapshot**. Lịch chỉ ~10 lời gọi/ngày — rẻ nhất cả nhóm — mà mở khoá cho Snapshot, BCTC và re-crawl giá.
 
 ### 4.2 Backfill một lần
 
@@ -444,24 +473,25 @@ CREATE TABLE financial_report_file (
 CREATE TABLE snapshot_daily (
   organ_code   text NOT NULL,
   trading_date date NOT NULL,
-  kind         text NOT NULL,   -- snapshot | company_score | valuation
-                                -- | rate_indicator | ownership | dividend
+  kind         text NOT NULL,   -- snapshot | valuation | ownership | dividend
+                                -- (company_score và rate_indicator ĐÃ BỎ — migration 0015,
+                                --  quyết định 2026-09-03: điểm chữ và cờ 0/1 của bên thứ ba)
   payload      jsonb NOT NULL,
   PRIMARY KEY (organ_code, trading_date, kind)
 );
 SELECT create_hypertable('snapshot_daily', 'trading_date');
 
 CREATE TABLE screener_daily (
-  organ_code   text NOT NULL,
+  security_id  bigint NOT NULL REFERENCES market.security,
   trading_date date NOT NULL,
-  payload      jsonb NOT NULL,   -- trường có `keep` trong market-field-selection, giữ 5 khối lồng
-                                 -- (80/193 là ước lượng 2026-08-14; đếm lại khi vá 66 khoá — spec 2026-09-03 §4)
-  PRIMARY KEY (organ_code, trading_date)
+  payload      jsonb NOT NULL,   -- trường có `keep` trong market-field-selection (75/193, đếm 2026-09-03),
+                                 -- lồng theo khối nguồn — sau lọc chỉ còn `stockScreenerItem` và `financial`
+  PRIMARY KEY (security_id, trading_date)
 );
 SELECT create_hypertable('screener_daily', 'trading_date');
 ```
 
-> Đây là chỗ **tự tạo ra lịch sử** cho những thứ API chỉ trả giá trị hiện tại: định giá, cơ cấu sở hữu, tỷ số không nguồn nào khác có. *(Đính chính 2026-09-03: bản cũ nêu "điểm VGM" — nhóm chấm điểm của FiinTrade đã bị **loại có chủ đích** ở [chọn trường §4.2](market-field-selection.md), không lưu.)* Screener không có endpoint lịch sử — chuỗi bắt đầu từ ngày job chạy, không backfill được.
+> Đây là chỗ **tự tạo ra lịch sử** cho những thứ API chỉ trả giá trị hiện tại: định giá, cơ cấu sở hữu, tỷ số không nguồn nào khác có. *(Đính chính 2026-09-03: bản cũ nêu "điểm VGM" — nhóm chấm điểm của FiinTrade đã bị **loại có chủ đích** ở [chọn trường §4.2](market-field-selection.md), không lưu.)* Screener không có endpoint lịch sử — chuỗi bắt đầu từ ngày job chạy, không backfill được. ⚠️ Ba mã `rtq12` `rtq27` `rtq83` có ở cả hai khối của **response** với giá trị KHÁC NHAU (đo 2026-09-03). **Kho chỉ lưu bản của khối chuẩn `stockScreenerItem`**, mỗi mã đúng một bản; `financial` chỉ giữ 5 mã riêng nó có, đều thuộc họ tỷ số/thị trường mà BCTC cũng không cấp. Bằng chứng và giới hạn: spec etl screener §5.3.
 
 ### 5.6 Sự kiện doanh nghiệp
 
@@ -708,7 +738,7 @@ Chiến lược chính là **bám sát và thích ứng liên tục với nguồ
 |---|---|---|
 | **A — Phổ quát** | OHLCV ngày và phút · khối lượng, giá trị · danh mục mã, sàn · chỉ số · sự kiện doanh nghiệp *(gốc từ VSD)* | ✅ Dễ. Nguồn nào cũng có, định nghĩa gần như đồng nhất |
 | **B — Có ở nhiều nguồn, định nghĩa khác nhau** | Báo cáo tài chính · phân ngành · dòng tiền theo nhóm NĐT · khối ngoại · thoả thuận | ⚠️ Được, nhưng **phải ánh xạ**. Mỗi nguồn có bộ mã chỉ tiêu và cách gộp khoản mục riêng |
-| **C — Độc quyền FiinGroup** | Điểm VGM · 32 chỉ tiêu `RateIndicator` · mô hình định giá (`estimatedEPS`, `forecastEPS`, `recommendMethod`) · `ZMFScore` · 223 trường screener | ❌ Mất là mất. Không nguồn nào khác có |
+| **C — Độc quyền FiinGroup** | 32 chỉ tiêu `RateIndicator` · mô hình định giá (`estimatedEPS`, `forecastEPS`, `recommendMethod`) · `ZMFScore` · **75/193** trường screener (đếm 2026-09-03). *Điểm VGM và các nhãn xếp hạng (`roe` `grossMargin` `profitGrowth` `revenueGrowth`) thuộc tầng này về bản chất nhưng **cố ý không lưu** — quyết định của chủ dự án: không dùng điểm do bên thứ ba chấm* | ❌ Mất là mất. Không nguồn nào khác có |
 
 Tầng A và B chiếm phần lớn giá trị sử dụng. Tầng C thì chấp nhận **đóng băng**: giữ nguyên lịch sử đã tích luỹ, các ngày sau để `NULL`. Đây chính là mô hình *"phần thiếu kệ nó, phần đủ cứ chạy"*.
 

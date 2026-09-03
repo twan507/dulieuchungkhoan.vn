@@ -25,7 +25,10 @@ def main(argv: list[str] | None = None) -> int:
         parser.add_argument("--accept-drop", action="store_true")
         parsed = parser.parse_args(args[1:])
         return etl.refdata_job.run(accept_drop=parsed.accept_drop)
-    print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata)", file=sys.stderr)
+    if args[0] == "screener":
+        import etl.screener_job
+        return etl.screener_job.run()
+    print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener)", file=sys.stderr)
     return 2
 
 

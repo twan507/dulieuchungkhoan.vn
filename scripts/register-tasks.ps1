@@ -135,6 +135,10 @@ Write-Host "Đăng ký refdata (08:00 ngày làm việc — danh bạ tươi TR�
 Register-DlckTask -TaskName "dlck-refdata" -AtTime "08:00" -ModuleArgs "etl refdata" -LogFile "refdata.log"
 Assert-TaskCommand -TaskName "dlck-refdata" -MustContain "python -m etl refdata"
 
+Write-Host "Đăng ký screener (15:20 ngày làm việc — sau khi ingester ghi xong 15:05, tránh 15:30 của OMO):"
+Register-DlckTask -TaskName "dlck-screener" -AtTime "15:20" -ModuleArgs "etl screener" -LogFile "screener.log"
+Assert-TaskCommand -TaskName "dlck-screener" -MustContain "python -m etl screener"
+
 Write-Host "Đăng ký ingester theo phiên (08:30, tự thoát sau đối chứng ~15:05):"
 Register-DlckTask -TaskName "dlck-ingester" -AtTime "08:30" -ModuleArgs "ingester" -LogFile "ingester-task.log"
 Assert-TaskCommand -TaskName "dlck-ingester" -MustContain "python -m ingester " -MustNotContain "--measure"
@@ -162,7 +166,7 @@ Register-DlckTask -TaskName $measureTask -AtTime "08:30" -ModuleArgs "ingester -
                   -LogFile "ingester-measure.log"
 Assert-TaskCommand -TaskName $measureTask -MustContain "python -m ingester --measure "
 
-Write-Host "`nĐã kiểm lệnh của cả 7 task. Xem lại bất cứ lúc nào:"
+Write-Host "`nĐã kiểm lệnh của cả 8 task. Xem lại bất cứ lúc nào:"
 Write-Host '  Get-ScheduledTask -TaskName "dlck-*" | % { $_.TaskName + " -> " + $_.Actions[0].Arguments }'
 # Cảnh báo này KHÔNG phụ thuộc LogonType: `Register-ScheduledTask -Force` thay định
 # nghĩa task ở MỌI lượt chạy, và New-ScheduledTaskSettingsSet không có cờ giữ trạng thái

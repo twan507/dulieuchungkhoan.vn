@@ -136,6 +136,21 @@ def test_checks_and_index_tables(db):  # seam 5 + 5c
         f"INSERT INTO market.snapshot_daily (issuer_id, trading_date, kind, payload) "
         f"VALUES ({iid}, '2026-08-20', 'weird', '{{}}'::jsonb)",
     )
+    # 0015: hai kind chấm điểm bên thứ ba đã bị bỏ khỏi CHECK (quyết định 2026-09-03)
+    for gone in ("company_score", "rate_indicator"):
+        assert expect_violation(
+            db,
+            f"INSERT INTO market.snapshot_daily (issuer_id, trading_date, kind, payload) "
+            f"VALUES ({iid}, '2026-08-20', '{gone}', '{{}}'::jsonb)",
+        ), f"{gone} phải bị CHECK từ chối"
+    for keep in ("snapshot", "valuation", "ownership", "dividend"):
+        db.execute(
+            sa.text(
+                "INSERT INTO market.snapshot_daily (issuer_id, trading_date, kind, payload)"
+                " VALUES (:i, '2026-08-20', :k, '{}'::jsonb)"
+            ),
+            {"i": iid, "k": keep},
+        )
     idx = _sec(db, "VNI2", stype="index")
     # payload truyền qua bind param — dấu ':' trong literal JSON bị sa.text() hiểu nhầm là param
     ins_stat = (

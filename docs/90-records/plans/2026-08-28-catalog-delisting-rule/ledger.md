@@ -85,3 +85,26 @@ Quét `chưa có luật nào` · `438` · `directory_absent` toàn repo. Phán q
 Review trục Spec nêu đúng: công thức AC3 ở [spec §12](../2026-08-28-ingester-spill-to-disk/spec.md) liệt `chênh_hai_socket` như một số hạng phải tính, mà ledger không đóng riêng nó ở cuối phiên — chỉ có mẫu giữa phiên 09:22:02.
 
 Lý do nó **không cần đóng riêng**: cửa sổ chung được cắt về đúng vòng đời tiến trình ghi (`--to "2026-08-28 15:04:59.999"`), và trong cửa sổ đó `expected = actual` **tuyệt đối trên cả 5 bảng**. Số hạng chênh-hai-socket nếu khác 0 sẽ hiện ra thành `diff ≠ 0` ở ít nhất một bảng. Năm bảng cùng bằng 0 ⇒ số hạng đó **bằng 0 trong cửa sổ chung**, đo gián tiếp nhưng chặt. Phần chênh 15 frame `idx` nằm **ngoài** cửa sổ chung (công bố sau khi tiến trình ghi đã thoát) nên không thuộc vế nào của hằng đẳng thức.
+
+## Lượt dọn tay — 2026-09-03 13:48 (chủ dự án cho phép)
+
+Job đã đỏ **3 sáng liên tiếp** (01·02·03/09, `guard refused: sắp lật delisted 438 mã — quá 1% của 2011`) đúng như thiết kế; danh bạ vì thế đứng ở 31/08. Trước khi lật đã lưu đường lùi: [`before-delist-20260903.csv`](before-delist-20260903.csv) — 439 dòng `security_id,ticker,exchange,status,directory_absent_since`.
+
+**Phép kiểm độc lập trước khi lật:** **0/438** mã bị đánh dấu có mặt trong `market.screener_daily` của chính hôm đó (nguồn thứ hai, không liên quan danh bạ) ⇒ chúng thật sự ngoài rổ giao dịch. Phân bố hợp lý với mã huỷ niêm yết: **379 UPCOM · 39 HNX · 21 HOSE**.
+
+```
+uv run python -m etl refdata --accept-drop     exit 0
+  {'sec_unchanged': 2017, 'delisted': 439, 'directory_absent_marked': 0,
+   'directory_absent_cleared': 0, 'stocks_no_issuer': 439, 'accept_drop': True, …}
+```
+
+| | trước | sau |
+|---|---:|---:|
+| `listed` | 2.011 | **1.572** |
+| `delisted` | 6 | **445** |
+| mang dấu `directory_absent_since` | 439 | **0** |
+| tổng dòng `market.security` | 2.017 | **2.017** — không xoá dòng nào |
+
+Vì sao dồn 439 mã một lúc: cột dấu chỉ mới thêm 28/08, nên mọi mã vắng đều tính ngày thứ nhất là 28/08 và cùng chạm ngưỡng 3 ngày tại 31/08 19:41. **Tồn đọng lịch sử, không phải 439 mã cùng huỷ trong một ngày.** Chốt chặn 1% không thể tự phân biệt hai ca đó — đó là lý do nó đòi người xác nhận, và nó đã làm đúng việc.
+
+⚠️ **Một suy đoán của tôi bị bác ngay sau đó:** tôi từng nói danh bạ cũ là nguyên nhân 4 mã Screener không ghép được. Sai — lượt refdata này thành công với `sec_inserted: 0`, và lượt `etl screener` chạy lại ngay sau vẫn `unmapped: 4`. Nguyên nhân thật **chưa biết**; đã vá công cụ chẩn đoán (xem ledger của plan screener) và sẽ có đáp án ở lượt AC3.
