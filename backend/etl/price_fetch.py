@@ -95,7 +95,13 @@ class Fetcher:
     def _page(self, code: str, page: int) -> tuple[dict, str]:
         status, text = 0, ""
         for attempt in range(RETRIES + 1):
-            status, text = self._request(code, page)
+            try:
+                status, text = self._request(code, page)
+            except httpx.HTTPError as e:
+                # Timeout/đứt kết nối đi CÙNG đường với response xấu — thử lại rồi mới FetchError.
+                # Sự cố 2026-09-04 02:00: máy ngủ giữa lời gọi, ReadTimeout lọt ra ngoài và giết
+                # cả lượt backfill ở mã đầu tiên thay vì chỉ đánh dấu mã đó hỏng.
+                status, text = 0, f"{type(e).__name__}: {e}"
             d = _parse(status, text)
             if _valid(d):
                 return d, text

@@ -80,6 +80,37 @@ def test_transient_failure_retries_with_backoff_then_succeeds():
     assert f.retries == 2 and slept == [2, 4]
 
 
+def test_transport_exception_is_retried_like_a_bad_response_then_succeeds():
+    """Sự cố 2026-09-04 02:00: máy ngủ giữa lời gọi ⇒ httpx.ReadTimeout lọt qua vòng retry và giết
+    cả lượt backfill ở mã ĐẦU TIÊN. Exception vận chuyển phải đi cùng đường với response xấu."""
+    import httpx
+    state = {"fail": 2}
+
+    def get(u):
+        if state["fail"]:
+            state["fail"] -= 1
+            raise httpx.ReadTimeout("The read operation timed out")
+        return 200, env(3)
+
+    f, slept = fetcher(get)
+    assert len(f.pages("BID")) == 1
+    assert f.retries == 2 and slept == [2, 4]
+
+
+def test_transport_exception_every_time_becomes_a_fetch_error_not_a_crash():
+    import httpx
+
+    def get(u):
+        raise httpx.ConnectError("[Errno 11001] getaddrinfo failed")
+
+    f, slept = fetcher(get)
+    with pytest.raises(pf.FetchError, match="ConnectError"):
+        f.pages("BID")
+    assert slept == [2, 4, 8]
+    res = f.many(["A", "B"])                          # đường many: mã hỏng vào failed, không ném
+    assert res.failed == ["A", "B"] and res.pages == {}
+
+
 def test_exhausted_retries_raise_fetch_error_naming_code_and_page():
     body = '{"status":"Failed","errors":["Timeout performing GET (5000ms)"]}'   # 00-conventions §10.5
     f, slept = fetcher(lambda u: (200, body))
