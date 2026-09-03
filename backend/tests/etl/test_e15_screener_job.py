@@ -74,7 +74,8 @@ def test_success_writes_rows_run_and_domain_state(monkeypatch, migrated_engine):
                         {"j": st.JOB}).one()
         assert run.status == "success"
         assert run.stats["counts"] == {"items": 30, "pages": 1, "priced": 30, "trading_dates": 1}
-        assert run.stats["rows_written"] == 30 and run.stats["unmapped"] == 0 and run.stats["trading_date"] == "2026-08-28"
+        assert run.stats["rows_written"] == 30 and run.stats["unmapped"] == 0
+        assert run.stats["unmapped_tickers"] == [] and run.stats["trading_date"] == "2026-08-28"
         assert run.stats["dup_conflicts"] == 52          # `rtq12`/`rtq27`/`rtq83` lệch giữa hai khối (Ruling 10)
         w = c.execute(sa.text("SELECT watermark FROM ops.data_domain_state WHERE domain='market.scores' AND source='fiintrade'")).scalar_one()
         assert w == "2026-08-28"

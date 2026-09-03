@@ -24,8 +24,10 @@ def _seed_securities(conn, rows):
 def test_merge_maps_by_ticker_and_exchange_and_counts_unmapped(db):
     rows = sn.normalize([POST]).rows
     _seed_securities(db, rows[:-1])                     # bỏ 1 mã cuối (FUEIP100) → 1 unmapped
-    mapped, unmapped = st.merge(db, rows)
-    assert len(mapped) == 29 and unmapped == 1
+    mapped, missing = st.merge(db, rows)
+    assert len(mapped) == 29
+    # nêu TÊN, không chỉ đếm — mã cuối của mẫu là FUEIP100 trên VNINDEX ⇒ HOSE
+    assert missing == ["FUEIP100/HOSE"]
     sid_ddb = db.execute(sa.text("SELECT security_id FROM market.security WHERE ticker='DDB'")).scalar_one()
     assert (sid_ddb, next(r for r in rows if r.ticker == "DDB")) in mapped
 
@@ -34,8 +36,8 @@ def test_merge_ignores_delisted_rows(db):
     rows = sn.normalize([POST]).rows
     _seed_securities(db, rows)
     db.execute(sa.text("UPDATE market.security SET status='delisted' WHERE ticker='DDB'"))
-    mapped, unmapped = st.merge(db, rows)
-    assert unmapped == 1 and all(r.ticker != "DDB" for _, r in mapped)
+    mapped, missing = st.merge(db, rows)
+    assert missing == ["DDB/UPCOM"] and all(r.ticker != "DDB" for _, r in mapped)
 
 
 def test_apply_twice_same_day_is_idempotent_and_bumps_ingested_at(db):

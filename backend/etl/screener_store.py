@@ -16,19 +16,22 @@ from etl.screener_normalize import ScreenerRow
 JOB = "market.screener"
 
 
+UNMAPPED_SAMPLE = 20        # đủ để chẩn đoán, không phình `ops.etl_run.stats`
+
+
 def merge(conn, rows: list[ScreenerRow]) -> tuple[list[tuple[int, ScreenerRow]], int]:
     listed = conn.execute(sa.text(
         "SELECT ticker, exchange, security_id FROM market.security WHERE status = 'listed'")).all()
     by_key = {(t, e): sid for t, e, sid in listed}
     mapped: list[tuple[int, ScreenerRow]] = []
-    unmapped = 0
+    missing: list[str] = []
     for r in rows:
         sid = by_key.get((r.ticker, r.exchange))
         if sid is None:
-            unmapped += 1
+            missing.append(f"{r.ticker}/{r.exchange}")
         else:
             mapped.append((sid, r))
-    return mapped, unmapped
+    return mapped, sorted(missing)
 
 
 def load_baseline(engine) -> int | None:

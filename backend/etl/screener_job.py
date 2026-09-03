@@ -41,7 +41,8 @@ def run() -> int:
         baseline = screener_store.load_baseline(engine)
         try:
             with engine.begin() as conn:
-                mapped, unmapped = screener_store.merge(conn, n.rows)
+                mapped, missing = screener_store.merge(conn, n.rows)
+                unmapped = len(missing)
                 verdict = screener_guard.check(n.total_count, len(n.rows) + n.unknown_com_group,
                                                priced, unmapped, baseline,
                                                unknown=n.unknown_com_group)
@@ -56,7 +57,9 @@ def run() -> int:
         trading_date = max(r.trading_date for r in n.rows).isoformat()
         stats = {"counts": {"items": n.total_count, "pages": len(pages), "priced": priced,
                             "trading_dates": len({r.trading_date for r in n.rows})},
-                 **apply_stats, "unmapped": unmapped, "unknown_com_group": n.unknown_com_group,
+                 **apply_stats, "unmapped": unmapped,
+                 "unmapped_tickers": missing[:screener_store.UNMAPPED_SAMPLE],
+                 "unknown_com_group": n.unknown_com_group,
                  "null_blocks": n.null_blocks, "dup_conflicts": n.dup_conflicts,
                  "retries": retries, "trading_date": trading_date}
         omo_store.close_run(engine, run_id, "success", stats)
