@@ -80,9 +80,17 @@ class Clock:
         return self.t
 
 
-def fetcher(get, clock=None):
-    slept = []
-    return pf.Fetcher(get, sleep=slept.append, clock=clock or Clock()), slept
+def fetcher(get, latency=1.8):
+    """Fetcher với đồng hồ giả TRÔI theo latency mỗi lời gọi (trung vị thật 1,76 s > MIN_INTERVAL 0,5 s
+    nên bộ giãn cách không ngủ) — chỉ backoff mới hiện trong `slept`. Đồng hồ đứng yên sẽ làm
+    bộ giãn cách ngủ 0,5 s giữa mọi lời gọi và mọi assert về `slept` sai."""
+    clock, slept = Clock(), []
+
+    def timed_get(u):
+        clock.t += latency
+        return get(u)
+
+    return pf.Fetcher(timed_get, sleep=slept.append, clock=clock), slept
 
 
 def _code(u):
@@ -154,13 +162,7 @@ def test_pagination_stops_at_short_page_and_at_total_count_cap():
 
 
 def test_min_interval_between_call_starts_sleeps_the_remainder():
-    clock = Clock()
-
-    def get(u):
-        clock.t += 0.1                                # lời gọi mất 0,1 s
-        return 200, env(60, total=120)
-
-    f, slept = fetcher(get, clock)
+    f, slept = fetcher(lambda u: (200, env(60, total=120)), latency=0.1)   # lời gọi mất 0,1 s
     f.pages("BID", max_pages=None)                    # 2 lời gọi
     assert slept == [pytest.approx(0.4)]              # 0,5 s giữa hai lần BẮT ĐẦU ⇒ ngủ 0,4
 
