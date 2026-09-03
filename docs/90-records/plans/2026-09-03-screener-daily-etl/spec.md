@@ -119,7 +119,7 @@ Một item → `ScreenerRow(ticker, exchange, organ_code, trading_date, payload)
 
 - `exchange` từ `priceInfo.comGroupCode`: `VNINDEX → HOSE`, `HNXIndex → HNX`, `UpcomIndex → UPCOM`. Giá trị khác ⇒ đếm `unknown_com_group`, bỏ dòng.
 - `trading_date = date(priceInfo.tradingDate)` — **cắt phần ngày**; đây là timestamp riêng từng mã (14:45–15:00), không dùng thô.
-- `payload` = 5 khối lồng, mỗi khối chỉ giữ khoá có `keep = True` trong `market-field-selection.json` (`source = "Screener"`); khối `null` hoặc không còn khoá nào ⇒ **bỏ khối**, không nổ. Khoá `keep` đọc từ file JSON lúc import — không hardcode danh sách trong code.
+- `payload` = khối lồng của nguồn, mỗi khối chỉ giữ khoá có `keep = True` trong `market-field-selection.json` (`source = "Screener"`); khối `null` hoặc không còn khoá nào ⇒ **bỏ khối**, không nổ. Khoá `keep` đọc từ file JSON lúc import — không hardcode danh sách trong code.
 - Không đổi đơn vị, không tính lại gì — *"Không tự tính lại chỉ tiêu nguồn đã cấp"* (step-03).
 
 > **Đính chính sau review cuối 2026-09-03:** 10 khoá keep nằm ở cả `stockScreenerItem` lẫn `financial`; 7 mã `rtd*` hai bản luôn bằng nhau, nhưng **`rtq12` · `rtq27` · `rtq83` khác nhau ở 52/90 cặp trên mẫu 28/08, kể cả đổi dấu**. Spec ban đầu chỉ xét kích thước, không xét hai bản có bằng nhau không — đó là lỗ hổng của spec. Quyết định tạm (Ruling 10, không mất dữ liệu): **giữ cả hai bản**, đếm `dup_conflicts` vào `stats` để nhìn thấy độ lệch, và ghi rõ ở `market-data-store.md` §5.5. **Khối nào là chuẩn cho ba mã đó là quyết định của chủ dự án**, cần biết nghĩa từng mã (bundle JS) — treo ở §9 mục 4. Sau lọc, thực tế chỉ còn hai khối `stockScreenerItem` và `financial` có khoá keep.
@@ -185,7 +185,7 @@ Fixture: hai file trong `samples/` chép sang `backend/tests/etl/fixtures/screen
 
 | File | Sửa gì |
 |---|---|
-| [`20-design/market-data-store.md`](../../../20-design/market-data-store.md) §5.5 | `screener_daily` đang ghi *"223 trường, 5 khối lồng"* và *"chuỗi điểm VGM"* — **đá** §4.1 cùng file (80/193) và quyết định bỏ nhóm chấm điểm. Sửa thành *"80/193 trường đã chọn (market-field-selection), 5 khối lồng"*, bỏ ví dụ VGM; §4.1 thêm dòng lịch 15:20 |
+| [`20-design/market-data-store.md`](../../../20-design/market-data-store.md) §5.5 | `screener_daily` đang ghi *"223 trường, 5 khối lồng"* và *"chuỗi điểm VGM"* — **đá** §4.1 cùng file (80/193) và quyết định bỏ nhóm chấm điểm. Sửa thành *"80/193 trường đã chọn (market-field-selection), 5 khối lồng"*, bỏ ví dụ VGM; §4.1 thêm dòng lịch 15:20 *(đợt sửa review cuối 2026-09-03 làm khác: 81/193, PK `(security_id, trading_date)` khớp migration 0004, và ghi rõ sau lọc chỉ còn hai khối — xem §5.3)* |
 | [`10-sources/market/10-fiin-dictionary.md`](../../../10-sources/market/10-fiin-dictionary.md) | *(tầng reference — được sửa vì đã đo lại 2026-08-28/09-03)*: response có thêm `page` `pageSize` `packageId` `errors`; `tradingDate` là timestamp **riêng từng mã**; **trước mở cửa đã là ngày hôm nay với giá 0** — bẫy cho mọi ETL dùng endpoint này |
 | [`20-design/gen_field_selection.py`](../../../20-design/gen_field_selection.py) → `.md`/`.json` | §4 — thêm 66 khoá; §7.3/§7.5 của file sinh sẽ tự về 0 "chưa liệt kê" |
 | Mọi chỗ chép **"80/193"** | `git grep "80/193"` — sửa thành số đếm thật hoặc ghi *"80 (ước lượng 2026-08-14) → N (đếm 2026-09-xx)"* |
