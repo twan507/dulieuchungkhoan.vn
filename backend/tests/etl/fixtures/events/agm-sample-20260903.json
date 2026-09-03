@@ -1,0 +1,78 @@
+{
+ "totalCount": 6,
+ "items": [
+  {
+   "organCode": "SASTECO",
+   "ticker": "SAC",
+   "organShortName": "Dịch vụ cảng Sài Gòn",
+   "publicDate": "2018-03-27T11:03:28.023",
+   "issueDate": "2018-04-24T00:00:00",
+   "exrightDate": "2018-04-03T00:00:00",
+   "address": "Thông báo sau.",
+   "locationName": null,
+   "eventTitle": null,
+   "sourceUrl": "http://fiinpro.com/News/Detail/1617479?lang=vi-VN"
+  },
+  {
+   "organCode": "SASTECO",
+   "ticker": "SAC",
+   "organShortName": "Dịch vụ cảng Sài Gòn",
+   "publicDate": "2018-03-27T00:00:00",
+   "issueDate": "2018-04-24T00:00:00",
+   "exrightDate": "2018-04-03T00:00:00",
+   "address": "Thông báo sau.",
+   "locationName": null,
+   "eventTitle": null,
+   "sourceUrl": "http://fiinpro.com/News/Detail/1617479?lang=vi-VN"
+  },
+  {
+   "organCode": "SHX",
+   "ticker": "SHX",
+   "organShortName": "Sài Gòn Hỏa xa",
+   "publicDate": "2022-09-12T00:00:00",
+   "issueDate": "2022-12-23T00:00:00",
+   "exrightDate": "2022-09-16T00:00:00",
+   "address": "Văn phòng CTCP Sài gòn Hỏa Xa, 275C Phạm Ngũ Lão, phường Phạm Ngũ Lão, Quận 1, TP. Hồ Chí Minh",
+   "locationName": "Thành phố Hồ Chí Minh",
+   "eventTitle": null,
+   "sourceUrl": "http://fiinpro.com/News/Detail/10506404?lang=vi-vn"
+  },
+  {
+   "organCode": "SHX",
+   "ticker": "SHX",
+   "organShortName": "Sài Gòn Hỏa xa",
+   "publicDate": "2022-09-12T00:00:00",
+   "issueDate": "2022-10-18T00:00:00",
+   "exrightDate": "2022-09-16T00:00:00",
+   "address": "Văn phòng CTCP Sài gòn Hỏa Xa, 275C Phạm Ngũ Lão, phường Phạm Ngũ Lão, Quận 1, TP. Hồ Chí Minh",
+   "locationName": "Thành phố Hồ Chí Minh",
+   "eventTitle": null,
+   "sourceUrl": "http://fiinpro.com/News/Detail/10506403?lang=vi-vn"
+  },
+  {
+   "organCode": "QNC",
+   "ticker": "QNC",
+   "organShortName": "Xi măng Quảng Ninh",
+   "publicDate": "2026-09-03T00:00:00",
+   "issueDate": "2026-10-24T00:00:00",
+   "exrightDate": "2026-09-22T00:00:00",
+   "address": "Công ty cổ phần Xi măng và Xây dựng Quảng Ninh, Khu phố Bạch Đằng, Phường Yên Tử, Tỉnh Quảng Ninh, Việt Nam",
+   "locationName": "Tỉnh Quảng Ninh",
+   "eventTitle": null,
+   "sourceUrl": "https://vsdc.vn/vi/ad/199746"
+  },
+  {
+   "organCode": "KTS",
+   "ticker": "KTS",
+   "organShortName": "Đường Kon Tum",
+   "publicDate": "2026-08-28T00:00:00",
+   "issueDate": null,
+   "exrightDate": "2026-09-18T00:00:00",
+   "address": "Công ty cổ phần Đường Kon Tum: Thôn Kon Rờ Bàng 1, Xã Ngọk Bay, Tỉnh Quảng Ngãi, Việt Nam",
+   "locationName": "Tỉnh Quảng Ngãi",
+   "eventTitle": null,
+   "sourceUrl": "https://vsdc.vn/vi/ad/199770"
+  }
+ ],
+ "status": "Success"
+}

@@ -1,0 +1,78 @@
+{
+ "totalCount": 6,
+ "items": [
+  {
+   "organCode": "SD9",
+   "ticker": "SD9",
+   "publicDate": "2026-03-17T00:00:00",
+   "recordDate": "2026-03-30T00:00:00",
+   "exrightDate": "2026-03-27T00:00:00",
+   "payoutDate": "2026-04-22T00:00:00",
+   "exerciseRate": 0.04,
+   "valuePerShare": 400.0,
+   "dividendYear": 2019,
+   "stageName": "Cả năm"
+  },
+  {
+   "organCode": "SD9",
+   "ticker": "SD9",
+   "publicDate": "2026-03-17T00:00:00",
+   "recordDate": "2026-03-30T00:00:00",
+   "exrightDate": "2026-03-27T00:00:00",
+   "payoutDate": "2026-04-22T00:00:00",
+   "exerciseRate": 0.015,
+   "valuePerShare": 150.0,
+   "dividendYear": 2021,
+   "stageName": "Cả năm"
+  },
+  {
+   "organCode": "SGS",
+   "ticker": "SGS",
+   "publicDate": "2026-01-10T00:00:00",
+   "recordDate": "2026-01-15T00:00:00",
+   "exrightDate": "2026-01-14T00:00:00",
+   "payoutDate": "2026-02-03T00:00:00",
+   "exerciseRate": 0.25,
+   "valuePerShare": 2500.0,
+   "dividendYear": 2023,
+   "stageName": "Cả năm"
+  },
+  {
+   "organCode": "SGS",
+   "ticker": "SGS",
+   "publicDate": "2026-01-10T00:00:00",
+   "recordDate": "2026-01-15T00:00:00",
+   "exrightDate": "2026-01-14T00:00:00",
+   "payoutDate": "2026-02-03T00:00:00",
+   "exerciseRate": 0.675,
+   "valuePerShare": 6750.0,
+   "dividendYear": 2024,
+   "stageName": "Cả năm"
+  },
+  {
+   "organCode": "THANHHOAWATER",
+   "ticker": "THN",
+   "publicDate": "2026-08-13T00:00:00",
+   "recordDate": "2026-08-21T00:00:00",
+   "exrightDate": "2026-08-20T00:00:00",
+   "payoutDate": "2026-08-28T00:00:00",
+   "exerciseRate": 0.1335,
+   "valuePerShare": 1335.0,
+   "dividendYear": 2025,
+   "stageName": "Cả năm"
+  },
+  {
+   "organCode": "MWJSC",
+   "ticker": "DMX",
+   "publicDate": "2026-08-11T00:00:00",
+   "recordDate": "2026-08-19T00:00:00",
+   "exrightDate": "2026-08-18T00:00:00",
+   "payoutDate": "2026-08-26T00:00:00",
+   "exerciseRate": 0.4,
+   "valuePerShare": 4000.0,
+   "dividendYear": 2025,
+   "stageName": "Đợt 1"
+  }
+ ],
+ "status": "Success"
+}

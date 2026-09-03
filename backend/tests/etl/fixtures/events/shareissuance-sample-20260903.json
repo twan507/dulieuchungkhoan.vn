@@ -1,0 +1,97 @@
+{
+ "totalCount": 7,
+ "items": [
+  {
+   "organCode": "ABI",
+   "ticker": "ABI",
+   "publicDate": "2025-09-04T00:00:00",
+   "exrightDate": "2025-09-11T00:00:00",
+   "issueDate": "2025-09-11T00:00:00",
+   "listingDate": null,
+   "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+   "exerciseRatio": 0.2,
+   "planVolumn": 14478350.0,
+   "issueYear": 2025,
+   "issueStatusName": "Đã thực hiện xong"
+  },
+  {
+   "organCode": "ABI",
+   "ticker": "ABI",
+   "publicDate": "2025-09-04T00:00:00",
+   "exrightDate": "2025-09-11T00:00:00",
+   "issueDate": "2025-09-11T00:00:00",
+   "listingDate": null,
+   "issueMethodName": "Cổ phiếu thưởng",
+   "exerciseRatio": 0.2,
+   "planVolumn": 14478350.0,
+   "issueYear": 2025,
+   "issueStatusName": "Đã thực hiện xong"
+  },
+  {
+   "organCode": "ABI",
+   "ticker": "ABI",
+   "publicDate": "2025-09-04T00:00:00",
+   "exrightDate": "2025-09-11T00:00:00",
+   "issueDate": "2025-09-11T00:00:00",
+   "listingDate": "2025-10-17T00:00:00",
+   "issueMethodName": "Cổ phiếu thưởng",
+   "exerciseRatio": 0.2,
+   "planVolumn": 14478350.0,
+   "issueYear": 2025,
+   "issueStatusName": "Đã thực hiện xong"
+  },
+  {
+   "organCode": "ABI",
+   "ticker": "ABI",
+   "publicDate": "2025-09-04T00:00:00",
+   "exrightDate": "2025-09-11T00:00:00",
+   "issueDate": "2025-09-11T00:00:00",
+   "listingDate": "2025-10-17T00:00:00",
+   "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+   "exerciseRatio": 0.2,
+   "planVolumn": 14478350.0,
+   "issueYear": 2025,
+   "issueStatusName": "Đã thực hiện xong"
+  },
+  {
+   "organCode": "VIC",
+   "ticker": "VIC",
+   "publicDate": "2026-07-10T00:00:00",
+   "exrightDate": "2026-07-10T00:00:00",
+   "issueDate": "2026-07-10T00:00:00",
+   "listingDate": "2026-07-10T00:00:00",
+   "issueMethodName": "Phát hành riêng lẻ",
+   "exerciseRatio": 0.0,
+   "planVolumn": -27460872.0,
+   "issueYear": 2026,
+   "issueStatusName": "Đã thực hiện xong"
+  },
+  {
+   "organCode": "VIC",
+   "ticker": "VIC",
+   "publicDate": "2026-07-10T00:00:00",
+   "exrightDate": "2026-07-10T00:00:00",
+   "issueDate": "2026-07-10T00:00:00",
+   "listingDate": "2026-08-10T00:00:00",
+   "issueMethodName": "Phát hành riêng lẻ",
+   "exerciseRatio": 0.007287,
+   "planVolumn": 56155405.0,
+   "issueYear": 2026,
+   "issueStatusName": "Đã thực hiện xong"
+  },
+  {
+   "organCode": "12681",
+   "ticker": "RYG",
+   "publicDate": "2026-08-22T00:00:00",
+   "exrightDate": "2026-09-03T00:00:00",
+   "issueDate": "2026-09-03T00:00:00",
+   "listingDate": null,
+   "issueMethodName": "Trả Cổ tức bằng Cổ phiếu",
+   "exerciseRatio": 0.17,
+   "planVolumn": 7650000.0,
+   "issueYear": 2026,
+   "issueStatusName": "Đã thực hiện xong"
+  }
+ ],
+ "status": "Success"
+}

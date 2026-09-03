@@ -1,0 +1,54 @@
+{
+ "totalCount": 4,
+ "items": [
+  {
+   "organCode": "ABI",
+   "ticker": "ABI",
+   "publicDate": "2025-09-04T00:00:00",
+   "recordDate": "2025-09-12T00:00:00",
+   "exrightDate": "2025-09-11T00:00:00",
+   "payoutDate": "2025-09-11T00:00:00",
+   "exerciseRate": 0.2,
+   "valuePerShare": 0.0,
+   "dividendYear": 2024,
+   "stageName": "Cả năm"
+  },
+  {
+   "organCode": "ABI",
+   "ticker": "ABI",
+   "publicDate": "2025-09-04T00:00:00",
+   "recordDate": "2025-09-12T00:00:00",
+   "exrightDate": "2025-09-11T00:00:00",
+   "payoutDate": "2025-09-11T00:00:00",
+   "exerciseRate": 0.2,
+   "valuePerShare": 0.0,
+   "dividendYear": 2024,
+   "stageName": "Cả năm"
+  },
+  {
+   "organCode": "12681",
+   "ticker": "RYG",
+   "publicDate": "2026-08-22T00:00:00",
+   "recordDate": "2026-09-04T00:00:00",
+   "exrightDate": "2026-09-03T00:00:00",
+   "payoutDate": "2026-09-03T00:00:00",
+   "exerciseRate": 0.17,
+   "valuePerShare": 0.0,
+   "dividendYear": 2025,
+   "stageName": "Cả năm"
+  },
+  {
+   "organCode": "VC3",
+   "ticker": "VC3",
+   "publicDate": "2026-08-21T00:00:00",
+   "recordDate": "2026-08-28T00:00:00",
+   "exrightDate": "2026-08-27T00:00:00",
+   "payoutDate": "2026-08-27T00:00:00",
+   "exerciseRate": 0.075,
+   "valuePerShare": 0.0,
+   "dividendYear": 2025,
+   "stageName": "Cả năm"
+  }
+ ],
+ "status": "Success"
+}

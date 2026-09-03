@@ -1,0 +1,48 @@
+{
+ "totalCount": 3,
+ "items": [
+  {
+   "ticker": "DIC",
+   "organCode": "DIC",
+   "organShortName": "ĐT và TM DIC",
+   "publicDate": "2026-08-19T00:00:00",
+   "yearReport": 2026,
+   "lengthReport": 2,
+   "revenue": 67008018480.0,
+   "revenueGrowth": 10.389685409503649,
+   "profit": 636287028.0,
+   "profitGrowth": -0.3608170815603393,
+   "rtd21": 20.5930275,
+   "rtd25": -0.30479236
+  },
+  {
+   "ticker": "THP",
+   "organCode": "TPST",
+   "organShortName": "Thủy sản và TMại Thuận Phước",
+   "publicDate": "2026-08-18T00:00:00",
+   "yearReport": 2026,
+   "lengthReport": 2,
+   "revenue": 702637555979.0,
+   "revenueGrowth": -0.12361246705827945,
+   "profit": 13350110368.0,
+   "profitGrowth": 0.19898548908787445,
+   "rtd21": 4.8500992,
+   "rtd25": 0.52261969
+  },
+  {
+   "ticker": "TLP",
+   "organCode": "THALEXIM",
+   "organShortName": "Thương mại XNK Thanh Lễ",
+   "publicDate": "2026-08-18T00:00:00",
+   "yearReport": 2026,
+   "lengthReport": 2,
+   "revenue": 8469163220599.0,
+   "revenueGrowth": 0.6858228852541177,
+   "profit": 56702878164.0,
+   "profitGrowth": 1.5361434149598292,
+   "rtd21": 14.7875801,
+   "rtd25": 1.1684373
+  }
+ ],
+ "status": "Success"
+}
