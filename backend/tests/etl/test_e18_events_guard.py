@@ -47,6 +47,23 @@ def test_duplicate_ratio_threshold():
                     dup_conflicts=600, rows_kept=109400).ok is False
 
 
+def test_all_families_empty_is_refused_even_with_no_baseline():
+    """Vế (0). Lượt ĐẦU TIÊN chưa có mốc nên vế (ii) không bắt được ca này; lọt qua thì
+    `rows` rỗng và `max()` tính watermark ném ValueError — lượt bị ghi `failed` với lý do
+    sai hoàn toàn. Chặn ở guard thì thông điệp nói đúng chuyện gì xảy ra."""
+    v = eg.check(counts={"AGM": 0, "IPO": 0}, collected={"AGM": 0, "IPO": 0}, baseline=None,
+                 issuers_new=0, dup_conflicts=0, rows_kept=0)
+    assert v.ok is False and "cả sáu họ trả 0" in v.reasons[0]
+
+
+def test_one_family_empty_is_not_enough_to_refuse_on_rule_zero():
+    """Biên đúng chiều: chỉ TỔNG bằng 0 mới là nguồn hỏng. Một họ rỗng mà họ khác có dữ
+    liệu thì vế (0) im — nếu đó là thiếu trang thật thì vế (i) mới là vế bắt."""
+    v = eg.check(counts={"AGM": 0, "IPO": 5}, collected={"AGM": 0, "IPO": 5}, baseline=None,
+                 issuers_new=0, dup_conflicts=0, rows_kept=5)
+    assert v.ok is True
+
+
 def test_every_broken_rule_is_reported_not_just_the_first():
     v = _check(collected={"AGM": 99, "Earning": 199}, issuers_new=21)
     assert len(v.reasons) == 3 and v.families == ("AGM", "Earning")

@@ -27,6 +27,13 @@ def check(counts: dict[str, int], collected: dict[str, int], baseline: dict[str,
           *, accept_new: bool = False) -> GuardVerdict:
     reasons: list[str] = []
     families: list[str] = []
+    # (0) Cả sáu họ cùng rỗng = nguồn hỏng nặng, không phải "hôm nay không có sự kiện":
+    # họ IPO một mình đã có 77 bản ghi lịch sử và con số đó chỉ tăng. Vế (ii) KHÔNG bắt
+    # được ca này ở lượt đầu tiên vì chưa có mốc để so — và lọt qua đây thì `rows` rỗng,
+    # `max()` tính watermark ném ValueError, lượt bị ghi `failed` với lý do sai hoàn toàn.
+    if not counts or sum(collected.values()) == 0:
+        reasons.append("cả sáu họ trả 0 bản ghi — nguồn hỏng, không phải ngày không có sự kiện")
+        families.extend(sorted(counts))
     for fam in sorted(counts):
         total, got = counts[fam], collected.get(fam, 0)
         if got != total:                                                        # (i)
