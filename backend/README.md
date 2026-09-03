@@ -10,7 +10,7 @@
 
 **Đang có:** [`agent/skills/`](agent/skills/) — hai skill sản phẩm `vn-stock-advisor` · `vn-stock-knowledge` (3.046 dòng, đã test 6 vòng). ⚠️ **Trước khi sửa bất cứ gì trong đó, bắt buộc đọc [`docs/30-skills/maintenance.md`](../docs/30-skills/maintenance.md).** `agent/` sau này chứa luôn system prompt và glue function-calling.
 
-**Trạng thái phần code:** `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)) · job `etl screener` (52 trang `GetScreenerItems` → `market.screener_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-screener-daily-etl/)) · job `etl events` (sáu họ `Calendar/GetCorporate*` → `market.corporate_event`, [hồ sơ](../docs/90-records/plans/2026-09-03-events-daily-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
+**Trạng thái phần code:** `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)) · job `etl screener` (52 trang `GetScreenerItems` → `market.screener_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-screener-daily-etl/)) · job `etl events` (sáu họ `Calendar/GetCorporate*` → `market.corporate_event`, [hồ sơ](../docs/90-records/plans/2026-09-03-events-daily-etl/)) · job `etl price` (`getPriceData` trang 1 mọi cổ phiếu niêm yết + backfill có con trỏ → `market.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-price-daily-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
 
 ---
 
@@ -118,10 +118,43 @@ Cờ `--accept-new` mở khoá lượt tạo NHIỀU issuer tối thiểu cho m�
 backfill đầu tiên (517 issuer, 2026-09-03), phải có người nhìn số trước khi chạy; task tự động
 (`dlck-events`) **không bao giờ** mang cờ này.
 
+## Chạy job price (giá theo ngày)
+
+```bash
+cd backend
+set -a; . ../.env; set +a; PYTHONIOENCODING=utf-8 uv run python -m etl price                      # hằng ngày: trang 1 (60 phiên) mọi cổ phiếu niêm yết
+set -a; . ../.env; set +a; PYTHONIOENCODING=utf-8 uv run python -m etl price --codes BID,VHM       # chỉ vài mã — chạy thử dưới quyền production, hoặc re-crawl theo sự kiện quyền
+set -a; . ../.env; set +a; PYTHONIOENCODING=utf-8 uv run python -m etl price --backfill --max-minutes 600   # lùi trọn lịch sử (~12,5 năm), tiếp tục được qua nhiều đêm
+```
+
+Cần `ETL_DATABASE_URL` (user thuộc role `dlck_etl`). `Code` gửi cho FiinTrade là **`organCode`** tra qua
+`issuer_external_id('fiintrade')` — 41 % mã có `organCode ≠ ticker`, gửi ticker là nhận `Code not valid`.
+Ghi `market.price_daily` UPSERT theo `(security_id, trading_date)`: **5 cột** (`close_adj` ← `closeValue`,
+**`close_raw` ← `closePrice` — giá thô lịch sử, điền một lần rồi không đè**, O/H/L) + `raw.fiintrade` giữ nguyên
+99 trường; dòng có payload không đổi được **bỏ qua** nên `stats.rows_changed` của lượt chạy lại phải là 0.
+Hồ sơ và ba quyết định thiết kế (tuần tự thay vì 8 luồng · `close_raw` từ `closePrice` · không mở cột mới):
+[`docs/90-records/plans/2026-09-03-price-daily-etl/`](../docs/90-records/plans/2026-09-03-price-daily-etl/).
+
+| Chế độ | Sổ `ops.etl_run.job` | Giao dịch | Guard |
+|---|---|---|---|
+| hằng ngày | `market.price_daily` | một giao dịch cho cả lượt, guard **trước** commit | (0) không mã nào có dữ liệu · (i) mã sai + mã hỏng > 2 % · (ii) số mã có dữ liệu sụt > 2 % so lượt success toàn tập gần nhất · (iii) ngày mới nhất ở tương lai · (iv) ngày mới nhất lùi so mốc |
+| `--backfill` | `market.price_backfill` | mỗi mã một giao dịch; `stats.cursor` ghi sau từng mã | không guard tổng — chỉ ngắt khẩn khi **10 mã liên tiếp** hỏng |
+
+Lượt `--codes` ghi `stats.subset = true`: **không** làm mốc cho guard (ii)/(iv), **không** đụng
+`data_domain_state('market.price')`, **không** dời con trỏ backfill. Backfill hết vòng (`pass_complete`)
+thì lượt kế bắt đầu vòng mới từ mã đầu — log ghi rõ. `stats.raw_close_mismatch` phải là **0**: đó là
+mắt của luật điền-một-lần `close_raw`; khác 0 là nguồn đã sửa hồi tố giá thô, xem tên mã trong
+`raw_close_mismatch_sample`.
+
+Bốn điều nguồn làm mà tài liệu cũ không nói *(đo 2026-09-03, [`09-fiin-market-price.md`](../docs/10-sources/market/09-fiin-market-price.md))*:
+`status` trả lẫn `0` và `"Success"` (job nhận cả hai) · `FromDate`/`ToDate` bị bỏ qua · nhóm dòng tiền theo
+nhà đầu tư điền trễ **T+1** (trang 1 = 60 phiên nên lượt hôm sau tự vá) · ngày nghỉ không có dòng (chạy ngày lễ
+là idempotent, không cần vế "có phiên không" như Screener).
+
 ## Lịch chạy (Windows Task Scheduler)
 
 ```bash
 pwsh scripts/register-tasks.ps1
 ```
 
-Đăng ký **9 task**, tất cả hằng ngày làm việc: 4 mốc OMO (11:30 · 15:30 · 18:00 · 21:30) · `dlck-refdata` 08:00 (danh bạ tươi trước phiên) · `dlck-ingester` 08:30 (ghi thật — gate mở 2026-08-26) · `dlck-screener` 15:20 (sau khi ingester đóng 15:05, tránh 15:30 của OMO — đăng ký ở Task 8 của [plan screener](../docs/90-records/plans/2026-09-03-screener-daily-etl/plan.md), để `Disabled` cùng cả đội) · `dlck-events` **18:10** (sau phiên, dùng danh bạ tươi từ 08:00, và **tránh 18:00 của OMO** — cùng lý do đặt `dlck-screener` lệch 15:30; giờ này sửa 2026-09-03 sau khi đăng ký lượt đầu lộ ra va lịch — đăng ký ở Task 7 của [plan events](../docs/90-records/plans/2026-09-03-events-daily-etl/plan.md), để `Disabled` cùng cả đội) · `dlck-ingester-measure` 08:30 (bắt frame thô song song làm lưới an toàn + đường nghiệm thu, thường trực từ 2026-08-27; bản đo giữ 30 ngày, job tự dọn). Bật/tắt tay bằng cmdlet `Enable-ScheduledTask` / `Disable-ScheduledTask`, **không dùng `schtasks.exe`** — xem cảnh báo đầu [`scripts/register-tasks.ps1`](../scripts/register-tasks.ps1).
+Đăng ký **10 task**, tất cả hằng ngày làm việc: 4 mốc OMO (11:30 · 15:30 · 18:00 · 21:30) · `dlck-refdata` 08:00 (danh bạ tươi trước phiên) · `dlck-ingester` 08:30 (ghi thật — gate mở 2026-08-26) · `dlck-screener` 15:20 (sau khi ingester đóng 15:05, tránh 15:30 của OMO — đăng ký ở Task 8 của [plan screener](../docs/90-records/plans/2026-09-03-screener-daily-etl/plan.md), để `Disabled` cùng cả đội) · `dlck-events` **18:10** (sau phiên, dùng danh bạ tươi từ 08:00, và **tránh 18:00 của OMO** — cùng lý do đặt `dlck-screener` lệch 15:30; giờ này sửa 2026-09-03 sau khi đăng ký lượt đầu lộ ra va lịch — đăng ký ở Task 7 của [plan events](../docs/90-records/plans/2026-09-03-events-daily-etl/plan.md), để `Disabled` cùng cả đội) · `dlck-price` **15:40** (sau screener 15:20 và OMO 15:30, ~45 phút tuần tự nên xong trước 18:00 của OMO; `-MustNotContain "--backfill"` — task tự động không bao giờ chạy backfill; vào script 2026-09-04, đăng ký thật ở Task 7 của [plan price](../docs/90-records/plans/2026-09-03-price-daily-etl/plan.md), để `Disabled` cùng cả đội) · `dlck-ingester-measure` 08:30 (bắt frame thô song song làm lưới an toàn + đường nghiệm thu, thường trực từ 2026-08-27; bản đo giữ 30 ngày, job tự dọn). Bật/tắt tay bằng cmdlet `Enable-ScheduledTask` / `Disable-ScheduledTask`, **không dùng `schtasks.exe`** — xem cảnh báo đầu [`scripts/register-tasks.ps1`](../scripts/register-tasks.ps1).

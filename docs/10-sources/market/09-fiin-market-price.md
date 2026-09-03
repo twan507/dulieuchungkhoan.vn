@@ -52,7 +52,18 @@ PageSize=10, 20, 25, 40, 50, 100, 120
 
 Dùng `Weekly`/`Monthly` sẽ ra biểu đồ sai mà không có dấu hiệu nào. **Chỉ dùng `Daily`.**
 
-### Response 200 — 97 trường mỗi phiên
+### 🔴 Bốn hành vi đo lại 2026-09-03 — khác tài liệu cũ hoặc chưa có
+
+*(18 lời gọi + 2 nguồn đối chứng, hồ sơ: [`plans/2026-09-03-price-daily-etl/measurements.md`](../../90-records/plans/2026-09-03-price-daily-etl/measurements.md))*
+
+1. **`closePrice` là giá THÔ lịch sử, `closeValue` là giá đã điều chỉnh** — xem [Điều chỉnh giá](#điều-chỉnh-giá) dưới. Câu *"giá thô chỉ có ở phiên hiện tại"* của bản 2026-08-15 **sai** với endpoint này.
+2. **`status` trả lẫn `0` và `"Success"` trên cùng endpoint** — 2/16 lời gọi thành công mang `0` (số nguyên), đều là response nhanh bất thường (~0,65 s, nhiều khả năng từ cache/máy chủ đời khác sau cân bằng tải). Kiểm `== "Success"` sẽ thử lại vô ích ~1/8 lời gọi; phải dùng `status ∈ {0, "Success"}` ([§6.1 quy ước chung](00-conventions.md)).
+3. **Mã sai trả lỗi có tên**, không phải `items` rỗng: `{"status":"Failed","errors":["Code not valid: VHM"],"items":null,"totalCount":0}` — cả ticker gọi nhầm (`VHM` thay vì `NHN`) lẫn ETF không có dữ liệu (`ASIAGF`). Phân biệt được với lỗi tạm thời (`Timeout performing …`) nên không cần thử lại.
+4. **`FromDate`/`ToDate` bị bỏ qua hoàn toàn** — `FromDate=2026-08-01&ToDate=2026-08-05` vẫn trả 60 phiên mới nhất, `totalCount` không đổi. Trang 1 là đơn vị nhỏ nhất.
+
+Kèm ba số đo nhỏ: **`totalCount` chính xác** (BID 3.142 = 52 × 60 + 22 — trang 53 trả 22, trang 54 trả `[]` với `status: Success`; bẫy 6 quy ước chung **không** áp dụng ở đây), trang 1/2 **liền nhau không chồng**; **ngày nghỉ không có dòng** (31/08–02/09 vắng hẳn, khác Screener); **nhóm dòng tiền theo nhà đầu tư điền trễ T+1** (bản ghi phiên vừa đóng lúc 22:00 còn `null` ở `localIndividual*` · `localInstitutional*` · `foreignIndividual*` · `foreignInstitutional*` · `netInstitution*`, bản ghi hôm trước đã đủ; `proprietary*` và khối ngoại tổng có ngay).
+
+### Response 200 — 99 trường mỗi phiên *(đếm lại 2026-09-03; bản 2026-08-15 ghi 97)*
 
 Nhóm theo chức năng:
 
@@ -63,10 +74,12 @@ Nhóm theo chức năng:
 
 | Trường | Đơn vị | Mô tả |
 |---|---|---|
-| `referenceValue` / `referencePrice` | VND | Giá tham chiếu |
+| `referenceValue` | VND | Giá tham chiếu — **đã điều chỉnh** |
+| `referencePrice` | VND | Giá tham chiếu — **thô** *(đo 2026-09-03)* |
 | `ceilingValue` / `floorValue` | VND | Trần / sàn |
-| `openValue` | VND | Mở cửa |
-| `closeValue` / `closePrice` | VND | Đóng cửa |
+| `openValue` | VND | Mở cửa — chỉ có bản đã điều chỉnh |
+| `closeValue` | VND | Đóng cửa — **đã điều chỉnh hồi tố** |
+| `closePrice` | VND | Đóng cửa — **THÔ, đúng giá khớp sàn** *(đo 2026-09-03, xem [Điều chỉnh giá](#điều-chỉnh-giá))* |
 | `highestValue` / `lowestValue` | VND | Cao nhất / thấp nhất |
 | `averageValue` | VND | Giá bình quân |
 | `matchValue` | VND | Giá khớp |
@@ -194,7 +207,19 @@ Quan trọng: **dữ liệu ở trang sâu vẫn đủ 99 trường**, kể cả
 
 ### Điều chỉnh giá
 
-Chuỗi giá là **giá đã điều chỉnh hồi tố** cho cổ tức và chia tách. Nhận biết bằng giá trị thập phân ở dữ liệu cũ — ví dụ `closeValue = 28104,0406633688` ngày 07/01/2022, trong khi giá hiện tại là số nguyên.
+Chuỗi `*Value` là **giá đã điều chỉnh hồi tố** cho cổ tức và chia tách. Nhận biết bằng giá trị thập phân ở dữ liệu cũ — ví dụ `closeValue = 28104,0406633688` ngày 07/01/2022, trong khi giá hiện tại là số nguyên.
+
+🔴 **Đính chính 2026-09-03 — giá THÔ lịch sử CÓ ở đây, trong `closePrice` và `referencePrice`.** Bản 2026-08-15 viết *"giá thô chỉ có ở phiên hiện tại"*; đo lại cho thấy hai cột song song ở mọi phiên:
+
+| Phiên | `closeValue` (điều chỉnh) | `closePrice` (thô) | Kiểm chứng |
+|---|---:|---:|---|
+| BID 2026-06-08 | 37.934,676 | **41.000** | |
+| BID 2014-06-03 | 5.747,8203 | **14.500** | |
+| DMX 2026-08-17 *(ex 18/08, cổ tức 4.000 đ)* | 84.499,8 | **88.500** | tỷ số **0,9548** = (88.500 − 4.000)/88.500 — trùng 4 chữ số với cổ tức lát 2 đã ghi; từ 18/08 tỷ số = 1 |
+| BFC 2026-08-10 *(ex 11/08, cổ tức 3.500 đ)* | 49.600,71 | **53.100** | (53.100 − 3.500)/53.100 = 0,93409 — đo được 0,9341 |
+| BID · FPT · HPG · SHS · PVS 28/08 và 03/09 | | | `closePrice` **bằng đúng** giá khớp cuối phiên trong tick BVSC (`rt.trade`, ClickHouse) — **10/10** |
+
+Nguồn làm tròn hệ số điều chỉnh **4 chữ số thập phân**. `openValue` · `highestValue` · `lowestValue` **không có cặp thô**. Hệ quả cho kho: `market.price_daily.close_raw` điền được cho **toàn bộ lịch sử** từ chính endpoint này ([market-data-store §5.2](../../20-design/market-data-store.md)).
 
 Đối chiếu với [`getHistoryBars`](02-bvsc-tvcharts.md) của BVSC: cả hai đều điều chỉnh, nhưng **hệ số khác nhau**, lệch ~1,9 đ (0,005%):
 
@@ -299,8 +324,10 @@ Chỉ `E1VFVN30` *(429.417 chứng chỉ)* và `FUEVFVND` *(152.251)* vừa có 
 ---
 
 ### Độ phủ & hiệu năng
-51/51 mã mẫu · 60 phiên/trang · ~201 KB · ~3,5 s mỗi trang.
+51/51 mã mẫu · 60 phiên/trang · ~201 KB · ~3,5 s mỗi trang *(đo 2026-08-15)*.
 Quét đủ 12,5 năm một mã = 52 lời gọi ≈ 3 phút tuần tự.
+
+*(đo 2026-09-03, 13 lời gọi thành công)* latency min 648 · **trung vị 1.757** · p90 2.614 · max 3.161 ms · trung vị 200 KB/trang. `organCode` dạng mã số thuế (`5702162138` = TD6) hoạt động bình thường.
 
 ---
 

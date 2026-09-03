@@ -216,7 +216,7 @@ Bốn luật rút ra từ những lần trả giá, mỗi luật chống một c
 | BCTC + PDF | **Kích hoạt** theo `GetCorporateEarning` | ~100–300/quý |
 | Re-crawl giá một mã | **Kích hoạt** theo sự kiện quyền của mã đó | tuỳ |
 
-**Hằng ngày ≈ 2.300 lời gọi** *(4 danh bạ + 1.974 giá + 52 Screener + 9 lịch sự kiện + ~200–260 họ Snapshot)* — **thấp hơn con số ~6.000 của bản 2026-08-14**, vì họ Snapshot chuyển từ chạy-mọi-mã-mỗi-ngày sang kích hoạt theo sự kiện.
+**Hằng ngày ≈ 1.850 lời gọi** *(4 danh bạ + **1.523** giá + 52 Screener + 9 lịch sự kiện + ~200–260 họ Snapshot; sửa 2026-09-04 — số 1.974 cũ đếm trước lượt dọn 442 mã huỷ niêm yết)* — **thấp hơn con số ~6.000 của bản 2026-08-14**, vì họ Snapshot chuyển từ chạy-mọi-mã-mỗi-ngày sang kích hoạt theo sự kiện.
 
 ### 4.1b Vì sao họ Snapshot không chạy hằng ngày — chốt 2026-09-03
 
@@ -251,19 +251,21 @@ quét sàn định kỳ toàn bộ         →  bắt phần lịch bỏ sót   
 
 | Việc | Lời gọi | Thời gian |
 |---|---|---|
-| `getPriceData` toàn bộ 52 trang × 1.974 mã | **102.648** | ~12 giờ ở 8 luồng |
+| `getPriceData` mọi trang × **1.523** cổ phiếu niêm yết *(đo 2026-09-03 — số 1.974 cũ đếm trước lượt dọn 442 mã huỷ niêm yết; độ sâu mỗi mã theo tuổi niêm yết: BID 53 trang, TD6 6 trang)* | **~50.000–80.000** | **tuần tự**, ~25–40 giờ, rải vài đêm bằng `python -m etl price --backfill --max-minutes N` — con trỏ trong `ops.etl_run.stats.cursor` nên lượt sau đi tiếp từ mã kế, không làm lại ([spec lát 3 §5.5e](../90-records/plans/2026-09-03-price-daily-etl/spec.md)) |
 | BCTC 3 loại × 1.974 mã | 5.922 | ~25 phút |
 | Lịch sự kiện toàn bộ | 9 | ~2,5 phút |
 
 *(đo 2026-09-03)* Lịch sự kiện tải TRỌN sáu họ mỗi lượt — **backfill và job hằng ngày nay là cùng một đường code** (`python -m etl events`), khác nhau đúng một cờ: `--accept-new` mở khoá lượt tạo nhiều issuer tối thiểu (517 ở lượt đầu), lượt hằng ngày sau đó chạy không cờ vì gần như không còn issuer mới. Xem [`08-fiin-event-calendar.md`](../10-sources/market/08-fiin-event-calendar.md).
 
-⚠️ Giới hạn **2 request/giây**, chạy ngoài giờ giao dịch, **rải 1–2 tuần**. Quét ồ ạt 102.648 lời gọi là mức tải đáng kể lên hạ tầng FiinGroup.
+⚠️ Giới hạn **2 request/giây** *(cài thành giãn cách ≥ 0,5 s giữa hai lần bắt đầu lời gọi trong `price_fetch`; với latency trung vị 1,76 s bộ giãn cách hầu như không phải ngủ)*, chạy ngoài giờ giao dịch, **rải nhiều đêm**. Quét ồ ạt hàng chục nghìn lời gọi là mức tải đáng kể lên hạ tầng FiinGroup.
 
 ### 4.3 Rate limiter
 
 Token bucket riêng cho từng host FiinTrade. ETL và chatbot **dùng chung ngân sách** — nếu không, quét đêm sẽ làm chatbot ban ngày bị chặn.
 
 Đo 2026-08-15 bằng đúng tải kế hoạch: burst Screener 52 trang chạy tuần tự (~29 request/phút) **không gặp tín hiệu chặn nào**, và **không có header hạn mức** để dựa vào — xem [§10 quy ước chung](../10-sources/market/00-conventions.md). Ngưỡng trần thì vẫn chưa biết, và **cố tình không dò**. Vì vậy token bucket phải tự giữ nhịp, và **nhịp 8 luồng ở §4.1 chưa được kiểm** — đo lại ở đúng nhịp đó trước khi bật chạy thật.
+
+**Chốt 2026-09-04 — lát giá chạy TUẦN TỰ, chưa cần token bucket dùng chung** *(quyết định §4.8 ở [spec lát 3 §4.1](../90-records/plans/2026-09-03-price-daily-etl/spec.md))*: nhu cầu 8 luồng biến mất khi ngân sách ngày còn 1.523 lời gọi (~45 phút tuần tự); backfill rải nhiều đêm. Bộ giãn cách nằm trong `price_fetch` vì chưa có người dùng thứ hai. **Đảo ngược khi** `api` bắt đầu gọi FiinTrade (cần ngân sách chung ⇒ tách `core/http`) hoặc backfill thật đo được > 60 giờ.
 
 ### 4.4 Luật huỷ niêm yết trong danh mục mã
 
@@ -284,7 +286,7 @@ Danh mục mã hợp nhất hai nguồn lệch nhau: bảng giá `/quotes` của
 2. **Chốt chặn sụt sẽ từ chối lượt dọn đầu tiên.** `refdata_guard` đặt `DELIST_RATIO = 0.01` — lật quá 1% số mã đang niêm yết là chặn trọn lượt. 438/1.962 = **22%**, gấp 22 lần ngưỡng. Lượt dọn đầu phải chạy tay một lần với `--accept-drop`; từ đó về sau mỗi ngày chỉ còn lác đác vài mã, nằm dưới ngưỡng.
 3. **Vắng mặt một lượt chưa chắc là chết.** Một mã **mới niêm yết** có thể xuất hiện ở bảng giá BVSC trước khi vào danh bạ FiinTrade — luật thô sẽ đánh `delisted` cho mã vừa lên sàn. ✅ **Đã giải bằng ngưỡng ân hạn 3 ngày**, xem cơ chế dưới.
 
-**Làm cùng lát nào:** gộp với lát **mở rộng danh mục — phái sinh + `/datafeed/instruments`**. Ba việc đó sửa đúng cùng ba đoạn: `refdata_merge` (trạng thái đích) · `plan_delist` (ai bị lật) · `refdata_guard` (ngưỡng). Làm rời là ba lần đụng đoạn code nguy hiểm nhất của job và ba lần chỉnh lại ngưỡng chốt chặn. Nhưng **phải xong trước ETL giá** — nếu không, ETL giá xây trên một tập niêm yết mà 22% là mã ma.
+**Làm cùng lát nào:** gộp với lát **mở rộng danh mục — phái sinh + `/datafeed/instruments`**. Ba việc đó sửa đúng cùng ba đoạn: `refdata_merge` (trạng thái đích) · `plan_delist` (ai bị lật) · `refdata_guard` (ngưỡng). Làm rời là ba lần đụng đoạn code nguy hiểm nhất của job và ba lần chỉnh lại ngưỡng chốt chặn. Nhưng **phải xong trước ETL giá** — nếu không, ETL giá xây trên một tập niêm yết mà 22% là mã ma. ✅ **Đã xong trước lát giá:** lượt dọn `--accept-drop` chạy 2026-09-03 06:49 UTC (run 62, `delisted: 439`); tập `listed` còn **1.523** cổ phiếu và `etl price` đi trên đúng tập đó.
 
 ### Cơ chế đã cài — 2026-08-28
 
@@ -372,7 +374,12 @@ CREATE TABLE price_daily (
   organ_code    text NOT NULL,
   trading_date  date NOT NULL,
   close_adj     numeric,      -- getPriceData.closeValue  → ĐÃ điều chỉnh
-  close_raw     numeric,      -- /datafeed/instruments EOD → giá THÔ
+  close_raw     numeric,      -- getPriceData.closePrice  → giá THÔ, điền MỘT LẦN rồi không đè
+                              --   (đo 2026-09-03: closePrice là giá thô lịch sử — tỷ số với closeValue
+                              --   khớp cổ tức tới 4 chữ số, 10/10 khớp tick BVSC; bản cũ ghi
+                              --   "/datafeed/instruments EOD" vì tưởng quá khứ không có giá thô ở nguồn nào.
+                              --   Writer EOD của BVSC nay chỉ còn vai trò đối chứng — bộ đếm
+                              --   raw_close_mismatch của job lộ mọi lệch, spec lát 3 §5.5c)
   open_value    numeric,
   highest_value numeric,
   lowest_value  numeric,

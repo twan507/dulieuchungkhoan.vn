@@ -143,8 +143,9 @@ Thất bại    ⟺  status == "Failed"  →  đọc mảng errors
 |---|---|
 | `Snapshot/*`, `MoneyFlow/*` | `0` *(số nguyên)* |
 | `Calendar/*`, `FinancialAnalysis/*` | `"Success"` *(chuỗi)* |
+| `PriceData/GetPriceData` | 🔴 **LẪN CẢ HAI trên cùng endpoint** *(đo 2026-09-03: 14/16 lời gọi `"Success"`, 2/16 `0` — hai response `0` đều nhanh bất thường ~0,65 s, nhiều khả năng từ cache/máy chủ đời khác sau cân bằng tải)* |
 
-Chỉ kiểm `status == "Success"` sẽ báo lỗi giả cho toàn bộ nhóm Snapshot. Chỉ kiểm `status == 0` sẽ báo lỗi giả cho nhóm Calendar.
+Chỉ kiểm `status == "Success"` sẽ báo lỗi giả cho toàn bộ nhóm Snapshot **và thử lại vô ích ~1/8 lời gọi `PriceData`**. Chỉ kiểm `status == 0` sẽ báo lỗi giả cho nhóm Calendar. Cách kiểm đúng cho mọi endpoint là công thức ở trên — `status ∈ {0, "Success"}` — không phải so với một giá trị.
 
 ### 6.2 Các dạng lỗi quan sát được
 
@@ -181,7 +182,7 @@ Toàn bộ API FiinTrade định danh doanh nghiệp bằng `organCode` — mã 
 
 Ví dụ: `VHM → NHN` · `ACV → ACVN` · `VGI → VTGI` · `MCH → MSCC` · `BSR → BSRC` · `STK → CENTURY`. Có **72 mã dùng mã số thuế** làm `organCode`: `TAH → 3801140300`, `TAB → 0107005554`, `BVL → 10708`.
 
-**Hành vi khi gọi sai:** không có lỗi. API trả `HTTP 200` với `items` rỗng.
+**Hành vi khi gọi sai:** không có lỗi. API trả `HTTP 200` với `items` rỗng *(đo 2026-08-15)*. ⚠️ **Đo lại 2026-09-03 trên `PriceData/GetPriceData`: nay trả lỗi có tên** — `{"status":"Failed","errors":["Code not valid: VHM"],"items":null,"totalCount":0}` — phân biệt được với lỗi tạm thời; các endpoint khác chưa đo lại, đừng suy từ một endpoint (§3.6 CLAUDE.md).
 
 ```
 GET /PriceData/GetPriceData?Code=VHM&...  →  200 ·    119 byte · items rỗng
@@ -253,7 +254,7 @@ Cũng đo cùng ngày: **`PageSize` của nhóm này không có trần** — ngu
 
 ### Bẫy 6 — `totalCount` không đáng tin ở một số endpoint
 
-Nhóm `TopMover/*` và một số endpoint khác trả `totalCount: 0` dù `items` có 30 bản ghi. Luôn dùng `items.length`, không dùng `totalCount`, trừ nhóm `Calendar/*` (nơi `totalCount` chính xác và cần thiết để phân trang).
+Nhóm `TopMover/*` và một số endpoint khác trả `totalCount: 0` dù `items` có 30 bản ghi. Luôn dùng `items.length`, không dùng `totalCount`, trừ nhóm `Calendar/*` (nơi `totalCount` chính xác và cần thiết để phân trang) và `PriceData/GetPriceData` *(đo 2026-09-03: BID `totalCount = 3.142 = 52 × 60 + 22`, trang 53 trả 22, trang 54 trả `[]` — chính xác, dùng được làm trần phân trang)*.
 
 ### Bẫy 7 — `TVC /history` bỏ qua `from`, chặn cứng ở 239 nến
 
@@ -267,7 +268,7 @@ Muốn nến 5/15/30/60 phút phải **tự gộp từ nến 1 phút** — API k
 
 ### Bẫy 8 — Giá lịch sử là giá ĐÃ điều chỉnh, và hai nguồn lệch nhau
 
-`TVC /history` và `PriceData/GetPriceData` đều trả **giá điều chỉnh hồi tố** cho cổ tức và chia tách, nhận biết bằng giá trị thập phân ở dữ liệu cũ (`37910,8925`). Giá thô chỉ có ở phiên hiện tại, qua `/datafeed/instruments` và luồng realtime.
+`TVC /history` và `PriceData/GetPriceData` đều trả **giá điều chỉnh hồi tố** cho cổ tức và chia tách, nhận biết bằng giá trị thập phân ở dữ liệu cũ (`37910,8925`). ~~Giá thô chỉ có ở phiên hiện tại, qua `/datafeed/instruments` và luồng realtime.~~ 🔴 **Đính chính 2026-09-03:** giá thô lịch sử **có** — `getPriceData` trả song song `closePrice`/`referencePrice` (thô, bội của bước giá) cạnh `closeValue`/`referenceValue` (điều chỉnh). Kiểm ba cách: tỷ số hai cột khớp cổ tức đã ghi tới 4 chữ số (DMX 0,9548 = (88.500 − 4.000)/88.500), 10/10 `closePrice` khớp tick BVSC trong ClickHouse, và bằng nhau đúng từ ngày không hưởng quyền. Chi tiết: [`09-fiin-market-price.md`](09-fiin-market-price.md#điều-chỉnh-giá). `openValue`/`highestValue`/`lowestValue` vẫn chỉ có bản điều chỉnh.
 
 Hai nguồn dùng **hệ số điều chỉnh khác nhau**, lệch ~0,005%:
 
