@@ -2,6 +2,7 @@ import json
 import os
 import pathlib
 
+import pytest
 import sqlalchemy as sa
 
 import etl.screener_job as job_mod
@@ -26,17 +27,42 @@ def _patch(monkeypatch, pages):
     monkeypatch.setattr(job_mod, "load_dotenv", lambda: None)
 
 
-def _seed(engine):
+@pytest.fixture(scope="module", autouse=True)
+def _securities(migrated_engine):
+    """Cắm 30 mã của mẫu, rồi DỌN SẠCH khi hết module.
+
+    `migrated_engine` không rollback, nên 30 mã committed ở đây sống sang file test khác:
+    chạy `test_e15` trước `test_e10` làm chốt chặn huỷ niêm yết của refdata nổ (Ruling 11).
+    Chỉ xoá đúng những id mình cắm — mã đã có sẵn (test_e10 để lại CLI/UPCOM) không đụng.
+    """
     rows = sn.normalize([POST]).rows
+    seeded: list[int] = []
+    with migrated_engine.begin() as c:
+        for r in rows:
+            sid = c.execute(sa.text(
+                "INSERT INTO market.security (ticker, exchange, security_type)"
+                " SELECT :t, :e, :k WHERE NOT EXISTS"
+                " (SELECT 1 FROM market.security WHERE ticker=:t AND exchange=:e AND status='listed')"
+                " RETURNING security_id"),
+                {"t": r.ticker, "e": r.exchange, "k": "etf" if r.ticker.startswith("FUE") else "stock"}).scalar()
+            if sid is not None:
+                seeded.append(sid)
+    yield seeded
+    with migrated_engine.begin() as c:                      # thứ tự: con trước, cha sau (FK)
+        c.execute(sa.text("DELETE FROM market.screener_daily WHERE security_id = ANY(:ids)"), {"ids": seeded})
+        c.execute(sa.text("DELETE FROM ops.etl_run WHERE job=:j"), {"j": st.JOB})
+        c.execute(sa.text("DELETE FROM staging.raw_payload WHERE source='screener'"))
+        c.execute(sa.text("DELETE FROM ops.data_domain_state"
+                          " WHERE domain='market.scores' AND source='fiintrade'"))
+        c.execute(sa.text("DELETE FROM market.security WHERE security_id = ANY(:ids)"), {"ids": seeded})
+
+
+def _seed(engine):
+    """Đưa ba bảng ghi về rỗng trước MỖI test — các test trong module độc lập với nhau."""
     with engine.begin() as c:
         c.execute(sa.text("DELETE FROM market.screener_daily"))
         c.execute(sa.text("DELETE FROM ops.etl_run WHERE job=:j"), {"j": st.JOB})
         c.execute(sa.text("DELETE FROM staging.raw_payload WHERE source='screener'"))
-        for r in rows:
-            c.execute(sa.text("INSERT INTO market.security (ticker, exchange, security_type)"
-                              " SELECT :t, :e, :k WHERE NOT EXISTS"
-                              " (SELECT 1 FROM market.security WHERE ticker=:t AND exchange=:e AND status='listed')"),
-                      {"t": r.ticker, "e": r.exchange, "k": "etf" if r.ticker.startswith("FUE") else "stock"})
 
 
 def test_success_writes_rows_run_and_domain_state(monkeypatch, migrated_engine):
