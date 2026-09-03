@@ -224,3 +224,28 @@ Cận theo từng mã và bộ đếm mới chạy thật trên kho production; 
 - `Decimal(str(v))` đi qua `float` một nhịp — đo trên fixture 0/N literal lệch; chữ spec rộng hơn cơ chế.
 - Roadmap/index ghi "merge `main`" — đúng sau bước merge cuối ledger này.
 - `service-topology §5` giữ "cả 9 task" cho task **đã đăng ký thật** — cố ý, phân biệt với 10 task trong script.
+
+---
+
+## Merge và bổ sung sau merge — 2026-09-04
+
+**Merge `main`:** `b07e90d` (`--no-ff`, 13 commit của nhánh). Trọn bộ test chạy lại trên `main`: `436 passed, 2 skipped`.
+
+### Máy ngủ theo LỊCH — thiết kế lại sau khi chủ dự án làm rõ (`01efebb`, merge `0147e8d`)
+
+Chủ dự án: máy **không tự ngủ** vì nhàn rỗi; giấc ngủ 02:00 là **lịch tự đặt** và sẽ còn. Hệ quả: ý *"giữ máy thức bằng `SetThreadExecutionState`"* tôi đề xuất lúc đầu **vô dụng** — nó chỉ chặn ngủ do nhàn rỗi, suspend theo lệnh thì app không chặn được (từ Vista). Thiết kế đúng là job **sống qua giấc ngủ**, ba chỗ hở đóng cả ba:
+
+| Chỗ hở | Trước | Sau |
+|---|---|---|
+| Lời gọi HTTP treo qua giấc ngủ | `ReadTimeout` giết cả lượt (lượt 76) | `e7f80f6`: thử lại 3 lần như response xấu |
+| Kết nối Postgres nằm trong pool suốt 38 phút fetch, chết sau giấc ngủ | `OperationalError` ở `load_baseline`/giao dịch ghi **sau khi đã gọi xong 1.523 lời gọi** | `create_engine(url, pool_pre_ping=True)` — thay kết nối chết trước khi dùng |
+| Ngân sách `--max-minutes` | theo `monotonic` — thức dậy còn ngân sách thì chạy tiếp, có thể lấn vào giờ giao dịch | theo **đồng hồ tường** (`_wall_clock`) — giờ ngủ vẫn tính ⇒ thức dậy là dừng sau mã đang dở, con trỏ đã lưu |
+
+Hai test mới (TDD): `pool_pre_ping` có mặt trong tham số `create_engine`; và ngân sách 60 phút + "nhảy 4 giờ" ⇒ `codes_done = 1`, `budget_hit = true`. 🔴 **Một test xanh giả suýt lọt:** patch `time.time` toàn cục thì **SQLAlchemy pool cũng gọi `time.time()`** khi tạo kết nối trong `open_run` (trước khi đặt hạn) và ăn mất tick đầu ⇒ hạn đặt sai, `codes_done = 3`. Sửa bằng seam `_wall_clock` trong job, test patch đúng seam đó.
+
+```
+438 passed, 2 skipped, 1 warning in 27.97s
+smoke production: python -m etl price --codes BID  → exit 0, with_data 1, rows_changed 0, raw_close_mismatch 0
+```
+
+Cách chạy backfill qua đêm nay ghi ở [backend/README](../../../../backend/README.md): chọn `--max-minutes N` hết trước 02:00; máy ngủ giữa chừng cũng không hỏng, chỉ dừng sớm.
