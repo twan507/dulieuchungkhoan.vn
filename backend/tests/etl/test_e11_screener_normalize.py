@@ -1,8 +1,6 @@
 import json, pathlib
 from datetime import date
 
-import pytest
-
 from etl import screener_normalize as sn
 
 FIX = pathlib.Path(__file__).parent / "fixtures" / "screener"
@@ -60,3 +58,26 @@ def test_preopen_sample_has_zero_priced_rows():
     res = sn.normalize([PRE])
     assert sum(1 for r in res.rows if r.close_price > 0) == 0
     assert all(r.trading_date == date(2026, 9, 3) for r in res.rows)
+
+
+def test_dup_conflicts_counted_on_real_sample():
+    """Mã keep nằm ở nhiều khối thì giữ cả hai bản — `dup_conflicts` đếm số cặp LỆCH.
+
+    Kỳ vọng tính ĐỘC LẬP: đi thẳng JSON thô theo cùng luật (mã keep có mặt ở ≥2 khối,
+    giá trị không bằng nhau), không gọi lại code normalize. Con số 52/90 cặp là số đo
+    của review cuối 2026-09-03 trên mẫu 28/08 (`rtq12` · `rtq27` · `rtq83`).
+    """
+    keep = set().union(*sn.KEEP.values())
+    expected = 0
+    for item in json.loads(POST)["items"]:
+        vals: dict[str, list] = {}
+        for b in sn.BLOCKS:
+            blk = item.get(b)
+            if blk is None:
+                continue
+            for k, v in blk.items():
+                if k in keep:
+                    vals.setdefault(k, []).append(v)
+        expected += sum(1 for vs in vals.values() if len(vs) > 1 and any(v != vs[0] for v in vs[1:]))
+    assert expected == 52
+    assert sn.normalize([POST]).dup_conflicts == expected

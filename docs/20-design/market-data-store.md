@@ -452,16 +452,16 @@ CREATE TABLE snapshot_daily (
 SELECT create_hypertable('snapshot_daily', 'trading_date');
 
 CREATE TABLE screener_daily (
-  organ_code   text NOT NULL,
+  security_id  bigint NOT NULL REFERENCES market.security,
   trading_date date NOT NULL,
-  payload      jsonb NOT NULL,   -- trường có `keep` trong market-field-selection, giữ 5 khối lồng
-                                 -- (80/193 là ước lượng 2026-08-14; đếm 2026-09-03: 77/193 — spec 2026-09-03 §4)
-  PRIMARY KEY (organ_code, trading_date)
+  payload      jsonb NOT NULL,   -- trường có `keep` trong market-field-selection (77/193, đếm 2026-09-03),
+                                 -- lồng theo khối nguồn — sau lọc chỉ còn `stockScreenerItem` và `financial`
+  PRIMARY KEY (security_id, trading_date)
 );
 SELECT create_hypertable('screener_daily', 'trading_date');
 ```
 
-> Đây là chỗ **tự tạo ra lịch sử** cho những thứ API chỉ trả giá trị hiện tại: định giá, cơ cấu sở hữu, tỷ số không nguồn nào khác có. *(Đính chính 2026-09-03: bản cũ nêu "điểm VGM" — nhóm chấm điểm của FiinTrade đã bị **loại có chủ đích** ở [chọn trường §4.2](market-field-selection.md), không lưu.)* Screener không có endpoint lịch sử — chuỗi bắt đầu từ ngày job chạy, không backfill được.
+> Đây là chỗ **tự tạo ra lịch sử** cho những thứ API chỉ trả giá trị hiện tại: định giá, cơ cấu sở hữu, tỷ số không nguồn nào khác có. *(Đính chính 2026-09-03: bản cũ nêu "điểm VGM" — nhóm chấm điểm của FiinTrade đã bị **loại có chủ đích** ở [chọn trường §4.2](market-field-selection.md), không lưu.)* Screener không có endpoint lịch sử — chuỗi bắt đầu từ ngày job chạy, không backfill được. ⚠️ Ba mã `rtq12` `rtq27` `rtq83` có ở cả hai khối với giá trị KHÁC NHAU (đo 2026-09-03) — đọc phải chỉ rõ khối; khối chuẩn chưa chốt (spec etl screener §9.4).
 
 ### 5.6 Sự kiện doanh nghiệp
 
@@ -708,7 +708,7 @@ Chiến lược chính là **bám sát và thích ứng liên tục với nguồ
 |---|---|---|
 | **A — Phổ quát** | OHLCV ngày và phút · khối lượng, giá trị · danh mục mã, sàn · chỉ số · sự kiện doanh nghiệp *(gốc từ VSD)* | ✅ Dễ. Nguồn nào cũng có, định nghĩa gần như đồng nhất |
 | **B — Có ở nhiều nguồn, định nghĩa khác nhau** | Báo cáo tài chính · phân ngành · dòng tiền theo nhóm NĐT · khối ngoại · thoả thuận | ⚠️ Được, nhưng **phải ánh xạ**. Mỗi nguồn có bộ mã chỉ tiêu và cách gộp khoản mục riêng |
-| **C — Độc quyền FiinGroup** | Điểm VGM · 32 chỉ tiêu `RateIndicator` · mô hình định giá (`estimatedEPS`, `forecastEPS`, `recommendMethod`) · `ZMFScore` · 223 trường screener | ❌ Mất là mất. Không nguồn nào khác có |
+| **C — Độc quyền FiinGroup** | Điểm VGM · 32 chỉ tiêu `RateIndicator` · mô hình định giá (`estimatedEPS`, `forecastEPS`, `recommendMethod`) · `ZMFScore` · 77/193 trường screener (đếm 2026-09-03) | ❌ Mất là mất. Không nguồn nào khác có |
 
 Tầng A và B chiếm phần lớn giá trị sử dụng. Tầng C thì chấp nhận **đóng băng**: giữ nguyên lịch sử đã tích luỹ, các ngày sau để `NULL`. Đây chính là mô hình *"phần thiếu kệ nó, phần đủ cứ chạy"*.
 

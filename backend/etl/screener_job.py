@@ -53,9 +53,11 @@ def run() -> int:
             log.error("screener từ chối: %s", e.reasons)
             return 1
         trading_date = max(r.trading_date for r in n.rows).isoformat()
-        stats = {"counts": {"items": n.total_count, "pages": len(pages), "priced": priced},
+        stats = {"counts": {"items": n.total_count, "pages": len(pages), "priced": priced,
+                            "trading_dates": len({r.trading_date for r in n.rows})},
                  **apply_stats, "unmapped": unmapped, "unknown_com_group": n.unknown_com_group,
-                 "null_blocks": n.null_blocks, "retries": retries, "trading_date": trading_date}
+                 "null_blocks": n.null_blocks, "dup_conflicts": n.dup_conflicts,
+                 "retries": retries, "trading_date": trading_date}
         omo_store.close_run(engine, run_id, "success", stats)
         screener_store.upsert_domain_state(engine, trading_date)
         log.info("screener xong: %s", stats)
