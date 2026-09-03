@@ -1175,10 +1175,11 @@ Expected: **8 task, tất cả `Disabled`**. Dán vào ledger (AC6).
 | `service-topology.md` §5 | "Cả 7 task" → "Cả 8 task (thêm `dlck-screener` 15:20)" |
 | `roadmap.md` §0 hàng code + §3 đoạn "[7] tách thành chuỗi lát" | lát 1 ✅ xong, số AC3; lát 2 (giá) là việc kế |
 | `README.md` | bảng dịch vụ: thêm `etl screener`; bước 5: "8 task" |
+| `backend/README.md` | danh sách job + mục "Chạy job screener" + "8 task" — **đã làm trong đợt sửa review cuối** |
 | `docs/90-records/README.md` | dòng plan: ✅ xong + số |
 | `10-fiin-dictionary.md` | **không sửa** — đã cập nhật 2026-09-03; chỉ sửa nếu AC5 đo ra điều mới |
 
-Sau khi sửa: `git grep -n "7 task\|cả 7" -- README.md docs/00-overview docs/20-design` — mỗi hit còn lại phải đúng hoặc thuộc vùng lịch sử.
+Sau khi sửa: `git grep -n "7 task\|cả 7" -- README.md backend/README.md docs/00-overview docs/20-design` — mỗi hit còn lại phải đúng hoặc thuộc vùng lịch sử. *(`backend/README.md` là index sở hữu danh sách job backend; bản đầu của checklist bỏ sót nó — review cuối 2026-09-03.)*
 
 - [ ] **Bước 6: Commit + review + merge**
 
