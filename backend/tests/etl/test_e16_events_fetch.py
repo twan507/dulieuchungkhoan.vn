@@ -67,3 +67,30 @@ def test_raises_on_empty_page_before_total_reached():
 
     with pytest.raises(ef.FetchError, match="rỗng"):
         ef.fetch(get=get, sleep=lambda s: None)
+
+
+def test_transport_exception_is_retried_like_a_bad_response_then_succeeds():
+    """Cùng lỗi lát 3 vá ở e7f80f6: httpx.ReadTimeout (máy ngủ giữa lời gọi) lọt qua vòng retry
+    và giết cả lượt. Exception vận chuyển phải đi cùng đường với response xấu."""
+    import httpx
+    state = {"fail": 2}
+
+    def get(url):
+        if state["fail"]:
+            state["fail"] -= 1
+            raise httpx.ReadTimeout("The read operation timed out")
+        return 200, _envelope(1, 1)
+
+    slept = []
+    pages, retries = ef.fetch(get=get, sleep=slept.append)
+    assert retries == 2 and slept == [2, 4] and len(pages) == 6
+
+
+def test_transport_exception_every_time_becomes_a_fetch_error_not_a_crash():
+    import httpx
+
+    def get(url):
+        raise httpx.ConnectError("[Errno 11001] getaddrinfo failed")
+
+    with pytest.raises(ef.FetchError, match="ConnectError"):
+        ef.fetch(get=get, sleep=lambda s: None)
