@@ -122,7 +122,7 @@ Một item → `ScreenerRow(ticker, exchange, organ_code, trading_date, payload)
 - `payload` = khối lồng của nguồn, mỗi khối chỉ giữ khoá có `keep = True` trong `market-field-selection.json` (`source = "Screener"`); khối `null` hoặc không còn khoá nào ⇒ **bỏ khối**, không nổ. Khoá `keep` đọc từ file JSON lúc import — không hardcode danh sách trong code.
 - Không đổi đơn vị, không tính lại gì — *"Không tự tính lại chỉ tiêu nguồn đã cấp"* (step-03).
 
-> **Đính chính sau review cuối 2026-09-03:** 10 khoá keep nằm ở cả `stockScreenerItem` lẫn `financial`; 7 mã `rtd*` hai bản luôn bằng nhau, nhưng **`rtq12` · `rtq27` · `rtq83` khác nhau ở 52/90 cặp trên mẫu 28/08, kể cả đổi dấu**. Spec ban đầu chỉ xét kích thước, không xét hai bản có bằng nhau không — đó là lỗ hổng của spec. Quyết định tạm (Ruling 10, không mất dữ liệu): **giữ cả hai bản**, đếm `dup_conflicts` vào `stats` để nhìn thấy độ lệch, và ghi rõ ở `market-data-store.md` §5.5. **Khối nào là chuẩn cho ba mã đó là quyết định của chủ dự án**, cần biết nghĩa từng mã (bundle JS) — treo ở §9 mục 4. Sau lọc, thực tế chỉ còn hai khối `stockScreenerItem` và `financial` có khoá keep.
+> **Đính chính sau review cuối 2026-09-03 — ĐÃ CHỐT cùng ngày:** 10 khoá keep nằm ở cả `stockScreenerItem` lẫn `financial`; 7 mã `rtd*` hai bản luôn bằng nhau, nhưng **`rtq12` · `rtq27` · `rtq83` khác nhau ở 52/90 cặp trên mẫu 28/08, kể cả đổi dấu**. Spec ban đầu chỉ xét kích thước, không xét hai bản có bằng nhau không — đó là lỗ hổng của spec. **Khối chuẩn = `stockScreenerItem`**, mỗi mã lưu đúng MỘT bản (`BLOCK_PRIORITY` trong `screener_normalize`); `financial` chỉ giữ 7 mã riêng nó có (`isa3` `isa5` `fryq30` `rtd39` `rtd53` `rtd54` `rtq81`). Hai bằng chứng độc lập: (1) bundle JS của chính FiinTrade khai `"stockScreenerItem.rtq12"` cho ROE, mọi mã keep khác cũng khai khối đó; (2) đẳng thức ROE = LNST(TTM) × P/B ÷ vốn hoá — `stockScreenerItem` sai số trung vị **8,1 %** (4 mã khớp trong 2 %), `financial` **23,0 %** (**0** mã khớp trong 2 %). ⚠️ Bằng chứng (2) chỉ chạy được cho `rtq12`; `rtq27`/`rtq83` theo cùng luật vì bundle xếp cùng nhóm — **suy luận, chưa đo riêng** *(thử `rtq83` = `isa20TTM/isa20Y − 1` thì CẢ HAI bản đều lệch >76 %, tức công thức thử sai, không kết luận được)*. `dup_conflicts` giữ nguyên làm **chỉ báo sức khoẻ nguồn**. Sau lọc chỉ còn hai khối có khoá keep.
 
 ### 5.4 `screener_guard` — thuần, đánh giá trước commit
 
@@ -199,6 +199,6 @@ Fixture: hai file trong `samples/` chép sang `backend/tests/etl/fixtures/screen
 1. **18 mã tỷ số §4.2 → `keep = True`**, 13 mã trong đó ghi `chưa giải mã` (lưu trước, hiểu sau).
 2. **Không ép 80** — ghi số đếm thật (§4.3) và đính chính mọi chỗ chép "80/193".
 3. **Guard vế (i) `closePrice > 0`** làm tín hiệu *"phiên có giao dịch"* thay cho giả định đã bị bác — kèm cổng AC5 cho lần ngày lễ đầu tiên.
-4. **Khối chuẩn cho `rtq12` · `rtq27` · `rtq83`** — hai khối trả giá trị khác nhau; giữ cả hai cho tới khi chọn. Consumer đọc payload phải chỉ rõ khối.
+4. ~~**Khối chuẩn cho `rtq12` · `rtq27` · `rtq83`**~~ — ✅ **chốt 2026-09-03: `stockScreenerItem`** (§5.3). Còn treo, không chặn: `rtq27`/`rtq83` mới có bằng chứng gián tiếp — đo riêng khi tìm được công thức đối chiếu đúng.
 
 ✅ Duyệt 2026-09-03 ⇒ [`plan.md`](plan.md) cùng thư mục (viết cùng ngày, 8 task).

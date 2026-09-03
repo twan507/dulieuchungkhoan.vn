@@ -1,0 +1,1013 @@
+{
+ "page": 0,
+ "pageSize": 0,
+ "totalCount": 0,
+ "items": [
+  {
+   "name": "Giá",
+   "code": "Price",
+   "parameters": [
+    {
+     "name": "Giá",
+     "code": "ClosePrice",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      100.0,
+      600629.0
+     ],
+     "unit": "VND"
+    },
+    {
+     "name": "Biến động giá 1 ngày",
+     "code": "PercentPriceChange1Day",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -0.1825,
+      0.2275
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Biến động giá 1 tuần",
+     "code": "PercentPriceChange1Week",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -0.3315436242,
+      0.5658571429
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Biến động giá 1 tháng",
+     "code": "PercentPriceChange1Month",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -0.6,
+      0.9644864865
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Biến động giá 3 tháng",
+     "code": "PercentPriceChange3Month",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -0.7244444444,
+      1.5652173913
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Biến động giá 6 tháng",
+     "code": "PercentPriceChange6Month",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -0.8883369087,
+      3.929237011
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Biến động giá 52 tuần",
+     "code": "PercentPriceChange52Week",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -0.9156503198,
+      7.0
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Biến động giá từ đầu năm",
+     "code": "PercentPriceChangeYTD",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -0.8956255607,
+      7.0
+     ],
+     "unit": "Percentage"
+    }
+   ]
+  },
+  {
+   "name": "Khối lượng & Biến động",
+   "code": "VolumeNVolatility",
+   "parameters": [
+    {
+     "name": "Khối lượng GD",
+     "code": "TotalMatchVolume",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      77719854.0
+     ],
+     "unit": "ThousandUnit"
+    },
+    {
+     "name": "Kl T.bình 5 phiên",
+     "code": "AverageVolume1Week",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      62978066.0
+     ],
+     "unit": "ThousandUnit"
+    },
+    {
+     "name": "Kl T.bình 10 phiên",
+     "code": "AverageVolume2Week",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      54469404.0
+     ],
+     "unit": "ThousandUnit"
+    },
+    {
+     "name": "Kl T.bình 20 phiên",
+     "code": "AverageVolume1Month",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      57633215.0
+     ],
+     "unit": "ThousandUnit"
+    },
+    {
+     "name": "Kl T.bình 3 tháng",
+     "code": "AverageVolume3Month",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      56746875.0
+     ],
+     "unit": "ThousandUnit"
+    },
+    {
+     "name": "Beta",
+     "code": "Rtd19",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -2.32353114,
+      2.49761109
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "% Free Float",
+     "code": "FreeFloatRate",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      1.0
+     ],
+     "unit": "Percentage"
+    }
+   ]
+  },
+  {
+   "name": "Giá trị GD",
+   "code": "TradingValue",
+   "parameters": [
+    {
+     "name": "Giá trị GD",
+     "code": "TotalMatchValue",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      2021436057400.0
+     ],
+     "unit": "MillionVND"
+    },
+    {
+     "name": "Giá trị GD T.bình 5D",
+     "code": "AverageValue1Week",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      1882665426120.0
+     ],
+     "unit": "MillionVND"
+    },
+    {
+     "name": "Giá trị GD T.bình 10D",
+     "code": "AverageValue2Week",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      1435726653050.0
+     ],
+     "unit": "MillionVND"
+    },
+    {
+     "name": "Giá trị GD T.bình 20D",
+     "code": "AverageValue1Month",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      1263085239317.3914
+     ],
+     "unit": "MillionVND"
+    },
+    {
+     "name": "Giá trị GD T.bình 3M",
+     "code": "AverageValue3Month",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      1308375084373.4243
+     ],
+     "unit": "MillionVND"
+    }
+   ]
+  },
+  {
+   "name": "Chỉ tiêu FiinTrade",
+   "code": "FiinTradeIndicators",
+   "parameters": [
+    {
+     "name": "FiinTrade Rank",
+     "code": "IcbRank",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      1.0,
+      323.0
+     ],
+     "unit": "Rank"
+    },
+    {
+     "name": "Value (FiinTrade Score)",
+     "code": "Value",
+     "type": "Value",
+     "selectedValue": null,
+     "valueRange": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "F"
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "Growth (FiinTrade Score)",
+     "code": "Growth",
+     "type": "Value",
+     "selectedValue": null,
+     "valueRange": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "F"
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "Momentum (FiinTrade Score)",
+     "code": "Momentum",
+     "type": "Value",
+     "selectedValue": null,
+     "valueRange": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "F"
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "VGM (FiinTrade Score)",
+     "code": "Vgm",
+     "type": "Value",
+     "selectedValue": null,
+     "valueRange": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "F"
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "F-Score (TTM)",
+     "code": "FScore",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      8.0
+     ],
+     "unit": "Rank"
+    },
+    {
+     "name": "Canslim (TTM)",
+     "code": "Canslim",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      6.0
+     ],
+     "unit": "Rank"
+    }
+   ]
+  },
+  {
+   "name": "Chỉ số định giá thị trường",
+   "code": "MarketRatio",
+   "parameters": [
+    {
+     "name": "Vốn hóa",
+     "code": "Rtd11",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      228854000.0,
+      1831875997244000.0
+     ],
+     "unit": "BillionVND"
+    },
+    {
+     "name": "P/E (TTM)",
+     "code": "Rtd21",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -4341.8769209,
+      5058595.39667819
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "P/S (TTM)",
+     "code": "Rtd26",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -229.896794,
+      18783.26640782
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "P/B (TTM)",
+     "code": "Rtd25",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -69.23859883,
+      34.21401902
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "Giá - Dòng Tiền (TTM)",
+     "code": "Rtd28",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -6195.24957865,
+      5058595.39667819
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "Giá - Dòng Tiền Tự Do (TTM)",
+     "code": "Rtd40",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -7458.00954178,
+      208846.97294982
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "Giá - T.sản hữu hình (TTM)",
+     "code": "Rtd27",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -69.23859883,
+      64.22836454
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "EPS (TTM)",
+     "code": "Rtd14",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -130999.33225261,
+      50318.91310356
+     ],
+     "unit": "Unit"
+    }
+   ]
+  },
+  {
+   "name": "Doanh thu & lợi nhuận",
+   "code": "RevenueProfit",
+   "parameters": [
+    {
+     "name": "Doanh thu (tỉ đồng) (TTM)",
+     "code": "RevTTM",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -8763719500.0,
+      423717675000000.0
+     ],
+     "unit": "BillionVND"
+    },
+    {
+     "name": "LN ròng (tỉ đồng) (TTM)",
+     "code": "Isa20TTM",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -831128937288.0,
+      79833359000000.0
+     ],
+     "unit": "BillionVND"
+    },
+    {
+     "name": "Doanh thu (tỉ đồng) (năm trước)",
+     "code": "RevY",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -10476890350.0,
+      331638445000000.0
+     ],
+     "unit": "BillionVND"
+    },
+    {
+     "name": "LN ròng (tỉ đồng) (năm trước)",
+     "code": "Isa20Y",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -987062071000.0,
+      41895255000000.0
+     ],
+     "unit": "BillionVND"
+    },
+    {
+     "name": "Doanh thu (tỉ đồng) (quý gần nhất)",
+     "code": "Rev",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -114595542249.0,
+      136253115852196.0
+     ],
+     "unit": "BillionVND"
+    },
+    {
+     "name": "Lợi nhuận ròng (tỉ đồng) (quý gần nhất)",
+     "code": "Prf",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -735458547203.0,
+      22583150000000.0
+     ],
+     "unit": "BillionVND"
+    }
+   ]
+  },
+  {
+   "name": "Chỉ số tăng trưởng",
+   "code": "GrowthRatio",
+   "parameters": [
+    {
+     "name": "T.trưởng D.thu (YoY)",
+     "code": "Rtq78",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -421.7430212,
+      156.14580951
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "T.trưởng LN gộp (YoY)",
+     "code": "Rtq79",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -147.79266247,
+      168.25646238
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "T.trưởng LN ròng (YoY)",
+     "code": "Rtq83",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -142.24845197,
+      468.53941214
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "T.trưởng K.doanh 3 năm",
+     "code": "Ryq160",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -0.94030823,
+      34.63554217
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "T.trưởng LN ròng 3 năm",
+     "code": "Ryq166",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -0.89975942,
+      5.61893764
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "T.trưởng vốn CSH 3 năm",
+     "code": "Ryq176",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -0.1223217,
+      1.73788927
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "T.trưởng EPS (TTM)",
+     "code": "Rtd52",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -93.9345867,
+      63.3681224
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Tăng trưởng doanh thu quý gần nhất (YoY)",
+     "code": "RevGrowth",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -1.0,
+      518.4148623086261
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Tăng trưởng lợi nhuận thuần quý gần nhất (YoY)",
+     "code": "PrfGrowth",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -602.153192921106,
+      4794.327990386579
+     ],
+     "unit": "Percentage"
+    }
+   ]
+  },
+  {
+   "name": "Chỉ số khả năng sinh lời",
+   "code": "ProfitabilityRatio",
+   "parameters": [
+    {
+     "name": "ROE (TTM)",
+     "code": "Rtq12",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -127.56331573,
+      7.85938948
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "ROA (TTM)",
+     "code": "Rtq14",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -6.21366863,
+      2.43738272
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Biên LN gộp (TTM)",
+     "code": "Rtq25",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -8.61647315,
+      9.92048004
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Biên LN gộp (quý)",
+     "code": "Rqq25",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -7.55207341,
+      25.20567546
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Biên LN gộp (năm gần nhất)",
+     "code": "Ryq25",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -2.42116714,
+      9.88472137
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Biên LN ròng (TTM)",
+     "code": "Rtq29",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -524.47799779,
+      755.92237212
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Biên LN ròng (quý)",
+     "code": "Rqq29",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -1736.26529233,
+      244.26637353
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Biên LN ròng (năm gần nhất)",
+     "code": "Ryq29",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -522.43405757,
+      814.25712563
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Biên EBIT (TTM)",
+     "code": "Rtq27",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -524.76181289,
+      23.87274509
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Biên EBIT (quý)",
+     "code": "Rqq27",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -410.975305,
+      21.6812784
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "ROIC (quý)",
+     "code": "Rqq23",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -0.1312354274,
+      0.1884904154
+     ],
+     "unit": "Percentage"
+    }
+   ]
+  },
+  {
+   "name": "Cơ cấu tài chính",
+   "code": "EquityStructure",
+   "parameters": [
+    {
+     "name": "Nợ phải trả/ Tổng tài sản (TTM)",
+     "code": "Rtq7",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      60.69505738
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "Nợ phải trả/ Vốn chủ sở hữu (TTM)",
+     "code": "Rtq6",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -326.18944964,
+      407.13738357
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "Nợ dài hạn/ Vốn chủ sở hữu (TTM)",
+     "code": "Rtq4",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -39.50511413,
+      82.88014412
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "Nợ phải trả/ Vốn chủ sở hữu (quý)",
+     "code": "Rqq6",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -326.18944964,
+      407.13738357
+     ],
+     "unit": "Unit"
+    }
+   ]
+  },
+  {
+   "name": "Chỉ số thanh toán",
+   "code": "LiquidityRatio",
+   "parameters": [
+    {
+     "name": "Tỉ suất thanh toán hiện hành (TTM)",
+     "code": "Rtq3",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.00266312,
+      1893.55468897
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "Tỉ suất thanh toán nhanh (TTM)",
+     "code": "Rtq2",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.00131037,
+      1889.65132021
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "Tỉ suất thanh toán tiền mặt (TTM)",
+     "code": "Rtq1",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      3.331e-05,
+      57.24072768
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "Khả năng chi trả lãi vay (TTM)",
+     "code": "Rtq77",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -882544.57050122,
+      918149.9992178
+     ],
+     "unit": "Unit"
+    }
+   ]
+  },
+  {
+   "name": "Sở hữu",
+   "code": "Ownership",
+   "parameters": [
+    {
+     "name": "Tỉ lệ tổ chức sở hữu",
+     "code": "CorpOwnership",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.05,
+      0.9996
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Sở hữu nước ngoài",
+     "code": "ForeignerPercentage",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      0.99100372
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Room nước ngoài",
+     "code": "ForeignerRoom",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      3548773372.0
+     ],
+     "unit": "ThousandUnit"
+    }
+   ]
+  },
+  {
+   "name": "Cổ Tức",
+   "code": "Dividends",
+   "parameters": [
+    {
+     "name": "Cổ Tức",
+     "code": "Rtd43",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      13414.24896175
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "Tỉ Suất Cổ Tức",
+     "code": "Rtd36",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      12.0
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Tỉ Suất Cổ Tức T.Bình 3 Năm",
+     "code": "Rtd20Avg",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      7.6666666666
+     ],
+     "unit": "Percentage"
+    },
+    {
+     "name": "Tỉ Lệ Chi Trả Cổ Tức",
+     "code": "Rtd51",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -5.07776147,
+      17.95490805
+     ],
+     "unit": "Percentage"
+    }
+   ]
+  },
+  {
+   "name": "Chỉ Số Kĩ Thuật",
+   "code": "TechnicalIndicators",
+   "parameters": [
+    {
+     "name": "RSI",
+     "code": "Rsi",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      100.0
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "ADX",
+     "code": "Adx",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      100.0
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "CCI",
+     "code": "Cci",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -333.33333334,
+      333.33333333
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "ROC",
+     "code": "Roc",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -53.03030303,
+      79.1328125
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "STOCH",
+     "code": "Stochastic",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      100.0
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "Williams",
+     "code": "Williams",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      -100.0,
+      0.0
+     ],
+     "unit": "Unit"
+    },
+    {
+     "name": "MFI",
+     "code": "Mfi",
+     "type": "Range",
+     "selectedValue": null,
+     "valueRange": [
+      0.0,
+      100.0
+     ],
+     "unit": "Unit"
+    }
+   ]
+  }
+ ],
+ "packageId": null,
+ "status": "Success",
+ "errors": null
+}

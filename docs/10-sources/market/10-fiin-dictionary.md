@@ -201,6 +201,8 @@ Không lọc theo một tiêu chí thì đặt `selectedValue` bằng đúng `va
 > - **Trước mở cửa, `tradingDate` đã mang ngày hôm nay** (`2026-09-03T08:22:46`) với `closePrice = 0`, `matchVolume = 0`, `totalVolume = 0`, `referenceDate = 2026-08-28` *(⇒ HOSE nghỉ 31/08–02/09)*. Ngày không giao dịch nguồn vẫn đóng dấu ngày đó — **không được dùng `tradingDate` làm bằng chứng có phiên**; tín hiệu dùng được là `closePrice > 0` (30/30 sau phiên vs 0/30 trước mở cửa). `totalVolume` không dùng được: 10/30 mã = 0 ngay trong ngày có phiên.
 > - `marketStatus` = `null` ở cả hai lần — vô dụng. Một khối có thể **`null` nguyên khối** (`V68.technical`). 20,1% giá trị trong khối là `null`.
 > - Tỷ số tài chính **đổi giữa hai lần** (103 + 733 giá trị) dù không có phiên nào ở giữa — *"payload trùng lượt trước"* không phải tín hiệu ngày nghỉ.
+> - 🔴 **Cùng một mã ở hai khối có thể trả HAI GIÁ TRỊ KHÁC NHAU** *(đo 2026-09-03)*: 10 mã có ở cả `stockScreenerItem` lẫn `financial`; 7 mã `rtd*` trùng khít, nhưng `rtq12` (ROE TTM) · `rtq27` (Biên EBIT TTM) · `rtq83` (T.trưởng LN ròng YoY) **lệch 52/90 cặp, kể cả đổi dấu**. Bundle JS của FiinTrade đọc ROE từ `"stockScreenerItem.rtq12"`, và đối chiếu đẳng thức ROE = LNST(TTM) × P/B ÷ vốn hoá cho `stockScreenerItem` sai số trung vị **8,1 %** vs `financial` **23,0 %** ⇒ **`stockScreenerItem` là khối chuẩn**. Ai làm phẳng 5 khối mà không chọn khối sẽ nhận giá trị tuỳ thứ tự duyệt.
+> - 🔴 **Bốn khoá trả CHUỖI, không phải số** *(đo 2026-09-03)*: `roe` · `grossMargin` · `profitGrowth` · `revenueGrowth` = `'Tốt'` · `'Trung bình'` · `'Cảnh báo'` — là **nhãn xếp hạng**, không phải tỷ số, bất kể tên khoá gợi ý gì.
 
 **193 trường phân biệt mỗi mã**, chia 5 khối cộng lại 223 lượt:
 

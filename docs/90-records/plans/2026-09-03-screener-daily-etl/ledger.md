@@ -68,3 +68,18 @@ Sổ thực thi. Nhánh `feat/screener-daily-etl` từ `70da066` (main). Artifac
 - Đợt sửa review cuối: DONE_WITH_CONCERNS (opus a263e37182e01f75c), 8 commit bb87d71..780a0ec; fixer báo tests/etl 91, bộ 349 passed 2 skipped, đảo thứ tự e15→e10 xanh, generator sinh lại byte-bằng-byte. Concerns: (1) brief §E.1 tự mâu thuẫn — fixer chọn hàng "Ngoài nhóm 48" + sửa nhãn (hợp lý); (2) §7.2 cần thêm hàng 4 mã flip vì keep=81; (3) sửa 4 đoạn văn arithmetic; (4) chưa đụng: spec §5.5 còn ghi `now()` (Ruling 2 là clock_timestamp) và 10-fiin-dictionary:290 "113 trường bị bỏ" vs 112 — controller sẽ đồng bộ sau re-review. Chờ re-review.
 - Re-review đợt sửa (sonnet a2241a083ac2c59c4): **A–I đều ADDRESSED, không có breakage mới**; Skip #8 nguyên vẹn. Hai quan sát ngoài phạm vi (spec §5.5 `now()`, 10-fiin-dictionary "113") controller đồng bộ ở commit bc58fd5. Controller tự chạy: bộ 349 passed 2 skipped 1 warning; đảo thứ tự e15→e10: 8 passed.
 - **Review cuối: ĐÓNG.** Còn lại theo plan: Task 7 (chạy thật AC3/AC4 sau 15:05 ngày giao dịch, AC5 trước 09:00 hôm sau) và Task 8 (đăng ký task trong cửa sổ admin của chủ dự án, để Disabled). Nhánh CHƯA merge cho tới khi AC3 có số.
+
+## Vòng giải mã 2026-09-03 (~10:40) — chủ dự án yêu cầu "check luôn mấy mã"
+
+**Bốn lời gọi thật** *(trong mức đã đo an toàn)*: `GetScreenerItems` trang 1 · `GetScreenerParameters` *(lưu ở `samples/screener-params-20260903.json`)* · HTML app · `main.42cb52b1.chunk.js` (3,06 MB).
+
+**Kết quả 1 — khối chuẩn: `stockScreenerItem`.** Hai bằng chứng độc lập: bundle khai bản đồ cột `"stockScreenerItem.rtq12"` cho ROE; đẳng thức ROE = LNST(TTM) × P/B ÷ vốn hoá cho `stockScreenerItem` sai số trung vị 8,1 % (4/22 mã khớp trong 2 %) vs `financial` 23,0 % (0/22). Giả thuyết "`financial` là kỳ khác" **bị bác** (0/26 khớp `rqq`/`ryq`). Thử đo riêng `rtq83` bằng `isa20TTM/isa20Y − 1`: **không kết luận được**, cả hai bản lệch >76 % ⇒ công thức thử sai, ghi nguyên trạng.
+
+**Kết quả 2 — 🔴 sửa lỗi của chính tôi.** `roe` `grossMargin` `profitGrowth` `revenueGrowth` trả **chuỗi** `'Tốt'`/`'Trung bình'`/`'Cảnh báo'` — **nhãn xếp hạng**, thuộc nhóm chấm điểm chủ dự án đã loại. Vòng 09-03 đầu tiên xếp nhầm vào tỷ số vì suy nghĩa từ **tên khoá** thay vì đọc **giá trị** — đúng bẫy §3.4 mà tài liệu dự án đã ghi. Lật về `keep=False` ⇒ keep **81 → 77**.
+
+**Kết quả 3 — đặt tên 11/13 mã:** `rtd53` EPS Forward · `rtq81` T.trưởng lợi nhuận (YoY) *(bundle, nhóm `pr`)* · `rtd54` P/E Forward *(suy theo hàng xóm, chưa chắc)* · `rqd25` P/B quý · `rqd52` T.trưởng EPS quý *(cả hai **60/60 null**)* · `rtq160`/`rtq166`/`rtq176` T.trưởng KD/LN ròng/vốn CSH 3 năm (TTM) · `ryq4` Nợ dài hạn/VCSH năm · `rtd20`/`rtd36Avg` tỉ suất cổ tức. **Chưa giải:** `fryq30`, `rtd39` — không có ở bundle chính lẫn chunk vendor.
+
+- **Ruling 18:** khối chuẩn `stockScreenerItem`, mỗi mã lưu **một bản** (`BLOCK_PRIORITY`); `financial` chỉ giữ 7 mã riêng nó. Làm **trước Task 7** vì kho chưa có dòng nào ⇒ đổi hình dạng payload lúc này miễn phí, sau AC3 thành lịch sử. Giữ `dup_conflicts` làm chỉ báo sức khoẻ nguồn. *Nếu sai:* `rtq27`/`rtq83` lấy nhầm khối — đảo được bằng một dòng `BLOCK_PRIORITY` + chạy lại ngày đó.
+- **Ruling 19:** 4 nhãn xếp hạng → `keep=False` (không cần hỏi lại: quyết định "không dùng điểm bên thứ ba" đang đứng, đây là sửa lỗi phân loại). *Nếu sai:* mất 4 nhãn theo ngày — nhưng chúng là điểm bên thứ ba, đúng thứ đã loại có chủ đích.
+
+Nghiệm thu: `tests/etl` **93 passed** · cả bộ **351 passed, 2 skipped** · đảo thứ tự e15→e10 **8 passed** · generator sinh lại **byte-bằng-byte** (không sửa tay). Payload DDB: **77 khoá, 0 trùng lặp**, `financial` = đúng 7 mã.

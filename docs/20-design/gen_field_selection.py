@@ -142,16 +142,31 @@ add(["revTTM", "revY", "isa1TTM", "isa1Y", "isa20TTM", "isa20Y", "isa3TTM",
 R_NEW = ("tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; "
          "duyệt 2026-09-03 (spec etl screener §4.2)")
 add(["isa3", "isa5", "ryq2", "ryq3", "ryq6"], "Screener", "Screener", True, R_NEW, block="Tỷ số (đo 2026-08-28)")
-add(["fryq30", "grossMargin", "profitGrowth", "revenueGrowth", "roe", "rqd25", "rqd52", "rtd20", "rtd36Avg",
+# 🔴 Đo 2026-09-03: `roe` `grossMargin` `profitGrowth` `revenueGrowth` trả CHUỖI
+# ('Tốt' · 'Trung bình' · 'Cảnh báo'), không phải số — chúng là NHÃN XẾP HẠNG, thuộc nhóm
+# chấm điểm đã loại. Vòng 2026-09-03 đầu tiên xếp nhầm chúng vào tỷ số vì suy nghĩa từ TÊN
+# khoá thay vì đọc GIÁ TRỊ (đúng bẫy §3.4). Đã tách ra dưới đây.
+add(["grossMargin", "profitGrowth", "revenueGrowth", "roe"], "Screener", "— (không lưu)", False,
+    "nhãn xếp hạng của FiinTrade, KHÔNG phải tỷ số — giá trị là chuỗi 'Tốt' · 'Trung bình' · "
+    "'Cảnh báo' (đo 2026-09-03 trên 60 bản ghi, 0 giá trị số). Thuộc nhóm chấm điểm: quyết định "
+    "của chủ dự án là không dùng điểm do bên thứ ba chấm",
+    names={"roe": "Xếp hạng ROE (nhãn)", "grossMargin": "Xếp hạng biên lãi gộp (nhãn)",
+           "profitGrowth": "Xếp hạng tăng trưởng lợi nhuận (nhãn)",
+           "revenueGrowth": "Xếp hạng tăng trưởng doanh thu (nhãn)"},
+    nsrc="tự đặt", block="Chấm điểm (đo 2026-09-03)")
+add(["fryq30", "rqd25", "rqd52", "rtd20", "rtd36Avg",
      "rtq160", "rtq166", "rtq176", "ryq4"], "Screener", "Screener", True,
-    R_NEW + " — KHÔNG có trong từ điển 729 mã: lưu trước, giải mã sau (bundle JS FiinTrade)",
+    R_NEW + " — KHÔNG có trong từ điển 729 mã. **Vòng giải mã 2026-09-03** (bundle JS + luật kỳ + `GetScreenerParameters`) đặt tên được 8/9; `fryq30` vẫn chưa giải",
     status="chưa giải mã", block="Tỷ số (đo 2026-08-28)",
-    names={"fryq30": "chưa giải mã", "grossMargin": "Biên lãi gộp (suy từ tên khoá)",
-           "profitGrowth": "Tăng trưởng lợi nhuận (suy từ tên khoá)",
-           "revenueGrowth": "Tăng trưởng doanh thu (suy từ tên khoá)", "roe": "ROE (suy từ tên khoá)",
-           "rqd25": "chưa giải mã", "rqd52": "chưa giải mã", "rtd20": "chưa giải mã",
-           "rtd36Avg": "chưa giải mã", "rtq160": "chưa giải mã", "rtq166": "chưa giải mã",
-           "rtq176": "chưa giải mã", "ryq4": "chưa giải mã"},
+    names={"fryq30": "chưa giải mã — không có ở bundle chính lẫn chunk vendor (dò 2026-09-03)",
+           "rqd25": "P/B (quý) — suy theo luật kỳ từ `rtd25` P/B (TTM); ⚠️ 60/60 giá trị null trên hai mẫu",
+           "rqd52": "T.trưởng EPS (quý) — suy theo luật kỳ từ `rtd52`; ⚠️ 60/60 giá trị null trên hai mẫu",
+           "rtd20": "Tỉ suất cổ tức — mã gốc của `rtd20Avg` (TB 3 năm), bundle 2026-09-03",
+           "rtd36Avg": "Tỉ suất cổ tức trung bình — TB của `rtd36` (Tỉ Suất Cổ Tức), bundle 2026-09-03",
+           "rtq160": "T.trưởng kinh doanh 3 năm (TTM) — suy theo luật kỳ từ `ryq160`",
+           "rtq166": "T.trưởng LN ròng 3 năm (TTM) — suy theo luật kỳ từ `ryq166`",
+           "rtq176": "T.trưởng vốn CSH 3 năm (TTM) — suy theo luật kỳ từ `ryq176`",
+           "ryq4": "Nợ dài hạn/Vốn chủ sở hữu (năm) — suy theo luật kỳ từ `rtq4` (TTM)"},
     nsrc="tự đặt")
 
 # ───────────────────────── Screener — BO ─────────────────────────
@@ -278,15 +293,22 @@ add(["rtd53", "rtq81"], "Screener", "Screener", True,
     "chỉ tiêu gì nên chưa xếp được vào nhóm nào. **Đo 2026-08-15**: cả hai CÓ THẬT trong khối `financial` "
     "và có giá trị (FPT `rtd53`=5426,73780245 `rtq81`=−0,03335415 · VNM 4702,49259309 và 0,22632399 · "
     "BID cả hai `null`) — nhưng số đo chỉ chứng minh trường tồn tại, KHÔNG cho ra tên, nên vẫn chưa xếp được"
-    " — **2026-09-03: lưu trước, giải mã sau (cùng luật với 13 mã §4.2 spec etl screener)**",
-    status="chưa giải mã", block="Chưa giải mã")
+    " — **2026-09-03: lưu trước, giải mã sau (cùng luật với nhóm §4.2 spec etl screener)**; vòng giải mã cùng ngày đặt tên được `rtd53` và `rtq81` từ bundle, `rtd54` suy theo hàng xóm, `rtd39` vẫn chưa giải",
+    names={"rtd53": "EPS Forward — bundle 2026-09-03: `snapShot.tableInfor.EPSForward`",
+           "rtq81": "T.trưởng lợi nhuận (YoY) — bundle 2026-09-03: khoá `eg` của nhóm `pr`, "
+                    "nằm giữa `rg`=`rtq78` (T.trưởng D.thu) và `npg`=`rtq83` (T.trưởng LN ròng)"},
+    nsrc="tự đặt", status="chưa giải mã", block="Chưa giải mã")
 add(["rtd39", "rtd54"], "Screener", "Screener", True,
     "có mặt trong khối `financial` của response nhưng KHÔNG có trong từ điển 729 mã — chưa biết là chỉ tiêu gì. "
     "**Đo 2026-08-15**: đã dump khoá khối `financial` — cả hai CÓ THẬT và có giá trị "
     "(`rtd39` BID 3,42582495 · FPT 15,93348656 · VNM 15,38168732; `rtd54` FPT 12,5858301 · VNM 13,09943584 · "
     "BID `null`). Vế *có thật không* đã xong; vế *là chỉ tiêu gì* thì số đo không trả lời được nên vẫn giữ"
-    " — **2026-09-03: lưu trước, giải mã sau (cùng luật với 13 mã §4.2 spec etl screener)**",
-    status="chưa giải mã", block="Chưa giải mã")
+    " — **2026-09-03: lưu trước, giải mã sau (cùng luật với nhóm §4.2 spec etl screener)**",
+    names={"rtd54": "P/E Forward — SUY 2026-09-03, chưa chắc: bundle xếp `rtd54` cạnh `rtd21` (P/E), "
+                    "`rtd14` (EPS), `rtd53` (EPS Forward) trong cùng bảng `snapShot.tableInfor`; "
+                    "dải giá trị đo được 1,59–34,67 hợp P/E",
+           "rtd39": "chưa giải mã — không có ở bundle chính lẫn chunk vendor (dò 2026-09-03)"},
+    nsrc="tự đặt", status="chưa giải mã", block="Chưa giải mã")
 
 # ───────────────────────── Snapshot — GIU 16 ─────────────────────────
 add(["ceo", "competitors", "majorHoldings", "comTypeCode"], "Snapshot", "Snapshot", True,
@@ -465,7 +487,9 @@ SCR_NEW_DROP_BLOCKS = [("metadata", "Metadata (đo 2026-08-28)"),
                        ("trùng BVSC", "Trùng BVSC (đo 2026-08-28)"),
                        ("biến động giá", "Biến động giá (đo 2026-08-28)"),
                        ("chấm điểm", "Chấm điểm (đo 2026-08-28)"),
-                       ("kỹ thuật", "Chỉ báo kỹ thuật (đo 2026-08-28)")]
+                       ("kỹ thuật", "Chỉ báo kỹ thuật (đo 2026-08-28)"),
+                       # 4 nhãn xếp hạng phát hiện 2026-09-03 (giá trị là CHUỖI, không phải số)
+                       ("nhãn xếp hạng", "Chấm điểm (đo 2026-09-03)")]
 
 
 def n_scr_block(block, keep):
@@ -828,7 +852,7 @@ for r in [x for x in ROWS if x["status"] == "cần kiểm API"]:
 scr_drop_rows = "\n".join(
     ["| %s | %s | %d | %s |" % (name, cnt_txt(cnt), count_scr_drop(tag), lech(cnt, count_scr_drop(tag)))
      for name, cnt, tag in SCR_DROP_GROUPS]
-    + ["| Ngoài nhóm — %d khoá lần đầu có tên (đo 2026-08-28: %s) | — | %d | ngoài nhóm |"
+    + ["| Ngoài nhóm — %d khoá lần đầu có tên (đo 2026-08-28 và 2026-09-03: %s) | — | %d | ngoài nhóm |"
        % (scr_new_drop, scr_new_drop_parts, scr_new_drop)])
 scr_keep_rows = "\n".join(
     ["| %s | %s | %d | %s |" % (name, cnt_txt(cnt), got, lech(cnt, got)) for name, cnt, got in SCR_KEEP_GROUPS]
