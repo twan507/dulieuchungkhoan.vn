@@ -195,6 +195,13 @@ Không lọc theo một tiêu chí thì đặt `selectedValue` bằng đúng `va
 }
 ```
 
+> 🔴 **Đo lại 2026-08-28 (sau phiên) và 2026-09-03 (08:38, trước mở cửa)** — response thật lưu ở [`samples/`](../../90-records/plans/2026-09-03-screener-daily-etl/samples/):
+> - Tầng đỉnh còn **`page`, `pageSize`, `packageId`, `errors`** ngoài ba khoá trên; `totalCount` = **1.545** ở cả hai lần *(1.549 là số 2026-08-15)*.
+> - `priceInfo.tradingDate` là **timestamp riêng từng mã** — sau phiên 28/08 có 29 giá trị khác nhau trên 30 mã, 14:45–15:00. Lấy ngày thì phải cắt `::date`.
+> - **Trước mở cửa, `tradingDate` đã mang ngày hôm nay** (`2026-09-03T08:22:46`) với `closePrice = 0`, `matchVolume = 0`, `totalVolume = 0`, `referenceDate = 2026-08-28` *(⇒ HOSE nghỉ 31/08–02/09)*. Ngày không giao dịch nguồn vẫn đóng dấu ngày đó — **không được dùng `tradingDate` làm bằng chứng có phiên**; tín hiệu dùng được là `closePrice > 0` (30/30 sau phiên vs 0/30 trước mở cửa). `totalVolume` không dùng được: 10/30 mã = 0 ngay trong ngày có phiên.
+> - `marketStatus` = `null` ở cả hai lần — vô dụng. Một khối có thể **`null` nguyên khối** (`V68.technical`). 20,1% giá trị trong khối là `null`.
+> - Tỷ số tài chính **đổi giữa hai lần** (103 + 733 giá trị) dù không có phiên nào ở giữa — *"payload trùng lượt trước"* không phải tín hiệu ngày nghỉ.
+
 **193 trường phân biệt mỗi mã**, chia 5 khối cộng lại 223 lượt:
 
 | Khối | Số trường | Nội dung |
