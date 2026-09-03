@@ -97,7 +97,7 @@ add(["PT_MATCH_QTTY", "PT_MATCH_PRICE", "PT_TOTAL_TRADED_QTTY", "PT_TOTAL_TRADED
 R_NAMED = ("tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; "
            "không nguồn nào khác có")
 R_CLASS = ("tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, "
-           "nên thuộc 80 trường giữ")
+           "nên thuộc nhóm giữ")
 add(["rtd26", "rtd27", "rtd28", "rtd40"], "Screener", "Screener", True, R_NAMED, block="Định giá")
 add(["rtd36", "rtd43", "rtd51", "rtd20Avg"], "Screener", "Screener", True,
     R_NAMED + " · nhóm cổ tức", block="Cổ tức")
@@ -134,6 +134,25 @@ add(["revTTM", "revY", "isa1TTM", "isa1Y", "isa20TTM", "isa20Y", "isa3TTM",
            "isi103TTM": "Doanh thu phí bảo hiểm (TTM) — suy từ `isi103`",
            "isi103Y": "Doanh thu phí bảo hiểm (năm trước) — suy từ `isi103`"},
     nsrc="suy theo luật kỳ", block="TTM/Y")
+
+# ───────────────────────── Screener — 66 khoá lần đầu có tên (đo 2026-08-28) ─────────────────────────
+# Không tài liệu nguồn nào liệt kê 66 khoá này (§7.5 bản trước). Tên lấy từ response thật
+# GetScreenerItems 2026-08-28 (docs/90-records/plans/2026-09-03-screener-daily-etl/samples/).
+# 48 khoá xếp bằng luật đã chốt; 18 mã tỷ số xếp `lấy` theo duyệt 2026-09-03 (spec §4.2, §9).
+R_NEW = ("tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; "
+         "duyệt 2026-09-03 (spec etl screener §4.2)")
+add(["isa3", "isa5", "ryq2", "ryq3", "ryq6"], "Screener", "Screener", True, R_NEW, block="Tỷ số (đo 2026-08-28)")
+add(["fryq30", "grossMargin", "profitGrowth", "revenueGrowth", "roe", "rqd25", "rqd52", "rtd20", "rtd36Avg",
+     "rtq160", "rtq166", "rtq176", "ryq4"], "Screener", "Screener", True,
+    R_NEW + " — KHÔNG có trong từ điển 729 mã: lưu trước, giải mã sau (bundle JS FiinTrade)",
+    status="chưa giải mã", block="Tỷ số (đo 2026-08-28)",
+    names={"fryq30": "chưa giải mã", "grossMargin": "Biên lãi gộp (suy từ tên khoá)",
+           "profitGrowth": "Tăng trưởng lợi nhuận (suy từ tên khoá)",
+           "revenueGrowth": "Tăng trưởng doanh thu (suy từ tên khoá)", "roe": "ROE (suy từ tên khoá)",
+           "rqd25": "chưa giải mã", "rqd52": "chưa giải mã", "rtd20": "chưa giải mã",
+           "rtd36Avg": "chưa giải mã", "rtq160": "chưa giải mã", "rtq166": "chưa giải mã",
+           "rtq176": "chưa giải mã", "ryq4": "chưa giải mã"},
+    nsrc="tự đặt")
 
 # ───────────────────────── Screener — BO ─────────────────────────
 add(["closePrice"], "Screener", "BVSC", False,
@@ -187,6 +206,41 @@ add(["totalBuyTradeVolume", "totalSellTradeVolume"], "Screener", "MoneyFlow", Fa
     names={"totalBuyTradeVolume": "Khối lượng theo chiều mua",
            "totalSellTradeVolume": "Khối lượng theo chiều bán"},
     nsrc="tự đặt", block="Trùng MoneyFlow")
+add(["comGroupCode", "icbCode", "isForecastTime", "marketStatus", "matchType", "organCode", "rateAdjusted",
+     "referenceDate", "ticker", "tradingDate"], "Screener", "—", False,
+    "metadata của response, không phải chỉ tiêu — `tradingDate` là timestamp riêng từng mã và ĐÃ mang ngày "
+    "hôm nay từ trước mở cửa (đo 2026-09-03), ETL chỉ dùng nó để lấy ngày, không lưu",
+    names={c: "metadata" for c in ["comGroupCode", "icbCode", "isForecastTime", "marketStatus", "matchType",
+                                    "organCode", "rateAdjusted", "referenceDate", "ticker", "tradingDate"]},
+    nsrc="tự đặt", block="Metadata (đo 2026-08-28)")
+add(["atoPrice", "atoVolume", "averagePrice", "ceilingPrice", "dealPrice", "dealValue", "dealVolume",
+     "expectedTradePrice", "expectedTradeVolume", "floorPrice", "foreignBuyValueTotal", "foreignBuyVolumeTotal",
+     "foreignCurrentRoom", "foreignSellValueTotal", "foreignSellVolumeTotal", "foreignTotalRoom", "highestPrice",
+     "lowestPrice", "matchPrice", "matchValue", "matchVolume", "openPrice", "percentPriceChange", "priceChange",
+     "referencePrice", "totalDealValue", "totalDealVolume", "totalValue", "totalVolume"],
+    "Screener", "BVSC", False,
+    "trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments`",
+    names={c: "giá/khối ngoại (khối priceInfo)" for c in
+           ["atoPrice", "atoVolume", "averagePrice", "ceilingPrice", "dealPrice", "dealValue", "dealVolume",
+            "expectedTradePrice", "expectedTradeVolume", "floorPrice", "foreignBuyValueTotal",
+            "foreignBuyVolumeTotal", "foreignCurrentRoom", "foreignSellValueTotal", "foreignSellVolumeTotal",
+            "foreignTotalRoom", "highestPrice", "lowestPrice", "matchPrice", "matchValue", "matchVolume",
+            "openPrice", "percentPriceChange", "priceChange", "referencePrice", "totalDealValue",
+            "totalDealVolume", "totalValue", "totalVolume"]},
+    nsrc="tự đặt", block="Trùng BVSC (đo 2026-08-28)")
+add(["percentPriceChange1Year", "percentPriceChange2Month", "percentPriceChange2Week", "percentPriceChange9Month"],
+    "Screener", "BVSC (tự tính)", False, "biến động giá — tính lại được từ chuỗi giá BVSC",
+    names={"percentPriceChange1Year": "Biến động giá 1 năm", "percentPriceChange2Month": "Biến động giá 2 tháng",
+           "percentPriceChange2Week": "Biến động giá 2 tuần", "percentPriceChange9Month": "Biến động giá 9 tháng"},
+    nsrc="tự đặt", block="Biến động giá (đo 2026-08-28)")
+add(["icbTotalRanked", "indexRank", "indexTotalRanked"], "Screener", "— (không lưu)", False,
+    "nhóm chấm điểm/xếp hạng riêng của FiinTrade — quyết định của chủ dự án: không dùng điểm do bên thứ ba chấm",
+    names={"icbTotalRanked": "Tổng số mã được xếp hạng trong ngành", "indexRank": "Hạng trong rổ chỉ số",
+           "indexTotalRanked": "Tổng số mã được xếp hạng trong rổ"},
+    nsrc="tự đặt", block="Chấm điểm (đo 2026-08-28)")
+add(["cmf", "sma20Past4"], "Screener", "BVSC (tự tính)", False, "chỉ báo kỹ thuật — tính lại được từ chuỗi giá",
+    names={"cmf": "Chaikin Money Flow", "sma20Past4": "SMA20 của 4 phiên trước"},
+    nsrc="tự đặt", block="Chỉ báo kỹ thuật (đo 2026-08-28)")
 
 # ───────────────────────── Screener — DA CHOT BANG SO DO 2026-08-15 ─────────────────────────
 # Bon nhom duoi day truoc mang trang thai `can kiem API`; loi goi that ngay 2026-08-15
@@ -480,7 +534,7 @@ Chép nguyên từ [kiến trúc tổng thể §3.4](../00-overview/architecture
 | Nhóm | Nguồn chuẩn | Quy mô |
 |---|---|---|
 | Giá, KL, sổ lệnh, khối ngoại, thoả thuận, chỉ báo kỹ thuật | **BVSC** | ~40 trường, realtime |
-| Tỷ số tài chính, Beta, sở hữu tổ chức, TTM | **Screener** | 80/193 |
+| Tỷ số tài chính, Beta, sở hữu tổ chức, TTM | **Screener** | {scr_keep_n}/193 |
 | Hồ sơ DN, sở hữu chi tiết | **Snapshot** | 16/54 |
 | Mọi mã `bs*` `is*` `cf*` `no*` | **BCTC đầy đủ** | 556 |
 | Tự doanh, đóng góp chỉ số, chuỗi khối ngoại | **MoneyFlow** | BVSC không có |
@@ -608,7 +662,7 @@ liệt kê được từ tài liệu nguồn. **Lệch không bị ép cho khớ
 | Nhóm | Đã chốt | Liệt kê được | Lệch |
 |---|---:|---:|---|
 {scr_keep_rows}
-| **Tổng giữ** | **80** | **{scr_keep_n}** | **{scr_keep_lech}** |
+| **Tổng giữ** | **80** *(ước lượng theo nhóm 2026-08-14)* | **{scr_keep_n}** *(đếm 2026-09-03)* | **{scr_keep_lech}** |
 
 ### 7.3 Screener — tổng
 

@@ -211,7 +211,7 @@ Bốn luật rút ra từ những lần trả giá, mỗi luật chống một c
 | Danh bạ, ngành ICB, `/quotes`, `/mapping` | Trước phiên | 4 |
 | `getPriceData` Page 1 | Sau 15:00 | 1.974 |
 | Snapshot ngày: **lưu 16/54 trường** — hồ sơ DN, sở hữu chi tiết | Sau 15:00 | ~4.000 |
-| `GetScreenerItems` — **lưu 80/193 trường** *(gửi 1 tiêu chí, nhiều hơn sẽ timeout)* — **lát 1 của nhóm này: `etl screener` 15:20, [spec 2026-09-03](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) đã duyệt 2026-09-03** | Sau 15:00 | 52 |
+| `GetScreenerItems` — **lưu 80/193 trường** (ước lượng 2026-08-14; đếm 2026-09-03: 77/193) *(gửi 1 tiêu chí, nhiều hơn sẽ timeout)* — **lát 1 của nhóm này: `etl screener` 15:20, [spec 2026-09-03](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) đã duyệt 2026-09-03** | Sau 15:00 | 52 |
 | Lịch sự kiện *(dùng `FromDate` lấy phần mới)* | Hằng ngày | ~10 |
 | BCTC + PDF | **Kích hoạt** theo `GetCorporateEarning` | ~100–300/quý |
 | Re-crawl giá một mã | **Kích hoạt** theo sự kiện quyền của mã đó | tuỳ |
@@ -455,7 +455,7 @@ CREATE TABLE screener_daily (
   organ_code   text NOT NULL,
   trading_date date NOT NULL,
   payload      jsonb NOT NULL,   -- trường có `keep` trong market-field-selection, giữ 5 khối lồng
-                                 -- (80/193 là ước lượng 2026-08-14; đếm lại khi vá 66 khoá — spec 2026-09-03 §4)
+                                 -- (80/193 là ước lượng 2026-08-14; đếm 2026-09-03: 77/193 — spec 2026-09-03 §4)
   PRIMARY KEY (organ_code, trading_date)
 );
 SELECT create_hypertable('screener_daily', 'trading_date');

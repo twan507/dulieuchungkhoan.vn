@@ -45,7 +45,7 @@ Chép nguyên từ [kiến trúc tổng thể §3.4](../00-overview/architecture
 | Nhóm | Nguồn chuẩn | Quy mô |
 |---|---|---|
 | Giá, KL, sổ lệnh, khối ngoại, thoả thuận, chỉ báo kỹ thuật | **BVSC** | ~40 trường, realtime |
-| Tỷ số tài chính, Beta, sở hữu tổ chức, TTM | **Screener** | 80/193 |
+| Tỷ số tài chính, Beta, sở hữu tổ chức, TTM | **Screener** | 77/193 |
 | Hồ sơ DN, sở hữu chi tiết | **Snapshot** | 16/54 |
 | Mọi mã `bs*` `is*` `cf*` `no*` | **BCTC đầy đủ** | 556 |
 | Tự doanh, đóng góp chỉ số, chuỗi khối ngoại | **MoneyFlow** | BVSC không có |
@@ -68,8 +68,8 @@ Hai đánh đổi đã chấp nhận, ghi ở đây để không ai hoảng khi 
 | **Nguồn chuẩn** | Nơi duy nhất chỉ tiêu này được lấy. `(tự tính)` = tính lại từ chuỗi của nguồn đó |
 | **Trạng thái** | `chốt` = suy được thẳng từ tài liệu nguồn hoặc từ nhóm lý do đã chốt · `cần kiểm API` = tài liệu không đủ căn cứ, phải gọi API đo mới kết luận được |
 
-Phân bố cột **Nguồn tên** trên 213 dòng: `từ điển` 114 · `tài liệu endpoint` 52 ·
-`suy theo luật kỳ` 7 · **`tự đặt` 31** · `—` 9. Con số `tự đặt` đáng để ý: đó là những
+Phân bố cột **Nguồn tên** trên 279 dòng: `từ điển` 119 · `tài liệu endpoint` 52 ·
+`suy theo luật kỳ` 7 · **`tự đặt` 92** · `—` 9. Con số `tự đặt` đáng để ý: đó là những
 mã mà **không nguồn nào cho tên**, tên trong bảng chỉ là nhãn mô tả để đọc cho tiện — đừng đem hiển thị cho
 người dùng cuối như tên chính thức, và đừng dùng nó làm căn cứ suy nghĩa. Việc phân loại lấy/bỏ của các dòng
 này **không dựa vào tên** mà dựa vào nhóm lý do, nên tên có là nhãn tự đặt cũng không ảnh hưởng.
@@ -146,9 +146,9 @@ Chỉ báo kỹ thuật **tự tính từ chuỗi giá này**, không lấy củ
 
 ## 4 · Screener `getScreenerItems`
 
-59 lấy · 64 bỏ · 4 cần kiểm API — trên 127 trường liệt kê được.
+77 lấy · 112 bỏ · 4 cần kiểm API — trên 193 trường liệt kê được.
 
-### 4.1 Lấy — 59 trường
+### 4.1 Lấy — 77 trường
 
 **Định giá** — 9 trường
 
@@ -158,11 +158,11 @@ Chỉ báo kỹ thuật **tự tính từ chuỗi giá này**, không lấy củ
 | `rtd27` | Giá - T.sản hữu hình (TTM) | từ điển | lấy | Screener | tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có | chốt |
 | `rtd28` | Giá - Dòng Tiền (TTM) | từ điển | lấy | Screener | tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có | chốt |
 | `rtd40` | Giá - Dòng Tiền Tự Do (TTM) | từ điển | lấy | Screener | tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có | chốt |
-| `rtd11` | Vốn hóa | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ; vốn hoá và EPS là mẫu số của chính các tỷ số FiinTrade nên phải lấy cùng bộ | chốt |
-| `rtd21` | P/E (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ; vốn hoá và EPS là mẫu số của chính các tỷ số FiinTrade nên phải lấy cùng bộ | chốt |
-| `rtd25` | P/B (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ; vốn hoá và EPS là mẫu số của chính các tỷ số FiinTrade nên phải lấy cùng bộ | chốt |
-| `rtd14` | EPS (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ; vốn hoá và EPS là mẫu số của chính các tỷ số FiinTrade nên phải lấy cùng bộ | chốt |
-| `rtd7` | Giá trị sổ sách trên mỗi cổ phiếu (BVPS) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ; vốn hoá và EPS là mẫu số của chính các tỷ số FiinTrade nên phải lấy cùng bộ | chốt |
+| `rtd11` | Vốn hóa | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ; vốn hoá và EPS là mẫu số của chính các tỷ số FiinTrade nên phải lấy cùng bộ | chốt |
+| `rtd21` | P/E (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ; vốn hoá và EPS là mẫu số của chính các tỷ số FiinTrade nên phải lấy cùng bộ | chốt |
+| `rtd25` | P/B (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ; vốn hoá và EPS là mẫu số của chính các tỷ số FiinTrade nên phải lấy cùng bộ | chốt |
+| `rtd14` | EPS (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ; vốn hoá và EPS là mẫu số của chính các tỷ số FiinTrade nên phải lấy cùng bộ | chốt |
+| `rtd7` | Giá trị sổ sách trên mỗi cổ phiếu (BVPS) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ; vốn hoá và EPS là mẫu số của chính các tỷ số FiinTrade nên phải lấy cùng bộ | chốt |
 
 **Cổ tức** — 4 trường
 
@@ -181,10 +181,10 @@ Chỉ báo kỹ thuật **tự tính từ chuỗi giá này**, không lấy củ
 | `rtq6` | Nợ phải trả/ Vốn chủ sở hữu (TTM) | từ điển | lấy | Screener | tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm đòn bẩy | chốt |
 | `rtq7` | Nợ phải trả/ Tổng tài sản (TTM) | từ điển | lấy | Screener | tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm đòn bẩy | chốt |
 | `rtq77` | Khả năng chi trả lãi vay (TTM) | từ điển | lấy | Screener | tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm đòn bẩy | chốt |
-| `rqq6` | Nợ phải trả/ Vốn chủ sở hữu (quý) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ | chốt |
-| `rtq3` | Tỉ suất thanh toán hiện hành (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ | chốt |
-| `rtq2` | Tỉ suất thanh toán nhanh (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ | chốt |
-| `rtq1` | Tỉ suất thanh toán tiền mặt (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ | chốt |
+| `rqq6` | Nợ phải trả/ Vốn chủ sở hữu (quý) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ | chốt |
+| `rtq3` | Tỉ suất thanh toán hiện hành (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ | chốt |
+| `rtq2` | Tỉ suất thanh toán nhanh (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ | chốt |
+| `rtq1` | Tỉ suất thanh toán tiền mặt (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ | chốt |
 
 **Tăng trưởng** — 9 trường
 
@@ -197,8 +197,8 @@ Chỉ báo kỹ thuật **tự tính từ chuỗi giá này**, không lấy củ
 | `ryq160` | T.trưởng K.doanh 3 năm | từ điển | lấy | Screener | tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm tăng trưởng | chốt |
 | `ryq166` | T.trưởng LN ròng 3 năm | từ điển | lấy | Screener | tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm tăng trưởng | chốt |
 | `ryq176` | T.trưởng vốn CSH 3 năm | từ điển | lấy | Screener | tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm tăng trưởng | chốt |
-| `revGrowth` | Tăng trưởng doanh thu quý gần nhất (YoY) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ | chốt |
-| `prfGrowth` | Tăng trưởng lợi nhuận thuần quý gần nhất (YoY) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ | chốt |
+| `revGrowth` | Tăng trưởng doanh thu quý gần nhất (YoY) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ | chốt |
+| `prfGrowth` | Tăng trưởng lợi nhuận thuần quý gần nhất (YoY) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ | chốt |
 
 **Sinh lời** — 11 trường
 
@@ -208,13 +208,13 @@ Chỉ báo kỹ thuật **tự tính từ chuỗi giá này**, không lấy củ
 | `rqq25` | Biên LN gộp (quý) | từ điển | lấy | Screener | tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm chỉ tiêu theo quý | chốt |
 | `rqq27` | Biên EBIT (quý) | từ điển | lấy | Screener | tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm chỉ tiêu theo quý | chốt |
 | `rqq29` | Biên LN ròng (quý) | từ điển | lấy | Screener | tỷ số tài chính — nằm trong cụm 55 tỷ số được nêu đích danh khi chốt nguồn; không nguồn nào khác có · nhóm chỉ tiêu theo quý | chốt |
-| `rtq12` | ROE (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ | chốt |
-| `rtq14` | ROA (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ | chốt |
-| `rtq25` | Biên Lãi Gộp | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ | chốt |
-| `ryq25` | Biên Lãi Gộp | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ | chốt |
-| `rtq29` | BIên Lãi Thuần | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ | chốt |
-| `ryq29` | BIên Lãi Thuần | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ | chốt |
-| `rtq27` | Biên EBIT (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc 80 trường giữ | chốt |
+| `rtq12` | ROE (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ | chốt |
+| `rtq14` | ROA (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ | chốt |
+| `rtq25` | Biên Lãi Gộp | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ | chốt |
+| `ryq25` | Biên Lãi Gộp | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ | chốt |
+| `rtq29` | BIên Lãi Thuần | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ | chốt |
+| `ryq29` | BIên Lãi Thuần | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ | chốt |
+| `rtq27` | Biên EBIT (TTM) | từ điển | lấy | Screener | tỷ số tài chính/định giá — không rơi vào bất kỳ nhóm bỏ nào trong 113 trường bị loại, nên thuộc nhóm giữ | chốt |
 
 **Beta** — 1 trường
 
@@ -249,7 +249,30 @@ Chỉ báo kỹ thuật **tự tính từ chuỗi giá này**, không lấy củ
 | `rev` | Doanh thu (tỉ đồng) (quý gần nhất) | từ điển | lấy | Screener | khối TTM/Y lấy trọn cụm — `isa20TTM` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20TTM` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh | chốt |
 | `prf` | Lợi nhuận ròng (tỉ đồng) (quý gần nhất) | từ điển | lấy | Screener | khối TTM/Y lấy trọn cụm — `isa20TTM` chính là mẫu số P/E của FiinTrade (vốn hoá ÷ `isa20TTM` khớp 9/10 mã VN30) và KHÔNG bằng tổng 4 quý `isa20` (lệch tới 9,4%); tự tính lại sẽ ra P/E khác cột P/E ngay bên cạnh | chốt |
 
-### 4.2 Bỏ — 64 trường
+**Tỷ số (đo 2026-08-28)** — 18 trường
+
+| Mã | Tên | Nguồn tên | Lấy/Bỏ | Nguồn chuẩn | Lý do | Trạng thái |
+|---|---|---|---|---|---|---|
+| `isa3` | Doanh số thuần | từ điển | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) | chốt |
+| `isa5` | Lãi gộp | từ điển | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) | chốt |
+| `ryq2` | Chỉ số thanh toán nhanh | từ điển | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) | chốt |
+| `ryq3` | Tỷ lệ Thanh Toán Hiện Hành | từ điển | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) | chốt |
+| `ryq6` | Nợ phải trả/ Vốn chủ sở hữu (TTM) | từ điển | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) | chốt |
+| `fryq30` | chưa giải mã | tự đặt | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) — KHÔNG có trong từ điển 729 mã: lưu trước, giải mã sau (bundle JS FiinTrade) | chưa giải mã |
+| `grossMargin` | Biên lãi gộp (suy từ tên khoá) | tự đặt | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) — KHÔNG có trong từ điển 729 mã: lưu trước, giải mã sau (bundle JS FiinTrade) | chưa giải mã |
+| `profitGrowth` | Tăng trưởng lợi nhuận (suy từ tên khoá) | tự đặt | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) — KHÔNG có trong từ điển 729 mã: lưu trước, giải mã sau (bundle JS FiinTrade) | chưa giải mã |
+| `revenueGrowth` | Tăng trưởng doanh thu (suy từ tên khoá) | tự đặt | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) — KHÔNG có trong từ điển 729 mã: lưu trước, giải mã sau (bundle JS FiinTrade) | chưa giải mã |
+| `roe` | ROE (suy từ tên khoá) | tự đặt | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) — KHÔNG có trong từ điển 729 mã: lưu trước, giải mã sau (bundle JS FiinTrade) | chưa giải mã |
+| `rqd25` | chưa giải mã | tự đặt | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) — KHÔNG có trong từ điển 729 mã: lưu trước, giải mã sau (bundle JS FiinTrade) | chưa giải mã |
+| `rqd52` | chưa giải mã | tự đặt | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) — KHÔNG có trong từ điển 729 mã: lưu trước, giải mã sau (bundle JS FiinTrade) | chưa giải mã |
+| `rtd20` | chưa giải mã | tự đặt | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) — KHÔNG có trong từ điển 729 mã: lưu trước, giải mã sau (bundle JS FiinTrade) | chưa giải mã |
+| `rtd36Avg` | chưa giải mã | tự đặt | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) — KHÔNG có trong từ điển 729 mã: lưu trước, giải mã sau (bundle JS FiinTrade) | chưa giải mã |
+| `rtq160` | chưa giải mã | tự đặt | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) — KHÔNG có trong từ điển 729 mã: lưu trước, giải mã sau (bundle JS FiinTrade) | chưa giải mã |
+| `rtq166` | chưa giải mã | tự đặt | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) — KHÔNG có trong từ điển 729 mã: lưu trước, giải mã sau (bundle JS FiinTrade) | chưa giải mã |
+| `rtq176` | chưa giải mã | tự đặt | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) — KHÔNG có trong từ điển 729 mã: lưu trước, giải mã sau (bundle JS FiinTrade) | chưa giải mã |
+| `ryq4` | chưa giải mã | tự đặt | lấy | Screener | tỷ số tài chính — không rơi vào nhóm bỏ nào, cùng họ với cụm tỷ số không nguồn nào khác có; duyệt 2026-09-03 (spec etl screener §4.2) — KHÔNG có trong từ điển 729 mã: lưu trước, giải mã sau (bundle JS FiinTrade) | chưa giải mã |
+
+### 4.2 Bỏ — 112 trường
 
 **Trùng BVSC** — 4 trường
 
@@ -355,6 +378,79 @@ Chỉ báo kỹ thuật **tự tính từ chuỗi giá này**, không lấy củ
 |---|---|---|---|---|---|---|
 | `totalBuyTradeVolume` | Khối lượng theo chiều mua | tự đặt | bỏ | MoneyFlow | trùng MoneyFlow — chuỗi mua/bán chủ động lấy trọn bộ ở MoneyFlow | chốt |
 | `totalSellTradeVolume` | Khối lượng theo chiều bán | tự đặt | bỏ | MoneyFlow | trùng MoneyFlow — chuỗi mua/bán chủ động lấy trọn bộ ở MoneyFlow | chốt |
+
+**Metadata (đo 2026-08-28)** — 10 trường
+
+| Mã | Tên | Nguồn tên | Lấy/Bỏ | Nguồn chuẩn | Lý do | Trạng thái |
+|---|---|---|---|---|---|---|
+| `comGroupCode` | metadata | tự đặt | bỏ | — | metadata của response, không phải chỉ tiêu — `tradingDate` là timestamp riêng từng mã và ĐÃ mang ngày hôm nay từ trước mở cửa (đo 2026-09-03), ETL chỉ dùng nó để lấy ngày, không lưu | chốt |
+| `icbCode` | metadata | tự đặt | bỏ | — | metadata của response, không phải chỉ tiêu — `tradingDate` là timestamp riêng từng mã và ĐÃ mang ngày hôm nay từ trước mở cửa (đo 2026-09-03), ETL chỉ dùng nó để lấy ngày, không lưu | chốt |
+| `isForecastTime` | metadata | tự đặt | bỏ | — | metadata của response, không phải chỉ tiêu — `tradingDate` là timestamp riêng từng mã và ĐÃ mang ngày hôm nay từ trước mở cửa (đo 2026-09-03), ETL chỉ dùng nó để lấy ngày, không lưu | chốt |
+| `marketStatus` | metadata | tự đặt | bỏ | — | metadata của response, không phải chỉ tiêu — `tradingDate` là timestamp riêng từng mã và ĐÃ mang ngày hôm nay từ trước mở cửa (đo 2026-09-03), ETL chỉ dùng nó để lấy ngày, không lưu | chốt |
+| `matchType` | metadata | tự đặt | bỏ | — | metadata của response, không phải chỉ tiêu — `tradingDate` là timestamp riêng từng mã và ĐÃ mang ngày hôm nay từ trước mở cửa (đo 2026-09-03), ETL chỉ dùng nó để lấy ngày, không lưu | chốt |
+| `organCode` | metadata | tự đặt | bỏ | — | metadata của response, không phải chỉ tiêu — `tradingDate` là timestamp riêng từng mã và ĐÃ mang ngày hôm nay từ trước mở cửa (đo 2026-09-03), ETL chỉ dùng nó để lấy ngày, không lưu | chốt |
+| `rateAdjusted` | metadata | tự đặt | bỏ | — | metadata của response, không phải chỉ tiêu — `tradingDate` là timestamp riêng từng mã và ĐÃ mang ngày hôm nay từ trước mở cửa (đo 2026-09-03), ETL chỉ dùng nó để lấy ngày, không lưu | chốt |
+| `referenceDate` | metadata | tự đặt | bỏ | — | metadata của response, không phải chỉ tiêu — `tradingDate` là timestamp riêng từng mã và ĐÃ mang ngày hôm nay từ trước mở cửa (đo 2026-09-03), ETL chỉ dùng nó để lấy ngày, không lưu | chốt |
+| `ticker` | metadata | tự đặt | bỏ | — | metadata của response, không phải chỉ tiêu — `tradingDate` là timestamp riêng từng mã và ĐÃ mang ngày hôm nay từ trước mở cửa (đo 2026-09-03), ETL chỉ dùng nó để lấy ngày, không lưu | chốt |
+| `tradingDate` | metadata | tự đặt | bỏ | — | metadata của response, không phải chỉ tiêu — `tradingDate` là timestamp riêng từng mã và ĐÃ mang ngày hôm nay từ trước mở cửa (đo 2026-09-03), ETL chỉ dùng nó để lấy ngày, không lưu | chốt |
+
+**Trùng BVSC (đo 2026-08-28)** — 29 trường
+
+| Mã | Tên | Nguồn tên | Lấy/Bỏ | Nguồn chuẩn | Lý do | Trạng thái |
+|---|---|---|---|---|---|---|
+| `atoPrice` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `atoVolume` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `averagePrice` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `ceilingPrice` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `dealPrice` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `dealValue` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `dealVolume` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `expectedTradePrice` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `expectedTradeVolume` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `floorPrice` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `foreignBuyValueTotal` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `foreignBuyVolumeTotal` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `foreignCurrentRoom` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `foreignSellValueTotal` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `foreignSellVolumeTotal` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `foreignTotalRoom` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `highestPrice` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `lowestPrice` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `matchPrice` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `matchValue` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `matchVolume` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `openPrice` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `percentPriceChange` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `priceChange` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `referencePrice` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `totalDealValue` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `totalDealVolume` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `totalValue` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+| `totalVolume` | giá/khối ngoại (khối priceInfo) | tự đặt | bỏ | BVSC | trùng BVSC — nhóm giá/khối ngoại/thoả thuận, nguồn chuẩn là BVSC realtime + `datafeed/instruments` | chốt |
+
+**Biến động giá (đo 2026-08-28)** — 4 trường
+
+| Mã | Tên | Nguồn tên | Lấy/Bỏ | Nguồn chuẩn | Lý do | Trạng thái |
+|---|---|---|---|---|---|---|
+| `percentPriceChange1Year` | Biến động giá 1 năm | tự đặt | bỏ | BVSC (tự tính) | biến động giá — tính lại được từ chuỗi giá BVSC | chốt |
+| `percentPriceChange2Month` | Biến động giá 2 tháng | tự đặt | bỏ | BVSC (tự tính) | biến động giá — tính lại được từ chuỗi giá BVSC | chốt |
+| `percentPriceChange2Week` | Biến động giá 2 tuần | tự đặt | bỏ | BVSC (tự tính) | biến động giá — tính lại được từ chuỗi giá BVSC | chốt |
+| `percentPriceChange9Month` | Biến động giá 9 tháng | tự đặt | bỏ | BVSC (tự tính) | biến động giá — tính lại được từ chuỗi giá BVSC | chốt |
+
+**Chấm điểm (đo 2026-08-28)** — 3 trường
+
+| Mã | Tên | Nguồn tên | Lấy/Bỏ | Nguồn chuẩn | Lý do | Trạng thái |
+|---|---|---|---|---|---|---|
+| `icbTotalRanked` | Tổng số mã được xếp hạng trong ngành | tự đặt | bỏ | — (không lưu) | nhóm chấm điểm/xếp hạng riêng của FiinTrade — quyết định của chủ dự án: không dùng điểm do bên thứ ba chấm | chốt |
+| `indexRank` | Hạng trong rổ chỉ số | tự đặt | bỏ | — (không lưu) | nhóm chấm điểm/xếp hạng riêng của FiinTrade — quyết định của chủ dự án: không dùng điểm do bên thứ ba chấm | chốt |
+| `indexTotalRanked` | Tổng số mã được xếp hạng trong rổ | tự đặt | bỏ | — (không lưu) | nhóm chấm điểm/xếp hạng riêng của FiinTrade — quyết định của chủ dự án: không dùng điểm do bên thứ ba chấm | chốt |
+
+**Chỉ báo kỹ thuật (đo 2026-08-28)** — 2 trường
+
+| Mã | Tên | Nguồn tên | Lấy/Bỏ | Nguồn chuẩn | Lý do | Trạng thái |
+|---|---|---|---|---|---|---|
+| `cmf` | Chaikin Money Flow | tự đặt | bỏ | BVSC (tự tính) | chỉ báo kỹ thuật — tính lại được từ chuỗi giá | chốt |
+| `sma20Past4` | SMA20 của 4 phiên trước | tự đặt | bỏ | BVSC (tự tính) | chỉ báo kỹ thuật — tính lại được từ chuỗi giá | chốt |
 
 **GTGD bình quân** — 4 trường
 
@@ -541,7 +637,7 @@ liệt kê được từ tài liệu nguồn. **Lệch không bị ép cho khớ
 | Sức mạnh tương đối | 2 | 2 | khớp |
 | Trùng MoneyFlow | 2 | 2 | khớp |
 | Giá trị GD bình quân 5/10/20 phiên, 3 tháng — *chốt bằng số đo 2026-08-15* | — | 4 | mới đo 2026-08-15 |
-| **Tổng bỏ** | **113** | **64** | **thiếu 49** |
+| **Tổng bỏ** | **113** | **112** | **thiếu 1** |
 
 ### 7.2 Screener — nhóm giữ
 
@@ -553,20 +649,20 @@ liệt kê được từ tài liệu nguồn. **Lệch không bị ép cho khớ
 | Khối TTM/Y trọn cụm | 13 | 13 | khớp |
 | Phần còn lại của 80 trường — không nguồn nào nêu đích danh | 9 | 0 | thiếu 9 |
 | `freeFloatRate` + `foreignerPercentage` — *chốt bằng số đo 2026-08-15* | — | 2 | mới đo 2026-08-15 |
-| **Tổng giữ** | **80** | **59** | **thiếu 21** |
+| **Tổng giữ** | **80** *(ước lượng theo nhóm 2026-08-14)* | **77** *(đếm 2026-09-03)* | **thiếu 3** |
 
 ### 7.3 Screener — tổng
 
 | Hạng mục | Số |
 |---|---:|
 | Tổng trường quan sát được trên VN30 | 193 |
-| Liệt kê được trong tài liệu này | 127 |
-| — trong đó `chốt` | 123 |
+| Liệt kê được trong tài liệu này | 193 |
+| — trong đó `chốt` | 189 |
 | — trong đó `cần kiểm API` | 4 |
-| **Chưa liệt kê được** (không tài liệu nguồn nào nêu mã) | **66** |
+| **Chưa liệt kê được** (không tài liệu nguồn nào nêu mã) | **0** |
 
-Phép cộng khép kín: thiếu 21 trường ở nhóm giữ + thiếu 49 trường ở nhóm bỏ =
-70 trường chưa phân loại, bằng đúng 66 trường chưa liệt kê được + 4 trường
+Phép cộng khép kín: thiếu 3 trường ở nhóm giữ + thiếu 1 trường ở nhóm bỏ =
+4 trường chưa phân loại, bằng đúng 0 trường chưa liệt kê được + 4 trường
 `cần kiểm API`. Không có trường nào bị đếm hai lần.
 
 ### 7.4 Snapshot
@@ -593,7 +689,7 @@ trống này)* còn 4, bằng đúng 2 dòng `cần kiểm API` + 2 trường ch
 
 ### 7.5 Ba chỗ lệch, nguyên nhân đã truy được
 
-1. **Screener thiếu 66 mã.** Không tài liệu nguồn nào liệt kê đủ 193 trường của response. Chỉ có:
+1. **Screener thiếu 0 mã.** Không tài liệu nguồn nào liệt kê đủ 193 trường của response. Chỉ có:
    83 tiêu chí của `GetScreenerParameters`, các mã được nêu đích danh khi chốt nguồn, và vài mã trong mô tả
    5 khối response (`priceInfo` 43 · `stockScreenerItem` 129 · `performance` 12 · `financial` 21 ·
    `technical` 18). Phần lớn 129 trường của `stockScreenerItem` không có mã nào được ghi ra.
@@ -655,7 +751,7 @@ Hai phép kiểm dự kiến gỡ khoảng trống §7.5 **đã chạy ngày 202
    `ALL` rồi `VN30`, `pageSize` 30)*. Ra đúng **193 khoá phân biệt / 223 lượt xuất hiện**, giống nhau ở cả
    hai `comGroupCode`. Chốt được giả định §7.6 (83/83 tiêu chí đều có trong response), giải được cách chuẩn
    hoá hoa/thường, và cho thấy nhóm ATO chỉ có 2 khoá (`atoPrice`, `atoVolume`) chứ không phải 4 (§7.5).
-   Vẫn còn **66 mã chưa liệt kê được** — phần lớn nằm trong 129 khoá của `stockScreenerItem` mà
+   Vẫn còn **0 mã chưa liệt kê được** — phần lớn nằm trong 129 khoá của `stockScreenerItem` mà
    không tài liệu nguồn nào ghi mã ra; số đo cho biết chúng TÊN gì nhưng không cho biết chúng LÀ gì, nên
    chưa xếp lấy/bỏ được.
 2. **`GetSnapshot` (BID) và `GetSnapshotNoneBank` (FPT, VNM), dump khoá cả ba khối.** Bản ngân hàng ra đúng
@@ -668,4 +764,4 @@ Hai phép kiểm dự kiến gỡ khoảng trống §7.5 **đã chạy ngày 202
 | Ngày | Thay đổi |
 |---|---|
 | 2026-08-14 | Bản đầu — trải quyết định chọn nguồn ngày 2026-08-14 ra từng mã trường. 213 dòng: 57+34+16 lấy · 92 bỏ · 14 chưa rõ. 16 dòng mang trạng thái `cần kiểm API` (gồm 2 dòng đã xếp *bỏ* nhưng bỏ có điều kiện) |
-| 2026-08-15 | **Đo thật, chốt 10/16 dòng `cần kiểm API`.** Gọi `GetScreenerParameters` (83 tiêu chí), `GetScreenerItems` 1 tiêu chí trên `ALL` và `VN30` (193 khoá), BVSC `/quotes?symbols=ALL` (2.534 bản ghi) và `/datafeed/instruments` (62 khoá), `GetSnapshot`/`GetSnapshotNoneBank` (54 / 56 khoá). Kết quả: `foreignerPercentage` + `freeFloatRate` → **lấy** ở Screener nên Snapshot bỏ hết điều kiện · `averageValue*` 4 mã → **bỏ** · `outstandingShare` + `freeFloat` → **lấy** ở Snapshot *(FPT lệch `ListedShare` 10.819.301 CP)* · `rtd39`/`rtd54` xác nhận có thật. Sửa **mã trường về đúng hoa/thường thật** — `getScreenerItems` chỉ hạ chữ cái đầu, viết thường toàn bộ sẽ trượt 31/83 khoá. Giải ba chỗ vênh: 223 = tổng 5 khối vs 193 khoá phân biệt · BVSC 62 đúng, 50 sai · `foreignerRoom` của Screener = `foreignRemain` của BVSC chứ không phải `foreignRoom`. Còn 6 dòng `cần kiểm API`: 213 dòng · 111 lấy · 96 bỏ · 6 chưa rõ |
+| 2026-08-15 | **Đo thật, chốt 10/16 dòng `cần kiểm API`.** Gọi `GetScreenerParameters` (83 tiêu chí), `GetScreenerItems` 1 tiêu chí trên `ALL` và `VN30` (193 khoá), BVSC `/quotes?symbols=ALL` (2.534 bản ghi) và `/datafeed/instruments` (62 khoá), `GetSnapshot`/`GetSnapshotNoneBank` (54 / 56 khoá). Kết quả: `foreignerPercentage` + `freeFloatRate` → **lấy** ở Screener nên Snapshot bỏ hết điều kiện · `averageValue*` 4 mã → **bỏ** · `outstandingShare` + `freeFloat` → **lấy** ở Snapshot *(FPT lệch `ListedShare` 10.819.301 CP)* · `rtd39`/`rtd54` xác nhận có thật. Sửa **mã trường về đúng hoa/thường thật** — `getScreenerItems` chỉ hạ chữ cái đầu, viết thường toàn bộ sẽ trượt 31/83 khoá. Giải ba chỗ vênh: 223 = tổng 5 khối vs 193 khoá phân biệt · BVSC 62 đúng, 50 sai · `foreignerRoom` của Screener = `foreignRemain` của BVSC chứ không phải `foreignRoom`. Còn 6 dòng `cần kiểm API`: 279 dòng · 129 lấy · 144 bỏ · 6 chưa rõ |
