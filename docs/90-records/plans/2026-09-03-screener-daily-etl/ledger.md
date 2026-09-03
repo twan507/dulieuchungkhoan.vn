@@ -1,0 +1,70 @@
+# SDD ledger — plan: docs/90-records/plans/2026-09-03-screener-daily-etl/plan.md
+
+Sổ thực thi. Nhánh `feat/screener-daily-etl` từ `70da066` (main). Artifact tạm (brief, report, gói diff review) ở scratchpad ngoài repo — **không** `.superpowers/` trong repo. Mỗi task: implementer Sonnet (model chỉ định tường minh) → review hai trục (spec + chất lượng) → vòng sửa ≤ 5.
+
+## Rà xung đột tiền-thực-thi (2026-09-03)
+
+| Cặp / task | Bên sản xuất | Bên tiêu thụ | Kết quả |
+|---|---|---|---|
+| T1 ↔ T2 | `market-field-selection.json` 193 dòng Screener, `keep is True` | `KEEP` nạp `keep is True`, test đếm lại từ chính JSON | khớp — test không phụ thuộc con số 77 |
+| T2 ↔ T3 | `fetch() -> (pages: list[str], retries)` | `normalize(pages: list[str])` | khớp |
+| T2 ↔ T4 | `ScreenerRow.close_price` | test guard đếm `r.close_price > 0` | khớp |
+| T2 ↔ T5 | `ScreenerRow.ticker/exchange/trading_date/payload` | `merge`, `apply` | khớp |
+| T3 ↔ T6 | `fetch(post=None, sleep=…)` | job gọi `fetch()`; test patch `lambda: (pages, 0)` | khớp |
+| T4 ↔ T6 | `check(total_count, collected, priced, unmapped, baseline)` | job truyền `collected = len(rows) + unknown_com_group` | **xung đột 1** — xem ruling |
+| T5 ↔ T6 | `load_baseline/merge/apply/store_refusal_evidence/upsert_domain_state` | job | khớp |
+| T5 nội bộ | `apply` set `ingested_at = now()` | test `t2 > t1` trong **một** transaction (fixture `db`) | **xung đột 2** — `now()` là giờ bắt đầu transaction |
+| T3 nội bộ | test `test_paginates…` | dòng `assert all(b == 30 for b in [30])` | **xung đột 3** — assert rỗng, rubric coi là lỗi |
+| T1 nội bộ | số đếm dự kiến `keep True 77 / False 112 / None 4` | tiêu chí đỗ | chỉ **193 dòng** và **thiếu = []** là tiêu chí; ba số kia ghi số thật |
+| T2 nội bộ | `SELECTION_JSON = parents[2]/docs/…` | `backend/etl/x.py` → parents[2] = gốc repo | đúng |
+| T6 nội bộ | fixture POST có `totalCount = 1545` nhưng chỉ 30 item (một trang) | guard (ii) `collected != total_count` | cùng gốc với xung đột 1 |
+| T8 | đăng ký task Scheduler cần shell **elevated** | shell agent không elevated (đo 2026-09-03) | bước 2–4 do chủ dự án chạy — điểm dừng hợp lệ (side effect ngoài worktree) |
+
+**Ruling 1 (T6 test):** fixture một trang mang `totalCount 1545` ⇒ guard (ii) từ chối là **đúng** với code; sai là ở test. `_patch` trong `test_e15` phải ghi đè `totalCount` = số item của trang (30) trước khi tiêm — `json.loads → d["totalCount"] = len(d["items"]) → json.dumps` — kèm comment nói rõ vì sao. `counts.items` kỳ vọng **30**. — *Vì:* spec §5.4 (ii) là hợp đồng, test phải mô phỏng một lượt đủ trang. — *Nếu sai:* test giả trang đầy đủ hơi lỏng; lượt thật AC3 (52 trang) mới là nghiệm thu.
+
+**Ruling 2 (T5 apply):** nhánh `DO UPDATE` đặt `ingested_at = clock_timestamp()` thay vì `now()`. — *Vì:* `now()` đóng băng theo transaction nên test một-transaction không phân biệt được hai lượt; `clock_timestamp()` là giờ câu lệnh, tương đương production (mỗi lượt job một transaction). — *Nếu sai:* không có hậu quả dữ liệu; chỉ là mốc ghi lệch vài ms so với `now()`.
+
+**Ruling 3 (T3 test):** bỏ dòng `assert all(b == 30 for b in [30])` — assert rỗng; `pageSize == 30` đã được kiểm ở `test_body_sends_exactly_one_criterion_and_page_size_30`. — *Nếu sai:* không.
+
+**Ruling 4 (T1 số đếm):** tiêu chí đỗ T1 = 193 dòng Screener + `thiếu = []` + §7.3 "Chưa liệt kê" = 0. Số `keep` ghi số đếm thật vào ledger; **không** sửa cho bằng 77. — *Vì:* spec §4.3.
+
+**Ruling 5 (worktree):** dùng nhánh trong cùng checkout, không worktree — implementer chạy tuần tự (không song song), và worktree không có `.venv` (bài học post-session 28/08). — *Nếu sai:* không có agent song song nên không có rủi ro giẫm commit.
+
+## Tiến độ
+
+- Task 1: implementer DONE (commit 72f3200, agent ae5c983bfe7abb8e0) — 193/193, keep True 77 · False 112 · None 4, unlisted 0. Chờ review.
+- Task 1: review sạch (sonnet a3b026bfbaa837db3) — 2 mục ⚠️ tự kiểm: README.md không có hit "80/193"; cả 193 khoá của HAI mẫu thật đều có dòng. Task 1: minor (deferred): `gen_field_selection.py:770` — mục nhật ký §9 đề ngày 2026-08-15 render số tổng HIỆN TẠI ({total_rows}…) nên số của dòng lịch sử trôi theo mỗi lần sinh — đặc tính có sẵn của generator, không do task này; đưa vào review cuối.
+- Task 1: complete (commits 70da066..72f3200, review clean)
+- Task 2: implementer DONE (commit a77aff7, agent a37c4e5627bc231ca) — 6/6, full suite 327 passed 2 skipped. Chờ review.
+- Task 2: review (sonnet ada72893826b09677) — 1 Important **plan-mandated**: `screener_normalize.py:66,68` truy cập `pi["tradingDate"]`/`pi["ticker"]` không guard ⇒ một item thiếu khoá làm KeyError cả lượt. **Ruling 6:** giữ nguyên, không sửa — `ticker`/`tradingDate` là khoá BẮT BUỘC của hợp đồng nguồn; thiếu là nguồn đổi schema, job phải **chết to** (spec §5.1: mọi Exception → `etl_run failed`, exit 2, không ghi gì) chứ không được lặng lẽ bỏ dòng (00-conventions §10.5). Chạy lại cùng ngày sau khi soi là lấy lại được. *Nếu sai:* một dòng hỏng chặn screener một ngày cho tới khi có người nhìn — chấp nhận được, và đó chính là tín hiệu giám sát hợp đồng [8] cần. Task 2: minor (deferred): `log` khai báo không dùng (`screener_normalize.py:14`); `import pytest` thừa trong test_e11; `_row()` trả tuple 3 ngôi hơi khó đọc. ⚠️ số 327 chưa tự chạy — review cuối chạy trọn bộ.
+- Task 2: complete (commits 72f3200..a77aff7, review clean với 1 parked-by-ruling)
+- Task 3: implementer DONE (commit 5171201, agent afd76995a32411e87) — 4/4, bộ 331 passed 2 skipped. Chờ review.
+- Task 3: review sạch (sonnet a781da87ae74eb4b5). Task 3: minor (deferred): `screener_fetch.py:146-155` `int(json.loads(first)["totalCount"])` không guard — thiếu/null thì TypeError/KeyError thay vì FetchError (plan-mandated; job vẫn failed loud). Task 3: minor (deferred): `totalCount == 0` không có test (code trả 1 trang, không rỗng).
+- Task 3: complete (commits a77aff7..5171201, review clean)
+- Task 4: implementer DONE (commit bdeaee0, agent a3649c0aef0b1e081) — 5/5, bộ 336 passed 2 skipped. Chờ review.
+- Task 4: review sạch (sonnet a048965fa0f23cf74) — test clause (i) trên fixture pre-open thật là load-bearing (bỏ clause (i) thì test đỏ). Task 4: minor (deferred): `screener_guard.py:45` có `collected > 0 and` — chặn ca chia cho 0, plan-mandated, vô hại.
+- Task 4: complete (commits 5171201..bdeaee0, review clean)
+- Task 5: implementer BLOCKED (agent ab5fb6fadea34560e, chưa commit) — 5/5 file riêng xanh; cả bộ 3 fail: `_seed_securities` INSERT mù đụng unique `(ticker, exchange) WHERE status=listed` vì `test_e10` (job refdata thật) đã commit `CLI/UPCOM` vào DB test ngoài rollback. **Ruling 7 (lỗi plan T5):** `_seed_securities` đổi sang `INSERT … SELECT … WHERE NOT EXISTS (… ticker=:t AND exchange=:e AND status='listed')` — y khuôn `_seed` của T6 trong plan; các assert giữ nguyên (mã có sẵn vẫn map được, số mapped/unmapped không đổi). *Nếu sai:* chỉ ảnh hưởng test.
+- Task 5: implementer DONE sau Ruling 7 (commit b446ec3) — 5/5, bộ 341 passed 2 skipped. Chờ review.
+- Task 5: review (sonnet aa3a065a09e9d12f2) — 1 Important plan-mandated: `test_refusal_evidence_and_domain_state` (migrated_engine, không rollback) chỉ dọn raw_payload TRƯỚC, không dọn SAU, và không dọn `data_domain_state(market.scores)` bao giờ ⇒ để rác committed trong DB test. Kiểm chéo: T6 `_seed` xoá raw_payload source=screener trước khi chạy và domain_state là upsert nên không vỡ test nào — nhưng vẫn là lỗi vệ sinh của plan. **Ruling 8:** sửa (vòng 1) — dọn cả hai bảng trước VÀ sau, y khuôn `test_baseline_reads_items_of_last_success`. *Nếu sai:* không.
+- Task 5: fix round 1/5 (1 addressed, 0 open — dọn cả hai bảng trước và sau; commit b446ec3..4d76162; re-review sonnet ab613194a9cfbab89 sạch). Task 5: minor (deferred): khối dọn sau assert không nằm trong try/finally (cùng khuôn với test baseline có sẵn) — assert đỏ thì để rác.
+- Task 5: complete (commits bdeaee0..4d76162, review clean sau 1 vòng sửa)
+- Task 6: implementer DONE (commit bb87d71, agent a8f716da8f70b8125) — 4/4 kể cả test dưới role dlck_etl, bộ 345 passed 2 skipped. Chờ review.
+- Task 6: review sạch (sonnet adf7c9bb358a459eb) — guard trong engine.begin(), bằng chứng ghi sau rollback, test role thật sự chạy mọi truy vấn dưới dlck_etl. Task 6: minor (deferred): test_e15 seed/dọn ĐẦU mỗi test nhưng không teardown cuối (cùng khuôn test_e10).
+- Task 6: complete (commits 4d76162..bb87d71, review clean)
+- **Ruling 9:** review toàn nhánh chạy NGAY sau T6 thay vì sau T8 — T7 là nghiệm thu chạy thật bị khoá theo giờ (AC3 sau 15:05, AC5 trước 09:00 hôm sau), T8 cần cửa sổ admin của chủ dự án; cả hai không sinh code ngoài 3 dòng ps1 (sẽ có re-review riêng ở T8). *Nếu sai:* T8 thêm code thì phải review bổ sung — chi phí một lượt re-review nhỏ.
+- Controller tự chạy `uv run pytest tests` 2026-09-03: **345 passed, 2 skipped, 1 warning** (StarletteDeprecationWarning có sẵn của fastapi/testclient, không thuộc lát này) — khớp báo cáo T6.
+- **Review cuối toàn nhánh** (opus aaca98e752e290621, 70da066..bb87d71): 1 Critical · 5 Important · 8 Minor · triage minor treo. Verdict "With fixes". Rulings cho đợt sửa duy nhất (brief: scratchpad `final-fix-brief.md`):
+  - **Ruling 10 (Critical #1 — lỗi SPEC):** 10 khoá keep có ở cả `stockScreenerItem` lẫn `financial`; `rtq12/rtq27/rtq83` **khác nhau 52/90 cặp, có đổi dấu**. Spec §2.1 chỉ xét kích thước, không xét hai bản có bằng nhau — lỗi của tôi khi viết spec. Quyết tạm **không mất dữ liệu**: giữ cả hai bản, thêm `dup_conflicts` vào stats, ghi rõ ở §5.5 và spec; **khối chuẩn cho 3 mã là quyết định của chủ dự án** (cần nghĩa mã) — treo ở spec §9.4. *Nếu sai:* consumer phải chỉ rõ khối khi đọc — đã ghi doc; không có gì bị xoá nên đảo được.
+  - **Ruling 11 (Important #1, reproduce được):** test_e15 để 30 security committed trong DB test ⇒ đảo thứ tự file làm guard huỷ niêm yết của refdata nổ. Sửa: fixture module-scoped có finalizer dọn theo id; e14 dọn trong try/finally. Ghi thêm phép kiểm chạy đảo thứ tự vào nghiệm thu.
+  - **Ruling 12 (Important #2):** clause (i) đổi từ `priced > 0` sang tỷ lệ `MIN_PRICED_RATIO = 0.5` — một mã lẻ có giá trong ngày lễ không được mở cửa ghi 1.545 dòng ma; phiên thật 30/30 vẫn qua. Chuỗi lý do đổi theo, test cập nhật literal. *Nếu sai:* phiên nào <50% mã có giá sẽ bị từ chối — không có phiên nào như vậy.
+  - **Ruling 13 (Important #3):** thêm clause (iv) `unknown_com_group ≤ 2%` — nguồn đổi tên sàn thì không được im lặng mất trọn một sàn.
+  - **Ruling 14 (Important #4 + minor T1):** bảng đối soát §7.1/§7.2 của file sinh không khép (64/112, 59/77) vì 66 khoá mang block tag mới; dòng nhật ký 2026-08-15 bị render số hiện tại (viết lại quá khứ — §1.7); thiếu dòng nhật ký 2026-09-03. Sửa generator, hard-code dòng 08-15, thêm dòng 09-03, chứng minh sinh lại byte-bằng-byte.
+  - **Ruling 15 (Minor #6):** 4 mã `rtd39 rtd53 rtd54 rtq81` đang `keep=None` (cần kiểm API) bị bỏ dù có giá trị thật — áp cùng luật chủ dự án đã duyệt hôm nay cho 13 mã ("lưu trước, giải mã sau") ⇒ `keep=True`, `chưa giải mã`; keep dự kiến 81. *Nếu sai:* thừa 4 khoá jsonb, bỏ qua được — chi phí ~0, còn không lưu thì mất theo ngày.
+  - **Ruling 16 (Minor #7):** bằng chứng từ chối lưu **trang 1** (đủ cho vế i/iii/iv), lưu mọi trang khi lý do là "thiếu trang" — tránh ~9,6 MB jsonb mỗi ngày nghỉ vào staging không có retention.
+  - **Ruling 17 (Important #5):** `backend/README.md` là index sở hữu job backend mà spec §8/plan T8 bỏ sót, grep kiểm của T8 cũng không quét `backend/` — sửa README ngay trong đợt này, mở rộng T8 Bước 5.
+  - Minor #8 (đọc `docs/` lúc import): **giữ nguyên, nợ đã ghi** (spec/plan) — xử lý khi đóng gói ETL vào container. Minor #9/#10/#11/#12/#13: sửa trong đợt (nhỏ).
+  - Triage minor treo: T1 §9 row → sửa (Ruling 14); T5/T6 dọn DB → sửa (Ruling 11); các minor còn lại giữ treo theo lời reviewer.
+- Đợt sửa review cuối: DONE_WITH_CONCERNS (opus a263e37182e01f75c), 8 commit bb87d71..780a0ec; fixer báo tests/etl 91, bộ 349 passed 2 skipped, đảo thứ tự e15→e10 xanh, generator sinh lại byte-bằng-byte. Concerns: (1) brief §E.1 tự mâu thuẫn — fixer chọn hàng "Ngoài nhóm 48" + sửa nhãn (hợp lý); (2) §7.2 cần thêm hàng 4 mã flip vì keep=81; (3) sửa 4 đoạn văn arithmetic; (4) chưa đụng: spec §5.5 còn ghi `now()` (Ruling 2 là clock_timestamp) và 10-fiin-dictionary:290 "113 trường bị bỏ" vs 112 — controller sẽ đồng bộ sau re-review. Chờ re-review.
+- Re-review đợt sửa (sonnet a2241a083ac2c59c4): **A–I đều ADDRESSED, không có breakage mới**; Skip #8 nguyên vẹn. Hai quan sát ngoài phạm vi (spec §5.5 `now()`, 10-fiin-dictionary "113") controller đồng bộ ở commit bc58fd5. Controller tự chạy: bộ 349 passed 2 skipped 1 warning; đảo thứ tự e15→e10: 8 passed.
+- **Review cuối: ĐÓNG.** Còn lại theo plan: Task 7 (chạy thật AC3/AC4 sau 15:05 ngày giao dịch, AC5 trước 09:00 hôm sau) và Task 8 (đăng ký task trong cửa sổ admin của chủ dự án, để Disabled). Nhánh CHƯA merge cho tới khi AC3 có số.
