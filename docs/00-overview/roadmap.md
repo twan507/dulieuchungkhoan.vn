@@ -27,7 +27,7 @@ Ba khối vốn có ba danh sách việc riêng, mỗi danh sách tự cho mình
 | **Repo vào git** | ✅ `git init` + commit đầu 2026-08-14 | toàn bộ docs + hai skill |
 | **Stack sản phẩm + cây monorepo** | ✅ **Chốt 2026-08-24** — Next.js · Python/FastAPI · Postgres + ClickHouse (lưu tick thô) · skill dời về `backend/agent/skills/` | [ADR 0007](decisions/0007-monorepo-layout-and-stack.md) |
 | **Hạ tầng + schema hai kho** | ✅ **Xong 2026-08-26** — compose (PG+Redis+CH, profile `realtime`) · schema `postgres-data` **14 migration** · schema `rt` ClickHouse 2 migration · **321 test** *(số cập nhật 2026-08-28; lúc dựng xong 26/08 là 10 migration / 71 test)* · một lượt dev trọn (dev-start → migrate → test → dev-stop) chạy sạch | [database/README.md](../../database/README.md) |
-| **Code sản phẩm (ingester · ETL thật · api)** | 🟡 **Lát cắt dọc đầu đã dựng 2026-08-26** — `ingester` (socket EIO3 → chuẩn hoá → Redis + ClickHouse, leader lock, đối chứng cuối phiên) và job `etl omo`; đã qua review toàn nhánh và **merge `main` 2026-08-26** *(194 test lúc đó)*. **Cập nhật 2026-08-28: 321 test xanh** — thêm lát tràn-ra-đĩa (AC3 đóng, dư = 0), job `etl refdata`, cây ngành hai lớp, và 7 task chuyển `LogonType=S4U`. Job OMO đã chạy thật từ 26/08 (4 mốc/ngày) — nhưng ⏸️ **cả 4 task OMO đã `Disabled` lúc 2026-08-28 15:04**. Trạng thái, điều kiện bật lại và mốc rà do **mục [4d] ở §2** sở hữu — không chép lại ở đây. **Ghi tick bật 2026-08-26 tối** — phiên ghi thật đầu tiên là 27/08, chạy song song một phiên `--measure` làm lưới an toàn. ⏸️ **TOÀN BỘ 7 task ghi dữ liệu đã `Disabled` lúc 2026-09-03 ~08:55** *(quyết định chủ dự án: giai đoạn này ưu tiên dev, đã có đủ phiên 27/08 · 28/08 + sáng 03/09 làm bằng chứng)*. Hai tiến trình đang chạy (`dlck-ingester`, `dlck-ingester-measure`) bị dừng giữa phiên. Ba đồng hồ mất dữ liệu (tick · frame thô · OMO) vì thế **cùng chạy**; điều kiện bật lại và mốc rà do **mục [4d] ở §2** sở hữu. ⚠️ `scripts/register-tasks.ps1` tự `Enable` `dlck-ingester` khi chạy lại — đừng chạy script đó trong lúc tạm dừng. `api` chưa bắt đầu. **[7] ETL hằng ngày: tách thành chuỗi lát 2026-08-28; lát 1 `etl screener` có [spec 2026-09-03](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) — **đã duyệt 2026-09-03**, đang viết plan** | [plans/2026-08-26-ingester-omo-first-slice/](../90-records/plans/2026-08-26-ingester-omo-first-slice/) |
+| **Code sản phẩm (ingester · ETL thật · api)** | 🟡 **Lát cắt dọc đầu đã dựng 2026-08-26** — `ingester` (socket EIO3 → chuẩn hoá → Redis + ClickHouse, leader lock, đối chứng cuối phiên) và job `etl omo`; đã qua review toàn nhánh và **merge `main` 2026-08-26** *(194 test lúc đó)*. **Cập nhật 2026-08-28: 321 test xanh** — thêm lát tràn-ra-đĩa (AC3 đóng, dư = 0), job `etl refdata`, cây ngành hai lớp, và 7 task chuyển `LogonType=S4U`. Job OMO đã chạy thật từ 26/08 (4 mốc/ngày) — nhưng ⏸️ **cả 4 task OMO đã `Disabled` lúc 2026-08-28 15:04**. Trạng thái, điều kiện bật lại và mốc rà do **mục [4d] ở §2** sở hữu — không chép lại ở đây. **Ghi tick bật 2026-08-26 tối** — phiên ghi thật đầu tiên là 27/08, chạy song song một phiên `--measure` làm lưới an toàn. ⏸️ **TOÀN BỘ 7 task ghi dữ liệu đã `Disabled` lúc 2026-09-03 ~08:55** *(quyết định chủ dự án: giai đoạn này ưu tiên dev, đã có đủ phiên 27/08 · 28/08 + sáng 03/09 làm bằng chứng)*. Hai tiến trình đang chạy (`dlck-ingester`, `dlck-ingester-measure`) bị dừng giữa phiên. Ba đồng hồ mất dữ liệu (tick · frame thô · OMO) vì thế **cùng chạy**; điều kiện bật lại và mốc rà do **mục [4d] ở §2** sở hữu. ⚠️ `scripts/register-tasks.ps1` tự `Enable` `dlck-ingester` khi chạy lại — đừng chạy script đó trong lúc tạm dừng. `api` chưa bắt đầu. **[7] ETL hằng ngày tách thành chuỗi lát; lát 1 `etl screener` ✅ XONG 2026-09-03** — đã merge `main`, chạy thật sau phiên **1.541 dòng/ngày**, 351 test xanh ([spec](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) · [ledger](../90-records/plans/2026-09-03-screener-daily-etl/ledger.md)). **Lát 2 = lịch sự kiện, chưa bắt đầu** | [plans/2026-08-26-ingester-omo-first-slice/](../90-records/plans/2026-08-26-ingester-omo-first-slice/) |
 | **Realtime phái sinh** | ✅ **Đã đo 2026-08-26 trong phiên** — phái sinh đi chung topic `i`/`o10`/`t` với cổ phiếu (`EX="XHNF"`), không có kênh riêng, không có `openInterest` | [§5.1](#51--realtime-phái-sinh--đã-đo-2026-08-26-phiên-chiều) · [hồ sơ đo](../90-records/surveys/2026-08-26-bvsc-realtime-session/README.md) |
 
 ## 1. Việc chặn nhiều thứ nhất — làm trước
@@ -107,7 +107,7 @@ Phiên 2026-08-27 chạy cả hai: `t` khớp **205.130 = 205.130** và `ptm` kh
 🔴 **Thứ tự lát ĐÃ ĐẢO — chốt 2026-09-03 sau khi soi họ Snapshot và đo độ phủ lịch sự kiện.** Thứ tự cũ (giá → snapshot → lịch sự kiện) sai theo phụ thuộc thật:
 
 ```
-lát 1  screener       ✅ xong
+lát 1  screener       ✅ XONG 2026-09-03, đã merge main
 lát 2  lịch sự kiện   ← ĐẨY LÊN. ~10 lời gọi/ngày, rẻ nhất cả nhóm, mà MỞ KHOÁ
                         cho snapshot, BCTC và re-crawl giá theo sự kiện quyền
 lát 3  giá theo ngày  1.974 lời gọi; cần lớp core/http + đo nhịp 8 luồng
@@ -117,7 +117,28 @@ sau đó BCTC           kích hoạt theo `getCorporateEarning` của lát 2
 
 **Hai quyết định kèm theo, cùng ngày:** (a) bỏ hai kind chấm điểm `company_score` và `rate_indicator` khỏi `snapshot_daily` — migration `0015`, vì nội dung thật là điểm chữ (`C`/`B`/`D`) và cờ `0.00`/`1.00`, đúng nhóm *không dùng điểm bên thứ ba* đã loại; (b) họ Snapshot **không chạy hằng ngày** mà kích hoạt theo sự kiện kèm quét sàn, vì **không trường nào trong 18 trường ta lưu đổi theo ngày**. Ngân sách ngày vì thế xuống **≈ 2.300 lời gọi** thay vì ~6.000 — bài toán nhịp 8 luồng của lát giá dễ thở hơn nhiều so với ước lượng cũ.
 
-⚠️ **Lịch sự kiện KHÔNG đầy đủ tuyệt đối** — đo 2026-09-03 bằng nguồn độc lập ([`08-fiin-event-calendar.md`](../10-sources/market/08-fiin-event-calendar.md)): `ShareIssuance` 100 % · `Earning` 96,4 % *(sót chỉ ở ≤ 2022)* · `CashDividend` 98,6 % **có sót ở vùng gần đây**. Nên trigger phải đi kèm quét sàn; quét sàn đồng thời là **thước đo** lỗ của lịch. Lát 2 (giá) mới cần lớp `core/http` + token bucket và phép đo nhịp 8 luồng mà [§10.6 quy ước chung](../10-sources/market/00-conventions.md) đòi.
+⚠️ **Lịch sự kiện KHÔNG đầy đủ tuyệt đối** — đo 2026-09-03 bằng nguồn độc lập ([`08-fiin-event-calendar.md`](../10-sources/market/08-fiin-event-calendar.md)): `ShareIssuance` 100 % · `Earning` 96,4 % *(sót chỉ ở ≤ 2022)* · `CashDividend` 98,6 % **có sót ở vùng gần đây**. Nên trigger phải đi kèm quét sàn; quét sàn đồng thời là **thước đo** lỗ của lịch.
+
+### Điểm vào cho lát 2 — đọc trước khi bắt đầu
+
+**Trạng thái bàn giao 2026-09-03:** `main` sạch sau merge lát 1 · **351 test xanh** · 8 task Scheduler đều `Disabled` (xem [4d]) · migration head `0015`.
+
+**Lát 2 = `etl events`** — bốn endpoint `Calendar/GetCorporate*` (`Earning` · `CashDividend` · `StockDividend` · `ShareIssuance`) → `market.corporate_event`. Bảng đã có từ migration `0004` với khoá tự nhiên 7 cột, **không cần migration mới**.
+
+| Cần biết trước | Ở đâu |
+|---|---|
+| Tài liệu endpoint + bẫy `Ticker=` trả **toàn bộ** 23.434 bản ghi (phải dùng `OrganCode=`) | [`08-fiin-event-calendar.md`](../10-sources/market/08-fiin-event-calendar.md) |
+| **Độ đầy đủ đã đo 2026-09-03** — `ShareIssuance` 100 % · `Earning` 96,4 % *(sót chỉ ở ≤ 2022)* · `CashDividend` 98,6 % **có sót gần đây** | cùng file, mục *Độ ĐẦY ĐỦ của lịch* |
+| Khuôn job để nhân bản: fetch → normalize → merge → **guard trước commit** → apply → `close_run` | `backend/etl/screener_*.py` — lát 1, mới nhất, đã qua review toàn nhánh |
+| Vì sao lát 2 đứng trước lát giá và lát snapshot | [`market-data-store.md` §4.1b](../20-design/market-data-store.md) |
+
+**Ba bài học của lát 1, áp thẳng được:**
+
+1. **Đừng suy nghĩa từ TÊN khoá — đọc GIÁ TRỊ.** Lát 1 mắc hai lần trong một ngày: `roe` tưởng là tỷ số, hoá ra là nhãn `'Tốt'`/`'Trung bình'`; `isa3`/`isa5` tưởng là tỷ số, hoá ra là dòng kết quả kinh doanh trùng BCTC.
+2. **Guard đặt ngưỡng cách xa vùng dữ liệu thật, đừng sát mép.** Ngưỡng *"có phiên"* ban đầu đặt 50 % từ mẫu **trang 1**; lượt chạy thật cho thấy giữa phiên toàn thị trường chỉ **53,8 %** — hơn ngưỡng 3,8 điểm. Hạ về 20 % sau khi đo đủ ba mức **0 / 53,8 / 100 %** trong cùng một ngày.
+3. **Bộ đếm lỗi phải nêu tên, không chỉ đếm.** `unmapped: 4` để suốt buổi không biết mã nào, đoán sai hai lần; thêm `unmapped_tickers` xong là truy ra nguyên nhân trong đúng một truy vấn.
+
+**Việc còn treo của lát 1** *(không chặn lát 2)*: **AC5** — chạy `etl screener` **trước 09:00** một ngày bất kỳ, phải bị guard từ chối với lý do *"không phải ngày giao dịch"*; **AC6** — đăng ký `dlck-screener` (đã thêm vào `scripts/register-tasks.ps1`, cần cửa sổ **Run as Administrator**, đăng ký xong **để `Disabled`** cùng cả đội). Lát 2 (giá) mới cần lớp `core/http` + token bucket và phép đo nhịp 8 luồng mà [§10.6 quy ước chung](../10-sources/market/00-conventions.md) đòi.
 
 ## 4. Việc đã có đáp án, chỉ cần áp dụng
 

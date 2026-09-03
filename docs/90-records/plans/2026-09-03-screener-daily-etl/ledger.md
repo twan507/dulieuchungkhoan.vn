@@ -134,3 +134,28 @@ Kho sau hai lượt: **1.541 dòng · 1.541 mã · 1 trading_date** — không �
 **Mục treo mới cho refdata:** *"vắng khỏi `/quotes` của BVSC" ≠ "đã huỷ niêm yết"* — cần một luật phân biệt, hoặc một `status` thứ ba (kiểu `not_on_bvsc`). Chưa gấp: 4 mã, và hệ quả chỉ là screener không ghi được 4 dòng/ngày.
 
 **Trạng thái AC:** AC1 ✅ · AC2 ✅ (351 passed, 2 skipped) · **AC3 ✅** · **AC4 ✅** · AC5 ⏳ *(chạy trước 09:00 mai, phải bị từ chối)* · AC6 ⏳ *(cần cửa sổ admin của chủ dự án)*.
+
+## Đóng lát — 2026-09-03 15:15
+
+Nhánh `feat/screener-daily-etl` (25 commit) đã **merge `main`** bằng `--no-ff`, nhánh đã xoá. `main` ahead origin 35 commit — **push là việc của chủ dự án**.
+
+| AC | Trạng thái | Bằng chứng |
+|---|---|---|
+| AC1 bảng chọn 193/193 | ✅ | keep **75** *(đếm thật; "80" là ước lượng nhóm 2026-08-14, không ép)*, `thiếu = []`, §7.3 *chưa liệt kê* = 0, generator sinh lại **byte-bằng-byte** |
+| AC2 test | ✅ | **351 passed, 2 skipped** — controller tự chạy, kể cả lượt **đảo thứ tự file** |
+| AC3 lượt thật sau 15:05 | ✅ | 15:06, exit 0, 1.541 dòng, 52 trang, 67 s, `priced` 1545/1545 |
+| AC4 idempotent | ✅ | 15:08, lượt hai, kho không đổi |
+| AC5 ngày không giao dịch | ⏳ **mở** | chạy trước 09:00 một ngày bất kỳ; phải exit 1, 0 dòng |
+| AC6 đăng ký task | ⏳ **mở** | `dlck-screener` 15:20 đã thêm vào `scripts/register-tasks.ps1`; cần cửa sổ admin, đăng ký xong **để `Disabled`** |
+
+**Ba lỗi của chính tôi mà quá trình bắt được, đều trước khi ghi lịch sử:**
+
+1. Spec bỏ sót việc hai bản của cùng mã có **khác nhau không** (`rtq12`/`rtq27`/`rtq83` lệch 52/90 cặp, có đổi dấu) — review cuối bắt.
+2. 4 khoá `roe` `grossMargin` `profitGrowth` `revenueGrowth` là **nhãn xếp hạng chuỗi**, không phải tỷ số — suy nghĩa từ tên khoá, đúng bẫy §3.4.
+3. `isa3`/`isa5` là **dòng kết quả kinh doanh**, trùng BCTC theo luật đang đứng — cũng suy từ tên khoá.
+
+Cả ba lộ ra **trước lượt AC3**, nên không dòng dữ liệu nào mang hình dạng sai. Bài học đã chép vào [roadmap §3 *Điểm vào cho lát 2*](../../../00-overview/roadmap.md).
+
+**Nợ kỹ thuật ghi rõ, không giấu:** `screener_normalize` đọc `docs/20-design/market-field-selection.json` **lúc import** bằng đường dẫn tương đối gốc repo — đúng cho Task Scheduler chạy từ checkout, **hỏng khi đóng gói vào container** (`deploy/backend.Dockerfile` không mount `docs/`). Đã ghi ở spec, xử lý khi đóng gói ETL.
+
+**Mục treo mới cho refdata** *(không thuộc lát này)*: *"vắng khỏi `/quotes` BVSC" ≠ "đã huỷ niêm yết"* — 4 mã `EGL` `FUCTVGF4` `FUCTVGF5` `FUEKIVND` đang `delisted` mà vẫn có giá đóng cửa.
