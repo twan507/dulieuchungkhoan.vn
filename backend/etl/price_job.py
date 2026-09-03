@@ -22,6 +22,7 @@ from etl import omo_store, price_fetch, price_guard, price_normalize, price_stor
 
 log = logging.getLogger("etl.price")
 VN = ZoneInfo("Asia/Ho_Chi_Minh")
+_wall_clock = time.time      # seam cho test: patch toàn cục time.time thì SQLAlchemy pool cũng ăn tick
 
 
 class GuardRefused(Exception):
@@ -61,7 +62,10 @@ def run(backfill: bool = False, codes: list[str] | None = None,
     if not url:
         log.error("thiếu ETL_DATABASE_URL")
         return 2
-    engine = sa.create_engine(url)
+    # pool_pre_ping: máy ngủ theo lịch (02:00) giữa lượt — kết nối nằm trong pool suốt 38 phút fetch
+    # thường chết sau giấc ngủ; không pre-ping thì load_baseline/giao dịch ghi ném OperationalError
+    # sau khi đã gọi xong 1.523 lời gọi. Fetch tự sống qua giấc ngủ nhờ retry exception vận chuyển.
+    engine = sa.create_engine(url, pool_pre_ping=True)
     try:
         return _backfill(engine, codes, max_minutes) if backfill else _daily(engine, codes)
     finally:
@@ -144,7 +148,9 @@ def _resume_point(todo, cursor):
 def _backfill(engine, tickers: list[str] | None, max_minutes: float | None) -> int:
     run_id = omo_store.open_run(engine, price_store.JOB_BACKFILL)
     t0 = time.monotonic()
-    deadline = None if max_minutes is None else t0 + max_minutes * 60
+    # Hạn theo đồng hồ TƯỜNG, không theo monotonic: máy ngủ 4 giờ giữa chừng thì thức dậy là hết
+    # ngân sách ⇒ dừng sau mã đang dở, không đem phần ngân sách còn lại chạy lấn vào giờ giao dịch.
+    deadline = None if max_minutes is None else _wall_clock() + max_minutes * 60
     stats: dict = {"cursor": None, "codes_done": 0, "pages": 0, "rows_sent": 0, "rows_changed": 0,
                    "dup_dates": 0, "raw_close_mismatch": 0, "raw_close_mismatch_sample": [],
                    "invalid_tickers": [], "failed_tickers": [], "retries": 0,
@@ -199,7 +205,7 @@ def _backfill(engine, tickers: list[str] | None, max_minutes: float | None) -> i
                 if i % 20 == 0:
                     log.info("backfill %d/%d mã, %d trang, %d dòng đổi", i, len(todo), stats["pages"],
                              stats["rows_changed"])
-                if deadline is not None and time.monotonic() >= deadline and i < len(todo):
+                if deadline is not None and _wall_clock() >= deadline and i < len(todo):
                     stats["budget_hit"] = True
                     break
             else:

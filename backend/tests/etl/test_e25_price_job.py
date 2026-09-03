@@ -208,6 +208,36 @@ def test_codes_without_any_organ_code_fail_loudly_not_as_a_source_outage(price_d
     assert "organCode" in err and "nguồn hỏng" not in err
 
 
+def test_engine_pre_pings_pooled_connections_that_died_while_the_machine_slept(price_db, monkeypatch):
+    """Máy ngủ theo lịch 02:00 (chủ dự án): kết nối Postgres nằm trong pool suốt 38 phút fetch
+    thường chết sau giấc ngủ (Docker/WSL reset mạng). pool_pre_ping thay nó trước khi dùng, thay vì
+    ném OperationalError ở load_baseline/giao dịch ghi sau khi đã gọi xong 1.523 lời gọi."""
+    _wire(monkeypatch)
+    seen = {}
+    real_create = price_job.sa.create_engine
+
+    def create_engine_recording(url, **kw):
+        seen.update(kw)
+        return real_create(url, **kw)
+
+    monkeypatch.setattr(price_job.sa, "create_engine", create_engine_recording)
+    assert price_job.run(codes=["ZZA"]) == 0
+    assert seen.get("pool_pre_ping") is True
+
+
+def test_backfill_budget_counts_wall_clock_so_a_sleep_ends_the_run_at_wake(price_db, monkeypatch):
+    """Ngân sách --max-minutes tính theo đồng hồ TƯỜNG: máy ngủ 4 giờ giữa chừng thì thức dậy là hết
+    ngân sách ⇒ dừng sau mã đang dở, không chạy lấn vào giờ giao dịch với phần ngân sách còn lại."""
+    _wire(monkeypatch)
+    ticks = iter([1_000.0] + [1_000.0 + 4 * 3600.0] * 50)      # lần gọi đầu: đặt hạn; các lần sau: đã ngủ 4 h
+    # Patch seam của job, KHÔNG patch time.time toàn cục: SQLAlchemy pool cũng gọi time.time() khi
+    # tạo kết nối (open_run chạy trước khi đặt hạn) và ăn mất tick đầu ⇒ hạn đặt sai, test xanh giả.
+    monkeypatch.setattr(price_job, "_wall_clock", lambda: next(ticks))
+    assert price_job.run(backfill=True, max_minutes=60) == 0
+    _, s, _ = _last(price_db, "market.price_backfill")
+    assert s["codes_done"] == 1 and s["budget_hit"] is True and s["pass_complete"] is False
+
+
 def test_cli_parses_backfill_codes_and_max_minutes(monkeypatch):
     seen = {}
     monkeypatch.setattr("etl.price_job.run", lambda **kw: seen.update(kw) or 0)

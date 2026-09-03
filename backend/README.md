@@ -145,11 +145,15 @@ Bốn bộ đếm "không có dữ liệu" của lượt hằng ngày, đều n�
 (cổ phiếu niêm yết chưa có `issuer_external_id('fiintrade')` — không gọi được, không tính vào `codes`). Bất biến:
 `with_data + empty + invalid + failed = codes`; guard (i) cộng ba số giữa vào tử số.
 
-🔴 **Backfill qua đêm đòi máy KHÔNG NGỦ.** Sự cố 2026-09-04 02:00: Windows vào sleep giữa một lời gọi, thức lúc
-05:56 ⇒ `httpx.ReadTimeout`; lượt đó ghi `failed` (con trỏ giữ nguyên nhờ `save_progress` sau từng mã, lượt sau đi
-tiếp) và từ commit `e7f80f6` timeout/đứt kết nối được thử lại 3 lần như response xấu thay vì giết cả lượt. Nhưng
-không code nào chống được máy ngủ 4 tiếng: trước khi chạy `--backfill --max-minutes 600` phải tắt sleep (Power &
-sleep → Never) hoặc chạy lúc có người. Lượt hằng ngày 15:40 (~38 phút) không bị vì máy đang dùng.
+**Máy ngủ theo lịch (02:00) giữa lượt — job sống qua được, thiết kế cho đúng ca này** *(chủ dự án đặt lịch ngủ đêm;
+máy không tự ngủ vì nhàn rỗi)*. Sự cố 2026-09-04 02:00 lộ ba chỗ hở, nay đóng cả ba: (1) lời gọi HTTP treo qua giấc
+ngủ thức dậy thành `httpx.ReadTimeout` — từ `e7f80f6` được thử lại 3 lần như response xấu; (2) kết nối Postgres nằm
+trong pool suốt 38 phút fetch chết sau giấc ngủ — `pool_pre_ping=True` thay nó trước khi dùng; (3) ngân sách
+`--max-minutes` tính theo **đồng hồ tường**, giờ ngủ vẫn tính ⇒ thức dậy là dừng sau mã đang dở, không chạy lấn vào
+giờ giao dịch; con trỏ đã lưu sau từng mã nên lượt sau nối tiếp. Cách chạy backfill qua đêm: `--backfill --max-minutes N`
+với N chọn sao cho **hết trước giờ ngủ** (ví dụ bắt đầu 20:00 thì N ≤ 350) — máy ngủ giữa chừng cũng không hỏng, chỉ
+là lượt đó dừng sớm. Giữ máy thức bằng `SetThreadExecutionState` **không** dùng được: nó chỉ chặn ngủ do nhàn rỗi,
+không chặn được lệnh suspend theo lịch.
 
 Lượt `--codes` ghi `stats.subset = true`: **không** làm mốc cho guard (ii)/(iv), **không** đụng
 `data_domain_state('market.price')`, **không** dời con trỏ backfill. Backfill hết vòng (`pass_complete`)
