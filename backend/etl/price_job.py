@@ -41,6 +41,9 @@ def run(backfill: bool = False, codes: list[str] | None = None,
         max_minutes: float | None = None) -> int:
     logging.basicConfig(level=logging.INFO, stream=sys.stderr,
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    # httpx ghi INFO cho TỪNG request — 1.523 dòng "HTTP Request: GET …" mỗi ngày trong price.log,
+    # lấp mất dòng tiến độ và dòng cảnh báo của chính job. Các job trước chỉ gọi ≤ 52 lần nên chưa lộ.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     load_dotenv()
     url = os.environ.get("ETL_DATABASE_URL")
     if not url:
