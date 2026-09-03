@@ -179,7 +179,7 @@ if ($script:disabledBefore.Count -gt 0) {
 }
 
 if ($LogonType -eq "S4U") {
-    Write-Host "`n✅ Cả 7 task đăng ký S4U (đã soi Principal thật từng task, không chỉ soi lệnh):"
+    Write-Host "`n✅ Cả 8 task đăng ký S4U (đã soi Principal thật từng task, không chỉ soi lệnh):"
     Write-Host "   chạy cả khi không đăng nhập, KHÔNG hiện cửa sổ cmd để bấm nhầm."
 } else {
     Write-Host "`n⚠️ Task chạy với tài khoản đang đăng nhập (Interactive). Muốn chạy cả khi"

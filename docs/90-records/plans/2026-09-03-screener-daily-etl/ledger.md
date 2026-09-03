@@ -146,7 +146,7 @@ Nhánh `feat/screener-daily-etl` (25 commit) đã **merge `main`** bằng `--no-
 | AC3 lượt thật sau 15:05 | ✅ | 15:06, exit 0, 1.541 dòng, 52 trang, 67 s, `priced` 1545/1545 |
 | AC4 idempotent | ✅ | 15:08, lượt hai, kho không đổi |
 | AC5 ngày không giao dịch | ⏳ **mở** | chạy trước 09:00 một ngày bất kỳ; phải exit 1, 0 dòng |
-| AC6 đăng ký task | ⏳ **mở** | `dlck-screener` 15:20 đã thêm vào `scripts/register-tasks.ps1`; cần cửa sổ admin, đăng ký xong **để `Disabled`** |
+| **AC6 đăng ký task** | ✅ **2026-09-03 15:2x** | chủ dự án chạy `register-tasks.ps1 -LogonType S4U` trong cửa sổ admin, nối liền lệnh tắt. Nghiệm thu bằng soi **Principal thật**, không tin lệnh vừa gọi — xem dưới |
 
 **Ba lỗi của chính tôi mà quá trình bắt được, đều trước khi ghi lịch sử:**
 
@@ -159,3 +159,32 @@ Cả ba lộ ra **trước lượt AC3**, nên không dòng dữ liệu nào man
 **Nợ kỹ thuật ghi rõ, không giấu:** `screener_normalize` đọc `docs/20-design/market-field-selection.json` **lúc import** bằng đường dẫn tương đối gốc repo — đúng cho Task Scheduler chạy từ checkout, **hỏng khi đóng gói vào container** (`deploy/backend.Dockerfile` không mount `docs/`). Đã ghi ở spec, xử lý khi đóng gói ETL.
 
 **Mục treo mới cho refdata** *(không thuộc lát này)*: *"vắng khỏi `/quotes` BVSC" ≠ "đã huỷ niêm yết"* — 4 mã `EGL` `FUCTVGF4` `FUCTVGF5` `FUEKIVND` đang `delisted` mà vẫn có giá đóng cửa.
+
+
+## AC6 — đăng ký `dlck-screener`, nghiệm thu 2026-09-03
+
+Chủ dự án chạy trong cửa sổ admin, **nối liền đăng ký với lệnh tắt trong một dòng** (bắt buộc: `-Force` bật lại mọi task đang cố ý `Disabled`, và lúc chạy `dlck-omo-1530` chỉ còn 6 phút):
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File …\scriptsegister-tasks.ps1 -LogonType S4U; Get-ScheduledTask -TaskName 'dlck-*' | Disable-ScheduledTask | Out-Null
+```
+
+Script in đủ 8 dòng `+ dlck-…`, không `throw`, và cảnh báo đúng 7 task bị `-Force` bật lại. Soi Principal thật từng task:
+
+```
+TaskName                 State LogonType UserId RunLevel
+dlck-ingester         Disabled       S4U tuanb   Limited
+dlck-ingester-measure Disabled       S4U tuanb   Limited
+dlck-omo-1130         Disabled       S4U tuanb   Limited
+dlck-omo-1530         Disabled       S4U tuanb   Limited
+dlck-omo-1800         Disabled       S4U tuanb   Limited
+dlck-omo-2130         Disabled       S4U tuanb   Limited
+dlck-refdata          Disabled       S4U tuanb   Limited
+dlck-screener         Disabled       S4U tuanb   Limited      ← MỚI
+```
+
+`dlck-screener` lệnh: `python -m etl screener`, log về `dlck-runtime\logs\screener.log`. Trigger `StartBoundary 15:20`, `DaysOfWeek = 62` = 2+4+8+16+32 ⇒ **Thứ 2→6**, đúng.
+
+🔴 **Một lỗi bắt được nhờ đọc output thay vì tin nó:** dòng tổng kết cuối script còn ghi *"Cả **7** task đăng ký S4U"* trong khi dòng ngay trên đã là *"cả **8** task"* — con số cứng sót lại lúc thêm `dlck-screener`. Đã sửa. Bài học: **thêm task thì phải quét MỌI con số cứng trong script**, không chỉ chỗ hiển nhiên.
+
+**Cả 8 task giữ `Disabled`** theo [4d] — giai đoạn dev. AC5 vẫn mở: chạy `etl screener` trước 09:00 một ngày bất kỳ, phải bị từ chối.
