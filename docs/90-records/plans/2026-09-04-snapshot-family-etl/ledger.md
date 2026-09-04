@@ -225,3 +225,5 @@ Lượt vá cho `ShareIssuance` bắn thêm kind `valuation` là đúng yêu c�
 | Dữ liệu đã nạp | `snapshot_daily` **246 dòng**/2026-09-04 · `ops.snapshot_check` 246 dòng |
 | Task Scheduler | **không đăng ký** — lịch thuộc lát 7, đúng phạm vi spec §3.2 |
 | Còn nợ | **AC5 nửa qua-mốc-đóng-cửa** — nguồn chưa nạp tính tới 16:42 ngày 04/09, đóng bằng một lệnh (§1d) · một Minor: import nằm giữa file test *(do plan viết "thêm vào cuối file")* |
+
+*Kiểm lại 22:10 ngày 04/09 (cuối lát 5): AAA vẫn 7.090 — sau 7 giờ kể từ đóng cửa nguồn chưa nạp phiên 04/09. Trả lời câu "cuối ngày hay qua đêm": **qua đêm** (hoặc muộn hơn). AC5 chạy sáng 05/09 với đúng lệnh trên; lát 7 xếp lịch `snapshot` sau 18:10 chỉ đủ cho trigger, phần giá bám theo phiên sẽ phản ánh ở lượt hôm sau.*
