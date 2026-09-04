@@ -1,0 +1,378 @@
+{
+ "page": 1,
+ "pageSize": 0,
+ "totalCount": 1,
+ "items": [
+  {
+   "organCode": "ASECO32",
+   "priceEarningRatio": {
+    "ratioYears": [
+     {
+      "yearReport": 2025,
+      "ratioValue": 11.0488925
+     },
+     {
+      "yearReport": 2024,
+      "ratioValue": 5.73173024
+     },
+     {
+      "yearReport": 2023,
+      "ratioValue": 6.86362831
+     },
+     {
+      "yearReport": 2022,
+      "ratioValue": 6.30544306
+     },
+     {
+      "yearReport": 2021,
+      "ratioValue": 117.44700756
+     },
+     {
+      "yearReport": 2020,
+      "ratioValue": 4.98788003
+     },
+     {
+      "yearReport": 2019,
+      "ratioValue": 6.23357932
+     },
+     {
+      "yearReport": 2018,
+      "ratioValue": 4.98609104
+     },
+     {
+      "yearReport": 2017,
+      "ratioValue": 5.85164549
+     }
+    ],
+    "ratioTTM": 3.84963858
+   },
+   "dividendYield": {
+    "ratioYears": [
+     {
+      "yearReport": 2025,
+      "ratioValue": 0.08680556
+     },
+     {
+      "yearReport": 2024,
+      "ratioValue": 0.06646526
+     },
+     {
+      "yearReport": 2023,
+      "ratioValue": 0.0875
+     },
+     {
+      "yearReport": 2022,
+      "ratioValue": 0.088235
+     },
+     {
+      "yearReport": 2021,
+      "ratioValue": 0.118589
+     },
+     {
+      "yearReport": 2020,
+      "ratioValue": 0.070287
+     },
+     {
+      "yearReport": 2019,
+      "ratioValue": 0.057142
+     },
+     {
+      "yearReport": 2018,
+      "ratioValue": 0.06962
+     },
+     {
+      "yearReport": 2017,
+      "ratioValue": 0.06875
+     }
+    ],
+    "ratioTTM": 0.08680556
+   },
+   "eps": {
+    "ratioYears": [
+     {
+      "yearReport": 2025,
+      "ratioValue": 2606.59609176
+     },
+     {
+      "yearReport": 2024,
+      "ratioValue": 5774.87051809
+     },
+     {
+      "yearReport": 2023,
+      "ratioValue": 5827.82141
+     },
+     {
+      "yearReport": 2022,
+      "ratioValue": 5392.16668309
+     },
+     {
+      "yearReport": 2021,
+      "ratioValue": 265.65172368
+     },
+     {
+      "yearReport": 2020,
+      "ratioValue": 6192.20987765
+     },
+     {
+      "yearReport": 2019,
+      "ratioValue": 5871.42605397
+     },
+     {
+      "yearReport": 2018,
+      "ratioValue": 6337.62997235
+     },
+     {
+      "yearReport": 2017,
+      "ratioValue": 5212.20912147
+     }
+    ],
+    "ratioTTM": 7481.22178882
+   },
+   "dps": {
+    "ratioYears": [
+     {
+      "yearReport": 2025,
+      "ratioValue": 2500.0
+     },
+     {
+      "yearReport": 2024,
+      "ratioValue": 2200.0
+     },
+     {
+      "yearReport": 2023,
+      "ratioValue": 3500.0
+     },
+     {
+      "yearReport": 2022,
+      "ratioValue": 3000.0
+     },
+     {
+      "yearReport": 2021,
+      "ratioValue": 3700.0
+     },
+     {
+      "yearReport": 2020,
+      "ratioValue": 2200.0
+     },
+     {
+      "yearReport": 2019,
+      "ratioValue": 2200.0
+     },
+     {
+      "yearReport": 2018,
+      "ratioValue": 2200.0
+     },
+     {
+      "yearReport": 2017,
+      "ratioValue": 2200.0
+     }
+    ],
+    "ratioTTM": 2500.0
+   },
+   "dividendPayoutRatio": {
+    "ratioYears": [
+     {
+      "yearReport": 2025,
+      "ratioValue": 0.33417002
+     },
+     {
+      "yearReport": 2024,
+      "ratioValue": 0.38096092
+     },
+     {
+      "yearReport": 2023,
+      "ratioValue": 0.60056748
+     },
+     {
+      "yearReport": 2022,
+      "ratioValue": 0.55636262
+     },
+     {
+      "yearReport": 2021,
+      "ratioValue": 0.72697314
+     },
+     {
+      "yearReport": 2020,
+      "ratioValue": 0.35528512
+     },
+     {
+      "yearReport": 2019,
+      "ratioValue": 0.37469602
+     },
+     {
+      "yearReport": 2018,
+      "ratioValue": 0.34713292
+     },
+     {
+      "yearReport": 2017,
+      "ratioValue": 0.4220859
+     }
+    ],
+    "ratioTTM": 0.33417002
+   },
+   "cashDividendPayouts": [
+    {
+     "valuePerShare": 2200.0,
+     "dividendYear": 2014,
+     "exrightYear": 2014,
+     "exrightMonth": 12
+    },
+    {
+     "valuePerShare": 2200.0,
+     "dividendYear": 2015,
+     "exrightYear": 2015,
+     "exrightMonth": 12
+    },
+    {
+     "valuePerShare": 2200.0,
+     "dividendYear": 2016,
+     "exrightYear": 2016,
+     "exrightMonth": 12
+    },
+    {
+     "valuePerShare": 2200.0,
+     "dividendYear": 2017,
+     "exrightYear": 2017,
+     "exrightMonth": 12
+    },
+    {
+     "valuePerShare": 1500.0,
+     "dividendYear": 2018,
+     "exrightYear": 2019,
+     "exrightMonth": 1
+    },
+    {
+     "valuePerShare": 700.0,
+     "dividendYear": 2018,
+     "exrightYear": 2019,
+     "exrightMonth": 6
+    },
+    {
+     "valuePerShare": 1500.0,
+     "dividendYear": 2019,
+     "exrightYear": 2019,
+     "exrightMonth": 12
+    },
+    {
+     "valuePerShare": 700.0,
+     "dividendYear": 2019,
+     "exrightYear": 2020,
+     "exrightMonth": 6
+    },
+    {
+     "valuePerShare": 1500.0,
+     "dividendYear": 2020,
+     "exrightYear": 2021,
+     "exrightMonth": 1
+    },
+    {
+     "valuePerShare": 700.0,
+     "dividendYear": 2020,
+     "exrightYear": 2021,
+     "exrightMonth": 7
+    },
+    {
+     "valuePerShare": 1000.0,
+     "dividendYear": 2021,
+     "exrightYear": 2021,
+     "exrightMonth": 12
+    },
+    {
+     "valuePerShare": 2700.0,
+     "dividendYear": 2021,
+     "exrightYear": 2022,
+     "exrightMonth": 8
+    },
+    {
+     "valuePerShare": 1000.0,
+     "dividendYear": 2022,
+     "exrightYear": 2022,
+     "exrightMonth": 12
+    },
+    {
+     "valuePerShare": 2000.0,
+     "dividendYear": 2022,
+     "exrightYear": 2023,
+     "exrightMonth": 8
+    },
+    {
+     "valuePerShare": 1000.0,
+     "dividendYear": 2023,
+     "exrightYear": 2023,
+     "exrightMonth": 12
+    },
+    {
+     "valuePerShare": 2500.0,
+     "dividendYear": 2023,
+     "exrightYear": 2024,
+     "exrightMonth": 8
+    },
+    {
+     "valuePerShare": 1000.0,
+     "dividendYear": 2024,
+     "exrightYear": 2024,
+     "exrightMonth": 12
+    },
+    {
+     "valuePerShare": 1200.0,
+     "dividendYear": 2024,
+     "exrightYear": 2025,
+     "exrightMonth": 7
+    },
+    {
+     "valuePerShare": 1000.0,
+     "dividendYear": 2025,
+     "exrightYear": 2025,
+     "exrightMonth": 12
+    },
+    {
+     "valuePerShare": 1500.0,
+     "dividendYear": 2025,
+     "exrightYear": 2026,
+     "exrightMonth": 7
+    }
+   ],
+   "cashDividendPlans": [
+    {
+     "dividendYear": 2026,
+     "valuePerShare": 2200.0
+    },
+    {
+     "dividendYear": 2025,
+     "valuePerShare": 2200.0
+    },
+    {
+     "dividendYear": 2024,
+     "valuePerShare": 2200.0
+    },
+    {
+     "dividendYear": 2023,
+     "valuePerShare": 3500.0
+    },
+    {
+     "dividendYear": 2022,
+     "valuePerShare": 3000.0
+    },
+    {
+     "dividendYear": 2021,
+     "valuePerShare": 3700.0
+    },
+    {
+     "dividendYear": 2020,
+     "valuePerShare": 2200.0
+    },
+    {
+     "dividendYear": 2019,
+     "valuePerShare": 2200.0
+    },
+    {
+     "dividendYear": 2018,
+     "valuePerShare": 2200.0
+    }
+   ]
+  }
+ ],
+ "packageId": null,
+ "status": "Success",
+ "errors": null
+}

@@ -1,0 +1,474 @@
+{
+ "sample": [
+  {
+   "issuer_id": "811",
+   "organ_code": "NASB",
+   "ticker": "BAB",
+   "com_type_code": "NH",
+   "last_close": "10700.0",
+   "last_date": "2026-09-03"
+  },
+  {
+   "issuer_id": "480",
+   "organ_code": "GDB",
+   "ticker": "BVB",
+   "com_type_code": "NH",
+   "last_close": "11900.0",
+   "last_date": "2026-09-03"
+  },
+  {
+   "issuer_id": "125",
+   "organ_code": "ASECO32",
+   "ticker": "A32",
+   "com_type_code": "CT",
+   "last_close": "28800.0",
+   "last_date": "2026-09-03"
+  },
+  {
+   "issuer_id": "53",
+   "organ_code": "2400379403",
+   "ticker": "AAH",
+   "com_type_code": "CT",
+   "last_close": "1900.0",
+   "last_date": "2026-09-03"
+  },
+  {
+   "issuer_id": "11",
+   "organ_code": "0109510866",
+   "ticker": "AAN",
+   "com_type_code": "CT",
+   "last_close": "16100.0",
+   "last_date": "2026-09-03"
+  },
+  {
+   "issuer_id": "1450",
+   "organ_code": "VMGC",
+   "ticker": "ABC",
+   "com_type_code": "CT",
+   "last_close": "10100.0",
+   "last_date": "2026-09-03"
+  },
+  {
+   "issuer_id": "523",
+   "organ_code": "HAMIS",
+   "ticker": "AAS",
+   "com_type_code": "CK",
+   "last_close": "8100.0",
+   "last_date": "2026-09-03"
+  },
+  {
+   "issuer_id": "82",
+   "organ_code": "ABSC",
+   "ticker": "ABW",
+   "com_type_code": "CK",
+   "last_close": "14300.0",
+   "last_date": "2026-09-03"
+  },
+  {
+   "issuer_id": "1455",
+   "organ_code": "VNAI",
+   "ticker": "AIC",
+   "com_type_code": "BH",
+   "last_close": "8100.0",
+   "last_date": "2026-09-03"
+  }
+ ],
+ "calls": [
+  {
+   "name": "snapshot",
+   "http": 200,
+   "ms": 695,
+   "bytes": 8842,
+   "status_field": 0,
+   "ticker": "BAB",
+   "organ": "NASB",
+   "com_type": "NH",
+   "endpoint": "GetSnapshot"
+  },
+  {
+   "name": "ownership",
+   "http": 200,
+   "ms": 91,
+   "bytes": 19604,
+   "status_field": "Success",
+   "ticker": "BAB",
+   "organ": "NASB",
+   "com_type": "NH",
+   "endpoint": "ownership"
+  },
+  {
+   "name": "dividend",
+   "http": 200,
+   "ms": 231,
+   "bytes": 3159,
+   "status_field": "Success",
+   "ticker": "BAB",
+   "organ": "NASB",
+   "com_type": "NH",
+   "endpoint": "dividend"
+  },
+  {
+   "name": "valuation",
+   "http": 200,
+   "ms": 4567,
+   "bytes": 5701,
+   "status_field": "Success",
+   "ticker": "BAB",
+   "organ": "NASB",
+   "com_type": "NH",
+   "endpoint": "valuation"
+  },
+  {
+   "name": "snapshot",
+   "http": 200,
+   "ms": 416,
+   "bytes": 8761,
+   "status_field": 0,
+   "ticker": "BVB",
+   "organ": "GDB",
+   "com_type": "NH",
+   "endpoint": "GetSnapshot"
+  },
+  {
+   "name": "ownership",
+   "http": 200,
+   "ms": 32,
+   "bytes": 13063,
+   "status_field": "Success",
+   "ticker": "BVB",
+   "organ": "GDB",
+   "com_type": "NH",
+   "endpoint": "ownership"
+  },
+  {
+   "name": "dividend",
+   "http": 200,
+   "ms": 211,
+   "bytes": 3146,
+   "status_field": "Success",
+   "ticker": "BVB",
+   "organ": "GDB",
+   "com_type": "NH",
+   "endpoint": "dividend"
+  },
+  {
+   "name": "valuation",
+   "http": 200,
+   "ms": 12341,
+   "bytes": 606,
+   "status_field": "Failed",
+   "ticker": "BVB",
+   "organ": "GDB",
+   "com_type": "NH",
+   "endpoint": "valuation"
+  },
+  {
+   "name": "snapshot",
+   "http": 200,
+   "ms": 371,
+   "bytes": 4208,
+   "status_field": "Success",
+   "ticker": "A32",
+   "organ": "ASECO32",
+   "com_type": "CT",
+   "endpoint": "GetSnapshotNoneBank"
+  },
+  {
+   "name": "ownership",
+   "http": 200,
+   "ms": 85,
+   "bytes": 6449,
+   "status_field": "Success",
+   "ticker": "A32",
+   "organ": "ASECO32",
+   "com_type": "CT",
+   "endpoint": "ownership"
+  },
+  {
+   "name": "dividend",
+   "http": 200,
+   "ms": 154,
+   "bytes": 4607,
+   "status_field": "Success",
+   "ticker": "A32",
+   "organ": "ASECO32",
+   "com_type": "CT",
+   "endpoint": "dividend"
+  },
+  {
+   "name": "valuation",
+   "http": 200,
+   "ms": 313,
+   "bytes": 8759,
+   "status_field": "Success",
+   "ticker": "A32",
+   "organ": "ASECO32",
+   "com_type": "CT",
+   "endpoint": "valuation"
+  },
+  {
+   "name": "snapshot",
+   "http": 200,
+   "ms": 165,
+   "bytes": 11294,
+   "status_field": "Success",
+   "ticker": "AAH",
+   "organ": "2400379403",
+   "com_type": "CT",
+   "endpoint": "GetSnapshotNoneBank"
+  },
+  {
+   "name": "ownership",
+   "http": 200,
+   "ms": 31,
+   "bytes": 7796,
+   "status_field": "Success",
+   "ticker": "AAH",
+   "organ": "2400379403",
+   "com_type": "CT",
+   "endpoint": "ownership"
+  },
+  {
+   "name": "dividend",
+   "http": 200,
+   "ms": 56,
+   "bytes": 1145,
+   "status_field": "Success",
+   "ticker": "AAH",
+   "organ": "2400379403",
+   "com_type": "CT",
+   "endpoint": "dividend"
+  },
+  {
+   "name": "valuation",
+   "http": 200,
+   "ms": 638,
+   "bytes": 6317,
+   "status_field": "Success",
+   "ticker": "AAH",
+   "organ": "2400379403",
+   "com_type": "CT",
+   "endpoint": "valuation"
+  },
+  {
+   "name": "snapshot",
+   "http": 200,
+   "ms": 25,
+   "bytes": 6332,
+   "status_field": "Success",
+   "ticker": "AAN",
+   "organ": "0109510866",
+   "com_type": "CT",
+   "endpoint": "GetSnapshotNoneBank"
+  },
+  {
+   "name": "ownership",
+   "http": 200,
+   "ms": 51,
+   "bytes": 4742,
+   "status_field": "Success",
+   "ticker": "AAN",
+   "organ": "0109510866",
+   "com_type": "CT",
+   "endpoint": "ownership"
+  },
+  {
+   "name": "dividend",
+   "http": 200,
+   "ms": 19,
+   "bytes": 748,
+   "status_field": "Success",
+   "ticker": "AAN",
+   "organ": "0109510866",
+   "com_type": "CT",
+   "endpoint": "dividend"
+  },
+  {
+   "name": "valuation",
+   "http": 200,
+   "ms": 102,
+   "bytes": 15182,
+   "status_field": "Success",
+   "ticker": "AAN",
+   "organ": "0109510866",
+   "com_type": "CT",
+   "endpoint": "valuation"
+  },
+  {
+   "name": "snapshot",
+   "http": 200,
+   "ms": 110,
+   "bytes": 12372,
+   "status_field": "Success",
+   "ticker": "ABC",
+   "organ": "VMGC",
+   "com_type": "CT",
+   "endpoint": "GetSnapshotNoneBank"
+  },
+  {
+   "name": "ownership",
+   "http": 200,
+   "ms": 40,
+   "bytes": 5043,
+   "status_field": "Success",
+   "ticker": "ABC",
+   "organ": "VMGC",
+   "com_type": "CT",
+   "endpoint": "ownership"
+  },
+  {
+   "name": "dividend",
+   "http": 200,
+   "ms": 229,
+   "bytes": 4428,
+   "status_field": "Success",
+   "ticker": "ABC",
+   "organ": "VMGC",
+   "com_type": "CT",
+   "endpoint": "dividend"
+  },
+  {
+   "name": "valuation",
+   "http": 200,
+   "ms": 248,
+   "bytes": 1088,
+   "status_field": "Success",
+   "ticker": "ABC",
+   "organ": "VMGC",
+   "com_type": "CT",
+   "endpoint": "valuation"
+  },
+  {
+   "name": "snapshot",
+   "http": 200,
+   "ms": 169,
+   "bytes": 11301,
+   "status_field": "Success",
+   "ticker": "AAS",
+   "organ": "HAMIS",
+   "com_type": "CK",
+   "endpoint": "GetSnapshotNoneBank"
+  },
+  {
+   "name": "ownership",
+   "http": 200,
+   "ms": 29,
+   "bytes": 4525,
+   "status_field": "Success",
+   "ticker": "AAS",
+   "organ": "HAMIS",
+   "com_type": "CK",
+   "endpoint": "ownership"
+  },
+  {
+   "name": "dividend",
+   "http": 200,
+   "ms": 72,
+   "bytes": 3125,
+   "status_field": "Success",
+   "ticker": "AAS",
+   "organ": "HAMIS",
+   "com_type": "CK",
+   "endpoint": "dividend"
+  },
+  {
+   "name": "valuation",
+   "http": 200,
+   "ms": 181,
+   "bytes": 8930,
+   "status_field": "Success",
+   "ticker": "AAS",
+   "organ": "HAMIS",
+   "com_type": "CK",
+   "endpoint": "valuation"
+  },
+  {
+   "name": "snapshot",
+   "http": 200,
+   "ms": 144,
+   "bytes": 11260,
+   "status_field": "Success",
+   "ticker": "ABW",
+   "organ": "ABSC",
+   "com_type": "CK",
+   "endpoint": "GetSnapshotNoneBank"
+  },
+  {
+   "name": "ownership",
+   "http": 200,
+   "ms": 722,
+   "bytes": 11399,
+   "status_field": "Success",
+   "ticker": "ABW",
+   "organ": "ABSC",
+   "com_type": "CK",
+   "endpoint": "ownership"
+  },
+  {
+   "name": "dividend",
+   "http": 200,
+   "ms": 116,
+   "bytes": 3171,
+   "status_field": "Success",
+   "ticker": "ABW",
+   "organ": "ABSC",
+   "com_type": "CK",
+   "endpoint": "dividend"
+  },
+  {
+   "name": "valuation",
+   "http": 200,
+   "ms": 260,
+   "bytes": 8930,
+   "status_field": "Success",
+   "ticker": "ABW",
+   "organ": "ABSC",
+   "com_type": "CK",
+   "endpoint": "valuation"
+  },
+  {
+   "name": "snapshot",
+   "http": 200,
+   "ms": 36,
+   "bytes": 10986,
+   "status_field": "Success",
+   "ticker": "AIC",
+   "organ": "VNAI",
+   "com_type": "BH",
+   "endpoint": "GetSnapshotNoneBank"
+  },
+  {
+   "name": "ownership",
+   "http": 200,
+   "ms": 23,
+   "bytes": 5462,
+   "status_field": "Success",
+   "ticker": "AIC",
+   "organ": "VNAI",
+   "com_type": "BH",
+   "endpoint": "ownership"
+  },
+  {
+   "name": "dividend",
+   "http": 200,
+   "ms": 73,
+   "bytes": 3358,
+   "status_field": "Success",
+   "ticker": "AIC",
+   "organ": "VNAI",
+   "com_type": "BH",
+   "endpoint": "dividend"
+  },
+  {
+   "name": "valuation",
+   "http": 200,
+   "ms": 214,
+   "bytes": 2705,
+   "status_field": "Success",
+   "ticker": "AIC",
+   "organ": "VNAI",
+   "com_type": "BH",
+   "endpoint": "valuation"
+  }
+ ]
+}

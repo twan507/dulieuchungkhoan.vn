@@ -1,0 +1,285 @@
+{
+ "page": 0,
+ "pageSize": 0,
+ "totalCount": 0,
+ "items": [
+  {
+   "overviewChartData": [
+    {
+     "item1": "Sở hữu nhà nước",
+     "item2": 0.51
+    },
+    {
+     "item1": "Sở hữu nước ngoài",
+     "item2": 0.0
+    },
+    {
+     "item1": "Khác",
+     "item2": 0.49
+    }
+   ],
+   "majorOwnershipsChartData": [
+    {
+     "item1": "Bộ Quốc Phòng",
+     "item2": 0.51
+    },
+    {
+     "item1": "Vũ Thị Luyến",
+     "item2": 0.02693
+    },
+    {
+     "item1": "Trương Thị Thịnh",
+     "item2": 0.0269
+    },
+    {
+     "item1": "Nguyễn Thế Anh",
+     "item2": 0.02549
+    },
+    {
+     "item1": "Khác",
+     "item2": 0.41068
+    }
+   ],
+   "majorShareHolders": [
+    {
+     "shareHolderName": "Bộ Quốc Phòng",
+     "shareHolderCode": "MODVN",
+     "shareHolderType": "Corporate",
+     "ownerTypeCode": null,
+     "isFounder": false,
+     "quantity": 3468000.0,
+     "percentage": 0.51,
+     "quantityAdjusted": 0.0,
+     "percentageAdjusted": 0.0,
+     "publicDate": "2025-12-31T00:00:00",
+     "positions": null
+    },
+    {
+     "shareHolderName": "Vũ Thị Luyến",
+     "shareHolderCode": "518378",
+     "shareHolderType": "Individual",
+     "ownerTypeCode": null,
+     "isFounder": false,
+     "quantity": 251130.0,
+     "percentage": 0.02693,
+     "quantityAdjusted": 0.0,
+     "percentageAdjusted": 0.0,
+     "publicDate": "2026-06-30T00:00:00",
+     "positions": null
+    },
+    {
+     "shareHolderName": "Trương Thị Thịnh",
+     "shareHolderCode": "1162165",
+     "shareHolderType": "Individual",
+     "ownerTypeCode": null,
+     "isFounder": false,
+     "quantity": 182895.0,
+     "percentage": 0.0269,
+     "quantityAdjusted": 0.0,
+     "percentageAdjusted": 0.0,
+     "publicDate": "2026-06-30T00:00:00",
+     "positions": null
+    },
+    {
+     "shareHolderName": "Nguyễn Thế Anh",
+     "shareHolderCode": "518371",
+     "shareHolderType": "Individual",
+     "ownerTypeCode": null,
+     "isFounder": false,
+     "quantity": 173300.0,
+     "percentage": 0.02549,
+     "quantityAdjusted": 0.0,
+     "percentageAdjusted": 0.0,
+     "publicDate": "2026-06-30T00:00:00",
+     "positions": "Chủ tịch Hội đồng Quản trị, Phó Chủ tịch Hội đồng Quản trị, Tổng Giám đốc"
+    },
+    {
+     "shareHolderName": "Vũ Xuân Tạo",
+     "shareHolderCode": "518370",
+     "shareHolderType": "Individual",
+     "ownerTypeCode": null,
+     "isFounder": false,
+     "quantity": 92800.0,
+     "percentage": 0.01365,
+     "quantityAdjusted": 0.0,
+     "percentageAdjusted": 0.0,
+     "publicDate": "2026-06-30T00:00:00",
+     "positions": "Chủ tịch Hội đồng Quản trị, Thành viên Hội đồng Quản trị"
+    },
+    {
+     "shareHolderName": "Ngô Thành Thắng",
+     "shareHolderCode": "518372",
+     "shareHolderType": "Individual",
+     "ownerTypeCode": null,
+     "isFounder": false,
+     "quantity": 19100.0,
+     "percentage": 0.0028,
+     "quantityAdjusted": 0.0,
+     "percentageAdjusted": 0.0,
+     "publicDate": "2026-06-30T00:00:00",
+     "positions": "Phó Chủ tịch Hội đồng Quản trị, Thành viên Hội đồng Quản trị, Tổng Giám đốc, Phó Tổng Giám đốc"
+    },
+    {
+     "shareHolderName": "Trần Thị Bình",
+     "shareHolderCode": "518373",
+     "shareHolderType": "Individual",
+     "ownerTypeCode": null,
+     "isFounder": false,
+     "quantity": 9100.0,
+     "percentage": 0.0013,
+     "quantityAdjusted": 0.0,
+     "percentageAdjusted": 0.0,
+     "publicDate": "2026-06-30T00:00:00",
+     "positions": "Thành viên Hội đồng Quản trị, Phó Tổng Giám đốc, Kế toán trưởng"
+    },
+    {
+     "shareHolderName": "Hà Ngọc Oanh",
+     "shareHolderCode": "518375",
+     "shareHolderType": "Individual",
+     "ownerTypeCode": null,
+     "isFounder": false,
+     "quantity": 8500.0,
+     "percentage": 0.00125,
+     "quantityAdjusted": 0.0,
+     "percentageAdjusted": 0.0,
+     "publicDate": "2026-06-30T00:00:00",
+     "positions": "Trưởng Ban kiểm soát"
+    },
+    {
+     "shareHolderName": "Đặng Thị Thúy Hà",
+     "shareHolderCode": "518377",
+     "shareHolderType": "Individual",
+     "ownerTypeCode": null,
+     "isFounder": false,
+     "quantity": 5300.0,
+     "percentage": 0.0008,
+     "quantityAdjusted": 0.0,
+     "percentageAdjusted": 0.0,
+     "publicDate": "2026-06-30T00:00:00",
+     "positions": "Thành viên Ban kiểm soát"
+    },
+    {
+     "shareHolderName": "Phạm Văn Hà",
+     "shareHolderCode": "813997",
+     "shareHolderType": "Individual",
+     "ownerTypeCode": null,
+     "isFounder": false,
+     "quantity": 1900.0,
+     "percentage": 0.0003,
+     "quantityAdjusted": 0.0,
+     "percentageAdjusted": 0.0,
+     "publicDate": "2024-12-31T00:00:00",
+     "positions": "Phó Tổng Giám đốc"
+    },
+    {
+     "shareHolderName": "Dương Hoài Nam",
+     "shareHolderCode": "518376",
+     "shareHolderType": "Individual",
+     "ownerTypeCode": null,
+     "isFounder": false,
+     "quantity": 1200.0,
+     "percentage": 0.0002,
+     "quantityAdjusted": 0.0,
+     "percentageAdjusted": 0.0,
+     "publicDate": "2026-06-30T00:00:00",
+     "positions": "Thành viên Ban kiểm soát"
+    }
+   ],
+   "boardOfDirectors": [
+    {
+     "personId": 518371,
+     "fullName": "Nguyễn Thế Anh",
+     "positionName": "Chủ tịch Hội đồng Quản trị",
+     "quantity": 173300.0,
+     "percentage": 0.02549,
+     "publicDate": "2026-06-30T00:00:00",
+     "isRelationship": false
+    },
+    {
+     "personId": 518372,
+     "fullName": "Ngô Thành Thắng",
+     "positionName": "Phó Chủ tịch Hội đồng Quản trị, Tổng Giám đốc",
+     "quantity": 19100.0,
+     "percentage": 0.0028,
+     "publicDate": "2026-06-30T00:00:00",
+     "isRelationship": false
+    },
+    {
+     "personId": 518370,
+     "fullName": "Vũ Xuân Tạo",
+     "positionName": "Thành viên Hội đồng Quản trị",
+     "quantity": 92800.0,
+     "percentage": 0.01365,
+     "publicDate": "2026-06-30T00:00:00",
+     "isRelationship": false
+    },
+    {
+     "personId": 518378,
+     "fullName": "Vũ Thị Luyến",
+     "positionName": "Anh của Vũ Xuân Tạo",
+     "quantity": 251130.0,
+     "percentage": 0.02693,
+     "publicDate": "2026-06-30T00:00:00",
+     "isRelationship": true
+    },
+    {
+     "personId": 518373,
+     "fullName": "Trần Thị Bình",
+     "positionName": "Thành viên Hội đồng Quản trị, Phó Tổng Giám đốc",
+     "quantity": 9100.0,
+     "percentage": 0.0013,
+     "publicDate": "2026-06-30T00:00:00",
+     "isRelationship": false
+    },
+    {
+     "personId": 518374,
+     "fullName": "Trần Bá Thượng",
+     "positionName": "Thành viên Hội đồng Quản trị",
+     "quantity": 0.0,
+     "percentage": 0.0,
+     "publicDate": "2026-06-30T00:00:00",
+     "isRelationship": false
+    },
+    {
+     "personId": 518375,
+     "fullName": "Hà Ngọc Oanh",
+     "positionName": "Trưởng Ban kiểm soát",
+     "quantity": 8500.0,
+     "percentage": 0.00125,
+     "publicDate": "2026-06-30T00:00:00",
+     "isRelationship": false
+    },
+    {
+     "personId": 518377,
+     "fullName": "Đặng Thị Thúy Hà",
+     "positionName": "Thành viên Ban kiểm soát",
+     "quantity": 5300.0,
+     "percentage": 0.0008,
+     "publicDate": "2026-06-30T00:00:00",
+     "isRelationship": false
+    },
+    {
+     "personId": 518376,
+     "fullName": "Dương Hoài Nam",
+     "positionName": "Thành viên Ban kiểm soát",
+     "quantity": 1200.0,
+     "percentage": 0.0002,
+     "publicDate": "2026-06-30T00:00:00",
+     "isRelationship": false
+    },
+    {
+     "personId": 4888230,
+     "fullName": "Hoàng Mạnh Cường",
+     "positionName": "Kế toán trưởng, Trưởng phòng Tài chính - Kế toán",
+     "quantity": 0.0,
+     "percentage": 0.0,
+     "publicDate": "2026-06-30T00:00:00",
+     "isRelationship": false
+    }
+   ]
+  }
+ ],
+ "packageId": null,
+ "status": "Success",
+ "errors": null
+}
