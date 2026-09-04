@@ -9,6 +9,7 @@ import datetime as dt
 import json
 import logging
 from dataclasses import dataclass
+from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
 
@@ -17,6 +18,7 @@ from etl.snapshot_guard import Tally, Verdict
 from etl.snapshot_normalize import keep_hash
 
 log = logging.getLogger("etl.snapshot")
+VN = ZoneInfo("Asia/Ho_Chi_Minh")
 
 JOB = "market.snapshot"
 DOMAIN = "market.snapshot"
@@ -238,8 +240,12 @@ def new_watermark(conn, trigger_cut: dt.date | None = None) -> dt.date:
     return got or dt.date(1900, 1, 1)
 
 
-def recrawl_codes(conn, days: int = 3) -> list[str]:
-    """Mã có ngày không hưởng quyền VỪA ĐI QUA trong `days` ngày gần đây.
+def recrawl_codes(conn, days: int = 3, today: dt.date | None = None) -> list[str]:
+    """Mã có ngày không hưởng quyền VỪA ĐI QUA trong `days` ngày gần đây, tính tới `today`.
+
+    `today` mặc định là NGÀY VIỆT NAM tính ở Python — không phải `current_date` của session
+    Postgres (UTC): từ 00:00 tới 07:00 giờ VN hai đồng hồ đó lệch nhau một ngày (đo 2026-09-05
+    05:38, hai test recrawl đỏ). Bơm được để test đứng vững ở mọi giờ.
 
     Không dùng watermark: mốc nước đo "sự kiện mới công bố", còn việc re-crawl giá phải xảy
     ra khi ngày ex ĐÃ QUA (trước ngày ex thì chuỗi close_adj chưa đổi, kéo về cũng vô ích).
@@ -253,14 +259,16 @@ def recrawl_codes(conn, days: int = 3) -> list[str]:
     bản không lọc loại trả 8 mã (DCF·KSV·PVO·RYG·SAS·SMT·TCH·VXT) mà 6/10 sự kiện của chúng
     là AGM; lọc lại còn đúng 2 mã (RYG, TCH) thật sự cần backfill trọn ~12,5 năm lịch sử.
     """
+    if today is None:
+        today = dt.datetime.now(VN).date()
     rows = conn.execute(sa.text(
         _UNIVERSE + """
         SELECT DISTINCT u.ticker FROM uni u
         JOIN market.corporate_event e ON e.issuer_id = u.issuer_id
-        WHERE e.exright_date BETWEEN current_date - :days AND current_date
+        WHERE e.exright_date BETWEEN CAST(:today AS date) - :days AND CAST(:today AS date)
           AND e.event_type IN ('CashDividend', 'StockDividend', 'ShareIssuance')
         ORDER BY u.ticker
-        """), {"days": days}).scalars().all()
+        """), {"days": days, "today": today}).scalars().all()
     return list(rows)
 
 

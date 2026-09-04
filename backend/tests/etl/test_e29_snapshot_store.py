@@ -437,3 +437,20 @@ def test_same_day_burst_is_served_across_runs_without_starving_anyone(db):
     left = [t for t in second.targets if t.organ_code.startswith("ZZBST")]
     assert [t.organ_code for t in left] == ["ZZBST2"] and second.trigger_cut is None
     assert ss.new_watermark(db, None) == d
+
+
+def test_recrawl_codes_window_is_anchored_on_an_explicit_vn_date_not_the_db_session_date(db):
+    """Đo 2026-09-05 05:38 giờ VN: hai test recrawl phía trên đỏ vì SQL lấy `current_date`
+    theo session Postgres (UTC — vẫn 04/09) còn test lấy `date.today()` (đã 05/09). Mọi ngày
+    từ 00:00 đến 07:00 giờ VN hai đồng hồ lệch nhau một ngày. Mốc phải là NGÀY VIỆT NAM và
+    phải bơm được vào để test đứng vững ở mọi giờ: ba mốc quanh một ngày ex cố định, không
+    dính `now()` ở cả hai phía."""
+    _quiet_events(db)
+    db.execute(sa.text("SET LOCAL TIME ZONE 'UTC'"))          # session lệch VN như production
+    _issuer(db, "Ex co dinh", "ZZFIXED", "ZZF")
+    ex = date(2030, 3, 10)
+    _event(db, "ZZFIXED", "CashDividend", ex - timedelta(days=5), exright_date=ex)
+    assert ss.recrawl_codes(db, today=ex) == ["ZZF"]                        # đúng ngày ex
+    assert ss.recrawl_codes(db, today=ex + timedelta(days=3)) == ["ZZF"]    # biên trong cửa sổ 3 ngày
+    assert ss.recrawl_codes(db, today=ex + timedelta(days=4)) == []         # vừa rơi khỏi cửa sổ
+    assert ss.recrawl_codes(db, today=ex - timedelta(days=1)) == []         # ngày ex chưa tới
