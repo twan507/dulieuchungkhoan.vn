@@ -22,6 +22,7 @@ log = logging.getLogger("etl.snapshot")
 JOB = snapshot_store.JOB
 VN = ZoneInfo("Asia/Ho_Chi_Minh")
 MAX_RECRAWL = 50                       # trần re-crawl giá một lượt — xem chú thích trong _recrawl
+RECRAWL_MAX_MINUTES = 20               # trần thời gian cho phần re-crawl giá — xem chú thích trong _recrawl
 
 
 class GuardRefused(Exception):
@@ -66,6 +67,20 @@ def _recrawl(engine, stats):
     Không còn nhánh 'bỏ qua ở lượt khởi tạo': `recrawl_codes()` (spec mới, đo bug thật
     2026-09-22) đã đổi sang cửa sổ vài ngày quanh hôm nay thay vì so với watermark, nên tự
     nó chặn số mã ở MỌI lượt — kể cả lượt khởi tạo — không còn nguy cơ trả cả 1.523 mã.
+
+    Vẫn cần TRẦN THỜI GIAN riêng: mỗi mã re-crawl là một lượt `price --backfill` TRỌN LỊCH SỬ
+    ~12,5 năm (mã lâu năm tới 53 trang), không phải một lần gọi nhẹ. Số đo thật (kho
+    production, tám tuần gần nhất): 8·22·34·23·48·32·41·46 mã MỖI TUẦN có ngày không hưởng
+    quyền — mùa cổ tức chạm gần trần `MAX_RECRAWL = 50` ngay trong cửa sổ 3 ngày. Không chặn
+    thời gian thì job snapshot hằng ngày (bản thân ~5 phút) có thể biến thành hàng chục phút
+    tới hàng giờ, không trần — đúng thứ gặp thật khi lượt `--codes A32,BAB,BVB` kéo theo
+    backfill của 8 mã và vượt 120 giây (đo 2026-09-22).
+
+    Cắt giữa chừng AN TOÀN: mã chưa kịp kéo không mất — `recrawl_codes()` dùng cửa sổ ngày
+    (không phải con trỏ một lần), nên hai lượt snapshot sau vẫn thấy lại đúng mã đó trong
+    cửa sổ 3 ngày; và `etl price --backfill --codes` tự nó idempotent, kéo lại nhiều lần vô
+    hại. `price_job.run(max_minutes=...)` đã có sẵn ngân sách thời gian từ lát 3 — chỉ cần
+    truyền xuống, không cần dựng cơ chế mới.
     """
     with engine.begin() as conn:
         codes = snapshot_store.recrawl_codes(conn)
@@ -77,7 +92,7 @@ def _recrawl(engine, stats):
         return
     try:
         import etl.price_job
-        rc = etl.price_job.run(backfill=True, codes=codes)
+        rc = etl.price_job.run(backfill=True, codes=codes, max_minutes=RECRAWL_MAX_MINUTES)
         stats["recrawl"] = {"codes": codes, "exit": rc}
     except Exception as e:                    # noqa: BLE001 — re-crawl hỏng KHÔNG kéo đổ lượt snapshot
         stats["recrawl"] = {"codes": codes, "error": f"{type(e).__name__}: {e}"}

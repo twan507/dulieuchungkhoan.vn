@@ -65,6 +65,9 @@ def _cleanup(engine):
         if iids:
             c.execute(sa.text("DELETE FROM market.snapshot_daily WHERE issuer_id = ANY(:i)"), {"i": iids})
             c.execute(sa.text("DELETE FROM ops.snapshot_check WHERE issuer_id = ANY(:i)"), {"i": iids})
+            # Vòng sửa 4 thêm: test truyền ngân sách thời gian cho re-crawl tự seed một dòng
+            # corporate_event — không dọn trước thì DELETE market.issuer bên dưới vỡ FK.
+            c.execute(sa.text("DELETE FROM market.corporate_event WHERE issuer_id = ANY(:i)"), {"i": iids})
             c.execute(sa.text("DELETE FROM market.security WHERE issuer_id = ANY(:i)"), {"i": iids})
             c.execute(sa.text("DELETE FROM market.issuer_external_id WHERE issuer_id = ANY(:i)"), {"i": iids})
             c.execute(sa.text("DELETE FROM market.issuer WHERE issuer_id = ANY(:i)"), {"i": iids})
@@ -207,6 +210,29 @@ def test_the_watermark_stays_put_when_a_target_has_a_bad_shape(snapshot_db):
     assert rc == 0                                # guard không từ chối (mẫu quá nhỏ, MIN_SAMPLE)
     with snapshot_db.connect() as c:
         assert ss.load_watermark(c) == date(2026, 9, 1)
+
+
+def test_recrawl_passes_the_time_budget_to_price_job(snapshot_db, monkeypatch):
+    """Số đo thật (kho production, đo 2026-09-22): re-crawl không trần thời gian từng kéo
+    một lượt `--codes A32,BAB,BVB` vượt 120 giây, vì mỗi mã re-crawl là một lượt
+    `price --backfill` TRỌN LỊCH SỬ ~12,5 năm, không phải một lần gọi nhẹ — mùa cổ tức có
+    tuần tới 48 mã trong cửa sổ 3 ngày, chạm gần trần `MAX_RECRAWL`. `_recrawl` phải truyền
+    đúng `max_minutes=RECRAWL_MAX_MINUTES` xuống `price_job.run`, không phải gọi trần.
+
+    Ghi đè fake của `_wire()` (vốn chỉ `lambda **kw: 0`, không ghi lại tham số) bằng một
+    fake bắt được `kw` — cùng `monkeypatch` instance nên đè hợp lệ, không cần sửa `_wire`.
+    """
+    price_calls = []
+    monkeypatch.setattr("etl.price_job.run", lambda **kw: (price_calls.append(kw), 0)[1])
+    iid = _seed(snapshot_db)
+    with snapshot_db.begin() as c:
+        # Ngày không hưởng quyền HÔM NAY — nằm trong cửa sổ mặc định 3 ngày của recrawl_codes().
+        c.execute(sa.text(
+            "INSERT INTO market.corporate_event (event_type, issuer_id, exright_date, payload)"
+            " VALUES ('CashDividend', :i, current_date, '{}'::jsonb)"), {"i": iid})
+    rc = sj.run(codes=[TICKER], get=_fake_get())
+    assert rc == 0
+    assert price_calls == [{"backfill": True, "codes": [TICKER], "max_minutes": sj.RECRAWL_MAX_MINUTES}]
 
 
 def test_a_partial_outage_refuses_the_run_and_leaves_real_evidence(snapshot_db):
