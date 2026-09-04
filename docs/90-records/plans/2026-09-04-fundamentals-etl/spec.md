@@ -1,6 +1,6 @@
 # Spec — lát 5 `etl fundamentals`: báo cáo tài chính và danh sách PDF
 
-**Ngày:** 2026-09-04 · **Nhánh:** `feat/fundamentals-etl` · **Trạng thái:** chờ chủ dự án duyệt
+**Ngày:** 2026-09-04 · **Nhánh:** `feat/fundamentals-etl` · **Trạng thái:** duyệt nguyên trạng 2026-09-04 (chủ dự án: "không biết sửa gì, làm tới xong") · thực thi xong cùng ngày — xem [ledger](ledger.md)
 **Tiền đề:** [roadmap — Điểm vào cho lát 5](../../../00-overview/roadmap.md) · [khảo sát BCTC 2026-09-04](../../surveys/2026-09-04-bctc-endpoints/README.md) · [tài liệu nguồn 05](../../../10-sources/market/05-fiin-financial-statements.md) · [spec lát 4](../2026-09-04-snapshot-family-etl/spec.md) (khuôn được nhân bản)
 
 Tiêu chí xuyên suốt của lát này, chốt trong brainstorm: **ít luật nhất, không đọc sai**. Mỗi quyết định dưới đây được chấm theo hai trục *bảo trì* và *sử dụng* trước, rồi mới tới dung lượng.

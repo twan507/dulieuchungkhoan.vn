@@ -213,7 +213,7 @@ Bốn luật rút ra từ những lần trả giá, mỗi luật chống một c
 | **Họ Snapshot — KHÔNG chạy hằng ngày** *(chốt 2026-09-03, xem §4.1b)*: `snapshot` `valuation` `ownership` `dividend`; hai kind chấm điểm đã bỏ khỏi lược đồ (migration `0015`) — **lát 4 XONG 2026-09-04: `etl snapshot`**, quét sàn **cuốn chiếu theo quota ngày**, ghi `snapshot_daily` **chỉ khi nội dung đổi**, mọi lượt kiểm cập nhật `ops.snapshot_check` ([spec](../90-records/plans/2026-09-04-snapshot-family-etl/spec.md) · [ledger](../90-records/plans/2026-09-04-snapshot-family-etl/ledger.md)) | **Kích hoạt theo sự kiện + quét sàn cuốn chiếu** | **234** *(đo thật; ước lượng cũ 200–260)* |
 | `GetScreenerItems` — **lưu 80/193 trường** (ước lượng 2026-08-14; đếm 2026-09-03: **75/193** — 66 khoá đặt tên từ response thật, trừ 4 nhãn xếp hạng và 2 dòng KQKD trùng BCTC) *(gửi 1 tiêu chí, nhiều hơn sẽ timeout)* — **lát 1 XONG 2026-09-03: `etl screener` 15:20 — chạy thật sau phiên, 1.541 dòng/ngày, 52 trang ~30–70 s** ([spec](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) · [ledger](../90-records/plans/2026-09-03-screener-daily-etl/ledger.md)) | Sau 15:00 | 52 |
 | Lịch sự kiện *(tải TRỌN sáu họ `GetCorporate*` — đo 2026-09-03: `FromDate` không dùng được, mỗi họ lọc theo một trục ngày khác nhau và `Earning` lọc theo trường không có trong response; [`08-fiin-event-calendar.md`](../10-sources/market/08-fiin-event-calendar.md))* | Hằng ngày | 9 |
-| BCTC + PDF | **Kích hoạt** theo `GetCorporateEarning` | ~100–300/quý |
+| BCTC + PDF — **lát 5 XONG 2026-09-04: `etl fundamentals`** — trigger `Earning` (`public_date` > mốc nước, loại cặp đã kiểm sau ngày công bố, trần 300 issuer/lượt) + quét sàn nhịp 90 ngày quota 20/kind, ghi KHI ĐỔI với hash trọn payload; điền đầu `--backfill` ([spec](../90-records/plans/2026-09-04-fundamentals-etl/spec.md) · [ledger](../90-records/plans/2026-09-04-fundamentals-etl/ledger.md)) | **Kích hoạt** theo `GetCorporateEarning` + quét sàn | ≈ 80/ngày thường · tới 1.200/ngày mùa báo cáo |
 | Re-crawl giá một mã | **Kích hoạt** theo sự kiện quyền của mã đó | tuỳ |
 
 **Hằng ngày ≈ 1.822 lời gọi** *(4 danh bạ + **1.523** giá + 52 Screener + 9 lịch sự kiện + **234** họ Snapshot *(đo thật ở lát 4; ước lượng cũ 200–260)*; sửa 2026-09-04 — số 1.974 cũ đếm trước lượt dọn 442 mã huỷ niêm yết)* — **thấp hơn con số ~6.000 của bản 2026-08-14**, vì họ Snapshot chuyển từ chạy-mọi-mã-mỗi-ngày sang kích hoạt theo sự kiện.
@@ -263,7 +263,7 @@ Cộng lại **234 lời gọi/ngày**, không có đỉnh tải và không cầ
 | Việc | Lời gọi | Thời gian |
 |---|---|---|
 | `getPriceData` mọi trang × **1.523** cổ phiếu niêm yết *(đo 2026-09-03 — số 1.974 cũ đếm trước lượt dọn 442 mã huỷ niêm yết; độ sâu mỗi mã theo tuổi niêm yết: BID 53 trang, TD6 6 trang)* | **~50.000–80.000** | **tuần tự**, ~25–40 giờ, rải vài đêm bằng `python -m etl price --backfill --max-minutes N` — con trỏ trong `ops.etl_run.stats.cursor` nên lượt sau đi tiếp từ mã kế, không làm lại ([spec lát 3 §5.5e](../90-records/plans/2026-09-03-price-daily-etl/spec.md)) |
-| BCTC 3 loại × **1.523 mã** *(sửa 2026-09-04 theo [khảo sát BCTC](../90-records/surveys/2026-09-04-bctc-endpoints/README.md); số cũ 1.974 đếm trước lượt dọn mã huỷ niêm yết)* | **4.569** | **≥ 38 phút** *(chỉ tính giãn cách 0,5 s; con số ~25 phút của bản cũ không thể đúng — 5.922 lời gọi giãn 0,5 s đã là 49 phút)* |
+| BCTC 3 loại × **1.523 mã** + danh sách PDF *(sửa 2026-09-04 theo [khảo sát BCTC](../90-records/surveys/2026-09-04-bctc-endpoints/README.md); số cũ 1.974 đếm trước lượt dọn mã huỷ niêm yết)* | **4.569 + 1.523 = 6.092** | **≥ 51 phút** *(chỉ tính giãn cách 0,5 s)* — lượt điền đầu `python -m etl fundamentals --backfill --stop-before-open`, con trỏ là `ops.fundamentals_check.checked_at`, giết giữa chừng không mất chỗ (lát 5) |
 | Lịch sự kiện toàn bộ | 9 | ~2,5 phút |
 
 *(đo 2026-09-03)* Lịch sự kiện tải TRỌN sáu họ mỗi lượt — **backfill và job hằng ngày nay là cùng một đường code** (`python -m etl events`), khác nhau đúng một cờ: `--accept-new` mở khoá lượt tạo nhiều issuer tối thiểu (517 ở lượt đầu), lượt hằng ngày sau đó chạy không cờ vì gần như không còn issuer mới. Xem [`08-fiin-event-calendar.md`](../10-sources/market/08-fiin-event-calendar.md).
@@ -461,6 +461,8 @@ Khối lượng: ~200k dòng/ngày · **~1 GB/năm** sau nén.
 
 ### 5.4 Báo cáo tài chính — dạng dài
 
+> **Lược đồ thật (lát 5, 2026-09-04):** migration `0004` (`market.financial_statement` khoá `(issuer_id, year_report, length_report, statement_type, metric_code)`, CHECK `length_report` 1–5) + `0017` (`financial_report_file.source_id` UNIQUE thay UNIQUE `source_url`; `length_report IN (1,2,3,4,5,6,9)` cho `financial_report_file` và `corporate_event`; bảng sổ kiểm `ops.fundamentals_check`). **Luật nạp đã chốt** ([spec lát 5 §4](../90-records/plans/2026-09-04-fundamentals-etl/spec.md)): **bỏ mọi ô null** — "chỉ tiêu không áp dụng cho loại hình" suy lúc đọc từ hậu tố mã (`a` `b` `s` `i`) + `issuer.com_type_code`, không lưu; `metric_code` **hạ chữ thường**; bỏ 8 khoá phi chỉ tiêu (`organCode` `ebit` `ebitDa` `operating` `otherAssetBank` `otherAssetNonBank` `otherLiabilties` `rtq29`); khi nội dung đổi thì **xoá trọn `(issuer, statement_type)` rồi chèn lại** trong một giao dịch và ghi một dòng `staging.raw_payload` làm lịch sử điều chỉnh; `reports` upsert theo `source_id`, không xoá. SQL dưới đây là bản thiết kế 2026-08-14, giữ làm bối cảnh.
+
 ```sql
 CREATE TABLE financial_statement (
   organ_code     text NOT NULL,
@@ -481,7 +483,7 @@ Chọn **dạng dài** vì bộ chỉ tiêu khác nhau theo loại hình doanh n
 
 ⚠️ **`metric_code` phải hạ chữ thường khi nạp** *(đúng chú thích của migration `0004`)*: `GetBalanceSheet` trả hai khoá viết hoa lẫn `bsI141` và `bsS134` *(4/4 mã, đo 2026-09-04)* trong khi [từ điển](../10-sources/market/field-dictionary.json) ghi `bsi141`/`bss134`. Giữ nguyên chữ hoa thì hai mã này không tra được và không khớp khoá chính.
 
-⚠️ **`sourceUrl` trùng NGAY trong một response** (BID: hai `id` khác nhau, cùng năm, cùng kỳ, cùng URL) trong khi cột khai `UNIQUE` ⇒ phải khử trùng hoặc `ON CONFLICT DO NOTHING`.
+⚠️ **`sourceUrl` trùng NGAY trong một response** (BID, BAB: hai `id` khác nhau — bản quý 3 và bản 9 tháng luỹ kế — cùng một URL) ⇒ migration `0017` khoá theo **`source_id`** (id của nguồn) và bỏ UNIQUE `source_url`; upsert `ON CONFLICT (source_id)`.
 
 CREATE TABLE financial_report_file (
   id          bigint PRIMARY KEY,
