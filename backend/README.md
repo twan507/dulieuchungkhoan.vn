@@ -124,7 +124,7 @@ backfill đầu tiên (517 issuer, 2026-09-03), phải có người nhìn số t
 cd backend
 set -a; . ../.env; set +a; PYTHONIOENCODING=utf-8 uv run python -m etl price                      # hằng ngày: trang 1 (60 phiên) mọi cổ phiếu niêm yết
 set -a; . ../.env; set +a; PYTHONIOENCODING=utf-8 uv run python -m etl price --codes BID,VHM       # chỉ vài mã — chạy thử dưới quyền production, hoặc re-crawl theo sự kiện quyền
-set -a; . ../.env; set +a; PYTHONIOENCODING=utf-8 uv run python -m etl price --backfill --max-minutes 600   # lùi trọn lịch sử (~12,5 năm), tiếp tục được qua nhiều đêm
+set -a; . ../.env; set +a; PYTHONIOENCODING=utf-8 uv run python -m etl price --backfill --stop-before-open   # lùi trọn lịch sử (~12,5 năm), dừng trước 08:45 ngày giao dịch kế — đây là lệnh của task dlck-price-backfill
 ```
 
 Cần `ETL_DATABASE_URL` (user thuộc role `dlck_etl`). `Code` gửi cho FiinTrade là **`organCode`** tra qua
@@ -150,10 +150,18 @@ máy không tự ngủ vì nhàn rỗi)*. Sự cố 2026-09-04 02:00 lộ ba ch�
 ngủ thức dậy thành `httpx.ReadTimeout` — từ `e7f80f6` được thử lại 3 lần như response xấu; (2) kết nối Postgres nằm
 trong pool suốt 38 phút fetch chết sau giấc ngủ — `pool_pre_ping=True` thay nó trước khi dùng; (3) ngân sách
 `--max-minutes` tính theo **đồng hồ tường**, giờ ngủ vẫn tính ⇒ thức dậy là dừng sau mã đang dở, không chạy lấn vào
-giờ giao dịch; con trỏ đã lưu sau từng mã nên lượt sau nối tiếp. Cách chạy backfill qua đêm: `--backfill --max-minutes N`
-với N chọn sao cho **hết trước giờ ngủ** (ví dụ bắt đầu 20:00 thì N ≤ 350) — máy ngủ giữa chừng cũng không hỏng, chỉ
-là lượt đó dừng sớm. Giữ máy thức bằng `SetThreadExecutionState` **không** dùng được: nó chỉ chặn ngủ do nhàn rỗi,
-không chặn được lệnh suspend theo lịch.
+giờ giao dịch; con trỏ đã lưu sau từng mã nên lượt sau nối tiếp. Giữ máy thức bằng `SetThreadExecutionState` **không** dùng được: nó chỉ chặn ngủ do nhàn rỗi, không chặn được lệnh
+suspend theo lịch.
+
+**Backfill chạy bằng task Scheduler `dlck-price-backfill`, không chạy tay trong phiên chat** *(quyết định chủ dự án
+2026-09-04)*: lệnh `etl price --backfill --stop-before-open`, trigger **thứ 7 00:05**, giới hạn chạy 3 ngày, đăng ký
+`Disabled` cùng cả đội. Hai cách dùng: kích hoạt tay buổi tối bất kỳ (`Start-ScheduledTask dlck-price-backfill`) —
+`--stop-before-open` tính hạn **08:45 của ngày giao dịch kế tiếp** ngay lúc bắt đầu nên tối thứ 3 dừng trước phiên
+sáng thứ 4; hoặc bật task để tự chạy thứ 7 và đi liền tới sáng thứ 2 (~20 giờ đủ trọn vòng). Máy ngủ 02:00 giữa
+chừng: job sống qua và chạy tiếp tới hạn; con trỏ nối các lượt. ⚠️ Hết vòng (`pass_complete`) thì lượt kế là **vòng
+mới** — làm mới toàn bộ chuỗi điều chỉnh (~20 giờ gọi mỗi cuối tuần): giữ task bật nếu muốn làm mới định kỳ, tắt
+nếu chỉ cần một vòng rồi re-crawl theo sự kiện quyền bằng `--codes` (lát 4). Tiến độ: `stats.cursor` /
+`codes_done` / `stop_at` của job `market.price_backfill` trong `ops.etl_run`.
 
 Lượt `--codes` ghi `stats.subset = true`: **không** làm mốc cho guard (ii)/(iv), **không** đụng
 `data_domain_state('market.price')`, **không** dời con trỏ backfill. Backfill hết vòng (`pass_complete`)
@@ -172,4 +180,4 @@ là idempotent, không cần vế "có phiên không" như Screener).
 pwsh scripts/register-tasks.ps1
 ```
 
-Đăng ký **10 task**, tất cả hằng ngày làm việc: 4 mốc OMO (11:30 · 15:30 · 18:00 · 21:30) · `dlck-refdata` 08:00 (danh bạ tươi trước phiên) · `dlck-ingester` 08:30 (ghi thật — gate mở 2026-08-26) · `dlck-screener` 15:20 (sau khi ingester đóng 15:05, tránh 15:30 của OMO — đăng ký ở Task 8 của [plan screener](../docs/90-records/plans/2026-09-03-screener-daily-etl/plan.md), để `Disabled` cùng cả đội) · `dlck-events` **18:10** (sau phiên, dùng danh bạ tươi từ 08:00, và **tránh 18:00 của OMO** — cùng lý do đặt `dlck-screener` lệch 15:30; giờ này sửa 2026-09-03 sau khi đăng ký lượt đầu lộ ra va lịch — đăng ký ở Task 7 của [plan events](../docs/90-records/plans/2026-09-03-events-daily-etl/plan.md), để `Disabled` cùng cả đội) · `dlck-price` **15:40** (sau screener 15:20 và OMO 15:30, ~45 phút tuần tự nên xong trước 18:00 của OMO; `-MustNotContain "--backfill"` — task tự động không bao giờ chạy backfill; vào script 2026-09-04, đăng ký thật ở Task 7 của [plan price](../docs/90-records/plans/2026-09-03-price-daily-etl/plan.md), để `Disabled` cùng cả đội) · `dlck-ingester-measure` 08:30 (bắt frame thô song song làm lưới an toàn + đường nghiệm thu, thường trực từ 2026-08-27; bản đo giữ 30 ngày, job tự dọn). Bật/tắt tay bằng cmdlet `Enable-ScheduledTask` / `Disable-ScheduledTask`, **không dùng `schtasks.exe`** — xem cảnh báo đầu [`scripts/register-tasks.ps1`](../scripts/register-tasks.ps1).
+Đăng ký **11 task** — 10 task hằng ngày làm việc và `dlck-price-backfill` thứ 7: 4 mốc OMO (11:30 · 15:30 · 18:00 · 21:30) · `dlck-refdata` 08:00 (danh bạ tươi trước phiên) · `dlck-ingester` 08:30 (ghi thật — gate mở 2026-08-26) · `dlck-screener` 15:20 (sau khi ingester đóng 15:05, tránh 15:30 của OMO — đăng ký ở Task 8 của [plan screener](../docs/90-records/plans/2026-09-03-screener-daily-etl/plan.md), để `Disabled` cùng cả đội) · `dlck-events` **18:10** (sau phiên, dùng danh bạ tươi từ 08:00, và **tránh 18:00 của OMO** — cùng lý do đặt `dlck-screener` lệch 15:30; giờ này sửa 2026-09-03 sau khi đăng ký lượt đầu lộ ra va lịch — đăng ký ở Task 7 của [plan events](../docs/90-records/plans/2026-09-03-events-daily-etl/plan.md), để `Disabled` cùng cả đội) · `dlck-price` **15:40** (sau screener 15:20 và OMO 15:30, ~45 phút tuần tự nên xong trước 18:00 của OMO; `-MustNotContain "--backfill"` — task tự động không bao giờ chạy backfill; vào script 2026-09-04, đăng ký thật ở Task 7 của [plan price](../docs/90-records/plans/2026-09-03-price-daily-etl/plan.md), để `Disabled` cùng cả đội) · `dlck-price-backfill` **thứ 7 00:05** (`etl price --backfill --stop-before-open`, giới hạn 3 ngày — lùi trọn lịch sử giá tới sáng thứ 2 hoặc tới khi hết vòng; kích hoạt tay buổi tối được, tự dừng trước 08:45 ngày giao dịch kế; vào script 2026-09-04, để `Disabled` cùng cả đội) · `dlck-ingester-measure` 08:30 (bắt frame thô song song làm lưới an toàn + đường nghiệm thu, thường trực từ 2026-08-27; bản đo giữ 30 ngày, job tự dọn). Bật/tắt tay bằng cmdlet `Enable-ScheduledTask` / `Disable-ScheduledTask`, **không dùng `schtasks.exe`** — xem cảnh báo đầu [`scripts/register-tasks.ps1`](../scripts/register-tasks.ps1).
