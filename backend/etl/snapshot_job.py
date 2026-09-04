@@ -103,6 +103,10 @@ def run(codes=None, kinds=None, max_minutes=None, get=None, sleep=time.sleep) ->
     logging.basicConfig(level=logging.INFO, stream=sys.stderr,
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
     load_dotenv()
+    # Lượt con: --codes hoặc --kinds chỉ phục vụ một phần vũ trụ — KHÔNG được đẩy mốc nước toàn
+    # bảng, nếu không mọi sự kiện công bố của phần còn lại nằm dưới mốc mới sẽ mất trigger vĩnh
+    # viễn. Tiền lệ: price_job.py đã có đúng khái niệm `subset` này (review, phát hiện #1).
+    subset = codes is not None or kinds is not None
     try:
         engine = _engine()
     except RuntimeError as e:
@@ -113,6 +117,12 @@ def run(codes=None, kinds=None, max_minutes=None, get=None, sleep=time.sleep) ->
         with engine.begin() as conn:
             watermark = snapshot_store.load_watermark(conn)
             targets = snapshot_store.due_list(conn, watermark, kinds=kinds, codes=codes)
+            # Lấy 'mốc nước MỚI' ngay CÙNG giao dịch với due_list, ở T0 — không đọc lại sau khi
+            # fetch/re-crawl xong (T1, cách nhau tới 20 phút). Đọc hai lần tạo cửa sổ đua: sự
+            # kiện `events_job` chèn đúng lúc đó bị mốc T1 nuốt mất mà không job nào phục vụ
+            # (review, phát hiện #3). Giá trị này chỉ THỰC SỰ dùng khi lượt đầy đủ và trót lọt —
+            # tính sẵn ở đây, rẻ, và loại bỏ hẳn cửa sổ đua.
+            new_wm = snapshot_store.new_watermark(conn)
         log.info("tới hạn: %d target (%d theo sự kiện)", len(targets),
                  sum(1 for t in targets if t.found_by == "event"))
 
@@ -137,22 +147,38 @@ def run(codes=None, kinds=None, max_minutes=None, get=None, sleep=time.sleep) ->
 
         stats = {"tally": vars(tally), "rows_written": written, "calls": calls,
                  "retries": retries, "stopped_early": stopped, "run_date": run_date.isoformat()}
-        _recrawl(engine, stats)
+        if subset:
+            stats["subset"] = True             # lượt con không được làm mốc cho lượt toàn tập
 
-        # Watermark chỉ tiến khi KHÔNG mã nào hỏng: đẩy mốc lên trong lúc còn target chưa
-        # phục vụ là mất trigger vĩnh viễn (§5.1 chú thích 2 của plan). `bad_shape` cũng phải
-        # chặn y như `failed` — target đó cũng CHƯA được apply() ghi vào snapshot_check (review
-        # vòng 1, phát hiện #1: brief chỉ cảnh báo đường `failed`, bỏ sót đường `bad_shape`).
-        if failed == 0 and bad_shape == 0 and not stopped:
-            with engine.begin() as conn:
-                wm = snapshot_store.new_watermark(conn)
-            snapshot_store.upsert_domain_state(engine, wm.isoformat())
-            stats["watermark"] = wm.isoformat()
+        if stopped:
+            # `--max-minutes` là trần cho CẢ LƯỢT (backend/README.md), không phải riêng pha
+            # fetch — pha fetch vừa bị cắt vì hết giờ thì đừng châm thêm tới 20 phút re-crawl
+            # nữa (review, phát hiện #4).
+            stats["recrawl"] = {"skipped": "pha fetch đã bị cắt vì hết --max-minutes"}
+            log.info("re-crawl bỏ qua: pha fetch đã dừng vì hết ngân sách thời gian")
         else:
+            _recrawl(engine, stats)
+
+        # Watermark chỉ tiến khi KHÔNG mã nào hỏng VÀ đây là lượt ĐẦY ĐỦ: đẩy mốc lên trong lúc
+        # còn target chưa phục vụ — hoặc chỉ vì lượt này vốn chỉ phục vụ vài mã/kind — là mất
+        # trigger vĩnh viễn cho phần còn lại của sàn (review, phát hiện #1). `bad_shape` cũng
+        # phải chặn y như `failed` — target đó cũng CHƯA được apply() ghi vào snapshot_check
+        # (review vòng 1, phát hiện #1: brief chỉ cảnh báo đường `failed`, bỏ sót `bad_shape`).
+        push_watermark = not subset and failed == 0 and bad_shape == 0 and not stopped
+        if push_watermark:
+            stats["watermark"] = new_wm.isoformat()
+        elif not subset:
             stats["watermark"] = watermark.isoformat()
             stats["watermark_held"] = True
 
+        # close_run TRƯỚC, upsert_domain_state SAU — khuôn events_job.py/price_job.py, đúng
+        # thứ tự docstring `omo_store.close_run` chốt: cột `stats` dùng `coalesce`, nên nếu bước
+        # sau ném lỗi thì bằng chứng của lượt đã ghi xong vẫn còn, chỉ đổi status (review, phát
+        # hiện #8 — trước fix, gọi ngược lại làm mất sạch stats khi upsert_domain_state hỏng).
         omo_store.close_run(engine, run_id, "success", stats)
+        if push_watermark:
+            snapshot_store.upsert_domain_state(engine, new_wm.isoformat())
+
         log.info("snapshot xong: %s", stats)
         return 0
     except Exception as e:                    # noqa: BLE001 — job biên ngoài: mọi lỗi vào etl_run

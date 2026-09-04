@@ -235,6 +235,114 @@ def test_recrawl_passes_the_time_budget_to_price_job(snapshot_db, monkeypatch):
     assert price_calls == [{"backfill": True, "codes": [TICKER], "max_minutes": sj.RECRAWL_MAX_MINUTES}]
 
 
+def test_a_codes_run_does_not_touch_the_domain_watermark(snapshot_db):
+    """CRITICAL #1: `price_job.py` đã có tiền lệ `subset` — lượt `--codes`/`--kinds` chỉ phục
+    vụ vài mã/kind thì KHÔNG được đẩy mốc nước toàn bảng, nếu không mọi sự kiện công bố của
+    ~1.520 issuer còn lại nằm dưới mốc mới sẽ mất trigger vĩnh viễn."""
+    _seed(snapshot_db)
+    rc = sj.run(codes=[TICKER], get=_fake_get())
+    assert rc == 0
+    with snapshot_db.begin() as c:
+        row = c.execute(sa.text("SELECT 1 FROM ops.data_domain_state"
+                                " WHERE domain = :d AND source = :s"),
+                        {"d": ss.DOMAIN, "s": ss.SOURCE}).first()
+        stats = c.execute(sa.text("SELECT stats FROM ops.etl_run WHERE job = :j"
+                                  " ORDER BY run_id DESC LIMIT 1"), {"j": ss.JOB}).scalar_one()
+    assert row is None                       # lượt --codes không được ghi/đè data_domain_state
+    assert stats["subset"] is True
+
+
+def test_the_watermark_written_reflects_the_due_list_snapshot_not_a_later_insert(
+        snapshot_db, monkeypatch):
+    """CRITICAL #1 (nhánh lượt đầy đủ) + IMPORTANT #3: `run()` đọc watermark hai lần — T0 cùng
+    `due_list`, T1 sau khi fetch/re-crawl xong (tới 20 phút) — tạo cửa sổ đua: sự kiện MỚI được
+    chèn (giả lập `events_job` chạy song song) ngay trong lúc snapshot đang fetch bị mốc T1 nuốt
+    mất, không job nào phục vụ nó. Sửa: `max(public_date)` phải lấy CÙNG giao dịch với
+    `due_list` ở T0 và ghi đúng giá trị đó ở cuối lượt — bất kể chuyện gì xảy ra ở giữa.
+
+    Zero hoá `QUOTA` để nhánh quét sàn không kéo issuer thật còn sót của file test khác vào
+    lượt (đây phải là lượt ĐẦY ĐỦ — codes=None, kinds=None — mới thật sự ghi watermark theo
+    fix #1). `expected_wm` tự đo NGAY TRƯỚC khi chạy job thay vì hard-code, để test không phụ
+    thuộc việc `market.corporate_event` có sạch tuyệt đối hay không (§1.7 — không giả định
+    trạng thái người khác để lại)."""
+    monkeypatch.setattr(ss, "QUOTA", {k: 0 for k in ss.QUOTA})
+    iid = _seed(snapshot_db)
+    with snapshot_db.begin() as c:
+        c.execute(sa.text(
+            "INSERT INTO ops.data_domain_state (domain, source, status, watermark)"
+            " VALUES (:d, :s, 'active', '2026-08-01')"), {"d": ss.DOMAIN, "s": ss.SOURCE})
+        c.execute(sa.text(
+            "INSERT INTO market.corporate_event (event_type, issuer_id, public_date, payload)"
+            " VALUES ('Earning', :i, current_date, '{}'::jsonb)"), {"i": iid})
+    with snapshot_db.begin() as c:
+        expected_wm = c.execute(sa.text(
+            "SELECT max(public_date) FROM market.corporate_event")).scalar_one()
+
+    inserted = {"done": False}
+
+    def get(u, timeout):
+        if not inserted["done"]:
+            inserted["done"] = True
+            with snapshot_db.begin() as c:
+                c.execute(sa.text(
+                    "INSERT INTO market.corporate_event (event_type, issuer_id, public_date, payload)"
+                    " VALUES ('Earning', :i, current_date + 30, '{}'::jsonb)"), {"i": iid})
+        return _fake_get()(u, timeout)
+
+    rc = sj.run(get=get, sleep=lambda s: None)
+    assert rc == 0
+    with snapshot_db.begin() as c:
+        wm = c.execute(sa.text("SELECT watermark FROM ops.data_domain_state"
+                               " WHERE domain = :d AND source = :s"),
+                       {"d": ss.DOMAIN, "s": ss.SOURCE}).scalar_one()
+    assert wm == expected_wm.isoformat()
+
+
+def test_recrawl_is_skipped_when_the_fetch_phase_was_cut_by_max_minutes(snapshot_db, monkeypatch):
+    """IMPORTANT #4: `--max-minutes` chỉ chặn pha fetch — `_recrawl` vẫn chạy tiếp tới 20 phút
+    nữa kể cả khi fetch vừa bị cắt vì hết giờ, trong khi `backend/README.md` mô tả cờ này như
+    trần thời gian của CẢ LƯỢT. `max_minutes=-1` đặt hạn ở quá khứ nên `stopped=True` ngay từ
+    target đầu tiên — tất định, không phụ thuộc đồng hồ thật."""
+    price_calls = []
+    monkeypatch.setattr("etl.price_job.run", lambda **kw: (price_calls.append(kw), 0)[1])
+    _seed(snapshot_db)
+    rc = sj.run(codes=[TICKER], get=_fake_get(), max_minutes=-1)
+    assert rc == 0
+    assert price_calls == []
+    with snapshot_db.begin() as c:
+        stats = c.execute(sa.text("SELECT stats FROM ops.etl_run WHERE job = :j"
+                                  " ORDER BY run_id DESC LIMIT 1"), {"j": ss.JOB}).scalar_one()
+    assert stats["stopped_early"] is True
+    assert "skipped" in stats["recrawl"]
+
+
+def test_stats_survive_when_upsert_domain_state_fails_after_close_run(snapshot_db, monkeypatch):
+    """MINOR #8: `omo_store.close_run` docstring chốt thứ tự — mọi job gọi
+    `close_run('success', stats)` TRƯỚC rồi mới làm nốt bước sau (`upsert_domain_state`); cột
+    `stats` dùng `coalesce` nên nếu bước sau ném lỗi, `etl_run` vẫn GIỮ được stats đã ghi, chỉ
+    đổi `status` sang `failed`. Trước fix, `snapshot_job` gọi `upsert_domain_state` TRƯỚC
+    `close_run` — lỗi ở đó làm `stats = NULL`, mất sạch bằng chứng của lượt đã ghi xong."""
+    monkeypatch.setattr(ss, "QUOTA", {k: 0 for k in ss.QUOTA})
+    monkeypatch.setattr(ss, "upsert_domain_state",
+                        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
+    iid = _seed(snapshot_db)
+    with snapshot_db.begin() as c:
+        c.execute(sa.text(
+            "INSERT INTO ops.data_domain_state (domain, source, status, watermark)"
+            " VALUES (:d, :s, 'active', '2026-08-01')"), {"d": ss.DOMAIN, "s": ss.SOURCE})
+        c.execute(sa.text(
+            "INSERT INTO market.corporate_event (event_type, issuer_id, public_date, payload)"
+            " VALUES ('Earning', :i, current_date, '{}'::jsonb)"), {"i": iid})
+    rc = sj.run(get=_fake_get(), sleep=lambda s: None)
+    assert rc == 2
+    with snapshot_db.begin() as c:
+        row = c.execute(sa.text("SELECT status, stats, error FROM ops.etl_run WHERE job = :j"
+                                " ORDER BY run_id DESC LIMIT 1"), {"j": ss.JOB}).one()
+    assert row.status == "failed"
+    assert "boom" in row.error
+    assert row.stats["rows_written"] == 1    # bằng chứng KHÔNG mất, dù status = failed
+
+
 def test_a_partial_outage_refuses_the_run_and_leaves_real_evidence(snapshot_db):
     """Review vòng 1, phát hiện #3: hai test outage toàn phần ở trên có `fetched` LUÔN RỖNG
     (payload lỗi khiến classify() không bao giờ trả 'ok') nên chỉ chứng minh
