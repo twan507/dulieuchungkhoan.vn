@@ -115,3 +115,56 @@ Mẫu trong tài liệu ghi `"status": 0` *(đo 2026-08-10)*; đo lại hôm nay
 1. Chốt **lưu null hay bỏ null** (§4.8, ba phương án, điều kiện đảo ngược).
 2. Chốt nạp **trọn lịch sử** hay **cửa sổ N kỳ** — nguồn **không lọc được kỳ** *(bẫy đã ghi trong tài liệu)*, nên mỗi lời gọi luôn tải trọn; cắt cửa sổ chỉ tiết kiệm chỗ lưu, không tiết kiệm lời gọi.
 3. Nhân bản khuôn `snapshot_*` — nó đã qua 5 vòng sửa và một review toàn nhánh.
+
+---
+
+## 6. Bổ sung chiều 2026-09-04 — 12 lời gọi trước khi mở lát 5
+
+**Tải:** 3 endpoint × 4 mã có kỳ quý (BAB `NASB` · AAS `HAMIS` · VNM · HPG), giãn cách 0,5 s, không lời gọi nào ngoài kế hoạch. Bản thô: [`periods-raw.json`](periods-raw.json). Cộng một phép đối chiếu cục bộ giữa `measurements-raw.json` và [`field-dictionary.json`](../../../10-sources/market/field-dictionary.json).
+
+### 6.1 `quarterReport` của ba endpoint số liệu chỉ có NĂM giá trị
+
+| Mã | Kỳ quý (BS / IS / CF) | Kỳ năm | `quarterReport` quý | `quarterReport` năm | Kỳ trùng |
+|---|---|---|---|---|---|
+| BAB | 43 / 43 / 43 | 17 / 17 / 17 | `{1,2,3,4}` | `{5}` | 0 |
+| AAS | 39 / 38 / 38 | 15 / 15 / 15 | `{1,2,3,4}` | `{5}` | 0 |
+| VNM | 84 / 87 / 67 | 24 / 23 / 23 | `{1,2,3,4}` | `{5}` | 0 |
+| HPG | 78 / 86 / 72 | 21 / 21 / 19 | `{1,2,3,4}` | `{5}` | 0 |
+| A32 *(mẫu sáng)* | 0 / 0 / 0 | 10 | — | `{5}` | 0 |
+
+Giá trị `6`/`9` ở §5.1 là của **`lengthReport` trong `getFinancialReports`** (danh sách PDF), **không** xuất hiện ở ba endpoint số liệu. Hệ quả: `financial_statement` giữ nguyên `CHECK (length_report BETWEEN 1 AND 5)`; chỉ `financial_report_file` và `corporate_event` cần nới.
+
+Cả bốn mã: `quarterly[]` xếp **mới → cũ** (phần tử đầu 2026Q2), `yearly[]` cũng mới → cũ — đúng như tài liệu nguồn ghi, và **ngược** với khối `quarterly[]` trong `GetSnapshot*` (cũ → mới, đính chính ở spec lát 4 §5.3).
+
+### 6.2 Con số 557 ở "Ba con số đính chính" là gì
+
+Đối chiếu tập khoá của 9 lời gọi buổi sáng với từ điển:
+
+| | Số |
+|---|---|
+| Khoá phân biệt trên ba endpoint (đúng con số 557 của §"Ba con số đính chính") | **557** |
+| … trong đó là mã từ điển (so khớp không phân biệt hoa thường) | **549** |
+| … trong đó **không phải** mã chỉ tiêu | **8**: `organCode` · `ebit` · `ebitDa` · `operating` · `otherAssetBank` · `otherAssetNonBank` · `otherLiabilties` · `rtq29` |
+| Mã từ điển chưa gặp trên mẫu 3 mã | 7: `cfa71` `cfa72` `isi173` `nob44` `nob65` `nob66` `nob151` |
+| Mã BCTC trong từ điển | **556** |
+
+Vậy **557 không phải đính chính của 556** — dòng "556 → 557" ở bảng đính chính buổi sáng là so hai số đếm hai thứ khác nhau. Tài liệu sống đã sửa lại theo đó (roadmap, `market-data-store` §5.4, `05-fiin-financial-statements.md`); bảng buổi sáng giữ nguyên làm bản ghi.
+
+### 6.3 Khoá viết hoa lẫn: `bsI141` và `bsS134`
+
+`GetBalanceSheet` trả đúng hai khoá này với chữ hoa ở giữa trên **4/4 mã chiều + A32 sáng**; `GetIncomeStatement` và `GetCashFlow` không có. Từ điển ghi `bsi141`/`bss134`. Không hạ chữ thường thì hai mã rơi khỏi từ điển và không khớp khoá chính `metric_code` (migration `0004` chú thích "chữ thường").
+
+### 6.4 Số kỳ ba báo cáo không bằng nhau, kích thước và độ trễ
+
+| Mã | KB (BS / IS / CF) | ms (BS / IS / CF) | Số khoá (BS / IS / CF) |
+|---|---|---|---|
+| BAB | 212 / 152 / 135 | 653 / 219 / 118 | 235 / 180 / 150 |
+| AAS | 189 / 140 / 117 | 640 / 399 / 527 | 235 / 180 / 150 |
+| VNM | 408 / 285 / 204 | 1.069 / 538 / 484 | 235 / 180 / 150 |
+| HPG | 377 / 276 / 206 | 817 / 413 / 332 | 235 / 180 / 150 |
+
+Số khoá mỗi endpoint **cố định** bất kể loại hình (ngân hàng, chứng khoán, sản xuất) — bộ mã của mọi loại hình cùng nằm trong một response, loại hình không áp dụng thì `null`. `status` = `"Success"` 12/12.
+
+### 6.5 AC5 của lát 4 — kiểm lại lúc 17:10
+
+`GetSnapshotNoneBank` của AAA: `rtd11` 2.791.635.955.700 ÷ `outstandingShare` 393.742.730 = **7.090** — vẫn là giá đóng cửa **03/09** (giá 04/09 là 7.130 theo `getPriceData`, xem [ledger lát 4 §1d](../../plans/2026-09-04-snapshot-family-etl/ledger.md)). Nguồn chưa nạp phiên 04/09 sau 2 giờ 10 phút kể từ khi đóng cửa. AC5 vẫn chưa đóng được; lệnh đóng không đổi.
