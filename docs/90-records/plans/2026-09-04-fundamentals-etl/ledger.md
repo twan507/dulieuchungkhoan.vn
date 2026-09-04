@@ -70,3 +70,26 @@ Cả hai lượt: BAB và AAS `unchanged` 6/6, `rows_written 0`, `raw_payload` k
 - **Việc kế tiếp:** giao **fix round 2** theo [fix-round2-brief.md](fix-round2-brief.md) (đã chép vào thư mục này): (A) ba test trigger dùng ngày hardcode ⇒ đổi sang `date.today()` tương đối; (B) `classify` coi `quarterly`/`yearly` `null` là `[]`, fixture `backend/tests/etl/fixtures/fundamentals/A32-cf-quarterly-null.json` đã có sẵn. Subagent Sonnet, TDD, hai commit; sau đó re-review có phạm vi.
 - Rồi: định danh 1 warning trong full-suite ⇒ AC1 · AC4 chạy lại (`--codes A32,BAB,AAS` ⇒ A32 phải `unchanged`) · AC3 `--backfill --max-minutes 30` ngoài giờ ⇒ ghi calls/retries/remaining · AC6 ép hỏng · AC7 lượt thường sau khi có mốc · checklist tài liệu §8 (roadmap có "Điểm vào cho lát 6" kèm lỗi A1 của lát 4; tài liệu nguồn 05 thêm bẫy `quarterly: null` đo 2026-09-04) · review lại · merge `main`.
 - Artifact điều phối (brief task 1–6, report, gói diff) ở scratchpad Temp của phiên `ea5dca87…`; mất cũng không sao — mọi quyết định đã nằm trong ledger này.
+
+## 5. Nối lại (máy chưa tắt, hook mục tiêu không cho dừng) — làm bước ngắn, commit từng bước
+
+- Fix round 2: `6c325d4` (test trigger/watermark lấy ngày từ `date.today()`) + `ef6ed24` (`classify` coi `quarterly`/`yearly` null là rỗng, fixture thật). tests/etl 312 + tests/schema 60 xanh. Chờ re-review có phạm vi.
+- Re-review round 2: A và B đều ADDRESSED, không breakage mới. Còn đúng một ngày hardcode trong `test_due_list_skips_the_trigger_branch_on_cold_start` — an toàn vì cold start bỏ nhánh trigger bất kể ngày.
+
+### AC4 — chạy lại sau fix (19:01, code tại ef6ed24)
+
+```
+{'tally': {'attempted': 12, 'failed': 0, 'bad_shape': 0, 'empty': 0, 'checked': 12, 'first': 0,
+           'floor_compared': 12, 'changed_floor': 0, 'unchanged': 12}, 'rows_written': 0, 'calls': 12, 'retries': 0}
+```
+A32 hết `bad_shape`; 12/12 `unchanged`; `remaining` vẫn 6.080. ✅
+
+### AC1 · AC6 (19:05, code tại ef6ed24)
+
+- **AC1:** `uv run pytest tests -q` ⇒ **590 passed, 2 skipped** *(trước lát: 533 + 2)*. Warning duy nhất ở chế độ mặc định là `ResourceWarning` (file `owner.lock` chưa đóng) của `tests/ingester/test_i15_recovery_drain.py` — có từ trước, ngoài lát 5.
+- **AC6:** ép `get` giả trả 503 cho 20 mã kind `bs` ⇒ guard từ chối "tỷ lệ lời gọi hỏng 100.0% > 20% (20/20)", exit 1, run 103 `failed`, `financial_statement` 40.961 dòng trước/sau không đổi, `fundamentals_check` vẫn 12. ✅ (0 dòng `raw_payload` — đúng giới hạn đã ghi: mọi target hỏng thì không có payload nào để lưu.)
+- **AC3 lô 1** `--backfill --max-minutes 30 --stop-before-open` khởi chạy 19:05, **bị dừng tay ~19:10** vì chủ dự án cần tắt máy — lượt bị giết trước `apply` nên không ghi gì, `checked_at` không nhúc nhích, chạy lại từ đầu là đúng thiết kế.
+
+## 6. TẠM DỪNG LẦN HAI ~19:10 — chủ dự án tắt máy. Điểm nối lại
+
+Code xong, review sạch tới `ef6ed24`; còn: AC3 (backfill trọn sàn theo lô 30 phút, ngoài giờ, tới `remaining = 0`), AC7 (lượt thường sau khi có mốc nước), checklist tài liệu spec §8 (chưa sửa dòng nào — các chỗ cần sửa: roadmap dòng 117 + mục "Điểm vào cho lát 5" → viết "Lát 5 ✅" và "Điểm vào cho lát 6" kèm lỗi A1 của lát 4; `market-data-store` §4.1 dòng BCTC + §5.4; `00-conventions` §10.1 dòng BCTC; `database/README` 17 migration + `test_s14`; `backend/README` mục "Chạy job fundamentals" trước "## Lịch chạy"; `05-fiin-financial-statements` thêm bẫy `quarterly: null` đo 2026-09-04 18:5x; khảo sát README §6.6; `90-records/README` dòng plan), rồi merge `main`.
