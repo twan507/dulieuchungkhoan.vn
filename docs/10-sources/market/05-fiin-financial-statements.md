@@ -89,6 +89,7 @@ Tra nghĩa từng mã: [Phụ lục A §A.5](appendix-A-field-codes.md) — **72
 
 - ⚠️ Ba mã UPCOM nhỏ (`THU`, `RAT`, `VCT`) **không có dữ liệu quý** nhưng vẫn có dữ liệu năm. Giao diện phải xử lý trường hợp tab "Theo quý" trống trong khi tab "Theo năm" có dữ liệu.
 - Số kỳ giữa ba báo cáo **không bằng nhau** trên cùng một mã (TDH: 78 / 86 / 62). Không thể giả định ghép được theo chỉ số vị trí — phải ghép theo cặp `yearReport` + `quarterReport`.
+- ⚠️ **Một kỳ có thể xuất hiện HAI lần trong cùng mảng** — `GetBalanceSheet` của BSHCO *(đo 2026-09-04 20:12, lượt điền đầu của lát 5)*: `quarterly` 17 phần tử mà kỳ 2024/Q2 có hai bản ghi **giống hệt nhau** (160 ô, 0 khác biệt). Khảo sát buổi chiều đo 0 trùng trên 4 mã nên đây là ca hiếm. Gộp khi giống hệt; hai bản khác nhau mới coi là sai hợp đồng. Mẫu thật: `backend/tests/etl/fixtures/fundamentals/BSHCO-bs-duplicate-period.json`.
 
 ### Độ phủ & hiệu năng
 
