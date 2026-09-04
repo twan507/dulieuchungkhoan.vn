@@ -54,3 +54,75 @@ def test_classify_calls_a_missing_root_key_bad_shape_not_retry():
 def test_classify_treats_broken_json_and_non_200_as_retry():
     assert sf.classify("ownership", 200, "<html>502</html>") == ("retry", None)
     assert sf.classify("ownership", 503, "") == ("retry", None)
+
+
+import httpx
+import pytest
+
+from etl.snapshot_fetch import BadShape, FetchError, Target
+
+
+def _t(kind="ownership"):
+    return Target(kind=kind, issuer_id=1, organ_code="ASECO32", ticker="A32",
+                  com_type="CT", found_by="floor")
+
+
+def test_fetch_one_retries_a_transport_exception_then_succeeds():
+    """Bài học lát 3: ReadTimeout phải đi CÙNG đường với response xấu, không ném thẳng."""
+    calls = []
+
+    def get(u, timeout):
+        calls.append(u)
+        if len(calls) == 1:
+            raise httpx.ReadTimeout("máy ngủ giữa lời gọi")
+        return 200, _text("A32-ownership.json")
+
+    with sf.open_fetcher(get=get, sleep=lambda s: None, clock=lambda: 0.0) as f:
+        item, _ = f.fetch_one(_t())
+    assert len(calls) == 2 and f.retries == 1
+    assert "majorShareHolders" in item
+
+
+def test_fetch_one_gives_up_after_four_attempts_on_a_failed_status():
+    def get(u, timeout):
+        return 200, _text("BVB-valuation-failed.json")
+
+    with sf.open_fetcher(get=get, sleep=lambda s: None, clock=lambda: 0.0) as f:
+        with pytest.raises(FetchError):
+            f.fetch_one(_t("valuation"))
+        assert f.calls == 4 and f.retries == 3
+
+
+def test_fetch_one_does_not_retry_a_bad_shape():
+    def get(u, timeout):
+        return 200, '{"items": [{"khac": 1}], "status": 0}'
+
+    with sf.open_fetcher(get=get, sleep=lambda s: None, clock=lambda: 0.0) as f:
+        with pytest.raises(BadShape):
+            f.fetch_one(_t())
+        assert f.calls == 1
+
+
+def test_fetch_one_waits_between_two_calls_to_keep_two_per_second():
+    slept, now = [], [0.0]
+
+    def get(u, timeout):
+        return 200, _text("A32-ownership.json")
+
+    with sf.open_fetcher(get=get, sleep=slept.append, clock=lambda: now[0]) as f:
+        f.fetch_one(_t())
+        now[0] = 0.1                                  # mới trôi 0,1 s kể từ lời gọi trước
+        f.fetch_one(_t())
+    assert slept and abs(slept[-1] - 0.4) < 1e-9      # phải ngủ bù đúng 0,4 s
+
+
+def test_fetch_one_passes_the_wider_timeout_for_valuation():
+    seen = []
+
+    def get(u, timeout):
+        seen.append(timeout)
+        return 200, _text("A32-valuation.json")
+
+    with sf.open_fetcher(get=get, sleep=lambda s: None, clock=lambda: 0.0) as f:
+        f.fetch_one(_t("valuation"))
+    assert seen == [30.0]

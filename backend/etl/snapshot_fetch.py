@@ -59,3 +59,72 @@ def classify(kind: str, http: int, text: str) -> tuple[str, dict | None]:
     if ROOT_KEY[kind] not in items[0]:
         return "bad_shape", None
     return "ok", items[0]
+
+
+@dataclass(frozen=True)
+class Target:
+    kind: str
+    issuer_id: int
+    organ_code: str
+    ticker: str
+    com_type: str | None
+    found_by: str                                  # 'event' | 'floor'
+
+
+class FetchError(Exception):
+    """Một mã/kind hỏng sau mọi lần thử — để nó CHƯA KIỂM, không ghi gì."""
+
+
+class BadShape(Exception):
+    """Response hợp lệ nhưng thiếu khoá gốc — nguồn đổi hình dạng, thử lại vô ích."""
+
+
+class Fetcher:
+    def __init__(self, get, sleep=time.sleep, clock=time.monotonic):
+        self._get, self._sleep, self._clock = get, sleep, clock
+        self.calls = 0
+        self.retries = 0
+        self._last: float | None = None
+
+    def _request(self, kind: str, u: str) -> tuple[int, str]:
+        if self._last is not None:
+            wait = MIN_INTERVAL - (self._clock() - self._last)
+            if wait > 0:
+                self._sleep(wait)
+        self._last = self._clock()
+        self.calls += 1
+        return self._get(u, TIMEOUT[kind])
+
+    def fetch_one(self, t: Target) -> tuple[dict, str]:
+        u = url(t.kind, t.organ_code, t.ticker, t.com_type)
+        http, text = 0, ""
+        for attempt in range(RETRIES + 1):
+            try:
+                http, text = self._request(t.kind, u)
+            except httpx.HTTPError as e:
+                # Timeout/đứt kết nối đi CÙNG đường với response xấu (bài học lát 3, e7f80f6)
+                http, text = 0, f"{type(e).__name__}: {e}"
+            verdict, item = classify(t.kind, http, text)
+            if verdict == "ok":
+                return item, text
+            if verdict == "bad_shape":
+                raise BadShape(f"{t.organ_code}/{t.kind}: thiếu khoá gốc {ROOT_KEY[t.kind]!r}")
+            if attempt == RETRIES:
+                break
+            self._sleep(BACKOFF[attempt])
+            self.retries += 1
+        raise FetchError(f"{t.organ_code}/{t.kind} hỏng sau {RETRIES + 1} lần"
+                         f" (HTTP {http}): {text[:200]}")
+
+
+@contextlib.contextmanager
+def open_fetcher(get=None, sleep=time.sleep, clock=time.monotonic):
+    if get is not None:                            # test tiêm get giả, không mở kết nối
+        yield Fetcher(get, sleep, clock)
+        return
+    # MỘT client cho trọn lượt — mở lại mỗi lời gọi là ~234 lần bắt tay TLS
+    with httpx.Client(headers={"Origin": FIIN_ORIGIN}) as client:
+        def get_one(u: str, timeout: float) -> tuple[int, str]:
+            r = client.get(u, timeout=timeout)
+            return r.status_code, r.text
+        yield Fetcher(get_one, sleep, clock)
