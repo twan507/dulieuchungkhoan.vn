@@ -26,7 +26,7 @@ Ba khối vốn có ba danh sách việc riêng, mỗi danh sách tự cho mình
 | **Độ rộng nguồn** | ✅ **Khép 2026-08-15** — 9 nguồn, ~400 lời gọi thật. Danh sách *"Ngoài phạm vi"* đã phân rã hết, **không còn mục nào chưa có câu trả lời** | [`10-sources/README.md` §2](../10-sources/README.md) |
 | **Repo vào git** | ✅ `git init` + commit đầu 2026-08-14 | toàn bộ docs + hai skill |
 | **Stack sản phẩm + cây monorepo** | ✅ **Chốt 2026-08-24** — Next.js · Python/FastAPI · Postgres + ClickHouse (lưu tick thô) · skill dời về `backend/agent/skills/` | [ADR 0007](decisions/0007-monorepo-layout-and-stack.md) |
-| **Hạ tầng + schema hai kho** | ✅ **Xong 2026-08-26** — compose (PG+Redis+CH, profile `realtime`) · schema `postgres-data` **14 migration** · schema `rt` ClickHouse 2 migration · **456 test** *(số cập nhật 2026-09-04 sau lát 3; sau lát 2 là 399, mốc 2026-08-28 là 321, lúc dựng xong 26/08 là 10 migration / 71 test)* · một lượt dev trọn (dev-start → migrate → test → dev-stop) chạy sạch | [database/README.md](../../database/README.md) |
+| **Hạ tầng + schema hai kho** | ✅ **Xong 2026-08-26** — compose (PG+Redis+CH, profile `realtime`) · schema `postgres-data` **16 migration** · schema `rt` ClickHouse 2 migration · **523 test** *(số cập nhật 2026-09-04 sau lát 4; sau lát 3 là 456; sau lát 2 là 399, mốc 2026-08-28 là 321, lúc dựng xong 26/08 là 10 migration / 71 test)* · một lượt dev trọn (dev-start → migrate → test → dev-stop) chạy sạch | [database/README.md](../../database/README.md) |
 | **Code sản phẩm (ingester · ETL thật · api)** | 🟡 **Lát cắt dọc đầu đã dựng 2026-08-26** — `ingester` (socket EIO3 → chuẩn hoá → Redis + ClickHouse, leader lock, đối chứng cuối phiên) và job `etl omo`; đã qua review toàn nhánh và **merge `main` 2026-08-26** *(194 test lúc đó)*. **Cập nhật 2026-08-28: 321 test xanh** — thêm lát tràn-ra-đĩa (AC3 đóng, dư = 0), job `etl refdata`, cây ngành hai lớp, và 7 task chuyển `LogonType=S4U`. Job OMO đã chạy thật từ 26/08 (4 mốc/ngày) — nhưng ⏸️ **cả 4 task OMO đã `Disabled` lúc 2026-08-28 15:04**. Trạng thái, điều kiện bật lại do **mục [4d] ở §2** sở hữu — không chép lại ở đây. **Ghi tick bật 2026-08-26 tối** — phiên ghi thật đầu tiên là 27/08, chạy song song một phiên `--measure` làm lưới an toàn. ⏸️ **TOÀN BỘ 7 task ghi dữ liệu đã `Disabled` lúc 2026-09-03 ~08:55** *(quyết định chủ dự án: giai đoạn này ưu tiên dev, đã có đủ phiên 27/08 · 28/08 + sáng 03/09 làm bằng chứng)*. Hai tiến trình đang chạy (`dlck-ingester`, `dlck-ingester-measure`) bị dừng giữa phiên. Ba đồng hồ mất dữ liệu (tick · frame thô · OMO) vì thế **cùng chạy**; điều kiện bật lại do **mục [4d] ở §2** sở hữu. ⚠️ `scripts/register-tasks.ps1` tự `Enable` `dlck-ingester` khi chạy lại — đừng chạy script đó trong lúc tạm dừng. `api` chưa bắt đầu. **[7] ETL hằng ngày tách thành chuỗi lát; lát 1 `etl screener` ✅ XONG 2026-09-03** — đã merge `main`, chạy thật sau phiên **1.541 dòng/ngày**, 351 test xanh ([spec](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) · [ledger](../90-records/plans/2026-09-03-screener-daily-etl/ledger.md)). **Lát 2 `etl events` ✅ XONG 2026-09-03** — sáu họ `Calendar/GetCorporate*` → `market.corporate_event`, chạy thật vào kho production: **110.695 dòng**, **517 issuer tối thiểu** tạo mới (bảng `issuer` 1.552 → 2.069), 42 bản ghi gộp vì đụng khoá tự nhiên, 9 lời gọi ~2 phút 39 giây, lượt hai idempotent (0 issuer mới, 0 dòng mới), **399 test xanh** ([spec](../90-records/plans/2026-09-03-events-daily-etl/spec.md) · [ledger](../90-records/plans/2026-09-03-events-daily-etl/ledger.md)). **Lát 3 `etl price` ✅ XONG 2026-09-04** — `getPriceData` trang 1 của **1.523** cổ phiếu niêm yết → `market.price_daily`, chạy thật: **91.165 dòng** (60 phiên/mã), **38 phút tuần tự, 0 retry, 0 tín hiệu chặn**; `close_raw` điền từ `closePrice` cho cả lịch sử (phát hiện mới, đã kiểm 3 cách); backfill 12,5 năm có con trỏ, chạy bằng task `dlck-price-backfill` (thứ 7, hoặc kích hoạt tay buổi tối, tự dừng trước phiên); **456 test xanh** ([spec](../90-records/plans/2026-09-03-price-daily-etl/spec.md) · [ledger](../90-records/plans/2026-09-03-price-daily-etl/ledger.md)) | [plans/2026-08-26-ingester-omo-first-slice/](../90-records/plans/2026-08-26-ingester-omo-first-slice/) |
 | **Realtime phái sinh** | ✅ **Đã đo 2026-08-26 trong phiên** — phái sinh đi chung topic `i`/`o10`/`t` với cổ phiếu (`EX="XHNF"`), không có kênh riêng, không có `openInterest` | [§5.1](#51--realtime-phái-sinh--đã-đo-2026-08-26-phiên-chiều) · [hồ sơ đo](../90-records/surveys/2026-08-26-bvsc-realtime-session/README.md) |
 
@@ -112,8 +112,8 @@ lát 1  screener              ✅ XONG 2026-09-03
 lát 2  lịch sự kiện          ✅ XONG 2026-09-03 — mở khoá snapshot, BCTC, re-crawl giá theo sự kiện quyền
 lát 3  giá theo ngày         ✅ XONG 2026-09-04 — 1.523 lời gọi tuần tự 38 phút; close_raw điền được cả lịch sử;
                                backfill = task dlck-price-backfill, tự chạy cuối tuần tới khi hết vòng
-lát 4  họ Snapshot           kích hoạt theo lát 2 + quét sàn (market-data-store §4.1b), gồm re-crawl giá
-                               theo exright_date bằng `etl price --backfill --codes` — điểm vào ở mục dưới
+lát 4  họ Snapshot           ✅ XONG 2026-09-04 — 234 lời gọi/ngày (quota cuốn chiếu), ghi KHI ĐỔI,
+                               sổ kiểm ops.snapshot_check vừa cấp danh sách tới hạn vừa đếm lỗ của lịch
 lát 5  BCTC                  kích hoạt theo getCorporateEarning của lát 2 → financial_statement (556 mã chỉ tiêu)
 lát 6  giám sát hợp đồng     [8] contract_snapshot (market-data-store §7.1) — bắt nguồn đổi schema/độ tươi,
                                dùng chung script với 5 lát trên
@@ -142,7 +142,40 @@ lát 8  lên VPS               hồ sơ docker-compose.vps.yml (service-topology
 
 🔴 **Sự cố lộ lỗi thật trong AC7:** máy **ngủ** 02:00 → 05:56, lời gọi treo qua giấc ngủ thành `httpx.ReadTimeout` và **lọt qua vòng retry**, giết cả lượt ở mã đầu — sửa `e7f80f6` (exception vận chuyển đi cùng đường với response xấu; `events_fetch`/`screener_fetch` cùng khuôn nhưng chỉ 9–52 lời gọi nên chưa gặp). Máy ngủ là **theo lịch** (chủ dự án đặt 02:00), app không chặn được ⇒ job được làm cho **sống qua giấc ngủ**: `pool_pre_ping` + ngân sách theo đồng hồ tường, cộng retry vận chuyển ([backend/README](../../backend/README.md)).
 
-### Điểm vào cho lát 4 — họ Snapshot kích hoạt theo sự kiện + quét sàn, đọc trước khi bắt đầu
+### Lát 4 — họ Snapshot ✅ XONG 2026-09-04
+
+**`python -m etl snapshot`** — bốn kind `snapshot` · `valuation` · `ownership` · `dividend` vào `market.snapshot_daily`, kiến trúc hai lớp của [market-data-store §4.1b](../20-design/market-data-store.md): trigger từ lịch sự kiện + **quét sàn cuốn chiếu theo quota ngày** (24 · 70 · 70 · 70 = **234 lời gọi/ngày**, phủ trọn sàn sau 22 ngày với ba kind nhịp tháng và 64 ngày với `snapshot`). Hồ sơ: [spec](../90-records/plans/2026-09-04-snapshot-family-etl/spec.md) · [plan](../90-records/plans/2026-09-04-snapshot-family-etl/plan.md) · [ledger](../90-records/plans/2026-09-04-snapshot-family-etl/ledger.md) · [số đo](../90-records/plans/2026-09-04-snapshot-family-etl/measurements.md).
+
+**Điểm khác mọi lát trước: kho chỉ nhận dòng KHI NỘI DUNG ĐỔI.** Không trường nào của họ này đổi theo ngày, nên ghi mỗi ngày một dòng là chép lại cùng một thứ 250 lần/năm. Phép so "có đổi không" tính hash trên **danh sách trắng theo kind** — bắt buộc, vì đo được rằng `rtd11` `rtd21` `rtd25` (snapshot) và `priceEarningRatio` `dividendYield` (dividend) **tính từ giá, đổi mỗi ngày**: hash trọn payload thì 100% mã "đổi" mỗi lượt và cả kiến trúc trigger mất nghĩa. Mọi lượt kiểm — đổi hay không — đều cập nhật `ops.snapshot_check`, và **`checked_at` chính là con trỏ** nên job không cần con trỏ riêng, lượt bị giết giữa chừng không mất chỗ.
+
+**Chạy thật vào kho production 2026-09-04:** AC3 **234 target, 234 lời gọi, 0 retry, 0 hỏng, 0 tín hiệu chặn**, phần snapshot ~123 giây · AC4 lượt hai cùng ngày `unchanged 12`, `rows_written 0` · AC6 re-crawl giá **18.429/18.909 dòng đổi** ở lượt đầu và **0** ở lượt hai (hệ số RYG 0,8547 · TCH 0,9091 trước ngày ex, 1,0 từ ngày ex; DCF chỉ có `AGM` nên giữ 1,0 suốt) · AC7 ép hỏng ⇒ `failed`, 0 dòng ghi, sổ kiểm không nhúc nhích. **523 test xanh.** ⏳ **AC5 còn nợ** — phép đo ngày-qua-ngày chứng minh danh sách trắng đúng, chạy 2026-09-05.
+
+🔴 **Bài học đắt nhất, và 523 test không bắt được:** lượt chạy thật đầu tiên ghi `watermark = 2026-09-22` — một ngày **ở tương lai** — vì spec định nghĩa mốc nước là `max(greatest(public_date, exright_date))` mà kho có 20 sự kiện `exright_date` tương lai. Trigger sẽ chết ba tuần, im lặng. Gốc rễ: **trộn hai đồng hồ khác nhau**. *"Sự kiện nào mới được công bố"* đo bằng `public_date`; *"ngày không hưởng quyền nào vừa đi qua"* đo bằng `exright_date` so với **hôm nay**. Tách xong thì re-crawl thành **không trạng thái** (cửa sổ 3 ngày), và phải kèm hai chốt nữa cũng chỉ lộ ra khi chạy thật: trần thời gian `RECRAWL_MAX_MINUTES = 20` *(mùa cổ tức có tuần 48 mã có ngày ex, mỗi mã là một lượt backfill trọn 12,5 năm)* và bộ lọc `event_type IN ('CashDividend','StockDividend','ShareIssuance')` *(6/10 sự kiện được chọn là `AGM` — chốt quyền dự đại hội, không đụng hệ số điều chỉnh)*.
+
+⚠️ **`ingested_at` không dùng được làm mốc "sự kiện mới"** — `events_store` upsert kèm `DO UPDATE SET ingested_at = clock_timestamp()`, mà job events tải trọn 110.695 dòng mỗi lượt nên cả bảng được làm mới dấu thời gian mỗi ngày. Đã cân nhắc và loại; đừng đề xuất lại.
+
+### Điểm vào cho lát 5 — BCTC, đọc trước khi bắt đầu
+
+**Trạng thái bàn giao 2026-09-04:** nhánh `feat/snapshot-family-etl` · **523 test xanh** · migration head `0016` · `snapshot_daily` 246 dòng ngày 2026-09-04 · `ops.snapshot_check` 246 dòng · **không đăng ký task Scheduler** (lịch thuộc lát 7) · AC5 còn nợ tới 05/09.
+
+| Cần biết trước | Ở đâu |
+|---|---|
+| Tín hiệu kích hoạt đã có sẵn: `corporate_event` loại `Earning` kèm `year_report`/`length_report` — lát 4 đã dùng đúng đường này cho kind `snapshot` | [`snapshot_store.due_list`](../../backend/etl/snapshot_store.py) |
+| **Khuôn job đã ổn định qua 3 lát**: `fetch` (classify 3 nhánh, retry, giãn cách) → `normalize` (thuần) → `guard` (ngưỡng + **mẫu tối thiểu**) → `store` → `job`. Nhân bản từ `snapshot_*`, đừng chép từ lát 1 | `backend/etl/snapshot_*.py` |
+| **Ghi khi đổi + sổ kiểm** là mẫu dùng lại được cho BCTC (BCTC cũng chỉ đổi khi có kỳ báo cáo mới) — cân nhắc trước khi mặc định ghi mọi lượt | [spec lát 4 §4.1](../90-records/plans/2026-09-04-snapshot-family-etl/spec.md) |
+| 556 mã chỉ tiêu BCTC và đơn vị của chúng | [Phụ lục A](../10-sources/market/appendix-A-field-codes.md) · [field-dictionary.json](../10-sources/market/field-dictionary.json) |
+| `snapshot.quarterly[]` / `yearly[]` **đã nằm sẵn trong payload** `snapshot_daily` (mã `bsa*` `isa*` `cfa*`) — cố ý không bóc ở lát 4; lát 5 quyết định bóc từ đó hay gọi endpoint BCTC riêng | [spec lát 4 §3.2](../90-records/plans/2026-09-04-snapshot-family-etl/spec.md) |
+
+**Bốn bài học lát 4, áp thẳng được:**
+
+1. **Chạy thật một lượt trước khi tin bất cứ điều gì.** Ba lỗi nặng nhất của lát này — mốc nước tương lai, re-crawl không trần, re-crawl lấy nhầm `AGM` — **không lỗi nào bị 523 test bắt được**. Chúng lộ ra ở lượt `--codes` đầu tiên và ở việc đọc `stats` của lượt đó.
+2. **Tài liệu thiết kế có thể lệch migration.** SQL viết theo `market-data-store.md` §5.6 tham chiếu cột `organ_code` không tồn tại. Lược đồ thật nằm ở migration; §5.6 đã đồng bộ 2026-09-04.
+3. **Test đụng CSDL dùng chung phải tự dập nền.** 9 test xanh khi chạy riêng, đỏ khi chạy cả bộ, vì chúng assert trên truy vấn **toàn cục** trong khi bộ test khác commit dữ liệu thật nằm lại. Helper dập nền + lọc theo mã của chính test.
+4. **Ngưỡng phần trăm phải có mẫu tối thiểu.** Chốt chặn "tỷ lệ đổi > 20%" tự vi phạm ở lượt `--codes` 3 mã và ở lượt cold start nếu không có `MIN_SAMPLE`.
+
+### ~~Điểm vào cho lát 4~~ — ĐÃ DÙNG XONG 2026-09-04, giữ làm ngữ cảnh
+
+*(Mục này viết ở cuối lát 3. Lát 4 đã xong — trạng thái hiện tại nằm ở hai mục trên, không phải ở đây.)*
 
 **Trạng thái bàn giao 2026-09-04:** nhánh `feat/price-daily-etl` merge `main` · **456 test xanh** · migration head `0015` · **11 task** đã đăng ký thật, đều `Disabled` · `price_daily` 113.427 dòng: 60 phiên/mã cho cả 1.523 mã + backfill đã đi tới con trỏ `ABC` (kiểm `ops.etl_run` job `market.price_backfill`, `stats.cursor`).
 

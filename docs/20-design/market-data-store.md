@@ -210,7 +210,7 @@ Bốn luật rút ra từ những lần trả giá, mỗi luật chống một c
 |---|---|---|
 | Danh bạ, ngành ICB, `/quotes`, `/mapping` | Trước phiên | 4 |
 | `getPriceData` Page 1 — **lát 3 XONG 2026-09-04: `etl price` 15:40** — trang 1 (60 phiên) của **1.523** cổ phiếu niêm yết, lượt thật đầu 91.165 dòng, **38 phút tuần tự, 0 retry**; lượt chạy lại bỏ qua dòng payload không đổi; `close_raw` điền từ `closePrice` cho cả lịch sử ([spec](../90-records/plans/2026-09-03-price-daily-etl/spec.md) · [ledger](../90-records/plans/2026-09-03-price-daily-etl/ledger.md)) | Sau 15:00 | **1.523** *(1.974 cũ gồm 442 mã đã rời sàn)* |
-| **Họ Snapshot — KHÔNG chạy hằng ngày** *(chốt 2026-09-03, xem §4.1b)*: `snapshot` `valuation` `ownership` `dividend`; hai kind chấm điểm đã bỏ khỏi lược đồ (migration `0015`) | **Kích hoạt theo sự kiện + quét sàn định kỳ** | **≈ 200–260** |
+| **Họ Snapshot — KHÔNG chạy hằng ngày** *(chốt 2026-09-03, xem §4.1b)*: `snapshot` `valuation` `ownership` `dividend`; hai kind chấm điểm đã bỏ khỏi lược đồ (migration `0015`) — **lát 4 XONG 2026-09-04: `etl snapshot`**, quét sàn **cuốn chiếu theo quota ngày**, ghi `snapshot_daily` **chỉ khi nội dung đổi**, mọi lượt kiểm cập nhật `ops.snapshot_check` ([spec](../90-records/plans/2026-09-04-snapshot-family-etl/spec.md) · [ledger](../90-records/plans/2026-09-04-snapshot-family-etl/ledger.md)) | **Kích hoạt theo sự kiện + quét sàn cuốn chiếu** | **234** *(đo thật; ước lượng cũ 200–260)* |
 | `GetScreenerItems` — **lưu 80/193 trường** (ước lượng 2026-08-14; đếm 2026-09-03: **75/193** — 66 khoá đặt tên từ response thật, trừ 4 nhãn xếp hạng và 2 dòng KQKD trùng BCTC) *(gửi 1 tiêu chí, nhiều hơn sẽ timeout)* — **lát 1 XONG 2026-09-03: `etl screener` 15:20 — chạy thật sau phiên, 1.541 dòng/ngày, 52 trang ~30–70 s** ([spec](../90-records/plans/2026-09-03-screener-daily-etl/spec.md) · [ledger](../90-records/plans/2026-09-03-screener-daily-etl/ledger.md)) | Sau 15:00 | 52 |
 | Lịch sự kiện *(tải TRỌN sáu họ `GetCorporate*` — đo 2026-09-03: `FromDate` không dùng được, mỗi họ lọc theo một trục ngày khác nhau và `Earning` lọc theo trường không có trong response; [`08-fiin-event-calendar.md`](../10-sources/market/08-fiin-event-calendar.md))* | Hằng ngày | 9 |
 | BCTC + PDF | **Kích hoạt** theo `GetCorporateEarning` | ~100–300/quý |
@@ -242,6 +242,17 @@ quét sàn định kỳ toàn bộ         →  bắt phần lịch bỏ sót   
 | `dividend` | `CashDividend` + `StockDividend` | **tháng** | có sót ở vùng gần đây ⇒ sàn phải dày hơn |
 | `ownership` | *(không có sự kiện)* — Screener dò tỷ lệ | **tháng** | chỉ có máy dò gián tiếp |
 | `valuation` | *(không có sự kiện)* — dự phóng đổi khi phân tích viên cập nhật | **tháng** | `riskFreeRate` khác nhau giữa các mã ⇒ mỗi mã được cập nhật vào lúc khác nhau |
+
+**Nhịp và quota thật — cài đặt 2026-09-04 (lát 4).** Quét sàn không chạy thành đợt lớn mà **cuốn chiếu theo quota ngày**: mỗi lượt lấy nhóm có `checked_at` cũ nhất, chưa kiểm bao giờ thì lên đầu.
+
+| Kind | Nhịp | Quota/ngày | Phủ trọn sàn sau |
+|---|---|---|---|
+| `snapshot` | 90 ngày | 24 | 64 ngày |
+| `ownership` · `valuation` · `dividend` | 30 ngày | 70 mỗi kind | 22 ngày |
+
+Cộng lại **234 lời gọi/ngày**, không có đỉnh tải và không cần mốc lịch thứ hai. Sổ kiểm `ops.snapshot_check` *(migration `0016`, một dòng mỗi `(issuer, kind)` — 6.092 dòng đứng yên)* làm hai việc: cấp danh sách tới hạn, và **đếm lỗ của lịch** — mỗi lần quét sàn tìm ra thay đổi mà trigger không bắn là một lỗ, đếm được ở `ops.etl_run.stats`. `checked_at` **chính là con trỏ**, nên job không cần con trỏ riêng.
+
+⚠️ **Máy dò sở hữu bằng Screener (nêu ở bảng trên) HOÃN có lý do:** dựng cơ chế dò thứ hai trước khi biết quét sàn tháng có đủ hay không là tối ưu hoá mù. Điều kiện làm: sau 2–3 tháng, nếu `changed_floor` của `ownership` cao thì dựng; nếu thấp thì nhịp tháng là đủ và mục này khép hẳn.
 
 **Quét sàn vừa là lưới vừa là thước đo:** mỗi lần nó tìm ra thay đổi mà trigger không bắn = **một lỗ của lịch, đếm được**. Sau vài tháng có số thật thì siết hay nới nhịp bằng dữ liệu, không bằng cảm giác. Đây là việc của [§7.1 giám sát hợp đồng dữ liệu](#71-giám-sát-hợp-đồng-dữ-liệu).
 

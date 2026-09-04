@@ -15,7 +15,7 @@ Thiết kế chi tiết phần Postgres/REST ở [`docs/20-design/market-data-st
 
 **Dữ liệu thật (2026-08-26 đêm, ngành cập nhật 2026-08-28):** 5 bảng tham chiếu đã nạp qua job `etl refdata` — `market.security` 2.015 · `market.issuer` 1.550 · `security_external_id` 2.014 · `issuer_external_id` 1.550 · `icb_industry` 176. Ngành đã nạp qua migration `0013`: `market.industry_icb_map` **55 dòng** (lớp 1, máy gán) · `market.issuer_industry_override` **161 dòng** (lớp 2, tay gán). Nghiệm thu trên DB thật dưới role `dlck_etl`: **1.526/1.550 issuer có ngành**, 24 quỹ/ETF không có ngành theo đúng thiết kế *(hồ sơ: [ledger](../docs/90-records/plans/2026-08-27-industry-two-layer-mapping/ledger.md))*.
 
-Schema `postgres-data` đã dựng: **14 migration** Alembic (`0001` schemas/extensions … `0010` registry ingested_at · `0011` đổi 6 code + 7 tên ngành · `0012` bảng `market.issuer_industry_override` + view `market.v_issuer_industry` · `0013` seed ngành hai lớp · `0014` cột dấu `security.directory_absent_since` cho luật huỷ niêm yết), **51 test** seam chạy trên Postgres thật (`backend/tests/schema/test_sNN_*.py` — 11 file, không 1-1 với 14 migration: test seed `0003` gộp vào `test_s02_identity.py`, `test_s03_market_data.py` test migration `0004`; từ `test_s05_macro.py` trở đi NN khớp đúng số migration, kể cả `test_s10_registry_ts.py` cho `0010`; `test_s11_industry_override.py` phủ cả `0012` lẫn nội dung seed `0013`; `test_s12_directory_absent.py` cho `0014`).
+Schema `postgres-data` đã dựng: **16 migration** Alembic (`0001` schemas/extensions … `0010` registry ingested_at · `0011` đổi 6 code + 7 tên ngành · `0012` bảng `market.issuer_industry_override` + view `market.v_issuer_industry` · `0013` seed ngành hai lớp · `0014` cột dấu `security.directory_absent_since` cho luật huỷ niêm yết · `0015` bỏ hai kind chấm điểm khỏi `snapshot_daily` · `0016` bảng sổ kiểm `ops.snapshot_check` + domain `market.snapshot`), **56 test** seam chạy trên Postgres thật (`backend/tests/schema/test_sNN_*.py` — 11 file, không 1-1 với 14 migration: test seed `0003` gộp vào `test_s02_identity.py`, `test_s03_market_data.py` test migration `0004`; từ `test_s05_macro.py` trở đi NN khớp đúng số migration, kể cả `test_s10_registry_ts.py` cho `0010`; `test_s11_industry_override.py` phủ cả `0012` lẫn nội dung seed `0013`; `test_s12_directory_absent.py` cho `0014`; `test_s13_snapshot_check.py` cho `0016`, gồm một test chạy dưới role `dlck_etl` thật).
 
 **Đọc ngành qua view, không đọc thẳng cột:** `market.issuer.industry_id` (lớp 1, máy — ETL ghi đè mỗi lượt) và `market.issuer_industry_override` (lớp 2, tay — `dlck_etl` đã bị `REVOKE` cả đọc lẫn ghi trên bảng này ở migration `0012`) không phải là nguồn đọc cuối. Đường đọc duy nhất là view `market.v_issuer_industry` = `COALESCE(override.industry_id, issuer.industry_id)` kèm cột `source` ∈ `manual` | `icb` | `NULL`.
 
@@ -81,7 +81,7 @@ Test schema (tự tạo lại `dulieu_test` từ đầu qua `conftest.py`, khôn
 cd backend && uv run pytest tests/schema -v
 ```
 
-Cả bộ trong một lệnh — 456 test *(đo 2026-09-04)*, gồm cả `tests/clickhouse` và `tests/ingester` *(hai bộ này tự dựng container ClickHouse riêng ở cổng riêng, không đụng CH production)*:
+Cả bộ trong một lệnh — 523 test *(đo 2026-09-04, sau lát 4)*, gồm cả `tests/clickhouse` và `tests/ingester` *(hai bộ này tự dựng container ClickHouse riêng ở cổng riêng, không đụng CH production)*:
 
 ```bash
 cd backend && uv run pytest tests -q
