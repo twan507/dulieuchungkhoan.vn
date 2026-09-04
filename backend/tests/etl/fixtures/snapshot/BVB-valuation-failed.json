@@ -1,0 +1,11 @@
+{
+ "page": 0,
+ "pageSize": 0,
+ "totalCount": 0,
+ "items": null,
+ "packageId": null,
+ "status": "Failed",
+ "errors": [
+  "Timeout performing GET (5000ms), next: GET AllOrganizations, inst: 0, qu: 0, qs: 1, aw: False, rs: ReadAsync, ws: Idle, in: 0, in-pipe: 408809, out-pipe: 0, serverEndpoint: 192.168.1.232:6379, mgr: 10 of 10 available, clientName: FIINTRADE-MICRO, IOCP: (Busy=0,Free=1000,Min=8,Max=1000), WORKER: (Busy=1,Free=32766,Min=8,Max=32767), v: 2.0.601.3402 (Please take a look at this article for some common client-side issues that can cause timeouts: https://stackexchange.github.io/StackExchange.Redis/Timeouts)"
+ ]
+}

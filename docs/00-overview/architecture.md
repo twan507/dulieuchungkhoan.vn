@@ -131,7 +131,7 @@ Ba nguồn thị trường chồng lấn nhau nhiều: Screener 193 trường *(
 |---|---|---|
 | Giá, KL, sổ lệnh, khối ngoại, thoả thuận, chỉ báo kỹ thuật | **BVSC** | ~40 trường, realtime |
 | Tỷ số tài chính, Beta, sở hữu tổ chức, TTM | **Screener** | 80/193 (ước lượng 2026-08-14; đếm 2026-09-03: **75/193** — 66 khoá đặt tên từ response thật, trừ 4 nhãn xếp hạng và 2 dòng KQKD trùng BCTC) |
-| Hồ sơ DN, sở hữu chi tiết | **Snapshot** | 16/54 |
+| Hồ sơ DN, sở hữu chi tiết | **Snapshot** | 18/54 *(ngân hàng; **15/54** ở phi ngân hàng — `rtq44` `rtq137` `rqq41` chỉ ngân hàng mới có, đo 9/9 mã 2026-09-04)* |
 | Mọi mã `bs*` `is*` `cf*` `no*` | **BCTC đầy đủ** | 556 |
 | Tự doanh, đóng góp chỉ số, chuỗi khối ngoại | **MoneyFlow** | BVSC không có |
 

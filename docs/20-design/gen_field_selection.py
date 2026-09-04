@@ -598,7 +598,7 @@ Chép nguyên từ [kiến trúc tổng thể §3.4](../00-overview/architecture
 |---|---|---|
 | Giá, KL, sổ lệnh, khối ngoại, thoả thuận, chỉ báo kỹ thuật | **BVSC** | ~40 trường, realtime |
 | Tỷ số tài chính, Beta, sở hữu tổ chức, TTM | **Screener** | {scr_keep_n}/193 |
-| Hồ sơ DN, sở hữu chi tiết | **Snapshot** | 16/54 |
+| Hồ sơ DN, sở hữu chi tiết | **Snapshot** | 18/54 *(ngân hàng; **15/54** ở phi ngân hàng — `rtq44` `rtq137` `rqq41` chỉ ngân hàng mới có, đo 9/9 mã 2026-09-04)* |
 | Mọi mã `bs*` `is*` `cf*` `no*` | **BCTC đầy đủ** | 556 |
 | Tự doanh, đóng góp chỉ số, chuỗi khối ngoại | **MoneyFlow** | BVSC không có |
 
@@ -681,6 +681,8 @@ Tổng room của Screener nằm ở khoá khác, trong khối `priceInfo`: `for
 `GetSnapshot`, còn `CT` `CK` `BH` dùng `GetSnapshotNoneBank`.
 
 ### 5.1 Lấy — {sn_keep_n} trường
+
+> **Đây là số trường ĐÃ CHỌN, không phải số trường luôn có mặt.** Đo 9/9 mã ngày 2026-09-04: `rtq44` `rtq137` `rqq41` **chỉ ngân hàng mới trả**, nên một mã phi ngân hàng chỉ có 15 trong số này — khoá vắng là chuyện bình thường, không phải lỗi.
 
 {sn_keep}
 

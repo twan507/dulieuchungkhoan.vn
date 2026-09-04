@@ -94,6 +94,8 @@ Tra nghĩa từng mã: [Phụ lục A §A.5](appendix-A-field-codes.md) — **72
 | `GetIncomeStatement` | 20/20 | 30 KB / 165 KB / 278 KB | ~2,41 s |
 | `GetCashFlow` | 20/20 | 25 KB / 126 KB / 194 KB | ~1,90 s |
 
+⚡ **Đo lại 2026-09-04 trên 3 mã (BAB · A32 · AAS): độ trễ chỉ 27–499 ms**, thấp hơn một bậc so với ~1,9–2,45 s đo ngày 2026-08-10. Giữ cả hai số kèm ngày — nguồn đã nhanh lên, không phải số cũ sai. Hệ quả: chi phí một lượt trọn sàn do **giãn cách 0,5 s** quyết định chứ không do độ trễ. Chi tiết: [khảo sát BCTC](../../90-records/surveys/2026-09-04-bctc-endpoints/README.md).
+
 ---
 
 ## `getFinancialReports`

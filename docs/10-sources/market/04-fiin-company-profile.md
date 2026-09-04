@@ -18,6 +18,10 @@ GET FIIN_FUND/Snapshot/GetSnapshot?OrganCode={organCode}&language=vi
 GET FIIN_FUND/Snapshot/GetSnapshotNoneBank?OrganCode={organCode}&language=vi
 ```
 
+### 🔴 Hai endpoint trả `status` KHÁC NHAU
+
+*(đo 2026-09-04, 9 mã)* `GetSnapshot` trả `"status": 0`, `GetSnapshotNoneBank` trả `"status": "Success"` — **cùng một họ, cùng một lượt gọi**. Kiểm `status == "Success"` sẽ từ chối sạch nhánh ngân hàng. Dùng công thức ở [quy ước §6.1](00-conventions.md).
+
 ### 🔴 Chọn endpoint nào
 
 Cả hai đều trả `HTTP 200` cho mọi mã. Chọn sai **không báo lỗi** mà làm gần một nửa số trường thành `null`.
@@ -244,28 +248,33 @@ GET FIIN_FUND/CashDividendAnalysis/GetAnalysis?OrganCode={organCode}&Code={ticke
 ```json
 {
   "items": [{
-    "organCode": "BID",
-    "priceEarningRatio": 8.585,
-    "dividendYield": 0.0,
-    "eps": 4548.52,
-    "dps": 0.0,
-    "dividendPayoutRatio": 0.0,
-    "cashDividendPayouts": [...],
-    "cashDividendPlans": [...]
+    "organCode": "ASECO32",
+    "priceEarningRatio":   { "ratioYears": [ {"yearReport": 2025, "ratioValue": 11.0488925}, … ] },
+    "dividendYield":       { "ratioYears": [ … ] },
+    "eps":                 { "ratioYears": [ … ] },
+    "dps":                 { "ratioYears": [ … ] },
+    "dividendPayoutRatio": { "ratioYears": [ … ] },
+    "cashDividendPayouts": [ {"valuePerShare": 2200.0, "dividendYear": 2014,
+                              "exrightYear": 2014, "exrightMonth": 12}, … ],
+    "cashDividendPlans":   [ {"dividendYear": 2026, "valuePerShare": 2200.0}, … ]
   }],
-  "status": 0
+  "status": "Success"
 }
 ```
 
+🔴 **Bản mẫu cũ ở đây SAI hình dạng** *(sửa 2026-09-04 sau khi gọi lại thật)*: năm chỉ tiêu đầu **không phải số**, mà là object `{"ratioYears": [{"yearReport", "ratioValue"}]}` — chuỗi **9 năm**. Kiểm trên chính mã ví dụ cũ (BID) và trên A32, cả hai cùng hình dạng. Cùng loại lỗi §3.4 của [CLAUDE.md](../../../CLAUDE.md): mẫu chép trong tài liệu là bản đã bóc vỏ, không phải frame thật.
+
 | Trường | Kiểu | Đơn vị | Mô tả |
 |---|---|---|---|
-| `priceEarningRatio` | number | lần | P/E |
-| `dividendYield` | number | thập phân | Tỷ suất cổ tức |
-| `eps` | number | VND | Lợi nhuận trên cổ phiếu |
-| `dps` | number | VND | Cổ tức trên cổ phiếu |
-| `dividendPayoutRatio` | number | thập phân | Tỷ lệ chi trả cổ tức |
-| `cashDividendPayouts` | array | — | Lịch sử các đợt đã chi trả |
-| `cashDividendPlans` | array | — | Kế hoạch cổ tức đã công bố |
+| `priceEarningRatio` | object | lần | P/E theo năm — 🔴 **mục của NĂM HIỆN HÀNH tính theo GIÁ hôm nay, đổi mỗi ngày** |
+| `dividendYield` | object | thập phân | Tỷ suất cổ tức theo năm — 🔴 **cũng theo giá, đổi mỗi ngày** |
+| `eps` | object | VND | Lợi nhuận trên cổ phiếu theo năm |
+| `dps` | object | VND | Cổ tức trên cổ phiếu theo năm |
+| `dividendPayoutRatio` | object | thập phân | Tỷ lệ chi trả cổ tức theo năm |
+| `cashDividendPayouts` | array | — | Lịch sử các đợt đã chi trả — `valuePerShare` · `dividendYear` · `exrightYear` · `exrightMonth` |
+| `cashDividendPlans` | array | — | Kế hoạch cổ tức đã công bố — `dividendYear` · `valuePerShare` |
+
+**Bằng chứng hai trường theo giá** *(đo 2026-09-04)*: A32 có `priceEarningRatio` năm 2025 = **11,0489**, `eps` = 2.606,60; giá đóng cửa 03/09 trong kho của dự án là **28.800** ⇒ 28.800 ÷ 2.606,60 = **11,0489**. Hệ quả cho ETL: hai trường này **không được vào phép so "nội dung có đổi không"**, nếu không thì ngày nào cũng báo đổi.
 
 ### Độ phủ & hiệu năng
-51/51 mã mẫu · 598 byte – 8,1 KB · TB 4,3 KB · ~130 ms.
+51/51 mã mẫu · 598 byte – 8,1 KB · TB 4,3 KB · ~130 ms. *(Đo lại 2026-09-04 trên 9 mã khác: 748 byte – 4,6 KB, 19–231 ms — cùng bậc.)*

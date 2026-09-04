@@ -174,6 +174,46 @@ Bốn điều nguồn làm mà tài liệu cũ không nói *(đo 2026-09-03, [`0
 nhà đầu tư điền trễ **T+1** (trang 1 = 60 phiên nên lượt hôm sau tự vá) · ngày nghỉ không có dòng (chạy ngày lễ
 là idempotent, không cần vế "có phiên không" như Screener).
 
+## Chạy job snapshot (họ hồ sơ doanh nghiệp)
+
+```bash
+uv run python -m etl snapshot                       # lượt bình thường: trigger + quét sàn cuốn chiếu
+uv run python -m etl snapshot --codes A32,BAB       # ép một tập mã, mọi kind, bỏ qua nhịp và quota
+uv run python -m etl snapshot --kinds dividend      # chỉ một vài kind
+uv run python -m etl snapshot --max-minutes 5       # trần thời gian, dừng sau target đang dở
+```
+
+Bốn kind `snapshot` · `valuation` · `ownership` · `dividend` vào `market.snapshot_daily`. Ngân sách **234 lời gọi/ngày**
+(quota 24 + 70 + 70 + 70), phần fetch ~2 phút.
+
+**Kho chỉ nhận dòng KHI NỘI DUNG ĐỔI** — họ này không có trường nào đổi theo ngày. Phép so tính hash trên
+**danh sách trắng theo kind**, cố tình bỏ ngoài mọi trường tính từ giá (`rtd11` `rtd21` `rtd25`,
+`priceEarningRatio`, `dividendYield`): hash trọn payload thì ngày nào cũng "đổi". Payload vẫn lưu **trọn** vì bốn
+endpoint chỉ trả giá trị hiện tại, không backfill được — trường không lưu hôm nay là mất vĩnh viễn.
+
+**Không có con trỏ, và không cần:** `ops.snapshot_check.checked_at` chính là con trỏ — lượt sau tự lấy nhóm cũ
+nhất chưa tới lượt, nên lượt bị giết giữa chừng không mất chỗ. Bảng này cũng là chỗ **đếm lỗ của lịch sự kiện**:
+quét sàn tìm ra thay đổi mà trigger không bắn thì `changed_floor` tăng.
+
+**Hai đồng hồ, đừng trộn** *(bài học trả giá 2026-09-04)*: mốc nước ở `ops.data_domain_state('market.snapshot')`
+đo **ngày công bố** (`max(public_date)`) và chỉ tiến khi lượt không có mã nào hỏng hay sai hình dạng — đẩy mốc
+khi còn target chưa phục vụ là mất trigger vĩnh viễn. Còn **re-crawl giá** không dùng mốc nước mà theo cửa sổ
+`exright_date` trong 3 ngày gần đây, chỉ với `CashDividend`/`StockDividend`/`ShareIssuance` (`AGM` không đụng hệ
+số điều chỉnh), trần `MAX_RECRAWL = 50` mã và `RECRAWL_MAX_MINUTES = 20` phút. Lỗi re-crawl **không** kéo đổ lượt
+snapshot; mã chưa kịp kéo được cửa sổ 3 ngày bắt lại.
+
+🔴 **Nếu job bị từ chối nhiều ngày liền, đọc dòng này trước khi nghi nguồn hỏng.** Chốt chặn (i) tính tỷ lệ
+đổi trên **cả lượt**, gộp bốn kind. `ownership` chiếm 70/234 target, và `majorShareHolders`/`boardOfDirectors`
+mang dấu thời gian **kỳ công bố** — khi nguồn cập nhật kỳ mới, mọi mã `ownership` được so trong 30 ngày kế tiếp
+đều đổi ⇒ 70/234 = **29,9% > ngưỡng 20%** ⇒ lượt bị từ chối, có thể lặp lại nhiều ngày, bốn lần một năm. Đây là
+**vận hành bình thường chạm ngưỡng**, không phải nguồn hỏng. Chưa sửa vì lời giải không hiển nhiên: tách ngưỡng
+theo từng kind làm ca này nổ **dễ hơn** (100% của `ownership`), còn nới ngưỡng thì mất khả năng bắt tập trắng sai.
+Cần vài tháng số thật của `changed_floor` mới quyết được. Gặp ca này: đọc `stats.tally` của lượt bị từ chối, nếu
+phần đổi dồn hết vào một kind thì chạy tay từng kind bằng `--kinds` để đi tiếp, và ghi số vào hồ sơ lát 4.
+
+⚠️ **Chưa đăng ký task Scheduler** — lịch của job này thuộc lát 7 (bảng lịch trong container `etl`). Chạy tay,
+hoặc để lát 7 gọi. Vị trí trong ngày: **sau `events` 18:10**, vì trigger đọc đúng bảng mà `events` vừa ghi.
+
 ## Lịch chạy (Windows Task Scheduler)
 
 ```bash
