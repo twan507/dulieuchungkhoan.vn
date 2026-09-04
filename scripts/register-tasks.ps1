@@ -67,9 +67,12 @@ function Register-DlckTask {
     # Dòng echo để ASCII không dấu: cmd.exe hiển thị theo codepage OEM, tiếng Việt có dấu sẽ vỡ.
     # Nút X bị chính job khoá lúc khởi động (core/console.py) — dừng bằng Ctrl+C hoặc Stop-ScheduledTask.
     # DLCK_LOCK_CONSOLE=1 chỉ đặt ở đây: chạy tay từ terminal thì job không khoá nút X của terminal đó.
-    $inner = 'title {4} && echo [{4}] python -m {2} -- nut X bi khoa khi job chay, dung bang Ctrl+C hoac Stop-ScheduledTask {4} -- log: {3} && cd /d "{0}" && set PYTHONIOENCODING=utf-8 && set DLCK_LOCK_CONSOLE=1 && "{1}" run python -m {2} >> "{3}" 2>&1' `
+    $inner = 'title {4} && echo [{4}] python -m {2} -- nut X bi khoa khi job chay, dung bang Ctrl+C hoac Stop-ScheduledTask {4} -- log: {3} && cd /d "{0}" && set PYTHONIOENCODING=utf-8 && set "DLCK_LOCK_CONSOLE=1" && "{1}" run python -m {2} >> "{3}" 2>&1' `
              -f $backend, $uv, $ModuleArgs, (Join-Path $logDir $LogFile), $TaskName
-    $action  = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c $inner"
+    # Khởi động qua conhost.exe để mở CONSOLE CỔ ĐIỂN: trên Windows 11 "terminal mặc định" là Windows
+    # Terminal, cửa sổ thật thuộc WindowsTerminal.exe còn GetConsoleWindow() chỉ trả cửa sổ OpenConsole ẩn
+    # ⇒ khoá nút X (core/console.py) rơi vào cửa sổ ẩn, X của Windows Terminal vẫn giết job (đo 2026-09-04).
+    $action  = New-ScheduledTaskAction -Execute "conhost.exe" -Argument "cmd.exe /c $inner"
     $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek $DaysOfWeek -At $AtTime
     # StartWhenAvailable: máy ngủ/tắt qua giờ chạy thì chạy bù khi bật lại.
     # RestartCount/RestartInterval: tự khởi động lại khi tiến trình chết (spec §3.8).

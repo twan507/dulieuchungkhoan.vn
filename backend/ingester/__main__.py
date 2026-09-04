@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import sys
 from datetime import date
 
 from core.console import lock_if_scheduled
@@ -7,7 +8,8 @@ from ingester.main import run
 
 
 def main() -> int:
-    lock_if_scheduled()               # cửa sổ task Interactive: bấm nhầm X là mất tick — khoá nút X
+    if lock_if_scheduled():           # cửa sổ task Interactive: bấm nhầm X là mất tick — khoá nút X
+        print("[dlck] nút X của cửa sổ đã khoá — dừng bằng Ctrl+C hoặc Stop-ScheduledTask", file=sys.stderr)
     ap = argparse.ArgumentParser("ingester")
     ap.add_argument("--measure", action="store_true")
     ap.add_argument("--out", default=None, help="thư mục frame đo (default INGESTER_MEASURE_DIR)")

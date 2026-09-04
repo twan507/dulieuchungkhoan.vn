@@ -14,7 +14,8 @@ def _heartbeat_loop() -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    lock_if_scheduled()               # cửa sổ task Interactive: bấm nhầm X không giết được job
+    if lock_if_scheduled():           # cửa sổ task Interactive: bấm nhầm X không giết được job
+        print("[dlck] nút X của cửa sổ đã khoá — dừng bằng Ctrl+C hoặc Stop-ScheduledTask", file=sys.stderr)
     args = sys.argv[1:] if argv is None else argv
     if not args:
         return _heartbeat_loop()          # giữ tương thích compose deploy/app
