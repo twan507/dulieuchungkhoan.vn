@@ -1,0 +1,176 @@
+import os
+import pathlib
+from datetime import date
+
+import pytest
+import sqlalchemy as sa
+
+from etl import snapshot_job as sj
+from etl import snapshot_store as ss
+
+FIX = pathlib.Path(__file__).parent / "fixtures" / "snapshot"
+ORGAN, TICKER = "ZZJOB", "ZZJ"
+# snapshot_guard.MIN_SAMPLE = 20 (test_e28: "hệ thống chạy bình thường không được tự phạm luật")
+# — một lượt --codes MỘT mã (4 target) không bao giờ chạm ngưỡng này. Test guard-từ-chối phải
+# seed đủ 20 mã, giới hạn 1 kind, để tỷ lệ hỏng thật sự vượt ngưỡng.
+BATCH = [f"ZZW{i:02d}" for i in range(20)]
+ALL_ORGANS = [ORGAN] + BATCH
+
+
+def _payload(kind):
+    name = {"snapshot": "A32-snapshot.json", "ownership": "A32-ownership.json",
+            "dividend": "A32-dividend.json", "valuation": "A32-valuation.json"}[kind]
+    return (FIX / name).read_text(encoding="utf-8")
+
+
+def _fake_get(counters=None):
+    """get(url, timeout) giả — trả đúng mẫu thật theo endpoint trong URL."""
+    def get(u, timeout):
+        if counters is not None:
+            counters.append(u)
+        kind = ("snapshot" if "/Snapshot/" in u else
+                "ownership" if "/Ownership/" in u else
+                "dividend" if "/CashDividendAnalysis/" in u else "valuation")
+        return 200, _payload(kind)
+    return get
+
+
+def _wire(monkeypatch):
+    # KHÔNG dựng DSN từ engine.url — mật khẩu lộ ra traceback (§5). Đọc thẳng biến môi trường,
+    # đúng khuôn test_e20_events_job.py / test_e25_price_job.py.
+    monkeypatch.setenv("ETL_DATABASE_URL", os.environ["TEST_DATABASE_URL"])
+    monkeypatch.setattr("etl.snapshot_job.load_dotenv", lambda *a, **k: None)
+
+
+def _cleanup(engine):
+    """Dọn ĐÚNG issuer test này tự cắm (theo organ_code) — khuôn `test_e25_price_job._cleanup`.
+
+    `snapshot_job.run()` tạo engine THẬT của riêng nó (đọc `ETL_DATABASE_URL`) và tự commit —
+    fixture `db` (một connection, rollback cuối test) không thấy và không dọn được các lượt ghi
+    đó. Vì vậy bộ test này dùng `migrated_engine` thật + dọn tay trước/sau, đúng khuôn
+    `test_e20_events_job.py`/`test_e25_price_job.py`, thay vì `db` + monkeypatch `_engine`
+    như bản nháp ban đầu (bản đó không thấy được issuer vừa seed — hai connection khác nhau).
+    """
+    with engine.begin() as c:
+        iids = c.execute(sa.text(
+            "SELECT issuer_id FROM market.issuer_external_id"
+            " WHERE source = 'fiintrade' AND external_code = ANY(:o)"), {"o": ALL_ORGANS}).scalars().all()
+        if iids:
+            c.execute(sa.text("DELETE FROM market.snapshot_daily WHERE issuer_id = ANY(:i)"), {"i": iids})
+            c.execute(sa.text("DELETE FROM ops.snapshot_check WHERE issuer_id = ANY(:i)"), {"i": iids})
+            c.execute(sa.text("DELETE FROM market.security WHERE issuer_id = ANY(:i)"), {"i": iids})
+            c.execute(sa.text("DELETE FROM market.issuer_external_id WHERE issuer_id = ANY(:i)"), {"i": iids})
+            c.execute(sa.text("DELETE FROM market.issuer WHERE issuer_id = ANY(:i)"), {"i": iids})
+        c.execute(sa.text("DELETE FROM ops.etl_run WHERE job = :j"), {"j": ss.JOB})
+        c.execute(sa.text("DELETE FROM staging.raw_payload WHERE source = 'snapshot'"))
+        c.execute(sa.text("DELETE FROM ops.data_domain_state WHERE domain = :d AND source = :s"),
+                  {"d": ss.DOMAIN, "s": ss.SOURCE})
+
+
+def _seed(engine, organ=ORGAN, ticker=TICKER):
+    with engine.begin() as c:
+        iid = c.execute(sa.text("INSERT INTO market.issuer (name, com_type_code)"
+                                " VALUES ('Job test', 'CT') RETURNING issuer_id")).scalar_one()
+        c.execute(sa.text("INSERT INTO market.issuer_external_id (issuer_id, source, external_code)"
+                          " VALUES (:i, 'fiintrade', :c)"), {"i": iid, "c": organ})
+        c.execute(sa.text("INSERT INTO market.security (ticker, exchange, security_type, issuer_id)"
+                          " VALUES (:t, 'HOSE', 'stock', :i)"), {"t": ticker, "i": iid})
+    return iid
+
+
+def _seed_batch(engine, tickers=BATCH):
+    """20 mã — đủ chạm `MIN_SAMPLE` của guard để lượt hỏng toàn phần thật sự bị từ chối."""
+    with engine.begin() as c:
+        for i, t in enumerate(tickers):
+            iid = c.execute(sa.text("INSERT INTO market.issuer (name, com_type_code)"
+                                    " VALUES (:n, 'CT') RETURNING issuer_id"),
+                            {"n": f"Outage {i}"}).scalar_one()
+            c.execute(sa.text("INSERT INTO market.issuer_external_id (issuer_id, source, external_code)"
+                              " VALUES (:i, 'fiintrade', :c)"), {"i": iid, "c": t})
+            c.execute(sa.text("INSERT INTO market.security (ticker, exchange, security_type, issuer_id)"
+                              " VALUES (:t, 'HOSE', 'stock', :i)"), {"t": t, "i": iid})
+    return tickers
+
+
+@pytest.fixture()
+def snapshot_db(migrated_engine, monkeypatch):
+    """Dọn TRƯỚC và SAU — teardown chạy cả khi test đỏ."""
+    _wire(monkeypatch)
+    _cleanup(migrated_engine)
+    yield migrated_engine
+    _cleanup(migrated_engine)
+
+
+def test_one_run_writes_four_kinds_and_closes_the_run_row(snapshot_db):
+    iid = _seed(snapshot_db)
+    rc = sj.run(codes=[TICKER], get=_fake_get())
+    assert rc == 0
+    with snapshot_db.begin() as c:
+        kinds = c.execute(sa.text("SELECT kind FROM market.snapshot_daily WHERE issuer_id = :i"
+                                  " ORDER BY kind"), {"i": iid}).scalars().all()
+        row = c.execute(sa.text("SELECT status, stats FROM ops.etl_run WHERE job = :j"
+                                " ORDER BY run_id DESC LIMIT 1"), {"j": ss.JOB}).one()
+    assert kinds == ["dividend", "ownership", "snapshot", "valuation"]
+    assert row.status == "success" and row.stats["rows_written"] == 4
+
+
+def test_a_second_run_on_the_same_day_writes_nothing_new(snapshot_db):
+    iid = _seed(snapshot_db)
+    sj.run(codes=[TICKER], get=_fake_get())
+    sj.run(codes=[TICKER], get=_fake_get())
+    with snapshot_db.begin() as c:
+        n = c.execute(sa.text("SELECT count(*) FROM market.snapshot_daily WHERE issuer_id = :i"),
+                      {"i": iid}).scalar_one()
+        stats = c.execute(sa.text("SELECT stats FROM ops.etl_run WHERE job = :j"
+                                  " ORDER BY run_id DESC LIMIT 1"), {"j": ss.JOB}).scalar_one()
+    assert n == 4
+    assert stats["rows_written"] == 0 and stats["tally"]["unchanged"] == 4
+
+
+def test_a_source_wide_outage_refuses_the_run_and_writes_no_row(snapshot_db):
+    tickers = _seed_batch(snapshot_db)
+    failing = (FIX / "BVB-valuation-failed.json").read_text(encoding="utf-8")
+    rc = sj.run(codes=tickers, kinds=["valuation"],
+               get=lambda u, timeout: (200, failing), sleep=lambda s: None)
+    assert rc == 1
+    with snapshot_db.begin() as c:
+        n = c.execute(sa.text(
+            "SELECT count(*) FROM market.snapshot_daily d"
+            " JOIN market.issuer_external_id x USING (issuer_id)"
+            " WHERE x.source = 'fiintrade' AND x.external_code = ANY(:o)"), {"o": tickers}).scalar_one()
+        row = c.execute(sa.text("SELECT status, error FROM ops.etl_run WHERE job = :j"
+                                " ORDER BY run_id DESC LIMIT 1"), {"j": ss.JOB}).one()
+    assert n == 0
+    assert row.status == "failed" and "hỏng" in row.error
+
+
+def test_a_refused_run_leaves_evidence_behind(snapshot_db):
+    tickers = _seed_batch(snapshot_db)
+    failing = (FIX / "BVB-valuation-failed.json").read_text(encoding="utf-8")
+    sj.run(codes=tickers, kinds=["valuation"],
+          get=lambda u, timeout: (200, failing), sleep=lambda s: None)
+    with snapshot_db.begin() as c:
+        n = c.execute(sa.text("SELECT count(*) FROM staging.raw_payload"
+                              " WHERE source = 'snapshot'")).scalar_one()
+    # Mọi target đều bị FiinTrade trả 'Failed' (retry, không phải 'ok') ⇒ fetched rỗng ⇒
+    # KHÔNG có gì để làm bằng chứng — store_refusal_evidence phải chịu được list rỗng
+    # (picked = [] ⇒ vòng for không chạy) mà không nổ, không phải chuyện nó ghi ra gì đó.
+    assert n == 0
+
+
+def test_the_watermark_stays_put_when_a_target_failed(snapshot_db):
+    """Đẩy watermark khi còn mã hỏng là mất trigger vĩnh viễn."""
+    _seed(snapshot_db)
+    with snapshot_db.begin() as c:
+        c.execute(sa.text("INSERT INTO ops.data_domain_state (domain, source, status, watermark)"
+                          " VALUES (:d, :s, 'active', '2026-09-01')"), {"d": ss.DOMAIN, "s": ss.SOURCE})
+    ok = _payload("ownership")
+    bad = (FIX / "BVB-valuation-failed.json").read_text(encoding="utf-8")
+
+    def flaky(u, timeout):
+        return (200, bad) if "/Valuation/" in u else (200, ok if "/Ownership/" in u else _payload(
+            "snapshot" if "/Snapshot/" in u else "dividend"))
+
+    sj.run(codes=[TICKER], get=flaky, sleep=lambda s: None)
+    with snapshot_db.connect() as c:
+        assert ss.load_watermark(c) == date(2026, 9, 1)

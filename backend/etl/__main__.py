@@ -48,7 +48,16 @@ def main(argv: list[str] | None = None) -> int:
         return etl.price_job.run(backfill=parsed.backfill, codes=parsed.codes,
                                  max_minutes=parsed.max_minutes,
                                  stop_before_open=parsed.stop_before_open)
-    print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener, events, price)",
+    if args[0] == "snapshot":
+        import etl.snapshot_job
+        parser = argparse.ArgumentParser(prog="etl snapshot")
+        parser.add_argument("--codes", type=lambda s: [t.strip().upper() for t in s.split(",") if t.strip()])
+        parser.add_argument("--kinds", type=lambda s: [k.strip() for k in s.split(",") if k.strip()])
+        parser.add_argument("--max-minutes", type=float, dest="max_minutes")
+        parsed = parser.parse_args(args[1:])
+        return etl.snapshot_job.run(codes=parsed.codes, kinds=parsed.kinds,
+                                    max_minutes=parsed.max_minutes)
+    print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener, events, price, snapshot)",
           file=sys.stderr)
     return 2
 

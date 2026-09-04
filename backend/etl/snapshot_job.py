@@ -1,0 +1,150 @@
+"""Một lượt chạy snapshot: due_list → fetch → guard → apply → re-crawl giá (spec §5.1).
+
+Y khuôn `events_job.run`: MỘT giao dịch cho dữ liệu, guard đánh giá TRƯỚC commit — từ chối
+thì raise bên trong `engine.begin()` để tự rollback; bằng chứng ghi ở giao dịch riêng.
+"""
+from __future__ import annotations
+
+import logging
+import os
+import sys
+import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+import sqlalchemy as sa
+
+from core.env import load_dotenv
+from etl import omo_store, snapshot_fetch, snapshot_guard, snapshot_store
+from etl.snapshot_fetch import BadShape, FetchError
+
+log = logging.getLogger("etl.snapshot")
+JOB = snapshot_store.JOB
+VN = ZoneInfo("Asia/Ho_Chi_Minh")
+MAX_RECRAWL = 50                       # trần re-crawl giá một lượt — xem chú thích trong _recrawl
+
+
+class GuardRefused(Exception):
+    def __init__(self, verdict):
+        self.verdict = verdict
+        super().__init__("; ".join(verdict.reasons))
+
+
+def _engine():
+    url = os.environ.get("ETL_DATABASE_URL")
+    if not url:
+        raise RuntimeError("thiếu ETL_DATABASE_URL")
+    # pool_pre_ping: kết nối nằm trong pool suốt lượt fetch dài có thể chết sau giấc ngủ 02:00
+    return sa.create_engine(url, pool_pre_ping=True)
+
+
+def _fetch_all(targets, get, sleep, deadline):
+    fetched, failed, bad_shape, stopped = [], 0, 0, False
+    with snapshot_fetch.open_fetcher(get=get, sleep=sleep) as f:
+        for i, t in enumerate(targets, 1):
+            if deadline is not None and time.monotonic() > deadline:
+                stopped = True
+                log.info("hết ngân sách thời gian sau %d/%d target", i - 1, len(targets))
+                break
+            try:
+                item, text = f.fetch_one(t)
+                fetched.append(snapshot_store.Fetched(target=t, item=item, text=text))
+            except BadShape as e:
+                bad_shape += 1
+                log.warning("hình dạng lạ: %s", e)
+            except FetchError as e:
+                failed += 1
+                log.warning("%s", e)
+            if i % 50 == 0:
+                log.info("đã gọi %d/%d target (%d lời gọi, %d retry)", i, len(targets), f.calls, f.retries)
+        return fetched, failed, bad_shape, stopped, f.calls, f.retries
+
+
+def _recrawl(engine, watermark_before, stats):
+    """Sự kiện quyền làm chuỗi close_adj của mã đó sai — kéo lại bằng đường có sẵn của lát 3.
+
+    Bỏ qua ở lượt khởi tạo: watermark 1900-01-01 nghĩa là 'mọi mã từng có ngày không hưởng
+    quyền', tức 1.523 mã — đúng bằng một lượt backfill trọn vòng ~20 giờ.
+    """
+    import datetime as dt
+
+    if watermark_before == dt.date(1900, 1, 1):
+        stats["recrawl"] = {"skipped": "lượt khởi tạo"}
+        return
+    with engine.begin() as conn:
+        codes = snapshot_store.recrawl_codes(conn, watermark_before)
+    if not codes:
+        return
+    if len(codes) > MAX_RECRAWL:
+        stats["recrawl"] = {"skipped": f"{len(codes)} mã > trần {MAX_RECRAWL}", "codes": codes}
+        log.warning("re-crawl bỏ qua: %d mã vượt trần %d", len(codes), MAX_RECRAWL)
+        return
+    try:
+        import etl.price_job
+        rc = etl.price_job.run(backfill=True, codes=codes)
+        stats["recrawl"] = {"codes": codes, "exit": rc}
+    except Exception as e:                    # noqa: BLE001 — re-crawl hỏng KHÔNG kéo đổ lượt snapshot
+        stats["recrawl"] = {"codes": codes, "error": f"{type(e).__name__}: {e}"}
+        log.exception("re-crawl giá thất bại — lượt snapshot vẫn tính là xong")
+
+
+def run(codes=None, kinds=None, max_minutes=None, get=None, sleep=time.sleep) -> int:
+    logging.basicConfig(level=logging.INFO, stream=sys.stderr,
+                        format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    load_dotenv()
+    try:
+        engine = _engine()
+    except RuntimeError as e:
+        log.error("%s", e)
+        return 2
+    run_id = omo_store.open_run(engine, JOB)
+    try:
+        with engine.begin() as conn:
+            watermark = snapshot_store.load_watermark(conn)
+            targets = snapshot_store.due_list(conn, watermark, kinds=kinds, codes=codes)
+        log.info("tới hạn: %d target (%d theo sự kiện)", len(targets),
+                 sum(1 for t in targets if t.found_by == "event"))
+
+        deadline = time.monotonic() + max_minutes * 60 if max_minutes else None
+        fetched, failed, bad_shape, stopped, calls, retries = _fetch_all(targets, get, sleep, deadline)
+
+        run_date = datetime.now(VN).date()
+        try:
+            with engine.begin() as conn:
+                tally, written = snapshot_store.apply(conn, fetched, run_date)
+                tally.attempted = len(targets)
+                tally.failed, tally.bad_shape = failed, bad_shape
+                verdict = snapshot_guard.check(tally)
+                if not verdict.ok:
+                    raise GuardRefused(verdict)
+        except GuardRefused as e:
+            snapshot_store.store_refusal_evidence(engine, fetched, run_id, e.verdict)
+            omo_store.close_run(engine, run_id, "failed",
+                                error="guard refused: " + "; ".join(e.verdict.reasons))
+            log.error("snapshot từ chối: %s", e.verdict.reasons)
+            return 1
+
+        stats = {"tally": vars(tally), "rows_written": written, "calls": calls,
+                 "retries": retries, "stopped_early": stopped, "run_date": run_date.isoformat()}
+        _recrawl(engine, watermark, stats)
+
+        # Watermark chỉ tiến khi KHÔNG mã nào hỏng: đẩy mốc lên trong lúc còn target chưa
+        # phục vụ là mất trigger vĩnh viễn (§5.1 chú thích 2 của plan).
+        if failed == 0 and not stopped:
+            with engine.begin() as conn:
+                wm = snapshot_store.new_watermark(conn)
+            snapshot_store.upsert_domain_state(engine, wm.isoformat())
+            stats["watermark"] = wm.isoformat()
+        else:
+            stats["watermark"] = watermark.isoformat()
+            stats["watermark_held"] = True
+
+        omo_store.close_run(engine, run_id, "success", stats)
+        log.info("snapshot xong: %s", stats)
+        return 0
+    except Exception as e:                    # noqa: BLE001 — job biên ngoài: mọi lỗi vào etl_run
+        omo_store.close_run(engine, run_id, "failed", error=f"{type(e).__name__}: {e}")
+        log.exception("snapshot thất bại")
+        return 2
+    finally:
+        engine.dispose()
