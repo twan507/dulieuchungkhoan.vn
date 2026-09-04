@@ -37,7 +37,11 @@ def upgrade() -> None:
                        ('snapshot','valuation','ownership','dividend')),
           checked_at timestamptz NOT NULL,
           keep_hash  text   NOT NULL,       -- sha256 của TẬP TRẮNG, không phải payload trọn
-          changed_at timestamptz,           -- lần nội dung đổi gần nhất; NULL = chưa đổi lần nào
+          changed_at timestamptz,           -- lần nội dung đổi gần nhất. Lần kiểm ĐẦU TIÊN của
+                                             -- một (issuer, kind) tính là một lần đổi thật (so
+                                             -- với "chưa từng kiểm"), nên apply() luôn set giá
+                                             -- trị này ngay từ đầu — NULL không xảy ra trong
+                                             -- thực tế, không phải "chưa đổi lần nào"
           found_by   text   NOT NULL CHECK (found_by IN ('event','floor')),
           PRIMARY KEY (issuer_id, kind)
         );
