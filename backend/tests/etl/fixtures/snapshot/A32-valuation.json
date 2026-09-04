@@ -1,0 +1,492 @@
+{
+ "page": 1,
+ "pageSize": 0,
+ "totalCount": 1,
+ "items": [
+  {
+   "valuationStock": {
+    "organCode": "ASECO32",
+    "outstandingShare": 6800000.0,
+    "rtq180": -25807827544.0,
+    "rtd14": 7481.22178882,
+    "rtd7": 33937.05626397,
+    "rtd35": -0.02576792,
+    "estimatedEPS": null,
+    "forecastEPS": null,
+    "estimatedBookValue": null,
+    "forcastBookValue": null,
+    "riskFreeRate": 0.04337,
+    "vnIndexEquityRisk": 0.0423333,
+    "recommendMethod": "PE"
+   },
+   "valuationSector": {
+    "icbCode": "3760",
+    "valuationStocks": [
+     {
+      "organCode": "BBT",
+      "ticker": "BBT",
+      "totalAsset": 158037395605.0,
+      "revenue": 144712459975.0,
+      "netProfit": 25587270375.0,
+      "marketCap": 272440000000.0,
+      "pe": 8.56957043,
+      "pb": 1.02984967
+     },
+     {
+      "organCode": "BDGAR",
+      "ticker": "BDG",
+      "totalAsset": 648595873928.0,
+      "revenue": 1196265853632.0,
+      "netProfit": 89327616335.0,
+      "marketCap": 655461885600.0,
+      "pe": 7.15664406,
+      "pb": 0.9634989
+     },
+     {
+      "organCode": "BVN",
+      "ticker": "BVN",
+      "totalAsset": 132557349986.0,
+      "revenue": 24808731569.0,
+      "netProfit": -3977185654.0,
+      "marketCap": 90500000000.0,
+      "pe": 3.15381694,
+      "pb": 0.668687
+     },
+     {
+      "organCode": "CENTURY",
+      "ticker": "STK",
+      "totalAsset": 1703389106213.0,
+      "revenue": 1765666338639.0,
+      "netProfit": 144360663988.0,
+      "marketCap": 1265448514200.0,
+      "pe": -24.37650229,
+      "pb": 0.75133882
+     },
+     {
+      "organCode": "DAGAR",
+      "ticker": "DCG",
+      "totalAsset": 417963452806.0,
+      "revenue": 590861531484.0,
+      "netProfit": 31481510209.0,
+      "marketCap": 137182419600.0,
+      "pe": 7.37838783,
+      "pb": 1.25963862
+     },
+     {
+      "organCode": "DAMSAN",
+      "ticker": "ADS",
+      "totalAsset": 1837891122900.0,
+      "revenue": 1339010462998.0,
+      "netProfit": 24442416654.0,
+      "marketCap": 625672814130.0,
+      "pe": 6.48422012,
+      "pb": 0.62408405
+     },
+     {
+      "organCode": "DETMAY7",
+      "ticker": "DM7",
+      "totalAsset": 548468984602.0,
+      "revenue": 855197712602.0,
+      "netProfit": 46842875874.0,
+      "marketCap": 254283150000.0,
+      "pe": 4.17039621,
+      "pb": 0.87894506
+     },
+     {
+      "organCode": "DUGRACO",
+      "ticker": "MGG",
+      "totalAsset": 930962264798.0,
+      "revenue": 2545698214621.0,
+      "netProfit": 56324882554.0,
+      "marketCap": 224990550000.0,
+      "pe": 7.07358592,
+      "pb": 0.84903301
+     },
+     {
+      "organCode": "EVE",
+      "ticker": "EVE",
+      "totalAsset": 1353033082102.0,
+      "revenue": 855358212133.0,
+      "netProfit": 42056931119.0,
+      "marketCap": 366483418290.0,
+      "pe": 9.56336057,
+      "pb": 0.39918851
+     },
+     {
+      "organCode": "FORTEX",
+      "ticker": "FTM",
+      "totalAsset": 1490033752041.0,
+      "revenue": 81302749625.0,
+      "netProfit": -200057670006.0,
+      "marketCap": 15000000000.0,
+      "pe": -0.10945409,
+      "pb": -0.0142053
+     },
+     {
+      "organCode": "G20",
+      "ticker": "G20",
+      "totalAsset": 204064346878.0,
+      "revenue": 0.0,
+      "netProfit": -158934082695.0,
+      "marketCap": 8640000000.0,
+      "pe": -0.65418247,
+      "pb": -0.05785248
+     },
+     {
+      "organCode": "GAR10",
+      "ticker": "M10",
+      "totalAsset": 1588766246274.0,
+      "revenue": 3447303437580.0,
+      "netProfit": 66162616439.0,
+      "marketCap": 626347163612.0,
+      "pe": 3.38113775,
+      "pb": 0.91600141
+     },
+     {
+      "organCode": "GIL",
+      "ticker": "GIL",
+      "totalAsset": 2708562072250.0,
+      "revenue": 3456745184577.0,
+      "netProfit": 309277202618.0,
+      "marketCap": 792450500400.0,
+      "pe": 6.60338918,
+      "pb": 0.31657979
+     },
+     {
+      "organCode": "GMC",
+      "ticker": "GMC",
+      "totalAsset": 1222790471213.0,
+      "revenue": 1474566250584.0,
+      "netProfit": 46414116807.0,
+      "marketCap": 125246747199.0,
+      "pe": -3.47439223,
+      "pb": 0.39726714
+     },
+     {
+      "organCode": "HALOTEX",
+      "ticker": "HLT",
+      "totalAsset": 289559282175.0,
+      "revenue": 508400841357.0,
+      "netProfit": -18227601792.0,
+      "marketCap": 75260000000.0,
+      "pe": -3.19095708,
+      "pb": -6.24120076
+     },
+     {
+      "organCode": "HANOSIMEX",
+      "ticker": "HSM",
+      "totalAsset": 1806969333884.0,
+      "revenue": 1325286282876.0,
+      "netProfit": 6649258042.0,
+      "marketCap": 137350000000.0,
+      "pe": 7.23778778,
+      "pb": 0.40250184
+     },
+     {
+      "organCode": "HDM",
+      "ticker": "HDM",
+      "totalAsset": 602165540117.0,
+      "revenue": 1338663858364.0,
+      "netProfit": 11905005896.0,
+      "marketCap": 648787625556.0,
+      "pe": 4.54046855,
+      "pb": 1.13522702
+     },
+     {
+      "organCode": "HTG",
+      "ticker": "HTG",
+      "totalAsset": 1751237369125.0,
+      "revenue": 3256264345125.0,
+      "netProfit": 62238752160.0,
+      "marketCap": 1447280132000.0,
+      "pe": 4.43413831,
+      "pb": 1.17849717
+     },
+     {
+      "organCode": "HUGA",
+      "ticker": "HNI",
+      "totalAsset": 600545358047.0,
+      "revenue": 900003373261.0,
+      "netProfit": 99722718761.0,
+      "marketCap": 706200660000.0,
+      "pe": 7.96817218,
+      "pb": 1.44443678
+     },
+     {
+      "organCode": "HUGACO",
+      "ticker": "HUG",
+      "totalAsset": 576875549415.0,
+      "revenue": 658742025932.0,
+      "netProfit": 19816929710.0,
+      "marketCap": 585341670000.0,
+      "pe": 6.59551353,
+      "pb": 1.93230783
+     },
+     {
+      "organCode": "KMR",
+      "ticker": "KMR",
+      "totalAsset": 1105292254926.0,
+      "revenue": 416927717690.0,
+      "netProfit": 182337999.0,
+      "marketCap": 131956512240.0,
+      "pe": 21.73083507,
+      "pb": 0.20207132
+     },
+     {
+      "organCode": "LIX",
+      "ticker": "LIX",
+      "totalAsset": 1017668765998.0,
+      "revenue": 2902192970348.0,
+      "netProfit": 230108370018.0,
+      "marketCap": 1590840000000.0,
+      "pe": 8.60470008,
+      "pb": 1.61045766
+     },
+     {
+      "organCode": "MPT",
+      "ticker": "MPT",
+      "totalAsset": 222995516917.0,
+      "revenue": 163466846302.0,
+      "netProfit": 2470339031.0,
+      "marketCap": 13685731200.0,
+      "pe": -19.03038824,
+      "pb": 0.08254667
+     },
+     {
+      "organCode": "NAGA",
+      "ticker": "NJC",
+      "totalAsset": 212577515512.0,
+      "revenue": 253135336776.0,
+      "netProfit": 14267941253.0,
+      "marketCap": 66878937600.0,
+      "pe": 5.30981523,
+      "pb": 0.66340717
+     },
+     {
+      "organCode": "NET",
+      "ticker": "NET",
+      "totalAsset": 695640970403.0,
+      "revenue": 1470113908321.0,
+      "netProfit": 133411232580.0,
+      "marketCap": 1366300814000.0,
+      "pe": 11.05703509,
+      "pb": 2.32143295
+     },
+     {
+      "organCode": "NHABE",
+      "ticker": "MNB",
+      "totalAsset": 2738098568234.0,
+      "revenue": 4021388964926.0,
+      "netProfit": 34858001638.0,
+      "marketCap": 496000000000.0,
+      "pe": 2.95095564,
+      "pb": 0.88678607
+     },
+     {
+      "organCode": "NTGATEX",
+      "ticker": "NTT",
+      "totalAsset": 628337863868.0,
+      "revenue": 816897081041.0,
+      "netProfit": -25578099259.0,
+      "marketCap": 267900000000.0,
+      "pe": 6.11368807,
+      "pb": 1.05549133
+     },
+     {
+      "organCode": "PNJ",
+      "ticker": "PNJ",
+      "totalAsset": 8483146098451.0,
+      "revenue": 17510788650999.0,
+      "netProfit": 1069310105261.0,
+      "marketCap": 20366533968200.0,
+      "pe": 7.01585317,
+      "pb": 1.46572809
+     },
+     {
+      "organCode": "PPHC",
+      "ticker": "PPH",
+      "totalAsset": 3780225658705.0,
+      "revenue": 2099133368320.0,
+      "netProfit": 283420488682.0,
+      "marketCap": 2025808365550.0,
+      "pe": 3.7774994,
+      "pb": 0.90947919
+     },
+     {
+      "organCode": "PTG",
+      "ticker": "PTG",
+      "totalAsset": 252524745861.0,
+      "revenue": 396994829140.0,
+      "netProfit": 43132411122.0,
+      "marketCap": 7993896000.0,
+      "pe": 0.12362486,
+      "pb": 0.04050107
+     },
+     {
+      "organCode": "SHGC",
+      "ticker": "MSH",
+      "totalAsset": 2627755267289.0,
+      "revenue": 3813408833205.0,
+      "netProfit": 231794644757.0,
+      "marketCap": 3415012957000.0,
+      "pe": 5.38979763,
+      "pb": 1.68939371
+     },
+     {
+      "organCode": "SPB",
+      "ticker": "SPB",
+      "totalAsset": 583137463267.0,
+      "revenue": 718019437586.0,
+      "netProfit": 7230676226.0,
+      "marketCap": 199501305000.0,
+      "pe": 5.85607832,
+      "pb": 0.71174997
+     },
+     {
+      "organCode": "TCM",
+      "ticker": "TCM",
+      "totalAsset": 2976422649274.0,
+      "revenue": 3469716808748.0,
+      "netProfit": 276227899280.0,
+      "marketCap": 1999856659000.0,
+      "pe": 9.08238594,
+      "pb": 0.83132563
+     },
+     {
+      "organCode": "TDFW",
+      "ticker": "GTD",
+      "totalAsset": 109919352107.0,
+      "revenue": 104113916214.0,
+      "netProfit": -13731210886.0,
+      "marketCap": 860250000000.0,
+      "pe": -22.20861935,
+      "pb": -69.23859883
+     },
+     {
+      "organCode": "TECHVINA",
+      "ticker": "CET",
+      "totalAsset": 84938816016.0,
+      "revenue": 28655822080.0,
+      "netProfit": 606275576.0,
+      "marketCap": 18755000000.0,
+      "pe": -8.30634083,
+      "pb": 0.28989047
+     },
+     {
+      "organCode": "TET",
+      "ticker": "TET",
+      "totalAsset": 106532726028.0,
+      "revenue": 22682602637.0,
+      "netProfit": 8466850793.0,
+      "marketCap": 3110147000000.0,
+      "pe": 108.52543803,
+      "pb": 26.89768798
+     },
+     {
+      "organCode": "TLG",
+      "ticker": "TLG",
+      "totalAsset": 2314599141762.0,
+      "revenue": 2684551950336.0,
+      "netProfit": 239845036749.0,
+      "marketCap": 5000168012000.0,
+      "pe": 10.84021169,
+      "pb": 1.96348768
+     },
+     {
+      "organCode": "TNG",
+      "ticker": "TNG",
+      "totalAsset": 3554954990341.0,
+      "revenue": 4480199673570.0,
+      "netProfit": 153603282678.0,
+      "marketCap": 2149812142200.0,
+      "pe": 4.81983144,
+      "pb": 1.06824261
+     },
+     {
+      "organCode": "TTG",
+      "ticker": "TTG",
+      "totalAsset": 25130123538.0,
+      "revenue": 46919260854.0,
+      "netProfit": 82481899.0,
+      "marketCap": 79165600000.0,
+      "pe": 9.42390875,
+      "pb": 2.58412423
+     },
+     {
+      "organCode": "VDN",
+      "ticker": "VDN",
+      "totalAsset": 381507105511.0,
+      "revenue": 513605103854.0,
+      "netProfit": -518902297.0,
+      "marketCap": 182084842000.0,
+      "pe": 15.02615682,
+      "pb": 2.30048747
+     },
+     {
+      "organCode": "VGTND",
+      "ticker": "NDT",
+      "totalAsset": 1128344352864.0,
+      "revenue": 1128375454129.0,
+      "netProfit": 1509443376.0,
+      "marketCap": 71943889600.0,
+      "pe": 2.1607961,
+      "pb": 1.10791726
+     },
+     {
+      "organCode": "VICOTEX",
+      "ticker": "TVT",
+      "totalAsset": 1614002073624.0,
+      "revenue": 1857171789615.0,
+      "netProfit": 75527258617.0,
+      "marketCap": 323400000000.0,
+      "pe": 6.54071381,
+      "pb": 0.59083077
+     },
+     {
+      "organCode": "VINATEX",
+      "ticker": "VGT",
+      "totalAsset": 18019676441742.0,
+      "revenue": 13908982061247.0,
+      "netProfit": 560541190728.0,
+      "marketCap": 5674000000000.0,
+      "pe": 5.52828245,
+      "pb": 0.72158344
+     },
+     {
+      "organCode": "VTEC",
+      "ticker": "VGG",
+      "totalAsset": 4736188847844.0,
+      "revenue": 7120958602535.0,
+      "netProfit": 150928132144.0,
+      "marketCap": 1843380000000.0,
+      "pe": 4.04976109,
+      "pb": 0.77103002
+     },
+     {
+      "organCode": "VTI",
+      "ticker": "VTI",
+      "totalAsset": 12741494252.0,
+      "revenue": 26623219850.0,
+      "netProfit": 18941050.0,
+      "marketCap": 20542862400.0,
+      "pe": 3.24497078,
+      "pb": -0.09467505
+     },
+     {
+      "organCode": "XPH",
+      "ticker": "XPH",
+      "totalAsset": 198743421881.0,
+      "revenue": 48723430123.0,
+      "netProfit": 41946306.0,
+      "marketCap": 178825567875.0,
+      "pe": 1.62710177,
+      "pb": 0.69793882
+     }
+    ]
+   }
+  }
+ ],
+ "packageId": null,
+ "status": "Success",
+ "errors": null
+}
