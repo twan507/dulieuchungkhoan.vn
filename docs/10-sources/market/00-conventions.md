@@ -425,7 +425,7 @@ Tính từ [lịch ETL §4.1–4.2](../../20-design/market-data-store.md), tách
 | **`Screener/GetScreenerItems` — phân trang 52 trang** | `FIIN_TOOLS` | Sau 15:00, hằng ngày | **52** |
 | `Calendar/*` — lịch sự kiện | `FIIN_MARKET` | Hằng ngày | ~10 |
 | **Cộng thường nhật** | | **hằng ngày** | **≈ 2.300** *(sửa 2026-09-03; bản cũ ghi 6.040 khi họ Snapshot còn chạy mọi mã mỗi ngày)* |
-| BCTC 3 loại × 1.974 mã *(số cũ; tập niêm yết nay 1.523 và BCTC theo doanh nghiệp — tính lại ở lát BCTC)* | `FIIN_FUND` | Theo quý, rải | 5.922 |
+| BCTC 3 loại × **1.523** mã *(sửa 2026-09-04 theo [khảo sát BCTC](../../90-records/surveys/2026-09-04-bctc-endpoints/README.md); số cũ 1.974 × 3 = 5.922 đếm trước lượt dọn mã huỷ niêm yết)* | `FIIN_FUND` | Theo quý, rải | **4.569** *(≥ 38 phút chỉ tính giãn cách 0,5 s)* |
 | `getPriceData` mọi trang × 1.523 mã *(sửa 2026-09-04; độ sâu theo tuổi niêm yết, BID 53 trang)* | `FIIN_TECH` | **Một lần**, tuần tự, rải vài đêm | **~50.000–80.000** |
 
 **Vì sao chọn burst Screener để kiểm.** Ba nhóm hằng ngày kia lớn hơn về số lượng nhưng là **nhiều lời gọi độc lập trên nhiều mã**, rải được tuỳ ý. Riêng 52 trang Screener là **một chuỗi phân trang dính liền trên đúng một endpoint của đúng một host** — không rải được, phải đi liền mạch mới lấy đủ 1.549 mã — và là lời gọi **nặng nhất mỗi lượt** trong cả lịch. Nếu chỗ nào bị chặn trước thì là chỗ này.
