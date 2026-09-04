@@ -192,7 +192,7 @@ def test_due_list_caps_the_trigger_branch_and_takes_the_oldest_public_date_first
     _quiet_events(db)
     for i in range(8):
         iid = _issuer(db, f"Trigger {i}", f"ZZT{i}", f"ZT{i}")
-        _checked(db, iid, "snapshot", days_ago=1)          # trong nhịp — chỉ trigger mới bắn
+        _checked(db, iid, "snapshot", days_ago=10)         # trong nhịp 90 ngày, và TRƯỚC mọi ngày công bố
         _event(db, f"ZZT{i}", "Earning", date.today() - timedelta(days=8 - i))  # i=0 cũ nhất
     due = ss.due_list(db, date.today() - timedelta(days=9), kinds=["snapshot"], max_trigger=3)
     assert [t.ticker for t in due] == ["ZT0", "ZT1", "ZT2"]
@@ -396,3 +396,44 @@ def test_recrawl_codes_ignores_agm_but_keeps_a_price_moving_event_type(db):
     _event(db, "ZZAGM", "AGM", date.today() - timedelta(days=5), exright_date=date.today())
     _event(db, "ZZSD", "StockDividend", date.today() - timedelta(days=5), exright_date=date.today())
     assert ss.recrawl_codes(db) == ["ZZV"]
+
+
+def test_trigger_skips_a_pair_already_checked_after_publication(db):
+    """Lỗi A1 của review lát 5, cùng loại ở lát 4: trigger cắt trần 300 issuer nhưng mốc nước
+    đẩy tới max(public_date) toàn cục ⇒ phần bị cắt mất trigger vĩnh viễn. Sửa bằng sổ kiểm:
+    cặp (issuer, kind) đã kiểm TỪ ngày công bố trở đi là "đã phục vụ", không lấy lại."""
+    _quiet_universe(db)
+    _quiet_events(db)
+    today = date.today()
+    a = _issuer(db, "Da phuc vu", "ZZSRVA", "ZSA")
+    b = _issuer(db, "Chua phuc vu", "ZZSRVB", "ZSB")
+    _event(db, "ZZSRVA", "Earning", today - timedelta(days=5))
+    _event(db, "ZZSRVB", "Earning", today - timedelta(days=5))
+    _checked(db, a, "snapshot", days_ago=0)               # kiểm hôm nay, SAU ngày công bố
+    _checked(db, b, "snapshot", days_ago=10)              # kiểm trước ngày công bố
+    due = _mine(ss.due_list(db, today - timedelta(days=30), kinds=["snapshot"]), "ZZSRVA", "ZZSRVB")
+    assert [(t.organ_code, t.found_by) for t in due] == [("ZZSRVB", "event")]
+
+
+def test_same_day_burst_is_served_across_runs_without_starving_anyone(db):
+    """Ngày hạn nộp: hàng trăm mã cùng public_date. Mốc "ngày cắt − 1" một mình sẽ phục vụ lại
+    đúng N mã đầu mãi mãi; luật "đã kiểm sau công bố" mới là thứ đẩy vòng quay đi tiếp."""
+    _quiet_universe(db)
+    _quiet_events(db)
+    today = date.today()
+    d = today - timedelta(days=1)
+    ids = [_issuer(db, f"Burst {i}", f"ZZBST{i}", f"ZB{i}") for i in range(3)]
+    for i, iid in enumerate(ids):
+        _checked(db, iid, "snapshot", days_ago=10)
+        _event(db, f"ZZBST{i}", "Earning", d)
+    first = ss.plan_due(db, today - timedelta(days=30), kinds=["snapshot"], max_trigger=2)
+    served = [t for t in first.targets if t.organ_code.startswith("ZZBST")]
+    assert [t.organ_code for t in served] == ["ZZBST0", "ZZBST1"] and first.trigger_cut == d
+    assert ss.new_watermark(db, first.trigger_cut) == d - timedelta(days=1)
+    for t in served:                                       # lượt 1 phục vụ xong hai cặp
+        db.execute(sa.text("UPDATE ops.snapshot_check SET checked_at = clock_timestamp()"
+                           " WHERE issuer_id = :i AND kind = 'snapshot'"), {"i": t.issuer_id})
+    second = ss.plan_due(db, d - timedelta(days=1), kinds=["snapshot"], max_trigger=2)
+    left = [t for t in second.targets if t.organ_code.startswith("ZZBST")]
+    assert [t.organ_code for t in left] == ["ZZBST2"] and second.trigger_cut is None
+    assert ss.new_watermark(db, None) == d

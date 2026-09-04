@@ -171,7 +171,7 @@ lát 8  lên VPS               hồ sơ docker-compose.vps.yml (service-topology
 
 | Cần biết trước | Ở đâu |
 |---|---|
-| 🔴 **Lỗi mốc nước của lát 4 còn nguyên** — `snapshot_store.new_watermark` đẩy tới `max(public_date)` toàn cục trong khi `due_list` cắt trần 300 issuer ⇒ mùa báo cáo, snapshot của mã bị cắt trễ tới 64 ngày. Lát 5 đã sửa cho `fundamentals_store` (loại cặp `checked_at` ≥ `public_date`, `plan_due` trả `trigger_cut`, mốc = ngày cắt − 1); **áp cùng công thức cho lát 4** ở một commit riêng trước khi bật lịch | [ledger lát 5 §2](../90-records/plans/2026-09-04-fundamentals-etl/ledger.md) · `backend/etl/fundamentals_store.py` |
+| Lỗi mốc nước nhảy qua issuer bị cắt trần trigger (A1 của review lát 5) **đã sửa cho cả lát 4** tối 2026-09-04 (`snapshot_store.plan_due` / `trigger_cut`, cùng công thức lát 5) — không còn nợ trước khi bật lịch | [ledger lát 5 §2](../90-records/plans/2026-09-04-fundamentals-etl/ledger.md) · [backend/README](../../backend/README.md) |
 | Bảy phép kiểm đơn vị của từ điển (đẳng thức kế toán, nhất quán thang) là đầu vào sẵn cho bộ giám sát; `metric_dictionary` nay có 729 dòng trong kho | [market-data-store §7.1](../20-design/market-data-store.md) · [field-dictionary.json](../10-sources/market/field-dictionary.json) |
 | Lịch sử điều chỉnh hồi tố nằm ở `staging.raw_payload` (`source = 'fundamentals'`, một dòng mỗi lần đổi, `meta.hash`) — thước đo tần suất restatement, giả định §2.2.1 của spec lát 5 chưa kiểm | [spec lát 5 §4.1](../90-records/plans/2026-09-04-fundamentals-etl/spec.md) |
 | Khuôn `Fetcher`/`_UNIVERSE` đã nhân bản hai lần (`snapshot_*`, `fundamentals_*`) — lát 6 dùng chung script cho 5 lát nên là lúc cân nhắc trích chung, không phải trước | ledger lát 5 §1 (Task 2) |
