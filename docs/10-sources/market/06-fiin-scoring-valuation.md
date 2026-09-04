@@ -362,5 +362,11 @@ Phân bố `recommendMethod`: `PE` 27 mã · `PB` 17 · `FCFE` 7.
 
 `estimatedEPS` và `forecastEPS` chênh nhau rất lớn (BID: 3.503 vs 1.319 — gấp 2,7 lần). Tài liệu của FiinGroup không nêu rõ định nghĩa: "estimated" là TTM ước tính hay đồng thuận thị trường, "forecast" là dự phóng năm nào. **Dùng nhầm sẽ ra giá mục tiêu lệch rất xa.** Cần làm rõ trước khi đưa vào sản phẩm.
 
+### Endpoint này cũng dính lỗi Redis tạm thời của nguồn
+
+*(đo 2026-09-04)* Gọi 9 mã thì **1 mã** (BVB) trả `HTTP 200` với `items: null` và `status: "Failed"`, mảng `errors` mang đúng chuỗi `Timeout performing GET (5000ms) … :6379` mà [quy ước §10.5](00-conventions.md) đã mô tả và phân loại từ 2026-08-15 — **lỗi tạm thời của nguồn, xử lý bằng thử lại**; luật và cách xử do mục đó sở hữu, không chép lại ở đây.
+
+Số mới của lượt đo này: lời gọi hỏng tốn **12,3 giây** mới trả lỗi (lượt thành công 102 ms – 4,6 s) ⇒ timeout client cho `GetValuation` phải rộng hơn hẳn ba endpoint còn lại trong họ Snapshot. Và với ETL: đọc `items: null` thành *"mã này rỗng"* là ghi kết luận sai rồi đánh dấu đã kiểm — hết lượt thử thì để mã đó **chưa kiểm**, đừng ghi gì.
+
 ### Hiệu năng
-2,8–53 KB tuỳ quy mô ngành · ~243 ms.
+2,8–53 KB tuỳ quy mô ngành · ~243 ms. *(Đo lại 2026-09-04, 9 mã: 606 byte – 15,2 KB, 102 ms – 4,6 s khi thành công; 12,3 s cho lượt `Failed` — timeout của client phải rộng hơn nhiều so với ba endpoint còn lại trong họ.)*
