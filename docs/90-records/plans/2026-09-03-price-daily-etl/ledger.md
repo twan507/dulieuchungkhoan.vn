@@ -162,22 +162,34 @@ Nhịp backfill đo được: 334 trang / 496 s ≈ **1,5 s/trang**, 33 trang/m�
 434 passed, 2 skipped, 1 warning in 28.91s
 ```
 
-### AC8 — đăng ký task `dlck-price`: ⏳ chờ chủ dự án (cần cửa sổ Run as Administrator)
+### AC8 — đăng ký task `dlck-price` và `dlck-price-backfill`: ✅ chủ dự án chạy trong cửa sổ admin, 2026-09-04 ~07:30
 
-Script đã có task thứ 10 (`51850f4`): `dlck-price` 15:40, `Assert-TaskCommand -MustContain "python -m etl price" -MustNotContain "--backfill"`. Khi đăng ký, kiểm bằng lệnh thật rồi tắt lại cùng cả đội:
+```
+pwsh scripts/register-tasks.ps1 -LogonType S4U
+  + dlck-price               15:40             ->  python -m etl price
+  + dlck-price-backfill      00:05             ->  python -m etl price --backfill --stop-before-open
+Đã kiểm lệnh của cả 11 task.
+⚠️ 9 task ĐANG TẮT trước lượt này đã bị -Force bật lại: dlck-events, dlck-ingester, …   ← đúng cảnh báo của script
+✅ Cả 11 task đăng ký S4U (đã soi Principal thật từng task, không chỉ soi lệnh)
+
+<Disable-ScheduledTask cả đội>  →  11 task, TẤT CẢ Disabled
+dlck-price            StartBoundary 2026-09-04T15:40:00+07:00   Days 62 (Thứ 2–6)   PT12H
+dlck-price-backfill   StartBoundary 2026-09-04T00:05:00+07:00   Days 64 (Saturday)  PT72H   MultipleInstances IgnoreNew
+```
+
+🔴 **Hai phép kiểm tôi đưa ban đầu báo FAIL oan** — nghiệm thu bằng thứ Scheduler *thật sự giữ* lộ ra chuỗi kỳ vọng của tôi sai, không phải task sai: `Triggers[0].DaysOfWeek` là **bit cờ số** (Sun 1 · Mon 2 · Tue 4 · Wed 8 · Thu 16 · Fri 32 · Sat 64 ⇒ `64`, và `62` cho Thứ 2–6), không phải chuỗi `"Saturday"`; `Settings.ExecutionTimeLimit` được Scheduler chuẩn hoá thành **`PT72H`**, không giữ nguyên `P3D`. Phép kiểm đúng:
 
 ```powershell
-pwsh scripts/register-tasks.ps1 -LogonType S4U          # cửa sổ admin; script -Force sẽ BẬT lại task đang tắt — tắt lại ngay sau
-(Get-ScheduledTask -TaskName "dlck-price").Triggers[0].StartBoundary   # phải có T15:40:00+07:00
-(Get-ScheduledTask -TaskName "dlck-price").Actions[0].Arguments        # phải có "python -m etl price", KHÔNG có "--backfill"
-(Get-ScheduledTask -TaskName "dlck-price-backfill").Triggers[0].DaysOfWeek          # Saturday
-(Get-ScheduledTask -TaskName "dlck-price-backfill").Settings.ExecutionTimeLimit     # P3D (3 ngày)
-(Get-ScheduledTask -TaskName "dlck-price-backfill").Actions[0].Arguments            # có "--backfill --stop-before-open"
-Get-ScheduledTask -TaskName "dlck-*" | Disable-ScheduledTask           # giữ Disabled theo [4d]
+(Get-ScheduledTask -TaskName "dlck-price").Triggers[0].StartBoundary                 # …T15:40:00+07:00
+(Get-ScheduledTask -TaskName "dlck-price").Actions[0].Arguments                      # có "python -m etl price", KHÔNG có "--backfill"
+(Get-ScheduledTask -TaskName "dlck-price-backfill").Triggers[0].DaysOfWeek           # 64 = Saturday
+(Get-ScheduledTask -TaskName "dlck-price-backfill").Settings.ExecutionTimeLimit      # PT72H = 3 ngày
+(Get-ScheduledTask -TaskName "dlck-price-backfill").Actions[0].Arguments             # có "--backfill --stop-before-open"
+Get-ScheduledTask -TaskName "dlck-*" | Where-Object State -ne 'Disabled'             # rỗng
 # Muốn backfill chạy ngay tối nay: Enable-ScheduledTask dlck-price-backfill; Start-ScheduledTask dlck-price-backfill
 ```
 
-**AC1–AC7 ✅ — AC8 ⏳ admin.**
+**AC1–AC8 ✅ — đóng trọn.**
 
 ---
 
