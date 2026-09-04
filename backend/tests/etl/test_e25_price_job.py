@@ -238,10 +238,34 @@ def test_backfill_budget_counts_wall_clock_so_a_sleep_ends_the_run_at_wake(price
     assert s["codes_done"] == 1 and s["budget_hit"] is True and s["pass_complete"] is False
 
 
+def test_next_open_is_0845_of_the_next_weekday():
+    """Task backfill chạy tay buổi tối hoặc tự động sáng thứ 7: hạn là 08:45 của NGÀY GIAO DỊCH kế
+    tiếp — tối thứ 3 ⇒ sáng thứ 4; thứ 7 ⇒ thứ 2; thứ 6 sau 08:45 ⇒ thứ 2. Chưa biết ngày lễ."""
+    from datetime import datetime
+    VN = price_job.VN
+    f = price_job._next_open
+    assert f(datetime(2026, 9, 5, 0, 5, tzinfo=VN)) == datetime(2026, 9, 7, 8, 45, tzinfo=VN)    # thứ 7 → thứ 2
+    assert f(datetime(2026, 9, 8, 20, 0, tzinfo=VN)) == datetime(2026, 9, 9, 8, 45, tzinfo=VN)   # tối thứ 3 → thứ 4
+    assert f(datetime(2026, 9, 4, 9, 0, tzinfo=VN)) == datetime(2026, 9, 7, 8, 45, tzinfo=VN)    # thứ 6 09:00 → thứ 2
+    assert f(datetime(2026, 9, 7, 8, 0, tzinfo=VN)) == datetime(2026, 9, 7, 8, 45, tzinfo=VN)    # thứ 2 08:00 → hôm nay
+
+
+def test_stop_before_open_ends_the_run_at_the_next_trading_morning(price_db, monkeypatch):
+    from datetime import datetime
+    _wire(monkeypatch)
+    target = price_job._next_open(datetime.now(price_job.VN)).timestamp()
+    monkeypatch.setattr(price_job, "_wall_clock", lambda: target + 1)      # đồng hồ đã qua 08:45 ngày giao dịch kế
+    assert price_job.run(backfill=True, stop_before_open=True) == 0
+    _, s, _ = _last(price_db, "market.price_backfill")
+    assert s["codes_done"] == 1 and s["budget_hit"] is True
+    assert s["stop_at"] == datetime.fromtimestamp(target, price_job.VN).isoformat(timespec="minutes")
+
+
 def test_cli_parses_backfill_codes_and_max_minutes(monkeypatch):
     seen = {}
     monkeypatch.setattr("etl.price_job.run", lambda **kw: seen.update(kw) or 0)
-    assert cli.main(["price", "--backfill", "--codes", "bid, dmx", "--max-minutes", "5"]) == 0
-    assert seen == {"backfill": True, "codes": ["BID", "DMX"], "max_minutes": 5.0}
+    assert cli.main(["price", "--backfill", "--codes", "bid, dmx", "--max-minutes", "5",
+                     "--stop-before-open"]) == 0
+    assert seen == {"backfill": True, "codes": ["BID", "DMX"], "max_minutes": 5.0, "stop_before_open": True}
     assert cli.main(["price"]) == 0
-    assert seen == {"backfill": False, "codes": None, "max_minutes": None}
+    assert seen == {"backfill": False, "codes": None, "max_minutes": None, "stop_before_open": False}
