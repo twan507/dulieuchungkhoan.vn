@@ -202,6 +202,15 @@ khi còn target chưa phục vụ là mất trigger vĩnh viễn. Còn **re-craw
 số điều chỉnh), trần `MAX_RECRAWL = 50` mã và `RECRAWL_MAX_MINUTES = 20` phút. Lỗi re-crawl **không** kéo đổ lượt
 snapshot; mã chưa kịp kéo được cửa sổ 3 ngày bắt lại.
 
+🔴 **Nếu job bị từ chối nhiều ngày liền, đọc dòng này trước khi nghi nguồn hỏng.** Chốt chặn (i) tính tỷ lệ
+đổi trên **cả lượt**, gộp bốn kind. `ownership` chiếm 70/234 target, và `majorShareHolders`/`boardOfDirectors`
+mang dấu thời gian **kỳ công bố** — khi nguồn cập nhật kỳ mới, mọi mã `ownership` được so trong 30 ngày kế tiếp
+đều đổi ⇒ 70/234 = **29,9% > ngưỡng 20%** ⇒ lượt bị từ chối, có thể lặp lại nhiều ngày, bốn lần một năm. Đây là
+**vận hành bình thường chạm ngưỡng**, không phải nguồn hỏng. Chưa sửa vì lời giải không hiển nhiên: tách ngưỡng
+theo từng kind làm ca này nổ **dễ hơn** (100% của `ownership`), còn nới ngưỡng thì mất khả năng bắt tập trắng sai.
+Cần vài tháng số thật của `changed_floor` mới quyết được. Gặp ca này: đọc `stats.tally` của lượt bị từ chối, nếu
+phần đổi dồn hết vào một kind thì chạy tay từng kind bằng `--kinds` để đi tiếp, và ghi số vào hồ sơ lát 4.
+
 ⚠️ **Chưa đăng ký task Scheduler** — lịch của job này thuộc lát 7 (bảng lịch trong container `etl`). Chạy tay,
 hoặc để lát 7 gọi. Vị trí trong ngày: **sau `events` 18:10**, vì trigger đọc đúng bảng mà `events` vừa ghi.
 
