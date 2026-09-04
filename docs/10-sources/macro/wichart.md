@@ -359,9 +359,9 @@ Cờ này nói **khoảng cách với một benchmark** — nên nó chỉ có n
 | `gao_nguyen_lieu` | Gạo nguyên liệu | 655 | 6d | VND/kg | **1** | A | `U1000` |
 | `phu_pham_lua_gao` | Phụ phẩm lúa gạo | 655 | 6d | VND/kg | **1** | A | `U1000` |
 | `tom_the` | Giá tôm thẻ | 643 | 7d | VND/kg | **1** | A | `U1000` |
-| `vai_cotton_my` | Vải cotton Mỹ | 685 | 0d | **?** | 1 | A | `UNITCHK` — nhãn `USD/tấn` nhưng 84,55 khớp **US cents/lb** |
+| `vai_cotton_my` | Vải cotton Mỹ | 685 | 0d | **USD/lb** | **0.01** | A | `SRCNOTE` — nhãn `USD/tấn` **sai**, giá trị là **US cent/lb**: *(đo 2026-09-05)* 82,33–93,14 khớp bậc với ICE cotton #2 `CT=F` 83,36–91,70 cùng tuần, lệch ≈ 1 %, nhãn ngày trễ 1 ngày so với phiên Mỹ (WiChart ngày d ≈ Yahoo ngày d−1); USD/tấn phải ~1.800–2.000 nên loại trừ. Kho lưu USD/lb (cent là đơn vị con, nhân 0,01) |
 | `gao_tpxk` | Gạo thành phẩm XK | 655 | 6d | VND/kg | 1 | **X** | `U1000` `FROZEN` (69 ngày không đổi) |
-| `ca_tra` | Giá cá tra | 545 | 5d | VND/kg | 1 | **X** | `FROZEN` (60 ngày không đổi) |
+| `ca_tra` | Giá cá tra | 545 | 5d | VND/kg | 1 | **X** | `FROZEN` (60 ngày không đổi) tại audit 12/08 — **đã sống lại**: *(đo 2026-09-05)* điểm mới nhất 28/08, giá đổi lần cuối 22/08 (14 ngày). Tier xét lại ở lát 6 |
 
 #### Kim loại (10)
 
@@ -714,9 +714,9 @@ WICHART = {
 "gao_nguyen_lieu": dict(g="hang_hoa", tier="A", s=[("Giá gạo nguyên liệu","VND/kg",1,D,["U1000"])]),
 "phu_pham_lua_gao":dict(g="hang_hoa", tier="A", s=[("Giá phụ phẩm lúa gạo","VND/kg",1,D,["U1000"])]),
 "tom_the":         dict(g="hang_hoa", tier="A", s=[("Giá tôm thẻ","VND/kg",1,D,["U1000"])]),
-"vai_cotton_my":   dict(g="hang_hoa", tier="A", s=[("Giá vải cotton","UNVERIFIED",1,D,["UNITCHK"])]),
+"vai_cotton_my":   dict(g="hang_hoa", tier="A", s=[("Giá vải cotton","USD/lb",0.01,D,["SRCNOTE"])]),  # raw = US cent/lb (đo 2026-09-05 vs ICE CT=F)
 "gao_tpxk":        dict(g="hang_hoa", tier="X", s=[("Giá gạo TPXK","VND/kg",1,None,["U1000","FROZEN"])]),
-"ca_tra":          dict(g="hang_hoa", tier="X", s=[("Giá cá tra","VND/kg",1,None,["FROZEN"])]),
+"ca_tra":          dict(g="hang_hoa", tier="X", s=[("Giá cá tra","VND/kg",1,None,[])]),  # FROZEN tại audit 12/08, sống lại 22/08 (đo 2026-09-05) — tier xét lại ở lát 6
 # Kim loại
 "quang_sat":       dict(g="hang_hoa", tier="A", s=[("Giá quặng sát","CNY/tấn",1,D,[])]),
 "vang":            dict(g="hang_hoa", tier="A", s=[("Giá vàng mua vào","VND/lượng",1e3,D,["UK1000"]),
@@ -781,6 +781,8 @@ SRCNOTE = {
                          "KHÔNG phải lãi suất online — chênh 1–2 điểm %",
   ("cao_su_nhat_ban",0): "TOCOM RSS3. Đơn vị API (Yên/kg) ĐÚNG; bảng web ghi Yên/tấn là sai",
   ("pmi", 0):            "S&P Global — dữ liệu độc quyền bên thứ ba, WiGroup cũng mua lại",
+  ("vai_cotton_my", 0):  "Nhãn 'USD/tấn' SAI — raw là US cent/lb (82–93 khớp bậc ICE CT=F, lệch ≈1%, "
+                         "nhãn ngày trễ 1 ngày so với phiên Mỹ). Đo 2026-09-05. Kho lưu USD/lb, scale 0,01",
   ("dau_wti", 0):        "Giá TƯƠNG LAI WTI tháng gần, KHÔNG phải giao ngay Cushing dù nhãn ghi "
                          "'Giá dầu WTI'. Lệch 0,50% so với Investing WTI tương lai (10 ngày); "
                          "2,85% so với FRED DCOILWTICO giao ngay (125 ngày) — chênh đó là "
@@ -799,7 +801,7 @@ Audit cho thấy **WiGroup gần như không sai về số học** — mọi th�
 Yêu cầu cụ thể:
 
 1. **Từ điển 87 chỉ tiêu**: nguồn gốc thật, kênh lấy giá, chuẩn sản phẩm, đơn vị thật của trường `data`, tần suất thật, độ trễ cam kết.
-2. **Làm rõ đơn vị `vai_cotton_my`** — `USD/tấn` hay `US cents/lb`.
+2. ~~**Làm rõ đơn vị `vai_cotton_my`** — `USD/tấn` hay `US cents/lb`.~~ ✅ Tự đo 2026-09-05: US cent/lb (so ICE `CT=F`). Còn cần họ xác nhận **chuẩn nào** (hợp đồng tháng gần hay chỉ số Cotlook), vì lệch ≈ 1 %.
 3. **Làm rõ `khi_lpg_trung_quoc`** — chuẩn sản phẩm nào, vì sao lệch 15–20% so với LPG SunSirs.
 4. **Xác nhận phương pháp `lshd`** — quầy hay online, rổ mẫu, cách bình quân.
 5. **Lịch sử đầy đủ cho chuỗi ngày** — gói trả phí phải bỏ giới hạn cửa sổ 2 năm.
@@ -821,5 +823,6 @@ Yêu cầu cụ thể:
 | 3 | Hiệu chuẩn đơn vị toàn bộ 126 series, ghép `titleIndex` theo giá trị | Phát hiện lỗi 1000× rải rác + 15 series `LOWRES` |
 | 4 | Đo sai số series tăng trưởng, thử nối chuỗi GDP, quét đứt gãy toàn bộ | Hệ số nối 1.6005; 1 đứt gãy thật / 18 báo động giả |
 | 5 | **Tự kiểm chứng file này**: script đọc chính khối Python trong file rồi đối chiếu từng trường với API sống — 507 khẳng định | 3 lỗi phát hiện & đã sửa: `vang` sai thang 1000×, đếm `LOWRES` 13→15, `vt` đơn vị "người"→"lượt người" |
+| 6 | **Chạy lại 2026-09-05** (chuẩn bị lát 6 ETL): 485 PASS / 24 FAIL — 22 FAIL là phép "độ trễ" vì file chụp số ngày trễ tại 12/08 mà script so tuyệt đối (tháng mới về ⇒ 42 → 35 d, quý chưa về ⇒ 72 → 96 d): **lỗi của phép kiểm, không phải nguồn**, phải đổi sang ngưỡng theo bội số chu kỳ (§7); 2 FAIL `ong_nhua_*` `CONST` là key Tier X hết đứng giá. Số series, tên, `scale`, tần suất: 0 FAIL. ~90 lời gọi liên tiếp không giãn cách, 0 lỗi HTTP | Quét riêng series chết: `thiec` 547 d · `cao_su` 572 d · `gdpbinhquan`/`ncp[1]` 1.343 d · RON 95 99 d · `gao_tpxk` đứng giá 93 d — đúng cờ; **`ca_tra` hết đóng băng**; `vai_cotton_my` đơn vị = US cent/lb |
 
 Số liệu gốc: `calibration.json`, `reaudit.json`, `final_facts.json` trong thư mục scratchpad của phiên audit.

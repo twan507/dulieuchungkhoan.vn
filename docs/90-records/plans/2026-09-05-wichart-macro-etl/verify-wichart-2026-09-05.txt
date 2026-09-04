@@ -1,0 +1,36 @@
+Installed 5 packages in 60ms
+Đọc registry từ file: 72 key, 21 key Tier X
+==============================================================================
+A. KIỂM TỪNG KEY TRONG REGISTRY
+==============================================================================
+  → 452 pass / 22 fail
+==============================================================================
+B. KIỂM CÁC KHẲNG ĐỊNH ĐẶC THÙ TRONG VĂN BẢN
+==============================================================================
+==============================================================================
+TỔNG: 485 PASS / 24 FAIL
+DANH SÁCH SAI:
+  ✗ gdp: độ trễ :: file=72d api=96d
+  ✗ cpi: độ trễ :: file=42d api=35d
+  ✗ iip: độ trễ :: file=42d api=35d
+  ✗ pmi: độ trễ :: file=42d api=35d
+  ✗ hhdv: độ trễ :: file=42d api=35d
+  ✗ fdi: độ trễ :: file=42d api=35d
+  ✗ cctm: độ trễ :: file=42d api=35d
+  ✗ cctt: độ trễ :: file=164d api=188d
+  ✗ vdtptxh: độ trễ :: file=72d api=96d
+  ✗ vdtnsnn: độ trễ :: file=42d api=35d
+  ✗ vt: độ trễ :: file=42d api=35d
+  ✗ kqt: độ trễ :: file=42d api=35d
+  ✗ ds: độ trễ :: file=224d api=278d
+  ✗ tn: độ trễ :: file=72d api=96d
+  ✗ ld: độ trễ :: file=72d api=96d
+  ✗ tcns: độ trễ :: file=72d api=96d
+  ✗ ncp: độ trễ :: file=589d api=643d
+  ✗ gdpbinhquan: độ trễ :: file=1319d api=1343d
+  ✗ ctt: độ trễ :: file=72d api=96d
+  ✗ hd: độ trễ :: file=72d api=96d
+  ✗ td: độ trễ :: file=72d api=96d
+  ✗ dtnh: độ trễ :: file=103d api=96d
+  ✗ B11 ong_nhua_27x18mm CONST :: 2 giá trị
+  ✗ B11 ong_nhua_60x2mm CONST :: 2 giá trị

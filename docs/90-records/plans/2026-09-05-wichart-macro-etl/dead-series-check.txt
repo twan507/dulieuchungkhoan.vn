@@ -1,0 +1,43 @@
+NOW 2026-09-05 06:03 ICT — quét 72 key registry (kể cả Tier X trong dict)
+key[idx]                         flags                     n   last_obs stale_d unchg_d last_val
+ds[1]                            PCTFRAC,LOWRES,CONST     26 2025-12-01     278    9409 0.01 
+ncp[1]                           PCTFRAC,LOWRES,DEAD      10 2023-01-01    1343       0 0.32 
+gdpbinhquan[0]                   DEAD                     24 2023-01-01    1343       0 102.76 TIER-X
+lsdh[0]                          CONST                   516 2026-09-04       1     730 3 
+lsdh[1]                          CONST                   516 2026-09-04       1     730 4.5 
+lsdh[2]                          CONST                   516 2026-09-04       1     730 5 
+gao_tpxk[0]                      U1000,FROZEN            662 2026-08-27       9      93 10200 TIER-X
+ca_tra[0]                        FROZEN                  548 2026-08-28       8      14 30000 TIER-X
+thiec[0]                         DEAD                    118 2025-03-07     547       0 261240 TIER-X
+xang_dau[0]                      SUBDEAD                 448 2026-05-29      99     100 24.15 
+cao_su[0]                        DEAD                    113 2025-02-10     572     593 440 TIER-X
+
+== Series KHÔNG cờ chết mà tần suất ngày trễ > 14 ngày, hoặc giá đứng > 45 ngày (ứng viên chết mới) ==
+lshd[0] SRCNOTE n=514 last=2026-09-04 stale=1d unchanged=81d last_val=4.19
+lshd[1] SRCNOTE n=514 last=2026-09-04 stale=1d unchanged=137d last_val=5.29
+lshd[2] SRCNOTE n=514 last=2026-09-04 stale=1d unchanged=81d last_val=5.91
+
+== vai_cotton_my ==
+unit khai: USD/tấn | titleIndex: ['82.33'] | timeUpdate: Ngày 04/09/2026
+   2026-08-31 93.14
+   2026-09-01 91.55
+   2026-09-02 88.93
+   2026-09-03 86.45
+   2026-09-04 82.33
+
+== Yahoo CT=F (ICE cotton #2, US cents/lb) ==
+HTTP 200
+   2026-08-31 91.69999694824219
+   2026-09-01 90.01000213623047
+   2026-09-02 86.37999725341797
+   2026-09-03 83.36000061035156
+   2026-09-04 86.73999786376953
+1 US cent/lb = 22,0462 USD/tấn
+
+== Kiểm lại gdpbinhquan theo yêu cầu chủ dự án (06:40, "có thể chưa tới kỳ") ==
+gdpbinhquan: timeArray=['y'] timeUpdate='Năm 2023' titleIndex=['102.76'] unit='triệu/người' n=24
+   2018-01-01 74.34 · 2019-01-01 80.8 · 2020-01-01 83.38 · 2021-01-01 86.98 · 2022-01-01 96.94 · 2023-01-01 102.76
+ds  (cùng nguồn GSO): timeUpdate='Năm 2025', điểm cuối 2025-12-01 102345.32
+ncp (cùng nguồn):     timeUpdate='Năm 2024', điểm cuối 2024-12-01 3656055.56
+=> Chuỗi NĂM, không phải quý. GSO đã công bố GDP bình quân 2024 (01/2025) và 2025 (01/2026); WiChart bỏ HAI kỳ liên tiếp
+   trong khi vẫn cập nhật ds/ncp cùng nguồn. Kết luận DEAD giữ nguyên. Tier X.
