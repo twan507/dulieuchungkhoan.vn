@@ -263,7 +263,7 @@ Cộng lại **234 lời gọi/ngày**, không có đỉnh tải và không cầ
 | Việc | Lời gọi | Thời gian |
 |---|---|---|
 | `getPriceData` mọi trang × **1.523** cổ phiếu niêm yết *(đo 2026-09-03 — số 1.974 cũ đếm trước lượt dọn 442 mã huỷ niêm yết; độ sâu mỗi mã theo tuổi niêm yết: BID 53 trang, TD6 6 trang)* | **~50.000–80.000** | **tuần tự**, ~25–40 giờ, rải vài đêm bằng `python -m etl price --backfill --max-minutes N` — con trỏ trong `ops.etl_run.stats.cursor` nên lượt sau đi tiếp từ mã kế, không làm lại ([spec lát 3 §5.5e](../90-records/plans/2026-09-03-price-daily-etl/spec.md)) |
-| BCTC 3 loại × 1.974 mã *(số cũ; tập niêm yết nay 1.523 và BCTC theo doanh nghiệp — tính lại ở lát BCTC)* | 5.922 | ~25 phút |
+| BCTC 3 loại × **1.523 mã** *(sửa 2026-09-04 theo [khảo sát BCTC](../90-records/surveys/2026-09-04-bctc-endpoints/README.md); số cũ 1.974 đếm trước lượt dọn mã huỷ niêm yết)* | **4.569** | **≥ 38 phút** *(chỉ tính giãn cách 0,5 s; con số ~25 phút của bản cũ không thể đúng — 5.922 lời gọi giãn 0,5 s đã là 49 phút)* |
 | Lịch sự kiện toàn bộ | 9 | ~2,5 phút |
 
 *(đo 2026-09-03)* Lịch sự kiện tải TRỌN sáu họ mỗi lượt — **backfill và job hằng ngày nay là cùng một đường code** (`python -m etl events`), khác nhau đúng một cờ: `--accept-new` mở khoá lượt tạo nhiều issuer tối thiểu (517 ở lượt đầu), lượt hằng ngày sau đó chạy không cờ vì gần như không còn issuer mới. Xem [`08-fiin-event-calendar.md`](../10-sources/market/08-fiin-event-calendar.md).
@@ -477,6 +477,10 @@ CREATE TABLE financial_statement (
 Chọn **dạng dài** vì bộ chỉ tiêu khác nhau theo loại hình doanh nghiệp (`bsa*` phi ngân hàng vs `bsb*` ngân hàng) — dạng cột rộng sẽ thưa hàng trăm cột `null`. Và hợp với việc mã chỉ tiêu chưa có bảng giải mã đầy đủ.
 
 ```sql
+🔴 **`length_report` có BẢY giá trị, không phải năm — đo 2026-09-04.** Nguồn phát thêm `6` (**bán niên**) và `9` (**9 tháng luỹ kế**) bên cạnh `1`–`4` (quý) và `5` (cả năm); trên mẫu 4 mã thì **28/307 dòng (9%)** mang hai giá trị đó. Migration `0004` đặt `CHECK (length_report BETWEEN 1 AND 5)` trên **cả** `financial_report_file` **lẫn** `corporate_event` ⇒ `INSERT` sẽ vi phạm ràng buộc và **giết cả lượt**. `corporate_event` chưa bị cắn chỉ vì `getCorporateEarning` chưa từng phát `6`/`9` — không phải vì code chặn. **Lát 5 phải nới CHECK trên cả hai bảng trước khi nạp.** Bằng chứng: [khảo sát BCTC §5.1](../90-records/surveys/2026-09-04-bctc-endpoints/README.md).
+
+⚠️ **`sourceUrl` trùng NGAY trong một response** (BID: hai `id` khác nhau, cùng năm, cùng kỳ, cùng URL) trong khi cột khai `UNIQUE` ⇒ phải khử trùng hoặc `ON CONFLICT DO NOTHING`.
+
 CREATE TABLE financial_report_file (
   id          bigint PRIMARY KEY,
   organ_code  text,

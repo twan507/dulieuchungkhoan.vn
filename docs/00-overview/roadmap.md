@@ -114,7 +114,7 @@ lát 3  giá theo ngày         ✅ XONG 2026-09-04 — 1.523 lời gọi tuần
                                backfill = task dlck-price-backfill, tự chạy cuối tuần tới khi hết vòng
 lát 4  họ Snapshot           ✅ XONG 2026-09-04 — 234 lời gọi/ngày (quota cuốn chiếu), ghi KHI ĐỔI,
                                sổ kiểm ops.snapshot_check vừa cấp danh sách tới hạn vừa đếm lỗ của lịch
-lát 5  BCTC                  kích hoạt theo getCorporateEarning của lát 2 → financial_statement (556 mã chỉ tiêu)
+lát 5  BCTC                  kích hoạt theo getCorporateEarning của lát 2 → financial_statement (**557** mã chỉ tiêu — đếm thật 2026-09-04)
 lát 6  giám sát hợp đồng     [8] contract_snapshot (market-data-store §7.1) — bắt nguồn đổi schema/độ tươi,
                                dùng chung script với 5 lát trên
 lát 7  scheduler trong etl   thay 11 task Windows bằng một bảng lịch trong code — xem "Lát 7" dưới
@@ -163,7 +163,7 @@ lát 8  lên VPS               hồ sơ docker-compose.vps.yml (service-topology
 | Tín hiệu kích hoạt đã có sẵn: `corporate_event` loại `Earning` kèm `year_report`/`length_report` — lát 4 đã dùng đúng đường này cho kind `snapshot` | [`snapshot_store.due_list`](../../backend/etl/snapshot_store.py) |
 | **Khuôn job đã ổn định qua 3 lát**: `fetch` (classify 3 nhánh, retry, giãn cách) → `normalize` (thuần) → `guard` (ngưỡng + **mẫu tối thiểu**) → `store` → `job`. Nhân bản từ `snapshot_*`, đừng chép từ lát 1 | `backend/etl/snapshot_*.py` |
 | **Ghi khi đổi + sổ kiểm** là mẫu dùng lại được cho BCTC (BCTC cũng chỉ đổi khi có kỳ báo cáo mới) — cân nhắc trước khi mặc định ghi mọi lượt | [spec lát 4 §4.1](../90-records/plans/2026-09-04-snapshot-family-etl/spec.md) |
-| 556 mã chỉ tiêu BCTC và đơn vị của chúng | [Phụ lục A](../10-sources/market/appendix-A-field-codes.md) · [field-dictionary.json](../10-sources/market/field-dictionary.json) |
+| **557** mã chỉ tiêu BCTC và đơn vị của chúng *(đếm thật 2026-09-04 trên 3 endpoint; bản cũ ghi 556)* | [Phụ lục A](../10-sources/market/appendix-A-field-codes.md) · [field-dictionary.json](../10-sources/market/field-dictionary.json) |
 | `snapshot.quarterly[]` / `yearly[]` **đã nằm sẵn trong payload** `snapshot_daily` (mã `bsa*` `isa*` `cfa*`) — cố ý không bóc ở lát 4; lát 5 quyết định bóc từ đó hay gọi endpoint BCTC riêng | [spec lát 4 §3.2](../90-records/plans/2026-09-04-snapshot-family-etl/spec.md) |
 
 **Bốn bài học lát 4, áp thẳng được:**
