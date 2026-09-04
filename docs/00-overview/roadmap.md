@@ -88,7 +88,8 @@ Phiên 2026-08-27 chạy cả hai: `t` khớp **205.130 = 205.130** và `ptm` kh
      │        │
      │        ├─→ [7]  ETL hằng ngày: giá, snapshot, screener, lịch sự kiện
      │        │         └─→ [8] Bộ giám sát hợp đồng (dựng cùng, dùng chung script)
-     │        │              └─→ [9] Backfill lịch sử giá, rải 1–2 tuần
+     │        │              └─→ [9] Backfill lịch sử giá ✅ task dlck-price-backfill, chạy cuối tuần
+     │        │                   └─→ [9b] Scheduler trong container etl (lát 7) ─→ [9c] Lên VPS (lát 8)
      │        │
      │        └─→ [10] Khung thu thập tin + chuẩn hoá, chạy KHÔNG có AI 1 tuần
      │                  └─→ [11] Đo tỷ lệ dedupe thật
@@ -107,14 +108,23 @@ Phiên 2026-08-27 chạy cả hai: `t` khớp **205.130 = 205.130** và `ptm` kh
 🔴 **Thứ tự lát ĐÃ ĐẢO — chốt 2026-09-03 sau khi soi họ Snapshot và đo độ phủ lịch sự kiện.** Thứ tự cũ (giá → snapshot → lịch sự kiện) sai theo phụ thuộc thật:
 
 ```
-lát 1  screener       ✅ XONG 2026-09-03, đã merge main
-lát 2  lịch sự kiện   ← ĐẨY LÊN. ~10 lời gọi/ngày, rẻ nhất cả nhóm, mà MỞ KHOÁ
-                        cho snapshot, BCTC và re-crawl giá theo sự kiện quyền
-lát 3  giá theo ngày  ✅ XONG 2026-09-04 — 1.523 lời gọi (không phải 1.974), TUẦN TỰ 38 phút,
-                        không cần core/http/8 luồng; close_raw điền được cả lịch sử — xem mục dưới
-lát 4  họ snapshot    kích hoạt theo lát 2 + quét sàn — xem market-data-store §4.1b
-sau đó BCTC           kích hoạt theo `getCorporateEarning` của lát 2
+lát 1  screener              ✅ XONG 2026-09-03
+lát 2  lịch sự kiện          ✅ XONG 2026-09-03 — mở khoá snapshot, BCTC, re-crawl giá theo sự kiện quyền
+lát 3  giá theo ngày         ✅ XONG 2026-09-04 — 1.523 lời gọi tuần tự 38 phút; close_raw điền được cả lịch sử;
+                               backfill = task dlck-price-backfill, tự chạy cuối tuần tới khi hết vòng
+lát 4  họ Snapshot           kích hoạt theo lát 2 + quét sàn (market-data-store §4.1b), gồm re-crawl giá
+                               theo exright_date bằng `etl price --backfill --codes` — điểm vào ở mục dưới
+lát 5  BCTC                  kích hoạt theo getCorporateEarning của lát 2 → financial_statement (556 mã chỉ tiêu)
+lát 6  giám sát hợp đồng     [8] contract_snapshot (market-data-store §7.1) — bắt nguồn đổi schema/độ tươi,
+                               dùng chung script với 5 lát trên
+lát 7  scheduler trong etl   thay 11 task Windows bằng một bảng lịch trong code — xem "Lát 7" dưới
+lát 8  lên VPS               hồ sơ docker-compose.vps.yml (service-topology §7b), chuyển hai kho, ingester
+                               active/standby, bật lại [4d] trên máy đích
 ```
+
+🔴 **Luật thứ tự (chốt 2026-09-04):** đi từ trên xuống, **không nhảy lát**; mỗi lát một session mới, bắt đầu từ mục *"Điểm vào cho lát N"* của lát trước và khép bằng cách viết *"Điểm vào cho lát N+1"*. Nhánh tin ([10]→[11]→[12] ở §3) chạy **song song** bằng session riêng, không chen vào chuỗi này; [13]–[14] chờ cả hai nhánh. Việc cắt ngang (bật lại [4d], spec tự ngắt ngày lễ, mở rộng danh mục phái sinh, ETL vĩ mô/quốc tế) chỉ làm khi chủ dự án gọi tên, không tự chen.
+
+**Lát 7 — scheduler trong `etl` (thêm 2026-09-04, sau khi đăng ký task admin lộ ra là mệt và khó quản).** Container `etl` của `deploy/app` hiện chỉ có heartbeat walking-skeleton; [service-topology §1–2](../20-design/service-topology.md) đã định nghĩa `etl` là *"job theo lịch, scheduler kích hoạt"*. Lát này thay 11 task Windows bằng **một bảng lịch trong code** (refdata 08:00 · screener 15:20 · price 15:40 · events 18:10 · OMO 4 mốc · price-backfill thứ 7 · quét sàn của lát 4, giờ VN), một vòng lặp spawn `python -m etl <job>` làm tiến trình con (lỗi job này không kéo đổ job kia, log tách riêng), chặn chạy chồng, và **tự chạy bù** mốc đã qua trong ngày mà `ops.etl_run` chưa có lượt success (mọi job đều idempotent). Cùng một code chạy **native trên dev** (`uv run python -m etl`, một cửa sổ thay 11 — không admin, không Docker Desktop trong session) và **trong container trên VPS** (`restart: unless-stopped`, sống qua reboot). `ingester` là daemon, không đi qua bảng này — service riêng có `restart`. Xong lát này thì `scripts/register-tasks.ps1` về hưu. Đứng **sau** lát 4–6 vì chưa đau (11 task đang `Disabled` theo [4d]) và **trước** lát 8 vì VPS không có Task Scheduler.
 
 **Hai quyết định kèm theo, cùng ngày:** (a) bỏ hai kind chấm điểm `company_score` và `rate_indicator` khỏi `snapshot_daily` — migration `0015`, vì nội dung thật là điểm chữ (`C`/`B`/`D`) và cờ `0.00`/`1.00`, đúng nhóm *không dùng điểm bên thứ ba* đã loại; (b) họ Snapshot **không chạy hằng ngày** mà kích hoạt theo sự kiện kèm quét sàn, vì **không trường nào trong 18 trường ta lưu đổi theo ngày**. Ngân sách ngày vì thế xuống **≈ 2.300 lời gọi** thay vì ~6.000 — bài toán nhịp 8 luồng của lát giá dễ thở hơn nhiều so với ước lượng cũ.
 
