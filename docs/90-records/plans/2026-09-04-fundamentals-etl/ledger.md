@@ -138,3 +138,5 @@ Code xong, review sạch tới `ef6ed24`; còn: AC3 (backfill trọn sàn theo l
 AC1–AC7 đóng trên kho production dưới credential `ETL_DATABASE_URL`; review toàn nhánh + 2 vòng sửa + 1 fix đo được khi chạy thật (kỳ trùng), mỗi fix có re-review; checklist tài liệu §8 xong (`b01c403` + roadmap cập nhật số cuối). Lỗi cùng loại ở lát 4 (mốc nước nhảy qua issuer bị cắt) để ở chip riêng / "Điểm vào cho lát 6". Merge `main`.
 
 **Rulings đã ra trong lát này** (đủ để chủ dự án lật lại): (1) chấp nhận nhân bản khuôn `Fetcher`/`_UNIVERSE`; (2) guard số cho `dai_gia_tri` thang chữ; (3) A1 sửa bằng sổ kiểm thay vì mốc ngày; (4) không sửa lát 4 trong nhánh này; (5) `quarterly: null` = rỗng; (6) kỳ trùng giống hệt thì gộp, khác nhau mới từ chối.
+
+*Bổ sung 22:40: lỗi A1 cùng loại ở lát 4 đã sửa ngay sau khi merge lát 5 — nhánh `fix/snapshot-watermark-cut` (`0b627d5`), 2 test mới ở `test_e29`, 593 test xanh, review hai trục sạch. Ruling "không sửa trong nhánh lát 5" ở §2 vẫn đúng: sửa ở commit riêng, sau merge.*
