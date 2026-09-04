@@ -143,30 +143,30 @@ Write-Host "Đăng ký job crawl OMO (4 mốc/ngày làm việc):"
 foreach ($t in @("11:30", "15:30", "18:00", "21:30")) {
     $name = "dlck-omo-" + ($t -replace ':', '')
     Register-DlckTask -TaskName $name -AtTime $t -ModuleArgs "etl omo" -LogFile "omo.log" `
-                      -Description "OMO SBV: tải và parse phiên đấu thầu hôm nay, vài giây, tự đóng khi xong"
+                      -Description "OMO SBV — tải phiên đấu thầu hôm nay, vài giây"
     Assert-TaskCommand -TaskName $name -MustContain "python -m etl omo"
 }
 
 Write-Host "Đăng ký refdata (08:00 ngày làm việc — danh bạ tươi TRƯỚC ingester 08:30 và ETL giá):"
 Register-DlckTask -TaskName "dlck-refdata" -AtTime "08:00" -ModuleArgs "etl refdata" -LogFile "refdata.log" `
-                  -Description "Danh bạ doanh nghiệp + danh mục mã + cây ICB: 4 lời gọi, ~1 phút, tự đóng khi xong"
+                  -Description "Danh bạ + danh mục mã + cây ICB — 4 lời gọi, ~1 phút"
 Assert-TaskCommand -TaskName "dlck-refdata" -MustContain "python -m etl refdata"
 
 Write-Host "Đăng ký screener (15:20 ngày làm việc — sau khi ingester ghi xong 15:05, tránh 15:30 của OMO):"
 Register-DlckTask -TaskName "dlck-screener" -AtTime "15:20" -ModuleArgs "etl screener" -LogFile "screener.log" `
-                  -Description "Screener 52 trang → screener_daily: ~1 phút, ngày nghỉ thì guard từ chối, tự đóng khi xong"
+                  -Description "Screener 52 trang — ~1 phút, ngày nghỉ thì từ chối"
 Assert-TaskCommand -TaskName "dlck-screener" -MustContain "python -m etl screener"
 
 Write-Host "Đăng ký events (18:10 ngày làm việc — sau phiên, sau screener 15:20, và tránh 18:00 của OMO):"
 Register-DlckTask -TaskName "dlck-events" -AtTime "18:10" -ModuleArgs "etl events" -LogFile "events.log" `
-                  -Description "Lịch sự kiện 6 họ → corporate_event: 9 lời gọi, ~2,5 phút, tự đóng khi xong"
+                  -Description "Lịch sự kiện 6 họ — 9 lời gọi, ~2,5 phút"
 # -MustNotContain là chốt chặn thật: task tự động KHÔNG BAO GIỜ được mang cờ cho phép
 # đẻ issuer tối thiểu hàng loạt — lượt đó phải chạy tay có người nhìn.
 Assert-TaskCommand -TaskName "dlck-events" -MustContain "python -m etl events" -MustNotContain "--accept-new"
 
 Write-Host "Đăng ký price (15:40 ngày làm việc — sau screener 15:20 và OMO 15:30; ~45 phút tuần tự, xong trước 18:00 của OMO):"
 Register-DlckTask -TaskName "dlck-price" -AtTime "15:40" -ModuleArgs "etl price" -LogFile "price.log" `
-                  -Description "Giá EOD: trang 1 (60 phiên) của ~1.523 cổ phiếu, ~40 phút tuần tự; xong hiện tổng kết 20 giây rồi tự đóng"
+                  -Description "Giá EOD trang 1 của ~1.523 mã — ~40 phút, tự đóng khi xong"
 # -MustNotContain: task tự động KHÔNG BAO GIỜ chạy backfill (25–40 giờ, chạy tay ngoài giờ có người nhìn).
 Assert-TaskCommand -TaskName "dlck-price" -MustContain "python -m etl price" -MustNotContain "--backfill"
 
@@ -177,14 +177,14 @@ Write-Host "Đăng ký price-backfill (thứ 7 00:05 — lùi trọn lịch sử
 # Hết vòng (pass_complete) thì lượt kế là VÒNG MỚI (làm mới toàn bộ chuỗi điều chỉnh) — cân nhắc tắt task
 # sau vòng đầu nếu không muốn ~20 giờ gọi mỗi cuối tuần.
 Register-DlckTask -TaskName "dlck-price-backfill" -AtTime "00:05" -DaysOfWeek Saturday `
-                  -Description "Lùi trọn lịch sử giá ~12,5 năm: nối từ con trỏ, dừng trước 08:45 ngày giao dịch kế hoặc khi hết vòng; Ctrl+C dừng, con trỏ giữ nguyên" `
+                  -Description "Lùi trọn lịch sử giá, nối từ con trỏ — hết hạn tự dừng, Ctrl+C dừng ngay" `
                   -ModuleArgs "etl price --backfill --stop-before-open" -LogFile "price-backfill.log" `
                   -ExecutionTimeLimit (New-TimeSpan -Days 3)
 Assert-TaskCommand -TaskName "dlck-price-backfill" -MustContain "python -m etl price --backfill --stop-before-open"
 
 Write-Host "Đăng ký ingester theo phiên (08:30, tự thoát sau đối chứng ~15:05):"
 Register-DlckTask -TaskName "dlck-ingester" -AtTime "08:30" -ModuleArgs "ingester" -LogFile "ingester-task.log" `
-                  -Description "Ingester realtime BVSC → Redis + ClickHouse: chạy tới ~15:05, tự đối chứng rồi thoát; ĐỪNG tắt giữa phiên (mất tick)"
+                  -Description "Ingester realtime BVSC — chạy tới ~15:05 rồi tự thoát; ĐỪNG tắt giữa phiên"
 Assert-TaskCommand -TaskName "dlck-ingester" -MustContain "python -m ingester " -MustNotContain "--measure"
 Enable-ScheduledTask -TaskName "dlck-ingester" | Out-Null
 # Nghiệm thu chính thứ commit này sinh ra để đổi (§3.5: kiểm cái nó THỰC SỰ ở trạng thái
@@ -207,7 +207,7 @@ Write-Host "  * dlck-ingester ĐANG BẬT — ghi tick thật (gate mở 2026-08
 $measureTask = "dlck-ingester-measure"
 Write-Host "Đăng ký phiên đo song song (hằng ngày làm việc, chạy cạnh phiên ghi):"
 Register-DlckTask -TaskName $measureTask -AtTime "08:30" -ModuleArgs "ingester --measure" `
-                  -Description "Phiên đo song song: ghi frame thô BVSC ra đĩa làm lưới an toàn, chạy tới hết phiên, giữ 30 ngày" `
+                  -Description "Phiên đo song song — ghi frame thô ra đĩa tới hết phiên" `
                   -LogFile "ingester-measure.log"
 Assert-TaskCommand -TaskName $measureTask -MustContain "python -m ingester --measure "
 

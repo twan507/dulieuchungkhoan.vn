@@ -18,6 +18,18 @@ class Fake:
         self.calls.append(("DeleteMenu", menu, item, flags))
         return self.delete_ok
 
+    # kernel32 phần QuickEdit — lock_if_scheduled gọi cả hai việc trên cùng một cổng
+    def GetStdHandle(self, which):
+        return 9
+
+    def GetConsoleMode(self, h, pmode):
+        pmode._obj.value = 0x0060
+        return 1
+
+    def SetConsoleMode(self, h, mode):
+        self.calls.append(("SetConsoleMode", h, mode))
+        return 1
+
 
 def test_locks_sc_close_on_the_console_window_system_menu():
     f = Fake()
@@ -85,25 +97,44 @@ def test_console_say_swallows_a_missing_console():
     assert console.console_say("x", opener=opener) is False
 
 
-def test_banner_and_farewell_only_speak_when_run_from_the_scheduler(monkeypatch):
+class FakeKernel:
+    """kernel32 giả cho QuickEdit: mode ban đầu có QUICK_EDIT (0x40) + INSERT (0x20)."""
+
+    def __init__(self, handle=9, mode=0x0060, ok=1):
+        self.handle, self.mode, self.ok, self.set_to = handle, mode, ok, None
+
+    def GetStdHandle(self, which):
+        assert which == console.STD_INPUT_HANDLE
+        return self.handle
+
+    def GetConsoleMode(self, h, pmode):
+        pmode._obj.value = self.mode
+        return self.ok
+
+    def SetConsoleMode(self, h, mode):
+        self.set_to = mode
+        return self.ok
+
+
+def test_disable_quick_edit_clears_the_flag_and_sets_extended_flags():
+    k = FakeKernel()
+    assert console.disable_quick_edit(kernel32=k) is True
+    assert k.set_to == (0x0060 | console.ENABLE_EXTENDED_FLAGS) & ~console.ENABLE_QUICK_EDIT_MODE
+    assert k.set_to & console.ENABLE_QUICK_EDIT_MODE == 0 and k.set_to & 0x0020   # INSERT giữ nguyên
+
+
+def test_disable_quick_edit_without_a_console_is_a_noop():
+    assert console.disable_quick_edit(kernel32=FakeKernel(handle=0)) is False
+    assert console.disable_quick_edit(kernel32=FakeKernel(ok=0)) is False
+
+
+def test_banner_only_speaks_when_run_from_the_scheduler(monkeypatch):
     said = []
     monkeypatch.setattr(console, "console_say", lambda t, opener=open: said.append(t) or True)
-    monkeypatch.setattr(console, "hold", lambda s, sleep=None: True)
     monkeypatch.delenv(console.ENV_FLAG, raising=False)
-    assert console.banner("bắt đầu") is False and console.farewell("xong") is False and said == []
+    assert console.banner("bắt đầu") is False and said == []
     monkeypatch.setenv(console.ENV_FLAG, "1")
-    assert console.banner("bắt đầu") is True and console.farewell("xong", 20) is True
-    assert said[0] == "bắt đầu" and said[1].startswith("xong — cửa sổ tự đóng sau 20 giây")
-
-
-def test_hold_waits_the_given_seconds_and_a_second_ctrl_c_cuts_it_short():
-    slept = []
-    assert console.hold(20, sleep=slept.append) is True and slept == [20]
-
-    def impatient(s):
-        raise KeyboardInterrupt
-
-    assert console.hold(20, sleep=impatient) is False           # Ctrl+C lần hai: đóng luôn, không ném
+    assert console.banner("bắt đầu") is True and said == ["bắt đầu"]
 
 
 def test_flag_with_trailing_space_from_cmd_set_still_counts(monkeypatch):
