@@ -10,11 +10,11 @@ Thực thi bằng subagent (Sonnet, chỉ định tường minh), review hai tr�
 
 | | Nội dung | Kết quả |
 |---|---|---|
-| AC1 | Toàn bộ test xanh | ✅ **532 passed, 2 skipped** *(trước lát này: 456)* |
+| AC1 | Toàn bộ test xanh | ✅ **533 passed, 2 skipped** *(trước lát này: 456)* |
 | AC2 | `--codes` 3 mã → 12 dòng, 4 kind | ✅ run 88 |
 | AC3 | Lượt đầy đủ vào kho production | ✅ run 91 — **234 target, 234 lời gọi, 0 retry** |
 | AC4 | Chạy lại cùng ngày | ✅ run 89 — `unchanged 12`, `rows_written 0` |
-| **AC5** | **Chạy lại ngày hôm sau: `changed_floor = 0`** | ⏳ **CHƯA CHẠY ĐƯỢC** — phép đo ngày-qua-ngày, mở lại 2026-09-05 |
+| **AC5** | **Chạy lại, `changed_floor = 0`** | 🟡 **Nửa dưới-ngày ĐẠT** (243/246 đứng yên; 3 mã đổi là công bố thật, lượt sau về 0). Nửa qua-mốc-đóng-cửa chờ lượt sau 15:00 — xem §1b |
 | AC6 | Re-crawl giá theo sự kiện quyền | ✅ run 90 → `rows_changed 18.429`; run 92 → `0` |
 | AC7 | Ép hỏng ⇒ lượt `failed`, 0 dòng ghi | ✅ run 93 |
 
@@ -77,6 +77,29 @@ EXIT 1
 Kiểm sau lượt: `ops.etl_run` run 93 `failed` đúng lý do · `snapshot_daily` vẫn **246 dòng** · `ops.snapshot_check` mốc kiểm mới nhất vẫn là `03:18:48` của AC3 — lượt hỏng **không** đụng sổ kiểm.
 
 🔴 **Một vế của AC7 KHÔNG được chứng minh bởi lượt này:** `staging.raw_payload` có **0 dòng**, vì mọi target đều hỏng nên không có payload nào để làm bằng chứng. Đường ghi bằng chứng được chứng minh ở tầng test job (`test_a_partial_outage_refuses_the_run_and_leaves_real_evidence`: 4/20 mã thành công, 16 hỏng ⇒ guard từ chối, 0 dòng `snapshot_daily`, và đúng 4 dòng `staging.raw_payload` với `endpoint_key` dạng `snapshot:<kind>:<organCode>`). Ghi ra đây vì lượt chạy thật **không** thay được phép kiểm đó.
+
+### 1b. AC5 — vì sao nó KHÔNG cần chờ sang ngày mới
+
+Bản spec viết AC5 là *"chạy lại ngày hôm sau"*. **Sai trọng tâm:** thứ phép thử cần không phải một ngày mới mà là **một giá đóng cửa mới**. Đo 2026-09-04 lúc 12:28 *(xem [measurements §4b](measurements.md))*: gọi lại A32 cho ra `rtd11` và hash **y hệt** lúc 09:57 — bốn endpoint làm mới theo phiên đóng cửa, không theo thời gian thực. Nên mốc là **sau 15:00 cùng ngày**, và sáng hôm sau lại còn là thứ 7, không có phiên nào.
+
+**Nửa "trôi trong ngày" đã chạy, 12:31 — 292 lời gọi trên 73 mã × 4 kind:**
+
+```
+attempted 292 · first 46 · floor_compared 246 · changed_floor 3 · unchanged 243
+subset: True · recrawl: ['RYG','TCH']
+```
+
+**Ba target đổi đều là kind `ownership`** (BVB · VLS · VVS). Truy tiếp: gọi lại ba mã đó **3 lần liên tiếp** cho ra hash giống hệt nhau ⇒ **không phải jitter theo từng response**, tức giả thuyết *"hash nhạy thứ tự phần tử mảng"* không đúng ở đây. Lượt thứ ba lúc 12:51 (73 mã, chỉ kind `ownership`) cho **`changed_floor = 0`**. Kết luận: ba thay đổi đó là **công bố thật một lần** trong khoảng 10:20–12:31.
+
+🔴 **Và chúng chính là số đo "lỗ của lịch" đầu tiên.** `ownership` không có loại sự kiện nào bắn trigger — nếu không có quét sàn, ba công bố này lọt hoàn toàn. Đây là kiến trúc hai lớp làm đúng việc nó sinh ra để làm.
+
+**Hai bản vá được nghiệm thu trên production trong cùng lượt:** mốc nước **đứng yên** ở `2026-09-03` với nguyên dấu thời gian `03:27:39` sau lượt `--codes` *(bản vá A1)*, và re-crawl chỉ còn **2 mã** thay vì 8 *(bộ lọc loại sự kiện)*.
+
+### 1c. Lỗi cùng họ với A1, lộ ra ở chính lượt kiểm trên
+
+Ba lượt `--codes` liên tiếp đều kéo lại `['RYG','TCH']` — ba lần backfill trọn 12,5 năm cho hai mã **không nằm trong tập người chạy ép**. Lượt đầu đổi dữ liệu thật, hai lượt sau `rows_changed = 0`, thuần lãng phí.
+
+Cùng bản chất với lỗi mốc nước: **lượt con là hành động thủ công phạm vi hẹp, không được gây tác dụng phụ toàn cục.** Vá: chỉ gọi `_recrawl` khi `not subset` (`4d193f5`), kèm test chứng minh lượt `--codes` không gọi `price_job` lần nào.
 
 ## 2. Năm vòng sửa — tất cả đều là lỗi của spec/plan, không phải của người thực thi
 
@@ -169,9 +192,9 @@ Lượt vá cho `ShareIssuance` bắn thêm kind `valuation` là đúng yêu c�
 
 | Mục | Giá trị |
 |---|---|
-| Test | **532 passed, 2 skipped** |
+| Test | **533 passed, 2 skipped** |
 | Migration head | **`0016`** — `ops.snapshot_check` + domain `market.snapshot` |
 | Module mới | `snapshot_fetch` · `snapshot_normalize` · `snapshot_guard` · `snapshot_store` · `snapshot_job` |
 | Dữ liệu đã nạp | `snapshot_daily` **246 dòng**/2026-09-04 · `ops.snapshot_check` 246 dòng |
 | Task Scheduler | **không đăng ký** — lịch thuộc lát 7, đúng phạm vi spec §3.2 |
-| Còn nợ | **AC5** (2026-09-05) · một Minor: import nằm giữa file test *(do plan viết "thêm vào cuối file")* |
+| Còn nợ | **AC5 nửa qua-mốc-đóng-cửa** (sau 15:00 ngày 2026-09-04) · một Minor: import nằm giữa file test *(do plan viết "thêm vào cuối file")* |
