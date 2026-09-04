@@ -421,7 +421,7 @@ Tính từ [lịch ETL §4.1–4.2](../../20-design/market-data-store.md), tách
 |---|---|---|---|
 | Danh bạ · cây ngành · `/quotes` · `/mapping` | `FIIN_CORE`, `BVSC` | Trước phiên, hằng ngày | 4 |
 | `PriceData/GetPriceData` Page 1 | `FIIN_TECH` | Sau 15:00, hằng ngày | **1.523** *(sửa 2026-09-04 — 1.974 cũ gồm 442 mã đã rời sàn, dọn 2026-09-03)* |
-| `Snapshot/*` — hồ sơ, sở hữu, cổ tức, định giá | `FIIN_FUND`, `FIIN_TOOLS` | **Kích hoạt theo sự kiện + quét sàn** *(đổi 2026-09-03; trước đây ghi "hằng ngày ~4.000", số đó tính 2 endpoint × 1.974 **mã** trong khi endpoint nhận `organCode` tức theo **doanh nghiệp** — 1.544 issuer)* | **≈ 200–260** |
+| `Snapshot/*` — hồ sơ, sở hữu, cổ tức, định giá | `FIIN_FUND`, `FIIN_TOOLS` | **Kích hoạt theo sự kiện + quét sàn** *(đổi 2026-09-03; trước đây ghi "hằng ngày ~4.000", số đó tính 2 endpoint × 1.974 **mã** trong khi endpoint nhận `organCode` tức theo **doanh nghiệp** — 1.544 issuer)* | **234** *(đo thật 2026-09-04 ở lát 4: quota cuốn chiếu 24+70+70+70; ước lượng cũ 200–260)* |
 | **`Screener/GetScreenerItems` — phân trang 52 trang** | `FIIN_TOOLS` | Sau 15:00, hằng ngày | **52** |
 | `Calendar/*` — lịch sự kiện | `FIIN_MARKET` | Hằng ngày | ~10 |
 | **Cộng thường nhật** | | **hằng ngày** | **≈ 2.300** *(sửa 2026-09-03; bản cũ ghi 6.040 khi họ Snapshot còn chạy mọi mã mỗi ngày)* |

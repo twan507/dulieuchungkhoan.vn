@@ -216,7 +216,7 @@ Bốn luật rút ra từ những lần trả giá, mỗi luật chống một c
 | BCTC + PDF | **Kích hoạt** theo `GetCorporateEarning` | ~100–300/quý |
 | Re-crawl giá một mã | **Kích hoạt** theo sự kiện quyền của mã đó | tuỳ |
 
-**Hằng ngày ≈ 1.850 lời gọi** *(4 danh bạ + **1.523** giá + 52 Screener + 9 lịch sự kiện + ~200–260 họ Snapshot; sửa 2026-09-04 — số 1.974 cũ đếm trước lượt dọn 442 mã huỷ niêm yết)* — **thấp hơn con số ~6.000 của bản 2026-08-14**, vì họ Snapshot chuyển từ chạy-mọi-mã-mỗi-ngày sang kích hoạt theo sự kiện.
+**Hằng ngày ≈ 1.822 lời gọi** *(4 danh bạ + **1.523** giá + 52 Screener + 9 lịch sự kiện + **234** họ Snapshot *(đo thật ở lát 4; ước lượng cũ 200–260)*; sửa 2026-09-04 — số 1.974 cũ đếm trước lượt dọn 442 mã huỷ niêm yết)* — **thấp hơn con số ~6.000 của bản 2026-08-14**, vì họ Snapshot chuyển từ chạy-mọi-mã-mỗi-ngày sang kích hoạt theo sự kiện.
 
 ### 4.1b Vì sao họ Snapshot không chạy hằng ngày — chốt 2026-09-03
 
