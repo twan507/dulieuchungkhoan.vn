@@ -57,6 +57,18 @@ def test_classify_calls_a_missing_root_key_bad_shape():
     assert ff.classify("reports", 200, '{"items": [1, 2], "status": "Success"}') == ("bad_shape", None)
 
 
+def test_classify_reads_a_null_period_list_as_empty():
+    """Đo 2026-09-04 18:5x: cùng A32, sáng nguồn trả "quarterly": [] (mẫu A32-cf.json), chiều trả
+    "quarterly": null — hai cách tuần tự hoá của "không có kỳ quý", cùng họ với bẫy status 0/"Success".
+    Coi null là rỗng; chỉ thiếu khoá hoặc kiểu khác list mới là bad_shape."""
+    verdict, item = ff.classify("cf", 200, _text("A32-cf-quarterly-null.json"))
+    assert verdict == "ok" and item["quarterly"] == [] and len(item["yearly"]) == 10
+    assert ff.classify("cf", 200, '{"items": [{"quarterly": null, "yearly": null}], "status": "Success"}') == \
+        ("ok", {"quarterly": [], "yearly": []})
+    assert ff.classify("cf", 200, '{"items": [{"quarterly": "x", "yearly": []}], "status": "Success"}') == ("bad_shape", None)
+    assert ff.classify("cf", 200, '{"items": [{"yearly": []}], "status": "Success"}') == ("bad_shape", None)
+
+
 def _target(kind="bs"):
     return ff.Target(kind=kind, issuer_id=1, organ_code="ASECO32", ticker="A32", found_by="floor")
 

@@ -4,6 +4,11 @@
 endpoint ⇒ hợp lệ là status ∈ {0, "Success"} (quy ước §6.1). Payload tới 408 KB (VNM) ⇒ timeout
 30 s cho mọi kind. `items: []` ở báo cáo số liệu KHÔNG phải sai hình dạng: coi là báo cáo rỗng,
 normalize/apply xử lý (spec §5.4 bước 2).
+
+Đo 2026-09-04 18:5x, cùng mã A32, cùng endpoint `cf`: bản sáng trả `"quarterly": []`, bản chiều
+trả `"quarterly": null` — hai cách tuần tự hoá của "không có kỳ quý" từ cùng nguồn, cùng họ với
+bẫy `status` 0/"Success" ở trên. `classify` coi `null` cũng là rỗng cho cả `quarterly`/`yearly`;
+chỉ thiếu khoá hoặc kiểu khác `list`/`null` mới là `bad_shape`.
 """
 from __future__ import annotations
 
@@ -52,10 +57,19 @@ def classify(kind: str, http: int, text: str) -> tuple[str, dict | None]:
     if not items:
         return "ok", {"quarterly": [], "yearly": []}
     item = items[0]
-    if not isinstance(item, dict) or not isinstance(item.get("quarterly"), list) \
-            or not isinstance(item.get("yearly"), list):
+    if not isinstance(item, dict):
         return "bad_shape", None
-    return "ok", item
+    normalized = {}
+    for period in ("quarterly", "yearly"):
+        if period not in item:
+            return "bad_shape", None                   # thiếu khoá ⇒ sai hình dạng thật
+        v = item[period]
+        if v is None:
+            v = []                                     # đo 2026-09-04 18:5x: null cũng là "không có kỳ" (xem docstring module)
+        elif not isinstance(v, list):
+            return "bad_shape", None
+        normalized[period] = v
+    return "ok", normalized
 
 
 @dataclass(frozen=True)
