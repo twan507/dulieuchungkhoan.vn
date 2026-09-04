@@ -682,6 +682,8 @@ Tổng room của Screener nằm ở khoá khác, trong khối `priceInfo`: `for
 
 ### 5.1 Lấy — {sn_keep_n} trường
 
+> **Đây là số trường ĐÃ CHỌN, không phải số trường luôn có mặt.** Đo 9/9 mã ngày 2026-09-04: `rtq44` `rtq137` `rqq41` **chỉ ngân hàng mới trả**, nên một mã phi ngân hàng chỉ có 15 trong số này — khoá vắng là chuyện bình thường, không phải lỗi.
+
 {sn_keep}
 
 ⚠️ `rtq137` và `rqq41` **được giữ dù chưa có tên** — từ điển 729 mã ghi trạng thái chưa giải mã cho cả hai.
