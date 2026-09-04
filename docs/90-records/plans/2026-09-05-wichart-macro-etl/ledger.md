@@ -31,3 +31,4 @@ Thực thi bằng subagent (Sonnet, chỉ định tường minh), review hai tr�
 
 ## 1. Tiến độ theo task
 
+- Task 1: complete (commits d6536ca..bcb8fdd, review clean). 7 test registry xanh, full suite 603 + 2 skipped. Reviewer đếm tay 53/52/105/68 và đối chiếu thứ tự series `dhtg`/`vang`/`xang_dau`/`phan_ure` với khối §9 — khớp. ⚠️ reviewer: cờ cấp key (`flags=["WIN2Y"]`, `["FREQMIS"]`) không được `build()` đọc — **Ruling:** cố ý; `WIN2Y` là tính chất cửa sổ nguồn (không đổi cách ghi), `FREQMIS` chỉ ghi chú, `freq` khai ở §9 đã là tần suất thật. Chi phí nếu sai: mất một cờ chỉ có giá trị cho bộ giám sát lát 12, khi đó đọc thêm một trường. Minor (deferred): `import dataclasses`/`pathlib` thừa trong `test_e36` (chép từ plan).
