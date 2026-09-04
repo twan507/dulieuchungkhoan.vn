@@ -83,3 +83,19 @@ def test_payload_hash_ignores_order_and_nulls_but_sees_a_value_change():
     assert fn.payload_hash(fn.rows("bs", changed)) != h0                 # đổi một giá trị
 
     assert fn.payload_hash([]) == fn.EMPTY_HASH
+
+
+def test_rows_merge_an_identical_duplicated_period_but_refuse_a_conflicting_one():
+    """Đo 2026-09-04 20:12 trên BSHCO (lượt backfill thật): `quarterly` chứa kỳ 2024/Q2 HAI lần,
+    hai bản ghi giống hệt nhau (160 ô non-null, 0 khác biệt) — nguồn lặp bản ghi, không phải hai kỳ.
+    Bản trùng giống hệt thì gộp; hai bản KHÁC nhau mới là sai hợp đồng (mất dữ liệu nếu chọn bừa)."""
+    item = _item("BSHCO-bs-duplicate-period.json")
+    assert sum(1 for r in item["quarterly"] if (r["yearReport"], r["quarterReport"]) == (2024, 2)) == 2
+    got = fn.rows("bs", item)
+    periods = {(r.year, r.length) for r in got}
+    assert (2024, 2) in periods and len(periods) == 17 - 1 + 16          # 17 quý (1 trùng) + 16 năm
+    assert len([r for r in got if (r.year, r.length) == (2024, 2)]) == 159       # 160 ô non-null trừ `otherAssetNonBank` (khoá phi chỉ tiêu duy nhất có giá trị ở kỳ này)
+    conflicting = {"quarterly": [], "yearly": [{"yearReport": 2025, "quarterReport": 5, "bsa1": 1.0},
+                                               {"yearReport": 2025, "quarterReport": 5, "bsa1": 2.0}]}
+    with pytest.raises(fn.BadRecord, match="trùng"):
+        fn.rows("bs", conflicting)

@@ -44,14 +44,19 @@ class ReportRow:
 def statement_rows(kind: str, item: dict) -> list[StatementRow]:
     st = STATEMENT[kind]
     out: list[StatementRow] = []
-    seen: set[tuple[int, int]] = set()
+    seen: dict[tuple[int, int], dict] = {}
     for rec in (item.get("quarterly") or []) + (item.get("yearly") or []):
         year, length = rec.get("yearReport"), rec.get("quarterReport")
         if not isinstance(year, int) or length not in STATEMENT_LENGTHS:
             raise BadRecord(f"{kind}: quarterReport/yearReport lạ: {year!r}/{length!r}")
         if (year, length) in seen:
-            raise BadRecord(f"{kind}: kỳ trùng {year}/{length}")
-        seen.add((year, length))
+            # Đo 2026-09-04 20:12 trên BSHCO (lượt backfill thật): kỳ 2024/Q2 xuất hiện HAI lần, hai bản
+            # ghi giống hệt nhau — nguồn lặp bản ghi, không phải hai kỳ. Giống hệt thì gộp (khoá chính
+            # không vỡ, hash không đổi); KHÁC nhau mới là sai hợp đồng, vì chọn bừa một bản là mất dữ liệu.
+            if seen[(year, length)] == rec:
+                continue
+            raise BadRecord(f"{kind}: kỳ trùng {year}/{length} với nội dung khác nhau")
+        seen[(year, length)] = rec
         for k, v in rec.items():
             if k in ("yearReport", "quarterReport") or k in NON_METRIC or v is None:
                 continue
