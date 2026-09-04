@@ -14,7 +14,7 @@ Thực thi bằng subagent (Sonnet, chỉ định tường minh), review hai tr�
 | AC2 | `--codes` 3 mã → 12 dòng, 4 kind | ✅ run 88 |
 | AC3 | Lượt đầy đủ vào kho production | ✅ run 91 — **234 target, 234 lời gọi, 0 retry** |
 | AC4 | Chạy lại cùng ngày | ✅ run 89 — `unchanged 12`, `rows_written 0` |
-| **AC5** | **Chạy lại, `changed_floor = 0`** | 🟡 **Nửa dưới-ngày ĐẠT** (243/246 đứng yên; 3 mã đổi là công bố thật, lượt sau về 0). Nửa qua-mốc-đóng-cửa chờ lượt sau 15:00 — xem §1b |
+| **AC5** | **Chạy lại, `changed_floor = 0`** | 🟡 **Nửa dưới-ngày ĐẠT** · nửa qua-mốc-đóng-cửa **CÒN NỢ** — nguồn chưa nạp giá 04/09 tính tới 16:42; xem §1b và §1d |
 | AC6 | Re-crawl giá theo sự kiện quyền | ✅ run 90 → `rows_changed 18.429`; run 92 → `0` |
 | AC7 | Ép hỏng ⇒ lượt `failed`, 0 dòng ghi | ✅ run 93 |
 
@@ -94,6 +94,31 @@ subset: True · recrawl: ['RYG','TCH']
 🔴 **Và chúng chính là số đo "lỗ của lịch" đầu tiên.** `ownership` không có loại sự kiện nào bắn trigger — nếu không có quét sàn, ba công bố này lọt hoàn toàn. Đây là kiến trúc hai lớp làm đúng việc nó sinh ra để làm.
 
 **Hai bản vá được nghiệm thu trên production trong cùng lượt:** mốc nước **đứng yên** ở `2026-09-03` với nguyên dấu thời gian `03:27:39` sau lượt `--codes` *(bản vá A1)*, và re-crawl chỉ còn **2 mã** thay vì 8 *(bộ lọc loại sự kiện)*.
+
+### 1d. Vì sao merge trước khi AC5 xong — và AC5 còn nợ những gì
+
+**Trạng thái đo tới 16:42 ngày 2026-09-04:** nguồn **chưa nạp** giá đóng cửa 04/09. Kiểm trên 4 mã **đã xác minh là có biến động giá hôm nay** (AAA 7.090→7.130 · AAM 7.600→7.480 · AAT 2.240→2.270 · ABB 17.200→17.100 theo `getPriceData`) — cả bốn vẫn mang giá 03/09, sau 1 giờ 42 phút kể từ lúc đóng phiên.
+
+🔴 **Phép đo này hỏng hai lần vì chọn sai mã chuẩn — ghi lại vì rất dễ lặp:**
+
+| Lần | Mã chuẩn | Vì sao vô nghĩa |
+|---|---|---|
+| 1 | A32 | mã UPCOM mỏng — không khớp lệnh thì giá đóng cửa không đổi |
+| 2 | thêm ACB | thanh khoản cao **nhưng hôm nay đứng giá đúng 22.200 cả hai phiên** |
+
+Cả hai lần đều cho ra *"nguồn chưa nạp"*, trong khi sự thật là *"giá không đổi nên không kết luận được gì"*. Chỉ khi đối chiếu `getPriceData` mới thấy 9/14 mã có biến động. **Bài học: mã chuẩn cho phép thử phải được CHỨNG MINH là có biến động, không phải được PHỎNG ĐOÁN là thanh khoản cao.**
+
+**Một phát hiện phụ, có ích cho lát 7:** hai họ endpoint làm mới ở hai thời điểm khác nhau — `getPriceData` đã có phiên 04/09 từ trước 15:51, họ Snapshot thì chưa. Task `dlck-price` đặt 15:40 là hợp lý; job snapshot **không** đặt cùng khung đó được.
+
+**Vì sao vẫn merge:** nếu danh sách trắng sai thì hỏng **rất to chứ không lặng lẽ**. Một trường bám giá lọt vào tập hash sẽ khiến toàn bộ nhóm quét sàn báo đổi ⇒ `changed_floor / floor_compared` ≈ 100% ⇒ chốt chặn (i) **từ chối cả lượt, exit 1, không ghi dòng nào**. Cộng thêm: nhánh **không đăng ký task nào** nên merge không khởi động gì, và 292 dòng đã nằm trong kho là do chính code này ghi.
+
+**Cách đóng nốt, một lệnh:**
+
+```bash
+cd backend && uv run python -m etl snapshot --codes AAA,ABB,AAM,AAT
+```
+
+Đọc `stats`: `changed_floor = 0` là AC5 đạt. Khác 0 thì so hai dòng `snapshot_daily` liền nhau của mã đổi để tìm trường jitter, rồi **bỏ trường đó khỏi `KEEP`** — đúng điều kiện đảo ngược đã ghi ở [spec §4.3](spec.md), **không** phải nới ngưỡng guard. Lượt đó đồng thời trả lời câu còn bỏ ngỏ: nguồn nạp **cuối ngày** hay **qua đêm**.
 
 ### 1c. Lỗi cùng họ với A1, lộ ra ở chính lượt kiểm trên
 
@@ -197,4 +222,4 @@ Lượt vá cho `ShareIssuance` bắn thêm kind `valuation` là đúng yêu c�
 | Module mới | `snapshot_fetch` · `snapshot_normalize` · `snapshot_guard` · `snapshot_store` · `snapshot_job` |
 | Dữ liệu đã nạp | `snapshot_daily` **246 dòng**/2026-09-04 · `ops.snapshot_check` 246 dòng |
 | Task Scheduler | **không đăng ký** — lịch thuộc lát 7, đúng phạm vi spec §3.2 |
-| Còn nợ | **AC5 nửa qua-mốc-đóng-cửa** (sau 15:00 ngày 2026-09-04) · một Minor: import nằm giữa file test *(do plan viết "thêm vào cuối file")* |
+| Còn nợ | **AC5 nửa qua-mốc-đóng-cửa** — nguồn chưa nạp tính tới 16:42 ngày 04/09, đóng bằng một lệnh (§1d) · một Minor: import nằm giữa file test *(do plan viết "thêm vào cuối file")* |
