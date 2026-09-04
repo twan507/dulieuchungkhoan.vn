@@ -24,7 +24,6 @@ TIMEOUT = 30.0
 RETRIES = 3
 BACKOFF = (2, 4, 8)
 MIN_INTERVAL = 0.5                                 # trần 2 request/giây (market-data-store §4.2)
-_EMPTY_STATEMENT = {"quarterly": [], "yearly": []}
 
 
 def url(kind: str, organ_code: str) -> str:
@@ -51,7 +50,7 @@ def classify(kind: str, http: int, text: str) -> tuple[str, dict | None]:
             return "bad_shape", None
         return "ok", {"items": items}
     if not items:
-        return "ok", dict(_EMPTY_STATEMENT)
+        return "ok", {"quarterly": [], "yearly": []}
     item = items[0]
     if not isinstance(item, dict) or not isinstance(item.get("quarterly"), list) \
             or not isinstance(item.get("yearly"), list):

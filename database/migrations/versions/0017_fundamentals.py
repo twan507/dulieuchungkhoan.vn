@@ -10,6 +10,9 @@
   5 mã). Nếu một ngày phát 6/9, normalize xếp bad_shape và guard báo — không lặng lẽ nạp dòng bán
   niên làm sai mọi phép cộng quý.
 - ops.fundamentals_check: sổ kiểm cùng hình với ops.snapshot_check (0016).
+- `downgrade()` sẽ VỠ trên một kho đã có dữ liệu thật: `source_url` trùng (BID/BAB, xem trên) khiến
+  không thể thêm lại UNIQUE (source_url), và mọi dòng `length_report` 6/9 khiến không thể thêm lại
+  CHECK (length_report BETWEEN 1 AND 5) — chỉ downgrade trên kho rỗng hoặc vừa reset.
 
 Revision ID: 0017
 Revises: 0016

@@ -35,3 +35,10 @@ def test_failed_bad_shape_and_empty_each_have_their_own_gate():
 
 def test_an_empty_due_list_is_a_success():
     assert fg.check(fg.Tally()).ok
+
+
+def test_min_sample_boundary_is_inclusive_at_twenty():
+    assert fg.check(fg.Tally(attempted=19, failed=19)).ok           # dưới cỡ mẫu ⇒ bỏ qua chốt
+    assert not fg.check(fg.Tally(attempted=20, failed=19)).ok        # đạt cỡ mẫu ⇒ áp chốt
+    assert fg.check(fg.Tally(floor_compared=19, changed_floor=19)).ok
+    assert not fg.check(fg.Tally(floor_compared=20, changed_floor=19)).ok

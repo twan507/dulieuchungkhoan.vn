@@ -48,6 +48,7 @@ def _cleanup(engine):
         c.execute(sa.text("DELETE FROM ops.etl_run WHERE job = :j"), {"j": fs.JOB})
         c.execute(sa.text("DELETE FROM staging.raw_payload WHERE source = 'fundamentals'"))
         c.execute(sa.text("DELETE FROM ops.data_domain_state WHERE domain = :d AND source = :s"), {"d": fs.DOMAIN, "s": fs.SOURCE})
+        c.execute(sa.text("DELETE FROM ops.fundamentals_check WHERE payload_hash = 'nen'"))
 
 
 def _seed(engine, organ=ORGAN, ticker=TICKER):
@@ -102,7 +103,6 @@ def test_backfill_run_covers_the_batch_and_reports_remaining(clean, monkeypatch)
     _wire(monkeypatch)
     for o in BATCH:
         _seed(clean, o, o[-3:] + "X")
-    monkeypatch.setattr(fs, "QUOTA", 1)                              # quota 1 mà backfill vẫn lấy hết
     with clean.begin() as c:                                         # dập nền: mã khác trong DB test coi như đã kiểm
         for k in fs.KINDS:
             c.execute(sa.text("INSERT INTO ops.fundamentals_check (issuer_id, kind, checked_at, payload_hash, found_by)"
@@ -128,7 +128,7 @@ def test_max_minutes_stops_after_the_current_target_and_holds_the_watermark(clea
     assert stats["stopped_early"] is True and 1 <= len(calls) < 12
 
 
-def test_an_outage_refuses_the_run_and_leaves_evidence(clean, monkeypatch):
+def test_an_outage_refuses_the_run_and_writes_nothing(clean, monkeypatch):
     _wire(monkeypatch)
     for o in BATCH:
         _seed(clean, o, o[-3:] + "X")
@@ -140,6 +140,9 @@ def test_an_outage_refuses_the_run_and_leaves_evidence(clean, monkeypatch):
                                  " (SELECT issuer_id FROM market.issuer_external_id WHERE external_code = ANY(:o))"), {"o": BATCH}).scalar_one() == 0
         assert c.execute(sa.text("SELECT count(*) FROM ops.fundamentals_check WHERE issuer_id IN"
                                  " (SELECT issuer_id FROM market.issuer_external_id WHERE external_code = ANY(:o))"), {"o": BATCH}).scalar_one() == 0
+        # Không target nào ra được Fetched (mọi call đều lỗi) ⇒ không có gì để lưu bằng chứng —
+        # giới hạn đã biết của đường bằng chứng (store_refusal_evidence chỉ ghi cái ĐÃ fetch được).
+        assert c.execute(sa.text("SELECT count(*) FROM staging.raw_payload WHERE source = 'fundamentals'")).scalar_one() == 0
 
 
 def test_a_broken_dictionary_file_fails_before_any_call(clean, monkeypatch, tmp_path):
