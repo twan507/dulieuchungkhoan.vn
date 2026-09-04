@@ -1,0 +1,33 @@
+# SDD ledger — plan: docs/90-records/plans/2026-09-05-wichart-macro-etl/plan.md
+
+**Ngày:** 2026-09-05 · **Nhánh:** `feat/wichart-etl` (mở từ `main` = `4cf7ed2`) · [spec](spec.md) · [plan](plan.md)
+
+Thực thi bằng subagent (Sonnet, chỉ định tường minh), review hai trục sau mỗi task, artifact điều phối (brief, report, gói diff) ở scratchpad ngoài repo (`…/scratchpad/sdd-wichart/`), không tạo `.superpowers/`.
+
+**Điểm duyệt §9 của spec — chủ dự án chốt qua `/goal` sáng 2026-09-05 ("spec xong thì cẩn thận check từng bước rồi dựng plan xong triển khai"):** coi 6 điểm §9 là duyệt theo đề xuất; điểm nào chủ dự án muốn lật lại thì sửa sau bằng một lượt `etl wichart` (registry upsert mỗi lượt) — không có gì khó đảo ngược ngoài tên mã (Phụ lục A/B).
+
+## 0. Rà plan trước khi giao (pre-flight)
+
+| Cặp / task | Sản xuất → tiêu thụ | Kết quả |
+|---|---|---|
+| T1 → T3, T5, T6 | `Series` (có `doc_name`, `external_sub`, `calendar`), `build()`, `key_groups()`, `BANDS`, `SOURCE`, `RegistryError` | T3 dùng `doc_name`/`flags`/`scale`/`freq`/`unit`/`calendar`; T5 dùng `external_sub`/`name_vi`/`region`; T6 dùng `build`/`key_groups`/`load_doc` (test) — tên khớp |
+| T2 → T6 | `open_fetcher(get, sleep, clock)`, `Fetcher.fetch_one(key, group) -> (doc, text)`, `calls`, `retries`, `FetchError`, `BadShape` | T6 `_fetch_all` gọi đúng chữ ký; `get(url, timeout)` khớp `_fake_get(u, timeout)` của test e41 |
+| T3 → T5, T6 | `Point(domain, code, obs_date, value, price_type)`, `SeriesError.reason`, `VN` | T5 `apply` đọc `p.domain/code/obs_date/value/price_type`; T6 phân loại theo `reason` ∈ {shape, freq, band} |
+| T4 → T6 | `Tally` các trường `keys_*`/`series_*`, `Verdict(ok, reasons=[])`, `check` | T6 dựng `Tally(series_total=…)` rồi gán ba trường `keys_*` sau fetch; `Verdict(ok=True)` hợp lệ nhờ default |
+| T5 → T6 | `load_registry(conn, series) -> (resolved, stats)`, `apply -> Written`, `seed_series_break`, `store_payload_if_changed -> bool`, `store_refusal_evidence(engine, texts, run_id, verdict)`, `upsert_domain_state(engine, watermark)`, `JOB` | T6 gọi đúng chữ ký; stats `registry` = dict 3 khoá như test e41 kỳ vọng |
+| T1 tự thân | test đếm 53/52/105/13 vs bảng `MACRO` (53 dòng) / `ASSET` (52 dòng) — đếm tay: MACRO 53 ✓ (gdp 3 · cpi · iip · pmi · hhdv 2 · fdi 4 · cctm 3 · cctt 4 · vdtptxh 2 · vdtnsnn 2 · vt 2 · kqt 2 · ds 2 · tn · ld 2 · tcns 3 · ncp 2 · ctt 2 · hd 2 · td 2 · dtnh · lsdh 3 · lslnh 3 · lshd 3 = 53); ASSET 52 ✓ (dhtg 5 + 47) | nhất quán; `key_groups` = 68 ✓ (24 + 43 + ca_tra) |
+| T1 tự thân | test `xang_dau[1]` role None làm `build` raise — `build` kiểm `role is None` cho mọi `(key, idx)` module map ✓ | nhất quán |
+| T3 tự thân | test `lslnh` macro giữ điểm cuối tuần: `series_points` chỉ gọi `drop_weekend_carry` khi `domain == "asset"` ✓; `real_freq` 3 điểm ngày → `d` khớp `freq` của `lslnh` ✓ | nhất quán |
+| T3 tự thân | `test_weekday_repeat…` literal 26/08 = 7550: **đã kiểm trên fixture** (`lua.json` hai điểm cuối 26/08 và 27/08 đều 7550) — plan ghi "nếu đỏ thì đọc fixture" là thừa nhưng không sai | chấp nhận |
+| T5 tự thân | `test_series_break…`: plan chuyển `break_date` sang `2026-01-01` (neo đầu kỳ) — **khác spec §5.5** (`2026-03-01`, chép neo của nguồn). Ruling dưới | — |
+| T5 tự thân | bind list `Decimal`/`date` thành mảng qua `cast(:x AS numeric[])` — chưa có tiền lệ với `unnest`; plan có đường lùi (`str` rồi cast) | theo dõi ở report T5 |
+| T6 tự thân | `_synthetic` dùng `wr.BANDS.get(s.unit)` với `s.unit` của mình (asset) hoặc §9 (macro) — cùng khoá `BANDS` mà normalize dùng ✓; `EPOCH["y"]` = 01/12/2025 giờ VN → neo `2025-01-01` ✓ | nhất quán |
+| T6 tự thân | `test_full_run…` kỳ vọng `payloads_stored == 68` ở lượt đầu (kho `raw_payload` trống sau `_cleanup`) ✓; `test_second_run…` kỳ vọng 0 vì hash không đổi ✓ | nhất quán |
+| Toàn plan vs rubric | Task 2 chép khuôn `Fetcher` từ `snapshot_fetch` (một lần nữa). Ruling: chấp nhận — spec/roadmap chốt không trích chung tới lát 12 | ghi nhận |
+
+**Ruling (pre-flight):** `series_break.break_date` cho `vn.gdp.real` = **`2026-01-01`**, không phải `2026-03-01` như spec §5.5 — vì kho neo **đầu kỳ** (Q1/2026 = 01/01) còn "2026-03" trong tài liệu nguồn là neo tháng cuối quý của WiChart; view nhân hệ số cho `obs_date < break_date`, nên `2026-01-01` (kỳ đầu của nền mới) phải **không** bị nhân. Chi phí nếu sai: một kỳ Q1/2026 bị nhân/không nhân sai hệ số 1,6 — nhìn thấy ngay ở AC7, sửa bằng một dòng UPDATE. Kiến trúc sư sửa spec §5.5 ở Task 7.
+
+**Số đếm độc lập cho test e41** (script đọc fixture, bỏ điểm T7/CN bằng điểm liền trước — chạy 2026-09-05 trước khi giao): `vang` 522 → 517 mỗi series ⇒ 1.034; `cpi` 284 điểm tháng (không áp luật cuối tuần) ⇒ 284; `lua` 662 → 490.
+
+## 1. Tiến độ theo task
+
