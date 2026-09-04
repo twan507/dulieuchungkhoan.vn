@@ -79,14 +79,15 @@ def test_due_list_floor_takes_never_checked_first_then_the_oldest_within_quota(d
 
 def test_due_list_trigger_fires_all_four_kinds_for_an_earning_after_the_watermark(db):
     _quiet(db)
+    today = date.today()
     a = _issuer(db, "A", "ZZA", "ZZA")
     b = _issuer(db, "B", "ZZB", "ZZB")
     for iid in (a, b):
         for k in fs.KINDS:
-            _checked(db, iid, k, 30)            # quét sàn TRƯỚC ngày công bố ⇒ chỉ trigger mới đưa vào
-    _earning(db, a, date(2026, 9, 3))
-    _earning(db, b, date(2026, 8, 1))
-    due = _mine(fs.due_list(db, date(2026, 8, 15)), "ZZA", "ZZB")
+            _checked(db, iid, k, 10)            # kiểm 10 ngày trước ⇒ trước ngày công bố của A, sau ngày công bố của B
+    _earning(db, a, today - timedelta(days=1))
+    _earning(db, b, today - timedelta(days=40))
+    due = _mine(fs.due_list(db, today - timedelta(days=20)), "ZZA", "ZZB")
     assert {(t.organ_code, t.kind, t.found_by) for t in due} == {("ZZA", k, "event") for k in fs.KINDS}
 
 
@@ -101,20 +102,22 @@ def test_due_list_skips_the_trigger_branch_on_cold_start(db):
 
 def test_due_list_caps_the_trigger_branch_oldest_first(db):
     _quiet(db)
+    today = date.today()
     ids = [_issuer(db, f"T{i}", f"ZZT{i}", f"ZT{i}") for i in range(3)]
     for i, iid in enumerate(ids):
         for k in fs.KINDS:
-            _checked(db, iid, k, 30)            # quét sàn TRƯỚC ngày công bố ⇒ không bị loại vì đã phục vụ
-        _earning(db, iid, date(2026, 9, 1 + i))
-    due = _mine(fs.due_list(db, date(2026, 8, 1), kinds=["bs"], max_trigger=2), "ZZT0", "ZZT1", "ZZT2")
+            _checked(db, iid, k, 10)            # kiểm 10 ngày trước ⇒ trước ngày công bố ⇒ không bị loại vì đã phục vụ
+        _earning(db, iid, today - timedelta(days=3 - i))
+    due = _mine(fs.due_list(db, today - timedelta(days=30), kinds=["bs"], max_trigger=2), "ZZT0", "ZZT1", "ZZT2")
     assert [t.organ_code for t in due] == ["ZZT0", "ZZT1"]
 
 
 def test_due_list_merges_trigger_and_floor_into_one_target_per_issuer_and_kind(db):
     _quiet(db)
+    today = date.today()
     a = _issuer(db, "A", "ZZA", "ZZA")          # chưa kiểm ⇒ floor; có Earning ⇒ trigger
-    _earning(db, a, date(2026, 9, 3))
-    due = _mine(fs.due_list(db, date(2026, 8, 1), kinds=["cf"]), "ZZA")
+    _earning(db, a, today - timedelta(days=1))
+    due = _mine(fs.due_list(db, today - timedelta(days=30), kinds=["cf"]), "ZZA")
     assert len(due) == 1 and due[0].found_by == "event"
 
 
@@ -144,36 +147,40 @@ def test_due_list_leaves_out_an_issuer_without_a_listed_stock(db):
 
 def test_new_watermark_is_the_latest_earning_public_date(db):
     _quiet(db)
+    today = date.today()
     a = _issuer(db, "A", "ZZA", "ZZA")
-    _earning(db, a, date(2026, 9, 3))
+    _earning(db, a, today - timedelta(days=1))
     db.execute(sa.text("INSERT INTO market.corporate_event (event_type, issuer_id, public_date, exright_date, payload)"
-                       " VALUES ('CashDividend', :i, '2026-09-04', '2026-09-30', '{}'::jsonb)"), {"i": a})
-    assert fs.new_watermark(db) == date(2026, 9, 3)      # chỉ Earning, chỉ public_date
+                       " VALUES ('CashDividend', :i, :p, :x, '{}'::jsonb)"),
+               {"i": a, "p": today, "x": today + timedelta(days=26)})
+    assert fs.new_watermark(db) == today - timedelta(days=1)      # chỉ Earning, chỉ public_date
 
 
 def test_trigger_skips_a_pair_already_checked_after_publication(db):
     _quiet(db)
+    today = date.today()
     a = _issuer(db, "A", "ZZA", "ZZA")
-    _earning(db, a, date(2026, 9, 1))
+    _earning(db, a, today - timedelta(days=5))
     _checked(db, a, "bs", 0)                            # kiểm hôm nay — sau ngày công bố ⇒ đã phục vụ
-    assert _mine(fs.due_list(db, date(2026, 8, 1), kinds=["bs"]), "ZZA") == []
+    assert _mine(fs.due_list(db, today - timedelta(days=30), kinds=["bs"]), "ZZA") == []
 
     b = _issuer(db, "B", "ZZB", "ZZB")
-    _earning(db, b, date(2026, 9, 1))
+    _earning(db, b, today - timedelta(days=5))
     _checked(db, b, "bs", 10)                           # kiểm 10 ngày trước — trước ngày công bố ⇒ còn tới hạn
-    due = _mine(fs.due_list(db, date(2026, 8, 1), kinds=["bs"]), "ZZB")
+    due = _mine(fs.due_list(db, today - timedelta(days=30), kinds=["bs"]), "ZZB")
     assert len(due) == 1 and due[0].found_by == "event"
 
 
 def test_same_day_burst_is_served_across_runs_without_starving_anyone(db):
     _quiet(db)
-    d = date(2026, 9, 3)
+    today = date.today()
+    d = today - timedelta(days=1)
     ids = [_issuer(db, f"S{i}", f"ZZS{i}", f"ZS{i}") for i in range(3)]
     for iid in ids:
         _earning(db, iid, d)
 
     # quota=0: tắt hẳn nhánh floor để cô lập đúng nhánh trigger đang kiểm
-    due1 = fs.plan_due(db, date(2026, 8, 1), kinds=["bs"], max_trigger=2, quota=0)
+    due1 = fs.plan_due(db, today - timedelta(days=30), kinds=["bs"], max_trigger=2, quota=0)
     served = _mine(due1.targets, "ZZS0", "ZZS1", "ZZS2")
     assert len(served) == 2 and due1.trigger_cut == d
     assert fs.new_watermark(db, d) == d - timedelta(days=1)
