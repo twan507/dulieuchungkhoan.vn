@@ -44,7 +44,7 @@ def _valid(status: int, text: str) -> bool:
         d = json.loads(text)
     except ValueError:
         return False
-    return d.get("status") == "Success" and isinstance(d.get("items"), list)
+    return d.get("status") in (0, "Success") and isinstance(d.get("items"), list)   # quy ước §6.1
 
 
 def _page(get, sleep, endpoint: str, page: int) -> tuple[str, int]:
