@@ -74,6 +74,8 @@ def _quiet_events(db):
 
 def test_due_list_leaves_out_an_issuer_with_no_listed_stock(db):
     _quiet_universe(db)
+    _quiet_events(db)     # dập corporate_event thật của bộ test khác — nhánh trigger đọc TOÀN
+                           # CỤC, không lọc theo mã như floor (review, phát hiện #5)
     _issuer(db, "Da huy niem yet", "ZZDELIST", "ZZD", listed=False)
     due = ss.due_list(db, date(1900, 1, 1))
     assert [t.organ_code for t in due] == []
@@ -81,6 +83,7 @@ def test_due_list_leaves_out_an_issuer_with_no_listed_stock(db):
 
 def test_due_list_takes_an_issuer_never_checked_before(db):
     _quiet_universe(db)
+    _quiet_events(db)
     _issuer(db, "Chua kiem bao gio", "ZZNEW", "ZZN")
     due = ss.due_list(db, date(1900, 1, 1))
     assert {t.kind for t in due} == set(ss.CADENCE_DAYS)
@@ -89,6 +92,7 @@ def test_due_list_takes_an_issuer_never_checked_before(db):
 
 def test_due_list_skips_a_kind_still_inside_its_cadence(db):
     _quiet_universe(db)
+    _quiet_events(db)
     iid = _issuer(db, "Vua kiem hom qua", "ZZFRESH", "ZZF")
     for kind in ss.CADENCE_DAYS:
         _checked(db, iid, kind, days_ago=1)
@@ -97,6 +101,7 @@ def test_due_list_skips_a_kind_still_inside_its_cadence(db):
 
 def test_due_list_takes_back_a_kind_past_its_cadence(db):
     _quiet_universe(db)
+    _quiet_events(db)
     iid = _issuer(db, "Qua han thang", "ZZOLD", "ZZO")
     _checked(db, iid, "ownership", days_ago=31)      # nhịp tháng: quá hạn
     _checked(db, iid, "snapshot", days_ago=31)       # nhịp quý: CHƯA tới hạn
@@ -167,6 +172,58 @@ def test_a_target_hit_by_both_paths_appears_once_and_counts_as_event(db):
     assert len(due) == 1 and due[0].found_by == "event"
 
 
+def test_due_list_skips_the_trigger_branch_on_a_cold_start_watermark(db):
+    """CRITICAL #2: mốc `1900-01-01` nghĩa là CHƯA từng ghi mốc nước — nếu không chặn, nhánh
+    trigger sẽ đọc TOÀN BỘ `corporate_event` lịch sử (gần trọn vũ trụ × nhiều kind, hàng nghìn
+    lời gọi). Quét sàn đã có quota chặn cold start; nhánh trigger thì chưa, đây là chỗ vá."""
+    _quiet_universe(db)
+    _quiet_events(db)
+    _issuer(db, "Cold start co su kien", "ZZCOLD", "ZZK")
+    _event(db, "ZZCOLD", "Earning", date.today() - timedelta(days=500))
+    due = ss.due_list(db, date(1900, 1, 1), kinds=["snapshot"])
+    assert all(t.found_by != "event" for t in due)
+
+
+def test_due_list_caps_the_trigger_branch_and_takes_the_oldest_public_date_first(db):
+    """CRITICAL #2: một mã hỏng dai dẳng giữ mốc đứng yên ⇒ danh sách trigger phình mỗi ngày,
+    không có đường tự thoát nếu không có trần. `max_trigger` cho phép test không cần chèn
+    hàng trăm dòng thật để chạm `MAX_TRIGGER` mặc định."""
+    _quiet_universe(db)
+    _quiet_events(db)
+    for i in range(8):
+        iid = _issuer(db, f"Trigger {i}", f"ZZT{i}", f"ZT{i}")
+        _checked(db, iid, "snapshot", days_ago=1)          # trong nhịp — chỉ trigger mới bắn
+        _event(db, f"ZZT{i}", "Earning", date.today() - timedelta(days=8 - i))  # i=0 cũ nhất
+    due = ss.due_list(db, date.today() - timedelta(days=9), kinds=["snapshot"], max_trigger=3)
+    assert [t.ticker for t in due] == ["ZT0", "ZT1", "ZT2"]
+
+
+def test_due_list_floor_returns_exactly_quota_when_cold_start_has_more_issuers_than_quota(db):
+    """IMPORTANT #6: spec §6 chốt seam 'bảng rỗng đi theo NULLS FIRST' — cơ chế DUY NHẤT giữ
+    quét sàn khỏi nổ 6.092 lời gọi ở lượt đầu — nhưng chưa test bao giờ ở tổ hợp thật: N issuer
+    chưa kiểm bao giờ, N > quota. Test cũ chỉ phủ 1 issuer NULL hoặc 5 issuer đều có checked_at."""
+    _quiet_universe(db)
+    tickers = [f"ZC{i}" for i in range(5)]
+    for i, t in enumerate(tickers):
+        _issuer(db, f"Cold start floor {i}", f"ZZCS{i}", t)
+    due = ss.due_list(db, date(1900, 1, 1), kinds=["ownership"], quota={"ownership": 3})
+    assert [t.ticker for t in due] == tickers[:3]
+
+
+def test_a_share_issuance_event_triggers_both_snapshot_and_valuation(db):
+    """IMPORTANT #7: `valuation` không có loại sự kiện nào trong spec gốc ⇒ chỉ đi đường quét
+    sàn — nhưng tập trắng của nó có `outstandingShare`, đúng đại lượng mà `ShareIssuance` làm
+    đổi, và `snapshot` cũng track `outstandingShare`. Một `ShareIssuance` mới phải bắn CẢ HAI
+    kind, không chỉ `snapshot`, để `valuation` khỏi ôm dữ liệu cũ tới 30 ngày."""
+    _quiet_universe(db)
+    iid = _issuer(db, "Phat hanh them", "ZZSI", "ZZI")
+    for kind in ss.CADENCE_DAYS:
+        _checked(db, iid, kind, days_ago=1)
+    _event(db, "ZZSI", "ShareIssuance", date.today())
+    due = _mine(ss.due_list(db, date.today() - timedelta(days=1)), "ZZSI")
+    assert sorted((t.kind, t.found_by) for t in due) == [("snapshot", "event"), ("valuation", "event")]
+
+
 def test_codes_forces_every_kind_and_ignores_cadence(db):
     iid = _issuer(db, "Ep bang codes", "ZZFORCE", "ZZR")
     for kind in ss.CADENCE_DAYS:
@@ -176,6 +233,13 @@ def test_codes_forces_every_kind_and_ignores_cadence(db):
 
 
 def test_load_watermark_falls_back_to_1900_when_the_row_is_missing(db):
+    # Dập dòng THẬT (nếu có) mà lượt job chạy thật khác để lại trong DB test dùng chung — nằm
+    # trong giao dịch của fixture `db`, rollback khi test xong, không đụng dữ liệu thật ngoài
+    # giao dịch này (review, phát hiện #5 — trước đây test này xanh chỉ nhờ dọn dẹp của file
+    # khác chạy trước, không phải bảo đảm; đo thật: seed một dòng qua `migrated_engine` rồi
+    # chạy lại test KHÔNG có DELETE này ⇒ đỏ, `datetime.date(2026, 5, 1) != date(1900, 1, 1)`).
+    db.execute(sa.text("DELETE FROM ops.data_domain_state WHERE domain = :d AND source = :s"),
+              {"d": ss.DOMAIN, "s": ss.SOURCE})
     assert ss.load_watermark(db) == date(1900, 1, 1)
 
 

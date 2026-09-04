@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import logging
 from dataclasses import dataclass
 
 import sqlalchemy as sa
@@ -15,16 +16,23 @@ from etl.snapshot_fetch import KINDS, Target
 from etl.snapshot_guard import Tally, Verdict
 from etl.snapshot_normalize import keep_hash
 
+log = logging.getLogger("etl.snapshot")
+
 JOB = "market.snapshot"
 DOMAIN = "market.snapshot"
 SOURCE = "fiintrade"
 
 MAX_EVIDENCE = 20                                  # đủ để nhìn ra vì sao guard từ chối
+MAX_TRIGGER = 300                                  # trần nhánh trigger/lượt — xem due_list()
+COLD_START = dt.date(1900, 1, 1)                   # mốc khởi tạo của load_watermark()
 
 CADENCE_DAYS = {"snapshot": 90, "valuation": 30, "ownership": 30, "dividend": 30}
 QUOTA = {"snapshot": 24, "valuation": 70, "ownership": 70, "dividend": 70}
-TRIGGER_KINDS = {"Earning": "snapshot", "ShareIssuance": "snapshot",
-                 "CashDividend": "dividend", "StockDividend": "dividend"}
+# Một loại sự kiện có thể bắn NHIỀU kind: `outstandingShare` nằm trong tập trắng của CẢ
+# `snapshot` lẫn `valuation`, và ShareIssuance/StockDividend là hai loại duy nhất làm nó đổi
+# (review #7) — CashDividend không đổi số cổ phiếu nên chỉ bắn `dividend`.
+TRIGGER_KINDS = {"Earning": ("snapshot",), "ShareIssuance": ("snapshot", "valuation"),
+                 "CashDividend": ("dividend",), "StockDividend": ("snapshot", "valuation")}
 
 # Vũ trụ: issuer có ÍT NHẤT một cổ phiếu đang niêm yết. Quỹ/ETF tự rơi ra vì không có
 # security dạng stock (đo 2026-09-04) — không cần luật loại riêng.
@@ -47,7 +55,7 @@ def load_watermark(conn) -> dt.date:
     got = conn.execute(sa.text(
         "SELECT watermark FROM ops.data_domain_state"
         " WHERE domain = :d AND source = :s"), {"d": DOMAIN, "s": SOURCE}).scalar()
-    return dt.date.fromisoformat(got) if got else dt.date(1900, 1, 1)
+    return dt.date.fromisoformat(got) if got else COLD_START
 
 
 def _target(row, kind: str, found_by: str) -> Target:
@@ -56,10 +64,11 @@ def _target(row, kind: str, found_by: str) -> Target:
 
 
 def due_list(conn, watermark: dt.date, kinds=None, codes=None,
-             quota=None, cadence=None) -> list[Target]:
+             quota=None, cadence=None, max_trigger=None) -> list[Target]:
     kinds = list(kinds or KINDS)
     quota = quota or QUOTA
     cadence = cadence or CADENCE_DAYS
+    max_trigger = max_trigger or MAX_TRIGGER
 
     if codes:                                   # lượt ép: mọi kind, bỏ qua nhịp và quota
         rows = conn.execute(sa.text(
@@ -70,22 +79,39 @@ def due_list(conn, watermark: dt.date, kinds=None, codes=None,
     out: list[Target] = []
     seen: set[tuple[int, str]] = set()
 
-    event_types = [t for t, k in TRIGGER_KINDS.items() if k in kinds]
-    if event_types:
+    event_types = [t for t, ks in TRIGGER_KINDS.items() if any(k in kinds for k in ks)]
+    if event_types and watermark == COLD_START:
+        # Cold start: chưa có dòng data_domain_state ⇒ mốc là 1900-01-01 ⇒ điều kiện
+        # `public_date > watermark` đúng cho MỌI sự kiện từng có — gần trọn vũ trụ × nhiều
+        # kind, hàng nghìn lời gọi. Quét sàn (nhánh B) đã tự phủ trọn sàn trong 30/90 ngày,
+        # không cần bắn trigger cho toàn bộ lịch sử ở lượt đầu (review, phát hiện #2).
+        log.info("bỏ qua nhánh trigger: mốc nước còn ở mốc khởi tạo %s (cold start) —"
+                 " quét sàn sẽ tự phủ trong 30/90 ngày", COLD_START.isoformat())
+    elif event_types:
         rows = conn.execute(sa.text(
             _UNIVERSE + """
-            SELECT DISTINCT u.*, e.event_type
+            SELECT DISTINCT u.*, e.event_type, e.public_date
             FROM uni u
             JOIN market.corporate_event e ON e.issuer_id = u.issuer_id
             WHERE e.event_type = ANY(:types)
               AND e.public_date > :wm
-            ORDER BY u.issuer_id
-            """), {"types": event_types, "wm": watermark}).all()
+            ORDER BY e.public_date ASC, u.issuer_id
+            LIMIT :limit
+            """), {"types": event_types, "wm": watermark, "limit": max_trigger + 1}).all()
+        if len(rows) > max_trigger:
+            # Một mã hỏng dai dẳng giữ mốc đứng yên ⇒ danh sách trigger phình mỗi ngày, không
+            # có đường tự thoát nếu không có trần. Lấy public_date CŨ NHẤT trước để không bỏ
+            # sót vĩnh viễn cái cũ (review, phát hiện #2).
+            log.info("nhánh trigger vượt trần %d: cắt %d target, giữ %d cũ nhất theo public_date",
+                     max_trigger, len(rows) - max_trigger, max_trigger)
+            rows = rows[:max_trigger]
         for r in rows:
-            kind = TRIGGER_KINDS[r.event_type]
-            if (r.issuer_id, kind) not in seen:
-                seen.add((r.issuer_id, kind))
-                out.append(_target(r, kind, "event"))
+            for kind in TRIGGER_KINDS[r.event_type]:
+                if kind not in kinds:
+                    continue
+                if (r.issuer_id, kind) not in seen:
+                    seen.add((r.issuer_id, kind))
+                    out.append(_target(r, kind, "event"))
 
     for kind in kinds:
         rows = conn.execute(sa.text(

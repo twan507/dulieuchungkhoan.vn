@@ -35,6 +35,12 @@ def test_snapshot_check_refuses_a_found_by_outside_the_two(db):
 
 
 def test_data_domain_state_accepts_the_new_market_snapshot_domain(db):
+    # Dập dòng THẬT (nếu có) mà lượt job chạy thật khác để lại trong DB test dùng chung — nằm
+    # trong giao dịch của fixture `db`, rollback khi test xong, không đụng dữ liệu thật ngoài
+    # giao dịch này (review, phát hiện #5 — đo thật: seed một dòng qua `migrated_engine` rồi
+    # chạy lại test KHÔNG có DELETE này ⇒ đỏ, IntegrityError vỡ PRIMARY KEY (domain, source)).
+    db.execute(sa.text(
+        "DELETE FROM ops.data_domain_state WHERE domain = 'market.snapshot' AND source = 'fiintrade'"))
     db.execute(sa.text(
         "INSERT INTO ops.data_domain_state (domain, source, status, watermark)"
         " VALUES ('market.snapshot', 'fiintrade', 'active', '2026-09-04')"))
