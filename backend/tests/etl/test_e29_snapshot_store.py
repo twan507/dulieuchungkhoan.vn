@@ -58,6 +58,20 @@ def _mine(due, *organ_codes):
     return [t for t in due if t.organ_code in organ_codes]
 
 
+def _quiet_events(db):
+    """Dọn `market.corporate_event` thật do bộ test khác để lại, trước khi seed sự kiện
+    của chính test này.
+
+    `new_watermark()` và `recrawl_codes()` quét TOÀN CỤC bảng này — không lọc theo mã như
+    `due_list()` — nên `_quiet_universe` (dập `ops.snapshot_check`) không đủ, phải dọn
+    thẳng bảng nguồn. Vòng sửa 1 chỉ chữa `due_list`; hai hàm này cùng bệnh nhưng lộ ra
+    ở review vòng 2 vì `test_new_watermark_...` từng xanh chỉ do TRÙNG HỢP dữ liệu thật để
+    lại nhỏ hơn mốc kỳ vọng — không phải bảo đảm. Nằm trong giao dịch của fixture `db`,
+    rollback khi test xong — không đụng dữ liệu thật của file khác ngoài giao dịch này.
+    """
+    db.execute(sa.text("DELETE FROM market.corporate_event"))
+
+
 def test_due_list_leaves_out_an_issuer_with_no_listed_stock(db):
     _quiet_universe(db)
     _issuer(db, "Da huy niem yet", "ZZDELIST", "ZZD", listed=False)
@@ -252,6 +266,7 @@ def test_apply_run_twice_on_the_same_day_is_idempotent(db):
 
 
 def test_new_watermark_takes_the_latest_of_both_event_dates(db):
+    _quiet_events(db)
     _issuer(db, "Moc nuoc", "ZZWM", "ZZW")
     _event(db, "ZZWM", "Earning", date(2026, 8, 1))
     _event(db, "ZZWM", "CashDividend", date(2026, 8, 20), exright_date=date(2026, 9, 10))
@@ -259,6 +274,7 @@ def test_new_watermark_takes_the_latest_of_both_event_dates(db):
 
 
 def test_recrawl_codes_names_only_tickers_with_a_new_exright_date(db):
+    _quiet_events(db)
     _issuer(db, "Co quyen", "ZZRC", "ZZQ")
     _issuer(db, "Khong quyen", "ZZNC", "ZZK")
     _event(db, "ZZRC", "CashDividend", date(2026, 9, 1), exright_date=date(2026, 9, 3))
