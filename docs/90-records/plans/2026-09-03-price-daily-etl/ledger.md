@@ -291,4 +291,13 @@ Ngay sau khi đăng ký 11 task S4U, chủ dự án kết luận: xin cửa sổ
 | Cửa sổ có tên | wrapper `cmd` đặt `title <task>` và in một dòng `[dlck-price] python -m etl price -- … -- log: …` (ASCII không dấu — cmd hiển thị theo codepage OEM) |
 | Khoá nút X | console **không thể hỏi lại xác nhận** (Windows gửi `CTRL_CLOSE_EVENT` rồi giết tiến trình); cái làm được là xoá `SC_CLOSE` khỏi system menu của chính cửa sổ — `core/console.py`, gọi ở đầu `etl` và `ingester`, **chỉ khi wrapper đặt `DLCK_LOCK_CONSOLE=1`** (menu thuộc conhost, giữ tới khi đóng cửa sổ — khoá ở lần chạy tay là terminal của người dùng mất nút X). 5 test với kernel32/user32 giả, không đụng console thật của pytest. Dừng có chủ đích: Ctrl+C hoặc `Stop-ScheduledTask` |
 
-Dọn task S4U: 7 task đăng ký từ phiên thường xoá được ngay từ phiên chat (`Unregister-ScheduledTask`), **4 task đăng ký trong cửa sổ admin** (`dlck-events` · `dlck-screener` · `dlck-price` · `dlck-price-backfill`) trả `Access is denied` — chủ dự án xoá bằng admin **một lần cuối**, rồi đăng ký lại cả 11 Interactive không cần admin. Trọn bộ test sau thay đổi: **449 passed, 2 skipped**.
+Dọn task S4U: 7 task đăng ký từ phiên thường xoá được ngay từ phiên chat (`Unregister-ScheduledTask`), **4 task đăng ký trong cửa sổ admin** (`dlck-events` · `dlck-screener` · `dlck-price` · `dlck-price-backfill`) trả `Access is denied` — chủ dự án xoá bằng admin **một lần cuối**, rồi đăng ký lại cả 11 Interactive không cần admin (từ phiên chat, `register exit=0`, `LogonType: Interactive` cả 11).
+
+**Nghiệm thu khoá nút X bằng thứ Windows THẬT SỰ giữ — hai lỗi thật lộ ra, đúng luật §3.5:**
+
+| Lần | Quan sát | Nguyên nhân | Sửa |
+|---|---|---|---|
+| 1 | Cửa sổ có tiêu đề `dlck-price-backfill` nhưng thuộc **`WindowsTerminal.exe`**; `GetConsoleWindow()` của job chỉ trả cửa sổ `OpenConsole` ẩn ⇒ khoá rơi vào cửa sổ ẩn, X của Windows Terminal vẫn giết job | Windows 11 "terminal mặc định" là Windows Terminal (`HKCU\Console\%%Startup` toàn GUID 0) | Task khởi động qua **`conhost.exe cmd.exe /c …`** — console cổ điển, không phụ thuộc terminal mặc định |
+| 2 | Console cổ điển rồi, nhưng `GetMenuState(hMenu, SC_CLOSE)` = `0x20001000` (mục Close còn) và log không có dòng `[dlck] nút X…` | Chẩn đoán qua đúng wrapper: biến tới python là **`'1 '`** — cmd `set X=1 && …` nhét cả khoảng trắng trước `&&` vào giá trị ⇒ `!= "1"` ⇒ không khoá | `strip()` khi so (test ca `'1 '`); wrapper dùng `set "X=1"`; khai báo `restype/argtypes` 64-bit cho handle |
+
+Kết quả sau sửa (task `dlck-price-backfill` chạy thật): cửa sổ thuộc `cmd.exe`, log có `[dlck] nút X của cửa sổ đã khoá — dừng bằng Ctrl+C hoặc Stop-ScheduledTask`, và **`GetMenuState(SC_CLOSE) = 4294967295`** (mục Close đã bị xoá). Trọn bộ test: **450 passed, 2 skipped**. ⚠️ Console cổ điển có QuickEdit: **bấm chuột vào trong cửa sổ** là vào chế độ Select (tiêu đề hiện `Select …`) và **tiến trình bị treo** cho tới khi bấm Esc — đừng bấm vào trong cửa sổ, chỉ nhìn.

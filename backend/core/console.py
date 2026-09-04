@@ -22,7 +22,9 @@ def lock_if_scheduled(**win32) -> bool:
     """Chỉ khoá khi chạy từ Task Scheduler (`DLCK_LOCK_CONSOLE=1`). Chạy tay từ terminal của người
     dùng thì KHÔNG đụng: menu thuộc về conhost, giữ tới khi đóng cửa sổ — khoá là terminal đó mất
     nút X cho tới hết phiên."""
-    if os.environ.get(ENV_FLAG) != "1":
+    # .strip(): wrapper cmd `set DLCK_LOCK_CONSOLE=1 && …` đưa cả khoảng trắng trước `&&` vào giá trị
+    # ("1 ") — đo 2026-09-04, chính nó làm lần chạy thật đầu tiên không khoá gì.
+    if os.environ.get(ENV_FLAG, "").strip() != "1":
         return False
     return lock_close_button(**win32)
 
@@ -34,6 +36,11 @@ def lock_close_button(kernel32=None, user32=None) -> bool:
         if sys.platform != "win32":
             return False
         kernel32, user32 = ctypes.windll.kernel32, ctypes.windll.user32
+        # Handle là con trỏ 64-bit; mặc định ctypes coi là int 32-bit — khai báo để không bị cắt.
+        kernel32.GetConsoleWindow.restype = ctypes.c_void_p
+        user32.GetSystemMenu.restype = ctypes.c_void_p
+        user32.GetSystemMenu.argtypes = [ctypes.c_void_p, ctypes.c_bool]
+        user32.DeleteMenu.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_uint]
     hwnd = kernel32.GetConsoleWindow()
     if not hwnd:
         return False

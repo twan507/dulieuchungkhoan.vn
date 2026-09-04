@@ -51,3 +51,11 @@ def test_manual_runs_do_not_touch_the_terminal_only_scheduler_runs_lock(monkeypa
     monkeypatch.setenv(console.ENV_FLAG, "1")
     assert console.lock_if_scheduled(kernel32=f, user32=f) is True
     assert f.calls[-1] == ("DeleteMenu", 7, console.SC_CLOSE, console.MF_BYCOMMAND)
+
+
+def test_flag_with_trailing_space_from_cmd_set_still_counts(monkeypatch):
+    """Đo 2026-09-04: `set DLCK_LOCK_CONSOLE=1 && …` trong cmd cho giá trị '1 ' (có dấu cách) —
+    lần chạy thật đầu tiên vì thế không khoá gì. So sánh sau strip()."""
+    f = Fake()
+    monkeypatch.setenv(console.ENV_FLAG, "1 ")
+    assert console.lock_if_scheduled(kernel32=f, user32=f) is True
