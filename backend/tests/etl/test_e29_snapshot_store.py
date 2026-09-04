@@ -150,7 +150,7 @@ def test_an_event_older_than_the_watermark_does_not_fire(db):
 
 
 def test_due_list_fires_on_publish_even_when_the_ex_right_date_is_far_in_the_future(db):
-    """Chiều ngược của bug đo 2026-09-22: trigger đọc `public_date`, không đọc
+    """Chiều ngược của bug đo 2026-09-04: trigger đọc `public_date`, không đọc
     `exright_date` — một sự kiện vừa công bố phải bắn ngay dù ngày không hưởng quyền của
     nó còn rất xa, đừng để lần sửa `new_watermark`/`due_list` làm hỏng chiều này."""
     _quiet_universe(db)
@@ -357,7 +357,7 @@ def test_apply_run_twice_on_the_same_day_is_idempotent(db):
 
 
 def test_new_watermark_tracks_the_announcement_date_not_the_ex_right_date(db):
-    """Bug thật đo 2026-09-22: `--codes A32,BAB,BVB` để lại watermark `2026-09-22` — nhảy
+    """Bug thật đo 2026-09-04: `--codes A32,BAB,BVB` để lại watermark `2026-09-22` — nhảy
     vào tương lai — vì bản cũ lấy `max(greatest(public_date, exright_date))` và một
     `exright_date` xa kéo mốc vượt luôn hôm nay, làm trigger chết ba tuần (không sự kiện
     công bố nào có `public_date` lớn hơn nổi cái mốc giả đó). `new_watermark()` giờ chỉ đo

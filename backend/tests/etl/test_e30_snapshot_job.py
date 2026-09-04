@@ -215,7 +215,7 @@ def test_the_watermark_stays_put_when_a_target_has_a_bad_shape(snapshot_db):
 
 
 def test_recrawl_passes_the_time_budget_to_price_job(snapshot_db, monkeypatch):
-    """Số đo thật (kho production, đo 2026-09-22): re-crawl không trần thời gian từng kéo
+    """Số đo thật (kho production, đo 2026-09-04): re-crawl không trần thời gian từng kéo
     một lượt `--codes A32,BAB,BVB` vượt 120 giây, vì mỗi mã re-crawl là một lượt
     `price --backfill` TRỌN LỊCH SỬ ~12,5 năm, không phải một lần gọi nhẹ — mùa cổ tức có
     tuần tới 48 mã trong cửa sổ 3 ngày, chạm gần trần `MAX_RECRAWL`. `_recrawl` phải truyền
