@@ -12,10 +12,48 @@ from __future__ import annotations
 import ctypes
 import os
 import sys
+import time
 
 SC_CLOSE = 0xF060          # WM_SYSCOMMAND: Close
 MF_BYCOMMAND = 0x0
 ENV_FLAG = "DLCK_LOCK_CONSOLE"   # wrapper của Task Scheduler đặt =1; chạy tay từ terminal thì không
+
+
+def console_say(text: str, opener=open) -> bool:
+    """Ghi thẳng ra THIẾT BỊ console (CONOUT$) — output thường của job đã bị `>> log 2>&1` nuốt,
+    còn đây là dòng người ngồi trước cửa sổ phải thấy. Không có console thì im lặng."""
+    try:
+        with opener("CONOUT$", "w", encoding="utf-8", errors="replace") as f:
+            f.write(text + "\n")
+        return True
+    except OSError:
+        return False
+
+
+def hold(seconds: float, sleep=time.sleep) -> bool:
+    """Giữ cửa sổ mở thêm `seconds` giây để đọc lời chào cuối; Ctrl+C lần nữa thì đóng luôn."""
+    try:
+        sleep(seconds)
+        return True
+    except KeyboardInterrupt:
+        return False
+
+
+def banner(text: str) -> bool:
+    """Dòng mở đầu cho cửa sổ task (bắt đầu lúc nào, làm gì, hạn ở đâu) — chỉ khi chạy từ Scheduler."""
+    if os.environ.get(ENV_FLAG, "").strip() != "1":
+        return False
+    return console_say(text)
+
+
+def farewell(text: str, seconds: float = 20) -> bool:
+    """Lời chào cuối cho cửa sổ task: chỉ khi chạy từ Task Scheduler (cùng cờ với khoá nút X) —
+    chạy tay từ terminal thì không bắt người dùng đợi 20 giây."""
+    if os.environ.get(ENV_FLAG, "").strip() != "1":
+        return False
+    console_say(f"{text} — cửa sổ tự đóng sau {seconds:g} giây (Ctrl+C lần nữa: đóng ngay)")
+    hold(seconds)
+    return True
 
 
 def lock_if_scheduled(**win32) -> bool:
