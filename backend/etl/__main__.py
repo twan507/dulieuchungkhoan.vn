@@ -3,6 +3,7 @@ import sys
 import time
 from datetime import datetime, timezone
 
+from core.console import lock_if_scheduled
 from etl.heartbeat import heartbeat
 
 
@@ -13,6 +14,7 @@ def _heartbeat_loop() -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    lock_if_scheduled()               # cửa sổ task Interactive: bấm nhầm X không giết được job
     args = sys.argv[1:] if argv is None else argv
     if not args:
         return _heartbeat_loop()          # giữ tương thích compose deploy/app

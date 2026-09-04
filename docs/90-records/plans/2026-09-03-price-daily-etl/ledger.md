@@ -281,3 +281,14 @@ Thiết kế thay thế, TDD (3 test mới, **444 passed, 2 skipped**):
 Ghi chú thiết kế: hết vòng thì lượt kế là vòng mới — task bật thường trực nghĩa là làm mới toàn bộ chuỗi điều chỉnh mỗi cuối tuần (~20 giờ gọi); tắt sau vòng đầu nếu chỉ muốn re-crawl theo sự kiện (lát 4). Ghi ở backend/README.
 
 **AC8 nay gồm hai task**, cùng một cửa sổ admin — lệnh cập nhật ở mục AC8 trên (thêm kiểm `dlck-price-backfill`: `Triggers[0].DaysOfWeek` = Saturday, `Settings.ExecutionTimeLimit` = `P3D`, lệnh chứa `--stop-before-open`).
+
+### S4U → Interactive, và khoá nút X — quyết định chủ dự án 2026-09-04 (sau AC8)
+
+Ngay sau khi đăng ký 11 task S4U, chủ dự án kết luận: xin cửa sổ admin **mỗi lần thêm task** (lát 1, 2, 3 đều thế) mệt và khó quản, và **thích thấy cửa sổ** để biết task nào đang chạy. Chuyển về `Interactive` — đăng ký không cần admin, `register-tasks.ps1` vốn hỗ trợ sẵn. Hai việc code:
+
+| Việc | Nội dung |
+|---|---|
+| Cửa sổ có tên | wrapper `cmd` đặt `title <task>` và in một dòng `[dlck-price] python -m etl price -- … -- log: …` (ASCII không dấu — cmd hiển thị theo codepage OEM) |
+| Khoá nút X | console **không thể hỏi lại xác nhận** (Windows gửi `CTRL_CLOSE_EVENT` rồi giết tiến trình); cái làm được là xoá `SC_CLOSE` khỏi system menu của chính cửa sổ — `core/console.py`, gọi ở đầu `etl` và `ingester`, **chỉ khi wrapper đặt `DLCK_LOCK_CONSOLE=1`** (menu thuộc conhost, giữ tới khi đóng cửa sổ — khoá ở lần chạy tay là terminal của người dùng mất nút X). 5 test với kernel32/user32 giả, không đụng console thật của pytest. Dừng có chủ đích: Ctrl+C hoặc `Stop-ScheduledTask` |
+
+Dọn task S4U: 7 task đăng ký từ phiên thường xoá được ngay từ phiên chat (`Unregister-ScheduledTask`), **4 task đăng ký trong cửa sổ admin** (`dlck-events` · `dlck-screener` · `dlck-price` · `dlck-price-backfill`) trả `Access is denied` — chủ dự án xoá bằng admin **một lần cuối**, rồi đăng ký lại cả 11 Interactive không cần admin. Trọn bộ test sau thay đổi: **449 passed, 2 skipped**.
