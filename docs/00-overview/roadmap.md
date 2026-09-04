@@ -89,7 +89,7 @@ Phiên 2026-08-27 chạy cả hai: `t` khớp **205.130 = 205.130** và `ptm` kh
      │        ├─→ [7]  ETL hằng ngày: giá, snapshot, screener, lịch sự kiện
      │        │         └─→ [8] Bộ giám sát hợp đồng (dựng cùng, dùng chung script)
      │        │              └─→ [9] Backfill lịch sử giá ✅ task dlck-price-backfill, chạy cuối tuần
-     │        │                   └─→ [9b] Scheduler trong container etl (lát 11) ─→ [9c] Lên VPS (lát 12)
+     │        │                   └─→ [9b] Scheduler trong container etl (lát 11) ─→ [9c] Lên VPS (lát 14, sau cùng)
      │        │
      │        └─→ [10] Khung thu thập tin + chuẩn hoá, chạy KHÔNG có AI 1 tuần
      │                  └─→ [11] Đo tỷ lệ dedupe thật
@@ -125,9 +125,10 @@ lát 8   quốc tế                  FRED · Frankfurter · Yahoo · LBMA · Bi
 lát 9   tin tức — thu thập       khung thu thập + chuẩn hoá + lưu toàn văn (news-pipeline §9.1), chạy KHÔNG có AI 1 tuần
 lát 10  tin tức — lưới AI        đo tỷ lệ dedupe thật → chốt ngân sách token → bật lưới phân loại 20 sub + gắn mã
 lát 11  scheduler trong etl      thay 11 task Windows bằng một bảng lịch trong code, chạy bù, bật lại [4d] — xem "Lát 11" dưới
-lát 12  lên VPS                  hồ sơ docker-compose.vps.yml (service-topology §7b), chuyển hai kho, ingester active/standby
-lát 13  tầng ngữ nghĩa           nối kho ↔ hai skill chứng khoán, function calling (chatbot-semantic-layer.md)
-lát 14  test vòng 6 có function calling
+lát 12  tầng ngữ nghĩa           nối kho ↔ hai skill chứng khoán, function calling (chatbot-semantic-layer.md)
+lát 13  test vòng 6              có function calling; sau đó CẢ HỆ chạy thử trên máy dev vài ngày liền (lịch tự động của lát 11)
+lát 14  lên VPS                  chỉ khi lát 13 đã ổn vài ngày — hồ sơ docker-compose.vps.yml (service-topology §7b), chuyển hai kho,
+                                   ingester active/standby
 ```
 
 **Bảng ánh xạ tên cũ → lát chuẩn** *(tên trong ngoặc vuông là nhãn của cây phụ thuộc phía trên, viết 2026-08-14; "lát 7/8" cũ là cách gọi từ 2026-09-03 tới 2026-09-04 chiều — tài liệu lịch sử trong `90-records/` vẫn dùng tên cũ, đúng luật không viết lại quá khứ)*:
@@ -141,13 +142,13 @@ lát 14  test vòng 6 có function calling
 | [10] khung thu thập tin không AI | **lát 9** | |
 | [11] đo dedupe · [12] ngân sách token + lưới phân loại | **lát 10** | |
 | [9b] "lát 7" scheduler trong etl | **lát 11** | |
-| [9c] "lát 8" lên VPS | **lát 12** | |
-| [13] tầng ngữ nghĩa · [14] test vòng 6 | **lát 13, lát 14** | |
+| [13] tầng ngữ nghĩa · [14] test vòng 6 | **lát 12, lát 13** | |
+| [9c] "lát 8" lên VPS | **lát 14** — sau cùng, sau vài ngày chạy thử trên dev | |
 
 
-🔴 **Luật thứ tự (chốt 2026-09-04):** đi từ trên xuống, **không nhảy lát**; mỗi lát một session mới, bắt đầu từ mục *"Điểm vào cho lát N"* của lát trước và khép bằng cách viết *"Điểm vào cho lát N+1"*. **Làm lần lượt, không song song** *(chủ dự án chốt 2026-09-04 tối, thay cho ý "nhánh tin chạy song song" của bản chiều)*: gom hết nguồn (lát 7–8) và tin (lát 9–10) về kho trước, rồi mới chuẩn hoá cách chạy (lát 11) và lên VPS (lát 12); lát 13–14 chờ tất cả. Việc cắt ngang (bật lại [4d], spec tự ngắt ngày lễ, mở rộng danh mục phái sinh) chỉ làm khi chủ dự án gọi tên, không tự chen; ETL vĩ mô/quốc tế đã được gọi tên và thành lát 7–8.
+🔴 **Luật thứ tự (chốt 2026-09-04):** đi từ trên xuống, **không nhảy lát**; mỗi lát một session mới, bắt đầu từ mục *"Điểm vào cho lát N"* của lát trước và khép bằng cách viết *"Điểm vào cho lát N+1"*. **Làm lần lượt, không song song** *(chủ dự án chốt 2026-09-04 tối, thay cho ý "nhánh tin chạy song song" của bản chiều)*: gom hết nguồn (lát 7–8) và tin (lát 9–10) về kho trước, rồi chuẩn hoá cách chạy (lát 11), nối tầng ngữ nghĩa và test vòng 6 (lát 12–13), **cả hệ chạy thử trên máy dev vài ngày**, cuối cùng mới lên VPS (lát 14). Việc cắt ngang (bật lại [4d], spec tự ngắt ngày lễ, mở rộng danh mục phái sinh) chỉ làm khi chủ dự án gọi tên, không tự chen; ETL vĩ mô/quốc tế đã được gọi tên và thành lát 7–8.
 
-**Lát 11 — scheduler trong `etl` (thêm 2026-09-04 với tên "lát 7", đổi số 2026-09-04 tối; sinh ra sau khi đăng ký task admin lộ ra là mệt và khó quản).** Container `etl` của `deploy/app` hiện chỉ có heartbeat walking-skeleton; [service-topology §1–2](../20-design/service-topology.md) đã định nghĩa `etl` là *"job theo lịch, scheduler kích hoạt"*. Lát này thay 11 task Windows bằng **một bảng lịch trong code** (refdata 08:00 · screener 15:20 · price 15:40 · events 18:10 · OMO 4 mốc · price-backfill thứ 7 · quét sàn của lát 4, giờ VN), một vòng lặp spawn `python -m etl <job>` làm tiến trình con (lỗi job này không kéo đổ job kia, log tách riêng), chặn chạy chồng, và **tự chạy bù** mốc đã qua trong ngày mà `ops.etl_run` chưa có lượt success (mọi job đều idempotent). Cùng một code chạy **native trên dev** (`uv run python -m etl`, một cửa sổ thay 11 — không admin, không Docker Desktop trong session) và **trong container trên VPS** (`restart: unless-stopped`, sống qua reboot). `ingester` là daemon, không đi qua bảng này — service riêng có `restart`. Xong lát này thì `scripts/register-tasks.ps1` về hưu. Đứng **sau** lát 6–10 (chưa đau: 11 task đang `Disabled` theo [4d], và chủ dự án muốn gom hết nguồn lẫn tin về kho rồi mới chuẩn hoá cách chạy) và **trước** lát 12 vì VPS không có Task Scheduler. Bảng lịch lúc đó gồm cả job vĩ mô/quốc tế/tin của lát 7–10.
+**Lát 11 — scheduler trong `etl` (thêm 2026-09-04 với tên "lát 7", đổi số 2026-09-04 tối; sinh ra sau khi đăng ký task admin lộ ra là mệt và khó quản).** Container `etl` của `deploy/app` hiện chỉ có heartbeat walking-skeleton; [service-topology §1–2](../20-design/service-topology.md) đã định nghĩa `etl` là *"job theo lịch, scheduler kích hoạt"*. Lát này thay 11 task Windows bằng **một bảng lịch trong code** (refdata 08:00 · screener 15:20 · price 15:40 · events 18:10 · OMO 4 mốc · price-backfill thứ 7 · quét sàn của lát 4, giờ VN), một vòng lặp spawn `python -m etl <job>` làm tiến trình con (lỗi job này không kéo đổ job kia, log tách riêng), chặn chạy chồng, và **tự chạy bù** mốc đã qua trong ngày mà `ops.etl_run` chưa có lượt success (mọi job đều idempotent). Cùng một code chạy **native trên dev** (`uv run python -m etl`, một cửa sổ thay 11 — không admin, không Docker Desktop trong session) và **trong container trên VPS** (`restart: unless-stopped`, sống qua reboot). `ingester` là daemon, không đi qua bảng này — service riêng có `restart`. Xong lát này thì `scripts/register-tasks.ps1` về hưu. Đứng **sau** lát 6–10 (chưa đau: 11 task đang `Disabled` theo [4d], và chủ dự án muốn gom hết nguồn lẫn tin về kho rồi mới chuẩn hoá cách chạy) và **trước** lát 14 vì VPS không có Task Scheduler — chính bảng lịch này là thứ chạy thử vài ngày trên dev trước khi lên VPS. Bảng lịch lúc đó gồm cả job vĩ mô/quốc tế/tin của lát 7–10.
 
 **Hai quyết định kèm theo, cùng ngày:** (a) bỏ hai kind chấm điểm `company_score` và `rate_indicator` khỏi `snapshot_daily` — migration `0015`, vì nội dung thật là điểm chữ (`C`/`B`/`D`) và cờ `0.00`/`1.00`, đúng nhóm *không dùng điểm bên thứ ba* đã loại; (b) họ Snapshot **không chạy hằng ngày** mà kích hoạt theo sự kiện kèm quét sàn, vì **không trường nào trong 18 trường ta lưu đổi theo ngày**. Ngân sách ngày vì thế xuống **≈ 2.300 lời gọi** thay vì ~6.000 *(đo thật ở lát 4 ngày 2026-09-04: **1.822** — họ Snapshot chốt ở 234 chứ không 200–260, và tập niêm yết là 1.523 chứ không 1.974)* — bài toán nhịp 8 luồng của lát giá dễ thở hơn nhiều so với ước lượng cũ.
 
