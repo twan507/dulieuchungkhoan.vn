@@ -185,12 +185,20 @@ def recrawl_codes(conn, days: int = 3) -> list[str]:
     ra khi ngày ex ĐÃ QUA (trước ngày ex thì chuỗi close_adj chưa đổi, kéo về cũng vô ích).
     Cửa sổ vài ngày để một hôm job không chạy cũng không mất; kéo lại nhiều lần là vô hại vì
     `etl price --backfill --codes` idempotent.
+
+    CHỈ ba loại `CashDividend`/`StockDividend`/`ShareIssuance` — đúng spec §5.6 gốc, bị đánh
+    rơi khi viết lại theo cửa sổ ngày ở vòng trước. Đây là ba loại DUY NHẤT đổi hệ số điều
+    chỉnh giá; `AGM` (ngày chốt quyền dự đại hội) và `IPO` cũng có `exright_date` nhưng không
+    đụng tới chuỗi `close_adj` — kéo lại là phí. Số đo thật (kho production, 2026-09-04):
+    bản không lọc loại trả 8 mã (DCF·KSV·PVO·RYG·SAS·SMT·TCH·VXT) mà 6/10 sự kiện của chúng
+    là AGM; lọc lại còn đúng 2 mã (RYG, TCH) thật sự cần backfill trọn ~12,5 năm lịch sử.
     """
     rows = conn.execute(sa.text(
         _UNIVERSE + """
         SELECT DISTINCT u.ticker FROM uni u
         JOIN market.corporate_event e ON e.issuer_id = u.issuer_id
         WHERE e.exright_date BETWEEN current_date - :days AND current_date
+          AND e.event_type IN ('CashDividend', 'StockDividend', 'ShareIssuance')
         ORDER BY u.ticker
         """), {"days": days}).scalars().all()
     return list(rows)

@@ -301,3 +301,19 @@ def test_recrawl_codes_picks_only_a_ticker_whose_ex_right_date_just_passed(db):
     _event(db, "ZZSTALE", "CashDividend", date.today() - timedelta(days=10),
            exright_date=date.today() - timedelta(days=10))
     assert ss.recrawl_codes(db) == ["ZZT"]
+
+
+def test_recrawl_codes_ignores_agm_but_keeps_a_price_moving_event_type(db):
+    """Spec §5.6 bản gốc bị đánh rơi ở vòng sửa 3: re-crawl chỉ dành cho ba loại sự kiện
+    ĐỔI HỆ SỐ ĐIỀU CHỈNH GIÁ — CashDividend/StockDividend/ShareIssuance. Số đo thật (kho
+    production, 2026-09-04): bản không lọc loại trả 8 mã (DCF·KSV·PVO·RYG·SAS·SMT·TCH·VXT)
+    mà 6/10 sự kiện của chúng là AGM (ngày chốt quyền dự đại hội — không cổ tức, không phát
+    hành, hệ số điều chỉnh KHÔNG đổi); chỉ RYG (StockDividend+ShareIssuance) và TCH
+    (ShareIssuance) thật sự cần kéo lại — còn lại 2/8. Ở đây: AGM và StockDividend có cùng
+    `exright_date` hôm nay, chỉ mã StockDividend được chọn."""
+    _quiet_events(db)
+    _issuer(db, "Chi hop dai hoi", "ZZAGM", "ZZG")
+    _issuer(db, "Chia co phieu", "ZZSD", "ZZV")
+    _event(db, "ZZAGM", "AGM", date.today() - timedelta(days=5), exright_date=date.today())
+    _event(db, "ZZSD", "StockDividend", date.today() - timedelta(days=5), exright_date=date.today())
+    assert ss.recrawl_codes(db) == ["ZZV"]
