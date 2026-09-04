@@ -19,6 +19,7 @@ class Tally:
     attempted: int = 0          # số (mã × kind) định gọi trong lượt
     failed: int = 0             # hỏng sau mọi lần thử ⇒ để CHƯA KIỂM
     bad_shape: int = 0          # response hợp lệ nhưng thiếu khoá gốc
+    checked: int = 0            # số bản ghi apply() đã xét — chưa dùng ở chốt chặn nào
     first: int = 0              # lần kiểm đầu tiên của (mã, kind) — chưa có hash cũ để so
     floor_compared: int = 0     # mã quét sàn CÓ hash cũ để so
     changed_floor: int = 0      # trong số đó, nội dung đổi — đây là LỖ của lịch sự kiện

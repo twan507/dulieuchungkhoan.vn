@@ -125,3 +125,110 @@ def test_load_watermark_reads_the_row_it_wrote(db):
     db.execute(sa.text("INSERT INTO ops.data_domain_state (domain, source, status, watermark)"
                        " VALUES ('market.snapshot', 'fiintrade', 'active', '2026-09-01')"))
     assert ss.load_watermark(db) == date(2026, 9, 1)
+
+
+import json
+import pathlib
+
+from etl import snapshot_normalize as sn
+
+FIX = pathlib.Path(__file__).parent / "fixtures" / "snapshot"
+
+
+def _item(name="A32-ownership.json"):
+    return json.loads((FIX / name).read_text(encoding="utf-8"))["items"][0]
+
+
+def _fetched(iid, kind="ownership", found_by="floor", item=None, organ="ZZAP", ticker="ZZA"):
+    from etl.snapshot_fetch import Target
+    obj = item if item is not None else _item()
+    return ss.Fetched(target=Target(kind=kind, issuer_id=iid, organ_code=organ, ticker=ticker,
+                                    com_type="CT", found_by=found_by),
+                      item=obj, text=json.dumps({"items": [obj], "status": 0}))
+
+
+def _rows(db, iid):
+    return db.execute(sa.text("SELECT count(*) FROM market.snapshot_daily WHERE issuer_id = :i"),
+                      {"i": iid}).scalar_one()
+
+
+def test_apply_writes_a_row_and_a_ledger_line_on_the_first_check(db):
+    db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
+    iid = _issuer(db, "Lan dau", "ZZAP", "ZZA")
+    tally, written = ss.apply(db, [_fetched(iid)], date(2026, 9, 4))
+    assert (tally.first, tally.floor_compared, written) == (1, 0, 1)
+    assert _rows(db, iid) == 1
+    got = db.execute(sa.text("SELECT keep_hash, found_by, changed_at IS NOT NULL AS c"
+                             " FROM ops.snapshot_check WHERE issuer_id = :i"), {"i": iid}).one()
+    assert got.keep_hash == sn.keep_hash("ownership", _item()) and got.found_by == "floor" and got.c
+
+
+def test_apply_writes_nothing_the_second_time_but_still_moves_the_ledger(db):
+    db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
+    iid = _issuer(db, "Khong doi", "ZZAP", "ZZA")
+    ss.apply(db, [_fetched(iid)], date(2026, 9, 4))
+    before = db.execute(sa.text("SELECT checked_at FROM ops.snapshot_check WHERE issuer_id = :i"),
+                        {"i": iid}).scalar_one()
+    tally, written = ss.apply(db, [_fetched(iid)], date(2026, 9, 5))
+    after = db.execute(sa.text("SELECT checked_at, changed_at FROM ops.snapshot_check"
+                               " WHERE issuer_id = :i"), {"i": iid}).one()
+    assert (tally.unchanged, tally.changed_floor, written) == (1, 0, 0)
+    assert _rows(db, iid) == 1                       # KHÔNG có dòng thứ hai
+    assert after.checked_at > before                 # nhưng vẫn "đã nhìn"
+    assert after.changed_at < after.checked_at
+
+
+def test_apply_writes_a_new_row_when_the_allowlist_content_changes(db):
+    db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
+    iid = _issuer(db, "Co doi", "ZZAP", "ZZA")
+    ss.apply(db, [_fetched(iid)], date(2026, 9, 4))
+    changed = _item()
+    changed["majorShareHolders"] = changed["majorShareHolders"][:5]
+    tally, written = ss.apply(db, [_fetched(iid, item=changed)], date(2026, 9, 5))
+    assert (tally.changed_floor, tally.floor_compared, written) == (1, 1, 1)
+    assert _rows(db, iid) == 2
+
+
+def test_apply_ignores_a_change_that_only_touches_a_price_derived_field(db):
+    db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
+    iid = _issuer(db, "Chi doi theo gia", "ZZAP", "ZZA", com_type="CT")
+    snap = _item("A32-snapshot.json")
+    ss.apply(db, [_fetched(iid, kind="snapshot", item=snap)], date(2026, 9, 4))
+    moved = json.loads(json.dumps(snap))
+    moved["summary"]["rtd11"] = 999_000_000_000.0
+    tally, written = ss.apply(db, [_fetched(iid, kind="snapshot", item=moved)], date(2026, 9, 5))
+    assert (tally.unchanged, written) == (1, 0)
+    assert _rows(db, iid) == 1
+
+
+def test_apply_counts_an_event_change_apart_from_a_floor_change(db):
+    db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
+    iid = _issuer(db, "Theo su kien", "ZZAP", "ZZA")
+    ss.apply(db, [_fetched(iid)], date(2026, 9, 4))
+    changed = _item()
+    changed["boardOfDirectors"] = []
+    tally, _ = ss.apply(db, [_fetched(iid, found_by="event", item=changed)], date(2026, 9, 5))
+    assert (tally.changed_event, tally.changed_floor, tally.floor_compared) == (1, 0, 0)
+
+
+def test_apply_run_twice_on_the_same_day_is_idempotent(db):
+    db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
+    iid = _issuer(db, "Cung ngay", "ZZAP", "ZZA")
+    ss.apply(db, [_fetched(iid)], date(2026, 9, 4))
+    ss.apply(db, [_fetched(iid)], date(2026, 9, 4))
+    assert _rows(db, iid) == 1
+
+
+def test_new_watermark_takes_the_latest_of_both_event_dates(db):
+    _issuer(db, "Moc nuoc", "ZZWM", "ZZW")
+    _event(db, "ZZWM", "Earning", date(2026, 8, 1))
+    _event(db, "ZZWM", "CashDividend", date(2026, 8, 20), exright_date=date(2026, 9, 10))
+    assert ss.new_watermark(db) == date(2026, 9, 10)
+
+
+def test_recrawl_codes_names_only_tickers_with_a_new_exright_date(db):
+    _issuer(db, "Co quyen", "ZZRC", "ZZQ")
+    _issuer(db, "Khong quyen", "ZZNC", "ZZK")
+    _event(db, "ZZRC", "CashDividend", date(2026, 9, 1), exright_date=date(2026, 9, 3))
+    _event(db, "ZZNC", "Earning", date(2026, 9, 2))
+    assert ss.recrawl_codes(db, date(2026, 9, 1)) == ["ZZQ"]
