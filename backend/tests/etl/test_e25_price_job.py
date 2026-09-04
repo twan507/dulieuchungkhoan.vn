@@ -261,6 +261,23 @@ def test_stop_before_open_ends_the_run_at_the_next_trading_morning(price_db, mon
     assert s["stop_at"] == datetime.fromtimestamp(target, price_job.VN).isoformat(timespec="minutes")
 
 
+def test_ctrl_c_closes_the_run_as_failed_with_a_reason_and_exits_130(price_db, monkeypatch):
+    """Ctrl+C là cách dừng chính thức của cửa sổ task (nút X đã khoá) — không được để lượt treo
+    'running' trong ops.etl_run với traceback KeyboardInterrupt."""
+    _wire(monkeypatch)
+
+    def boom(self, code, max_pages=1):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(price_fetch.Fetcher, "pages", boom)
+    assert price_job.run(backfill=True) == 130
+    status, stats, err = _last(price_db, "market.price_backfill")
+    assert status == "failed" and "Ctrl+C" in err and stats["codes_done"] == 0
+    assert price_job.run() == 130
+    status, _, err = _last(price_db, "market.price_daily")
+    assert status == "failed" and "Ctrl+C" in err
+
+
 def test_cli_parses_backfill_codes_and_max_minutes(monkeypatch):
     seen = {}
     monkeypatch.setattr("etl.price_job.run", lambda **kw: seen.update(kw) or 0)
