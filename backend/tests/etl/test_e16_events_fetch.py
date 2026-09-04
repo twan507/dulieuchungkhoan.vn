@@ -94,3 +94,14 @@ def test_transport_exception_every_time_becomes_a_fetch_error_not_a_crash():
 
     with pytest.raises(ef.FetchError, match="ConnectError"):
         ef.fetch(get=get, sleep=lambda s: None)
+
+
+def test_status_zero_is_a_valid_page_not_a_retry():
+    """Quy ước §6.1: thành công ⟺ status ∈ {0, "Success"}. Cùng nợ với screener_fetch (lát 3)."""
+    def get(url):
+        d = json.loads(_envelope(3, 3)); d["status"] = 0
+        return 200, json.dumps(d)
+    slept = []
+    pages, retries = ef.fetch(get=get, sleep=slept.append)
+    assert retries == 0 and slept == []
+    assert len(pages) == 6 and all(json.loads(p[0])["status"] == 0 for p in pages.values())

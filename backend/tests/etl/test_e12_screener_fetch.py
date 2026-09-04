@@ -77,3 +77,16 @@ def test_transport_exception_every_time_becomes_a_fetch_error_not_a_crash():
 
     with pytest.raises(sf.FetchError, match="ConnectError"):
         sf.fetch(post=post, sleep=lambda s: None)
+
+
+def test_status_zero_is_a_valid_page_not_a_retry():
+    """Quy ước §6.1: thành công ⟺ status ∈ {0, "Success"}. Nợ từ lát 3 — chỉ nhận chuỗi
+    thì một trang trả 0 (đã thấy trên getPriceData, 2/16 lời gọi) bị thử lại 4 lần rồi FetchError."""
+    def post(body):
+        http, text = _ok(body["page"])
+        d = json.loads(text); d["status"] = 0
+        return http, json.dumps(d)
+    slept = []
+    pages, retries = sf.fetch(post=post, sleep=slept.append)
+    assert retries == 0 and slept == []
+    assert len(pages) == 3 and json.loads(pages[0])["status"] == 0
