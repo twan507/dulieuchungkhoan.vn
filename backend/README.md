@@ -214,6 +214,41 @@ phần đổi dồn hết vào một kind thì chạy tay từng kind bằng `--
 ⚠️ **Chưa đăng ký task Scheduler** — lịch của job này thuộc lát 7 (bảng lịch trong container `etl`). Chạy tay,
 hoặc để lát 7 gọi. Vị trí trong ngày: **sau `events` 18:10**, vì trigger đọc đúng bảng mà `events` vừa ghi.
 
+## Chạy job fundamentals (báo cáo tài chính + danh sách PDF + từ điển)
+
+```bash
+uv run python -m etl fundamentals                              # lượt thường: trigger Earning + quét sàn 90 ngày, quota 20 mã/kind
+uv run python -m etl fundamentals --codes A32,BAB              # ép một tập mã, mọi kind, bỏ nhịp/quota — chạy thử dưới quyền production
+uv run python -m etl fundamentals --kinds bs,reports           # chỉ vài kind: bs · is · cf · reports
+uv run python -m etl fundamentals --backfill --stop-before-open --max-minutes 40   # lượt điền đầu: mọi cặp CHƯA KIỂM, không quota, dừng trước 08:45
+```
+
+Bốn kind `bs` · `is` · `cf` (→ `market.financial_statement`, dạng dài, **bỏ null**, `metric_code` chữ thường) và `reports`
+(→ `market.financial_report_file`, khoá `source_id`). Mỗi lượt nạp lại từ điển 729 mã vào `market.metric_dictionary` từ
+`docs/10-sources/market/field-dictionary.json` trước khi gọi nguồn — file hỏng thì lượt chết ngay, chưa gọi gì.
+
+**Ghi KHI ĐỔI, hash trên TRỌN payload đã chuẩn hoá** (ba endpoint không có trường tính từ giá). Đổi ⇒ xoá trọn
+`(issuer, statement_type)` rồi chèn lại trong một giao dịch, cộng một dòng `staging.raw_payload` — đó là lịch sử điều
+chỉnh hồi tố. `reports` upsert theo `source_id`, không xoá. **Rỗng không bao giờ xoá:** mã từng có dữ liệu mà nguồn trả
+rỗng thì giữ nguyên kho, không đánh dấu đã kiểm, đếm vào `tally.empty`.
+
+**Con trỏ là `ops.fundamentals_check.checked_at`** — cả lượt thường lẫn `--backfill`; giết giữa chừng không mất chỗ,
+`stats.remaining` là số cặp (issuer, kind) chưa kiểm còn lại. Lượt điền trọn sàn ≈ 6.092 lời gọi, ≥ 51 phút.
+
+**Mốc nước** (`ops.data_domain_state('market.fundamentals')`) đo `public_date` của `Earning`, chỉ tiến khi lượt đầy đủ,
+không mã nào hỏng/sai hình dạng/rỗng và không bị cắt giờ. Nhánh trigger **loại cặp đã kiểm sau ngày công bố** rồi mới
+cắt trần 300 issuer; bị cắt thì mốc chỉ tiến tới ngày cắt − 1 (`stats.trigger_cut`) — nếu không, ngày hạn nộp với hàng
+trăm mã cùng `public_date` sẽ làm phần dư mất trigger vĩnh viễn (review 2026-09-04).
+
+⚠️ **Lượt `--codes` dưới 20 target không được guard bảo vệ** (`MIN_SAMPLE`): đọc `stats.tally` bằng mắt — `bad_shape`
+khác 0 là nguồn đổi hình dạng (đã gặp: `"quarterly": null` thay cho `[]` trên cùng mã trong cùng ngày).
+
+🔴 **Chốt (i) mùa báo cáo:** như `snapshot`, tỷ lệ đổi nhóm quét sàn > 20 % có thể là vận hành bình thường khi quét sàn
+rơi vào mã vừa có kỳ mới mà lịch sự kiện sót. Đọc `stats.tally`, chạy tay `--kinds` để đi tiếp, ghi số vào hồ sơ lát 5;
+**không** nới ngưỡng.
+
+⚠️ **Chưa đăng ký task Scheduler** — lát 7. Vị trí trong ngày: **sau `events` 18:10 và sau `snapshot`**.
+
 ## Lịch chạy (Windows Task Scheduler)
 
 ```bash

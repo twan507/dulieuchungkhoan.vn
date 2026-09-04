@@ -168,3 +168,7 @@ Số khoá mỗi endpoint **cố định** bất kể loại hình (ngân hàng,
 ### 6.5 AC5 của lát 4 — kiểm lại lúc 17:10
 
 `GetSnapshotNoneBank` của AAA: `rtd11` 2.791.635.955.700 ÷ `outstandingShare` 393.742.730 = **7.090** — vẫn là giá đóng cửa **03/09** (giá 04/09 là 7.130 theo `getPriceData`, xem [ledger lát 4 §1d](../../plans/2026-09-04-snapshot-family-etl/ledger.md)). Nguồn chưa nạp phiên 04/09 sau 2 giờ 10 phút kể từ khi đóng cửa. AC5 vẫn chưa đóng được; lệnh đóng không đổi.
+
+### 6.6 Bổ sung tối 2026-09-04 (18:5x, 4 lời gọi) — `quarterly` là `null`, không phải `[]`
+
+Lượt AC4 của lát 5 báo A32 `bad_shape` 3/3 báo cáo trong khi lượt 18:40 nạp sạch. Gọi thẳng `ASECO32` ba endpoint: HTTP 200, `status "Success"`, **`"quarterly": null`**, `yearly` 10 kỳ như cũ. Mẫu buổi sáng (`samples/A32-*.json`) có `"quarterly": []`. Cùng một mã, cùng một ngày, hai cách tuần tự hoá của "không có kỳ quý" — cùng họ với `status` 0/"Success" ở câu 2. Bản thô: `backend/tests/etl/fixtures/fundamentals/A32-cf-quarterly-null.json`. Hệ quả cho code: coi `null` là rỗng; kiểm hình dạng viết theo *nghĩa*, không theo *kiểu* của mẫu đã lưu. Tài liệu sống đã ghi ở [05](../../../10-sources/market/05-fiin-financial-statements.md).

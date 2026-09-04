@@ -17,7 +17,7 @@ Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập d
 | Tầng ngữ nghĩa nối dữ liệu ↔ skill | 🟡 đề xuất, **chưa duyệt** | [chatbot-semantic-layer.md](docs/20-design/chatbot-semantic-layer.md) |
 | Hai skill chứng khoán | ✅ xong, test 6 vòng, đã dừng tối ưu | 3.046 dòng |
 | Repo vào git | ✅ khởi tạo 2026-08-14 | commit đầu tiên |
-| **Hạ tầng + schema hai kho** | ✅ **2026-08-26** | Postgres **16 migration** (alembic) · ClickHouse **2** · compose PG+CH+Redis |
+| **Hạ tầng + schema hai kho** | ✅ **2026-08-26** | Postgres **17 migration** (alembic) · ClickHouse **2** · compose PG+CH+Redis |
 | **Ingester realtime** | ✅ **ghi thật từ 2026-08-27** — hàng đợi có trần, tràn ra đĩa khi kho trục trặc | 4,72 triệu dòng phiên 28/08 · chưa lần nào phải dùng tới đĩa |
 | **ETL theo lịch** | `etl omo` · `etl refdata` · **`etl screener`** (15:20) · **`etl events`** (18:10) · **`etl price`** (mới 2026-09-04, 15:40 — giá theo ngày + backfill 12,5 năm) — ⏸️ **tạm tắt, ưu tiên dev** ([lộ trình §2 mục 4d](docs/00-overview/roadmap.md)) | 11 task Scheduler, `LogonType=Interactive` (cửa sổ cmd hiện tên task đang chạy; đảo từ S4U 2026-09-04 để khỏi cần admin), đều `Disabled` (`dlck-price` 15:40 · `dlck-price-backfill` thứ 7 00:05 từ 2026-09-04) |
 | **`api` · `frontend`** | ❌ chưa bắt đầu | |

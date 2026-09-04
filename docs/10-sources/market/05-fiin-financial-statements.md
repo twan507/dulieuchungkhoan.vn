@@ -71,6 +71,7 @@ Tra nghĩa từng mã: [Phụ lục A §A.5](appendix-A-field-codes.md) — **72
 
 - ⚠️ **Không lọc được kỳ.** Muốn hiển thị 5 năm gần nhất vẫn phải tải toàn bộ 21 kỳ năm và 86 kỳ quý.
 - ⚠️ **`GetBalanceSheet` trả hai khoá viết hoa lẫn: `bsI141` và `bsS134`** *(đo 2026-09-04, 4/4 mã BAB · AAS · VNM · HPG, kèm mẫu A32 trong [khảo sát](../../90-records/surveys/2026-09-04-bctc-endpoints/samples/A32-balance_sheet.json))*. Từ điển ghi `bsi141`/`bss134` chữ thường — **hạ chữ thường trước khi tra hoặc ghi kho**. `GetIncomeStatement` và `GetCashFlow` không có khoá nào như vậy.
+- ⚠️ **`quarterly`/`yearly` có thể là `null` thay vì `[]`** — cùng mã A32, sáng 2026-09-04 nguồn trả `"quarterly": []`, chiều cùng ngày (18:5x) trả `"quarterly": null` trên cả ba endpoint, `yearly` bình thường, `status` `"Success"`. Hai cách tuần tự hoá của "không có kỳ quý"; coi `null` là rỗng, chỉ thiếu khoá hay kiểu khác list mới là sai hình dạng. Mẫu thật: `backend/tests/etl/fixtures/fundamentals/A32-cf-quarterly-null.json`.
 - `status` trả `0` *(đo 2026-08-10)* **và** `"Success"` *(đo 2026-09-04, 21/21 lời gọi trên 5 mã BAB · A32 · AAS · VNM · HPG)* trên cùng ba endpoint — kiểm bằng `status ∈ {0, "Success"}` theo [quy ước §6.1](00-conventions.md), không so với một giá trị.
 - Ngoài mã chỉ tiêu, mỗi response còn **8 khoá không phải mã chỉ tiêu**: `organCode` · `ebit` · `ebitDa` · `operating` · `otherAssetBank` · `otherAssetNonBank` · `otherLiabilties` *(nguyên văn, thiếu chữ `i`)* · `rtq29` *(chỉ `GetIncomeStatement`)*. Đếm trọn ba endpoint được **557 khoá phân biệt** = 549 mã từ điển + 8 khoá này *(đối chiếu 2026-09-04 trên 3 mã)* — đừng đọc 557 thành "số mã chỉ tiêu".
 - Số kỳ khác nhau rõ rệt giữa các mã. Ví dụ đo được:
@@ -88,6 +89,7 @@ Tra nghĩa từng mã: [Phụ lục A §A.5](appendix-A-field-codes.md) — **72
 
 - ⚠️ Ba mã UPCOM nhỏ (`THU`, `RAT`, `VCT`) **không có dữ liệu quý** nhưng vẫn có dữ liệu năm. Giao diện phải xử lý trường hợp tab "Theo quý" trống trong khi tab "Theo năm" có dữ liệu.
 - Số kỳ giữa ba báo cáo **không bằng nhau** trên cùng một mã (TDH: 78 / 86 / 62). Không thể giả định ghép được theo chỉ số vị trí — phải ghép theo cặp `yearReport` + `quarterReport`.
+- ⚠️ **Một kỳ có thể xuất hiện HAI lần trong cùng mảng** — `GetBalanceSheet` của BSHCO *(đo 2026-09-04 20:12, lượt điền đầu của lát 5)*: `quarterly` 17 phần tử mà kỳ 2024/Q2 có hai bản ghi **giống hệt nhau** (160 ô, 0 khác biệt). Khảo sát buổi chiều đo 0 trùng trên 4 mã nên đây là ca hiếm. Gộp khi giống hệt; hai bản khác nhau mới coi là sai hợp đồng. Mẫu thật: `backend/tests/etl/fixtures/fundamentals/BSHCO-bs-duplicate-period.json`.
 
 ### Độ phủ & hiệu năng
 

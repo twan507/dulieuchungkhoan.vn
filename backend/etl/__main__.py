@@ -57,7 +57,18 @@ def main(argv: list[str] | None = None) -> int:
         parsed = parser.parse_args(args[1:])
         return etl.snapshot_job.run(codes=parsed.codes, kinds=parsed.kinds,
                                     max_minutes=parsed.max_minutes)
-    print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener, events, price, snapshot)",
+    if args[0] == "fundamentals":
+        import etl.fundamentals_job
+        parser = argparse.ArgumentParser(prog="etl fundamentals")
+        parser.add_argument("--codes", type=lambda s: [t.strip().upper() for t in s.split(",") if t.strip()])
+        parser.add_argument("--kinds", type=lambda s: [k.strip() for k in s.split(",") if k.strip()])
+        parser.add_argument("--max-minutes", type=float, dest="max_minutes")
+        parser.add_argument("--backfill", action="store_true")
+        parser.add_argument("--stop-before-open", action="store_true", dest="stop_before_open")
+        parsed = parser.parse_args(args[1:])
+        return etl.fundamentals_job.run(codes=parsed.codes, kinds=parsed.kinds, max_minutes=parsed.max_minutes,
+                                        backfill=parsed.backfill, stop_before_open=parsed.stop_before_open)
+    print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener, events, price, snapshot, fundamentals)",
           file=sys.stderr)
     return 2
 
