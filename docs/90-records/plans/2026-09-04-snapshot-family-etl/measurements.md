@@ -78,6 +78,23 @@ Cả bốn cùng vỏ `{page, pageSize, totalCount, items, packageId, status, er
 
 🔴 **Tài liệu nguồn [`04-fiin-company-profile.md`](../../../10-sources/market/04-fiin-company-profile.md) chép SAI hình dạng `dividend`** — bản cũ ghi 5 chỉ tiêu là số vô hướng (`"priceEarningRatio": 8.585`). Kiểm trên chính mã ví dụ của tài liệu (BID) và trên A32: cả hai đều là object `ratioYears`. **Đã sửa tầng reference cùng ngày** (commit `fad9b6b`), cùng loại lỗi §3.4 — mẫu trong tài liệu là bản đã bóc vỏ.
 
+## 4b. Bốn endpoint KHÔNG cập nhật trong phiên — đo 2026-09-04
+
+Gọi lại A32 lúc **12:28** và so với bản lưu lúc **09:57** cùng ngày (phiên sáng đã đóng lúc 11:30):
+
+| | 09:57 | 12:28 |
+|---|---|---|
+| `rtd11` (vốn hoá) | 195.840.000.000 | **y hệt** |
+| `rtd21` (P/E) | 3,84963858 | **y hệt** |
+| hash tập trắng | `585cb9d36ef99e69` | **y hệt** |
+
+Cả hai lượt đều mang giá đóng cửa **03/09** *(195.840.000.000 ÷ 6.800.000 CP = 28.800 đ)*. Nguồn làm mới theo **phiên đóng cửa**, không theo thời gian thực.
+
+**Hai hệ quả:**
+
+1. **AC5 không cần chờ sang ngày mới, nó cần một giá đóng cửa mới.** Chạy lại sau khi nguồn nạp giá đóng cửa 04/09 (quanh 15:30–16:00) là đã có phép thử đầy đủ — không phải chờ tới hôm sau, và càng không nên chờ tới thứ 7 vì hôm đó không có phiên.
+2. **Lát 7 xếp lịch thoải mái trong khoảng giữa hai lần đóng cửa** — chạy 16:00 hay 18:10 đều cho cùng kết quả. Ràng buộc duy nhất còn lại là chạy **sau `events`**, vì trigger đọc bảng mà job đó vừa ghi.
+
 ## 5. Số dùng cho spec
 
 | Đại lượng | Giá trị | Từ đâu |
