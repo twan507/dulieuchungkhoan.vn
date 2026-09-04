@@ -505,20 +505,35 @@ SELECT create_hypertable('screener_daily', 'trading_date');
 ### 5.6 Sự kiện doanh nghiệp
 
 ```sql
-CREATE TABLE corporate_event (
-  event_type   text NOT NULL,     -- AGM | CashDividend | StockDividend
-                                  -- | Earning | IPO | ShareIssuance
-  organ_code   text NOT NULL,
-  public_date  date,
-  exright_date date,
-  record_date  date,
-  payout_date  date,
-  payload      jsonb NOT NULL,
-  source_url   text,
-  PRIMARY KEY (event_type, organ_code, public_date, coalesce(exright_date, '1900-01-01'))
+CREATE TABLE market.corporate_event (
+  event_id      bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  event_type    text NOT NULL CHECK (event_type IN
+                ('AGM','CashDividend','StockDividend','Earning','IPO','ShareIssuance')),
+  issuer_id     bigint NOT NULL REFERENCES market.issuer,
+  public_date   date,
+  exright_date  date,               -- kích hoạt re-crawl giá của mã thuộc issuer này
+  record_date   date,
+  payout_date   date,
+  year_report   smallint,           -- CHỈ Earning: kỳ báo cáo — phần khoá tự nhiên
+  length_report smallint CHECK (length_report BETWEEN 1 AND 5),
+  stage_key     text,               -- phân định đợt (CashDividend/StockDividend/ShareIssuance)
+  payload       jsonb NOT NULL,
+  source_url    text,
+  ingested_at   timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX ON corporate_event (organ_code, exright_date);
+CREATE UNIQUE INDEX corporate_event_natural_key ON market.corporate_event
+  (event_type, issuer_id,
+   coalesce(public_date,   '1900-01-01'),
+   coalesce(exright_date,  '1900-01-01'),
+   coalesce(year_report,   0),
+   coalesce(length_report, 0),
+   coalesce(stage_key,     ''));
+CREATE INDEX ON market.corporate_event (issuer_id, exright_date);
 ```
+
+🔴 **Đồng bộ với migration `0004` ngày 2026-09-04.** Bản trước ở đây còn là lược đồ nháp: khoá `organ_code text` thay vì `issuer_id`, thiếu `event_id`, `year_report`, `length_report`, `stage_key`, `ingested_at`, và mô tả khoá tự nhiên sai. Lát 4 đã trả giá vì chuyện này — SQL trigger viết theo tài liệu tham chiếu cột `organ_code` không tồn tại, phải sửa giữa chừng. **Lược đồ thật nằm ở migration, không nằm ở đây; khi hai bên lệch thì migration đúng.**
+
+⚠️ `ingested_at` **không dùng được** làm mốc "sự kiện mới": `events_store` upsert kèm `DO UPDATE SET ingested_at = clock_timestamp()`, mà job tải trọn cả bảng mỗi lượt nên toàn bộ dòng được làm mới dấu thời gian mỗi ngày. Mốc "mới công bố" phải đo bằng `public_date`.
 
 ### 5.7 Chính sách nén và lưu trữ
 
