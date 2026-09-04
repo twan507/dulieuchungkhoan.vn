@@ -361,7 +361,7 @@ Cờ này nói **khoảng cách với một benchmark** — nên nó chỉ có n
 | `tom_the` | Giá tôm thẻ | 643 | 7d | VND/kg | **1** | A | `U1000` |
 | `vai_cotton_my` | Vải cotton Mỹ | 685 | 0d | **USD/lb** | **0.01** | A | `SRCNOTE` — nhãn `USD/tấn` **sai**, giá trị là **US cent/lb**: *(đo 2026-09-05)* 82,33–93,14 khớp bậc với ICE cotton #2 `CT=F` 83,36–91,70 cùng tuần, lệch ≈ 1 %, nhãn ngày trễ 1 ngày so với phiên Mỹ (WiChart ngày d ≈ Yahoo ngày d−1); USD/tấn phải ~1.800–2.000 nên loại trừ. Kho lưu USD/lb (cent là đơn vị con, nhân 0,01) |
 | `gao_tpxk` | Gạo thành phẩm XK | 655 | 6d | VND/kg | 1 | **X** | `U1000` `FROZEN` (69 ngày không đổi) |
-| `ca_tra` | Giá cá tra | 545 | 5d | VND/kg | 1 | **X** | `FROZEN` (60 ngày không đổi) tại audit 12/08 — **đã sống lại**: *(đo 2026-09-05)* điểm mới nhất 28/08, giá đổi lần cuối 22/08 (14 ngày). Tier xét lại ở lát 6 |
+| `ca_tra` | Giá cá tra | 545 | 5d | VND/kg | 1 | **A** | `FROZEN` (60 ngày không đổi) tại audit 12/08 — **đã sống lại**: *(đo 2026-09-05)* điểm mới nhất 28/08, giá đổi lần cuối 22/08 (14 ngày) — **nâng Tier A 2026-09-05** (lát 6) |
 
 #### Kim loại (10)
 
@@ -716,7 +716,7 @@ WICHART = {
 "tom_the":         dict(g="hang_hoa", tier="A", s=[("Giá tôm thẻ","VND/kg",1,D,["U1000"])]),
 "vai_cotton_my":   dict(g="hang_hoa", tier="A", s=[("Giá vải cotton","USD/lb",0.01,D,["SRCNOTE"])]),  # raw = US cent/lb (đo 2026-09-05 vs ICE CT=F)
 "gao_tpxk":        dict(g="hang_hoa", tier="X", s=[("Giá gạo TPXK","VND/kg",1,None,["U1000","FROZEN"])]),
-"ca_tra":          dict(g="hang_hoa", tier="X", s=[("Giá cá tra","VND/kg",1,None,[])]),  # FROZEN tại audit 12/08, sống lại 22/08 (đo 2026-09-05) — tier xét lại ở lát 6
+"ca_tra":          dict(g="hang_hoa", tier="A", s=[("Giá cá tra","VND/kg",1,D,[])]),  # FROZEN tại audit 12/08, sống lại 22/08 (đo 2026-09-05) — nâng Tier A ở lát 6 (VHC · ANV · IDI)
 # Kim loại
 "quang_sat":       dict(g="hang_hoa", tier="A", s=[("Giá quặng sát","CNY/tấn",1,D,[])]),
 "vang":            dict(g="hang_hoa", tier="A", s=[("Giá vàng mua vào","VND/lượng",1e3,D,["UK1000"]),
@@ -767,7 +767,7 @@ WICHART = {
 # Tier X — không thu thập. Giữ danh sách để bộ giám sát biết đây là quyết định có chủ ý,
 # không phải bỏ sót.
 TIER_X = [
-  "gdpbinhquan","gao_tpxk","ca_tra","thiec","cao_su","xi_mang","xi_mang_pcb",
+  "gdpbinhquan","gao_tpxk","thiec","cao_su","xi_mang","xi_mang_pcb",
   "da_0_4","da_1x2","da_mi_sang","da_hoc","be_tong_mac_300","be_tong_nhua_min",
   "coc_be_tong_du_ung_luc","gach_dat_set_nung","ong_nhua_27x18mm","ong_nhua_60x2mm",
   "ong_nhua_90x29mm","son_lot_khang_kiem_cao_cap","son_noi_that_tieu_chuan",
