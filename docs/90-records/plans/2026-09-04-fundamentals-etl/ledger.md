@@ -93,3 +93,48 @@ A32 hết `bad_shape`; 12/12 `unchanged`; `remaining` vẫn 6.080. ✅
 ## 6. TẠM DỪNG LẦN HAI ~19:10 — chủ dự án tắt máy. Điểm nối lại
 
 Code xong, review sạch tới `ef6ed24`; còn: AC3 (backfill trọn sàn theo lô 30 phút, ngoài giờ, tới `remaining = 0`), AC7 (lượt thường sau khi có mốc nước), checklist tài liệu spec §8 (chưa sửa dòng nào — các chỗ cần sửa: roadmap dòng 117 + mục "Điểm vào cho lát 5" → viết "Lát 5 ✅" và "Điểm vào cho lát 6" kèm lỗi A1 của lát 4; `market-data-store` §4.1 dòng BCTC + §5.4; `00-conventions` §10.1 dòng BCTC; `database/README` 17 migration + `test_s14`; `backend/README` mục "Chạy job fundamentals" trước "## Lịch chạy"; `05-fiin-financial-statements` thêm bẫy `quarterly: null` đo 2026-09-04 18:5x; khảo sát README §6.6; `90-records/README` dòng plan), rồi merge `main`.
+
+## 7. Nối lại 20:06 (sau khởi động máy) — Docker phải mở tay, ba container tự lên
+
+- Tài liệu sống spec §8 xong ở `b01c403` (roadmap "Lát 5 ✅" + "Điểm vào cho lát 6", market-data-store §4.1/§4.2/§5.4, conventions §10.1, database/README 17 migration + 60 test, backend/README mục fundamentals, 05 bẫy `quarterly: null`, README gốc 17 migration, index records, khảo sát §6.6).
+- **AC3 lô 1** `--backfill --max-minutes 40 --stop-before-open` bật 20:09. Nhịp thật buổi tối **~2,7 s/lời gọi** (109 lời gọi sau 5 phút) — chậm hơn ước tính 0,55 s vì độ trễ nguồn; ước ~870 cặp/lô, cần ~7 lô, phải nối lô tới trước 02:00 (máy ngủ).
+- **Bẫy thứ ba lộ khi chạy thật (20:12):** BSHCO `GetBalanceSheet` có kỳ 2024/Q2 **hai lần**, hai bản ghi giống hệt (160 ô non-null, 0 khác biệt). Normalize cũ raise `BadRecord` "kỳ trùng" ⇒ cặp bị bỏ qua mỗi lượt mãi mãi. **Ruling:** trùng giống hệt thì gộp, khác nhau mới là sai hợp đồng — sửa TDD với mẫu thật `BSHCO-bs-duplicate-period.json`, 159 dòng chỉ tiêu của kỳ đó = 160 ô non-null trừ `otherAssetNonBank` (khoá phi chỉ tiêu duy nhất có giá trị). ⚠️ Commit `935a577` chỉ chứa fixture + tài liệu: `git add` kèm một đường dẫn sai đã bỏ cả lệnh (git không thêm gì khi một pathspec không khớp) — reviewer scoped bắt được; code + test nằm ở commit kế tiếp, ghi vào [05](../../../10-sources/market/05-fiin-financial-statements.md). Chi phí nếu sai: một kỳ lặp mà có ô khác nhau thật sẽ vẫn bị từ chối đúng như trước; không có đường nào lặng lẽ chọn bừa. Lô 1 đang chạy code cũ nên BSHCO/bs chưa kiểm — lô 2 tự nạp lại.
+
+### AC3 — lượt điền đầu, lô 1 (20:09 → 20:58, code tại b01c403)
+
+```
+{'tally': {'attempted': 6080, 'failed': 0, 'bad_shape': 2, 'empty': 0, 'checked': 2066, 'first': 2066, ...},
+ 'rows_written': 16216976, 'calls': 2068, 'retries': 0, 'stopped_early': True, 'remaining': 4014,
+ 'stop_at': '2026-09-04T20:49+07:00', 'backfill': True, 'watermark': '1900-01-01', 'watermark_held': True}
+```
+
+- Fetch 40 phút: **2.068 lời gọi, 0 retry, 0 tín hiệu chặn**, nhịp trung bình 1,16 s/lời gọi (5 phút đầu 2,7 s, sau đó ~1,3 s). Pha ghi **8,5 phút** cho 16,2 triệu dòng trong một giao dịch (`executemany` lô 5.000) — chấp nhận được cho lượt điền một lần; ghi nhận tối ưu `COPY` nếu về sau cần nạp lại trọn sàn thường xuyên.
+- **~31.400 dòng/mã** (2.066 cặp ≈ 516 mã), gấp ~2,3 lần ước tính khảo sát (13.900 — đo trên A32/BAB/AAS là mẫu nhỏ và không có kỳ quý sâu) ⇒ trọn sàn ước **~48 triệu dòng**, không phải 21 triệu. Số cuối lấy ở lô cuối.
+- `bad_shape` 2 = BSHCO/bs và DNSE/is (kỳ trùng giống hệt) — lô 1 chạy code trước `f7ddac0`; hai cặp này chưa được đánh dấu kiểm nên lô kế (code mới) tự nạp. Mốc nước giữ (lượt bị cắt giờ), đúng luật.
+- Lô 2 trở đi chạy bằng vòng lặp `backfill_chunks.sh` (40 phút/lô, tự dừng khi `remaining = 0` hoặc tới 01:30).
+
+### AC3 — lô 2 (20:58 → 21:44, code tại f7ddac0)
+
+`calls 2919 · checked 2919 (first) · failed 0 · bad_shape 0 · empty 0 · rows_written 11.053.206 · retries 0 · stopped_early True · remaining 1095`. Nhịp **0,82 s/lời gọi** (nguồn nhanh dần về đêm). BSHCO/bs và DNSE/is (kỳ trùng giống hệt) nạp được nhờ `f7ddac0` — `bad_shape` về 0. Chủ dự án đã **tắt auto sleep** lúc ~21:00, mốc dừng 01:30 của vòng lặp không còn cần thiết.
+
+### AC3 — lô 3 (21:44 → 21:54) và tổng kết lượt điền đầu
+
+`calls 1095 · checked 1095 (first) · failed 0 · bad_shape 0 · empty 0 · rows_written 85.286 · stopped_early False · remaining 0 · watermark '2026-09-03'` — lô cuối toàn kind `reports` (thứ tự backfill đi theo kind), nên ít dòng. Lượt trọn không bị cắt ⇒ mốc nước tiến lần đầu.
+
+**Tổng ba lô:** 6.082 lời gọi (2.068 + 2.919 + 1.095; 12 cặp AC2 đã kiểm trước), **0 retry, 0 tín hiệu chặn**, ~1 giờ 45 phút kể cả ghi. Kho (22:00): `financial_statement` **27.281.962 dòng** (BS 14.042.932 · IS 6.827.632 · CF 6.411.398), **1.523/1.523 issuer**, 548 mã chỉ tiêu phân biệt, 0 mã viết hoa, 3.401 MB; `financial_report_file` **114.629** dòng, `length_report` ∈ {1,2,3,4,5,6,9}; `ops.fundamentals_check` 6.092 = 1.523 × 4; `staging.raw_payload` 6.092 dòng, 198 MB; 0 issuer có sổ kiểm `bs` mà không có dòng. Ước "≈ 21 triệu" của khảo sát thấp hơn thật ~30 %.
+
+### AC7 — lượt thường sau khi có mốc (22:02, sau `etl events` 22:01)
+
+`etl events` thật: 110.700 dòng, mốc `2026-09-04`. Kho có **34 `Earning` `public_date = 2026-09-04`** > mốc `2026-09-03`. Lượt `python -m etl fundamentals`: `tới hạn: 0 target (0 theo sự kiện)` — cả 34 cặp bị loại đúng luật vì `checked_at` (20:xx hôm nay) ≥ `public_date`; quét sàn cũng 0 vì mọi cặp vừa kiểm trong nhịp 90 ngày ⇒ `success`, `checked 0` (chốt (v)), mốc tiến `2026-09-04`. Nhánh trigger vì thế được chứng minh trên dữ liệu thật ở vế **loại**, còn vế **bắn** đã chứng minh bằng `test_e34` (trigger-only, cap, same-day burst). ✅
+
+⚠️ **Câu hỏi để ngỏ, đo được về sau:** nếu sự kiện công bố ngày D nhưng nguồn nạp báo cáo *sau* lúc job fetch ngày D, cặp đó đã bị coi "phục vụ" và chỉ được quét sàn bắt trong 90 ngày. Hôm nay không xảy ra (34 sự kiện có trước lượt fetch). Dấu hiệu để nhận ra: `changed_floor` rơi vào mã có `Earning` trong 90 ngày trước. Nếu thấy, đổi luật loại thành `checked_at::date > public_date` **kèm** sắp xếp ứng viên trigger theo `checked_at NULLS FIRST` để tránh kẹt ngày hạn nộp — ghi sẵn ở đây để lát 6 không phải nghĩ lại.
+
+### AC1 lần cuối (22:02, head f7ddac0)
+
+`uv run pytest tests -q` ⇒ **591 passed, 2 skipped, 1 warning** (ResourceWarning ingester, có từ trước). ✅
+
+## 8. Kết luận
+
+AC1–AC7 đóng trên kho production dưới credential `ETL_DATABASE_URL`; review toàn nhánh + 2 vòng sửa + 1 fix đo được khi chạy thật (kỳ trùng), mỗi fix có re-review; checklist tài liệu §8 xong (`b01c403` + roadmap cập nhật số cuối). Lỗi cùng loại ở lát 4 (mốc nước nhảy qua issuer bị cắt) để ở chip riêng / "Điểm vào cho lát 6". Merge `main`.
+
+**Rulings đã ra trong lát này** (đủ để chủ dự án lật lại): (1) chấp nhận nhân bản khuôn `Fetcher`/`_UNIVERSE`; (2) guard số cho `dai_gia_tri` thang chữ; (3) A1 sửa bằng sổ kiểm thay vì mốc ngày; (4) không sửa lát 4 trong nhánh này; (5) `quarterly: null` = rỗng; (6) kỳ trùng giống hệt thì gộp, khác nhau mới từ chối.
