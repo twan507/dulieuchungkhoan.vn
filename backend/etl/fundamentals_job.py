@@ -77,8 +77,10 @@ def run(codes=None, kinds=None, max_minutes=None, backfill=False, stop_before_op
         with engine.begin() as conn:
             n_dict = fundamentals_store.load_dictionary(conn)       # hợp đồng khởi động: hỏng thì chết trước fetch
             watermark = fundamentals_store.load_watermark(conn)
-            targets = fundamentals_store.due_list(conn, watermark, kinds=kinds, codes=codes, backfill=backfill)
-            new_wm = fundamentals_store.new_watermark(conn)          # cùng giao dịch với due_list — không đọc lại sau fetch
+            due = fundamentals_store.plan_due(conn, watermark, kinds=kinds, codes=codes, backfill=backfill)
+            targets = due.targets
+            new_wm = fundamentals_store.new_watermark(conn, due.trigger_cut)  # cùng giao dịch với due_list — không đọc lại sau fetch
+            new_wm = max(new_wm, watermark)                          # mốc cắt trần không bao giờ lùi
         log.info("từ điển %d mã; tới hạn: %d target (%d theo sự kiện)", n_dict, len(targets),
                  sum(1 for t in targets if t.found_by == "event"))
 
@@ -109,7 +111,8 @@ def run(codes=None, kinds=None, max_minutes=None, backfill=False, stop_before_op
 
         stats = {"tally": vars(tally), "rows_written": written, "calls": calls, "retries": retries,
                  "stopped_early": stopped, "run_date": run_date.isoformat(),
-                 "dictionary_rows": n_dict, "remaining": left, "stop_at": stop_at}
+                 "dictionary_rows": n_dict, "remaining": left, "stop_at": stop_at,
+                 "trigger_cut": due.trigger_cut.isoformat() if due.trigger_cut else None}
         if subset:
             stats["subset"] = True
         if backfill:
@@ -121,6 +124,7 @@ def run(codes=None, kinds=None, max_minutes=None, backfill=False, stop_before_op
         if push:
             stats["watermark"] = new_wm.isoformat()
         elif not subset:
+            stats["watermark"] = watermark.isoformat()
             stats["watermark_held"] = True
         omo_store.close_run(engine, run_id, "success", stats)       # close_run TRƯỚC, domain state SAU
         if push:

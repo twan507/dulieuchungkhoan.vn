@@ -60,9 +60,16 @@ def load_watermark(conn) -> dt.date:
     return dt.date.fromisoformat(got) if got else COLD_START
 
 
-def new_watermark(conn) -> dt.date:
-    """Mốc 'sự kiện MỚI CÔNG BỐ' — CHỈ `public_date` của `Earning`. Không trộn `exright_date`
-    (bài học mốc nước tương lai của lát 4)."""
+def new_watermark(conn, trigger_cut: dt.date | None = None) -> dt.date:
+    """Mốc 'sự kiện MỚI CÔNG BỐ' — CHỈ `public_date` của `Earning`.
+
+    Khi nhánh trigger bị cắt trần, mốc chỉ được tiến tới NGÀY TRƯỚC ngày công bố của dòng đầu
+    tiên bị cắt: mọi cặp (issuer, kind) từ ngày đó trở đi còn nằm trên mốc nên lượt sau thấy lại,
+    còn cặp đã phục vụ bị loại bằng `checked_at >= public_date` chứ không bằng mốc — nên ngày hạn
+    nộp với hàng trăm mã cùng `public_date` không gây kẹt (review toàn nhánh 2026-09-04, A1).
+    """
+    if trigger_cut is not None:
+        return trigger_cut - dt.timedelta(days=1)
     got = conn.execute(sa.text(
         "SELECT max(public_date) FROM market.corporate_event WHERE event_type = 'Earning'")).scalar()
     return got or COLD_START
@@ -73,40 +80,58 @@ def _target(row, kind: str, found_by: str) -> Target:
                   ticker=row.ticker, found_by=found_by)
 
 
+@dataclass(frozen=True)
+class Due:
+    targets: list[Target]
+    trigger_cut: dt.date | None      # public_date của dòng đầu tiên bị cắt; None khi không cắt
+
+
 def due_list(conn, watermark: dt.date, kinds=None, codes=None, backfill: bool = False,
              quota: int = QUOTA, cadence: int = CADENCE_DAYS, max_trigger: int = MAX_TRIGGER) -> list[Target]:
+    return plan_due(conn, watermark, kinds, codes, backfill, quota, cadence, max_trigger).targets
+
+
+def plan_due(conn, watermark: dt.date, kinds=None, codes=None, backfill: bool = False,
+             quota: int = QUOTA, cadence: int = CADENCE_DAYS, max_trigger: int = MAX_TRIGGER) -> Due:
     kinds = list(kinds or KINDS)
     if codes:                                       # lượt ép: mọi kind, bỏ nhịp và quota
         rows = conn.execute(sa.text(
             _UNIVERSE + "SELECT * FROM uni WHERE ticker = ANY(:codes) ORDER BY ticker"),
             {"codes": list(codes)}).all()
-        return [_target(r, k, "floor") for r in rows for k in kinds]
+        return Due(targets=[_target(r, k, "floor") for r in rows for k in kinds], trigger_cut=None)
 
     out: list[Target] = []
     seen: set[tuple[int, str]] = set()
+    trigger_cut: dt.date | None = None
 
     if watermark == COLD_START:
         log.info("bỏ qua nhánh trigger: mốc nước còn ở mốc khởi tạo (cold start) — quét sàn/backfill tự phủ")
     else:
+        cap = max_trigger * len(kinds)
         rows = conn.execute(sa.text(
             _UNIVERSE + """
-            SELECT u.issuer_id, u.organ_code, u.com_type_code, u.ticker, min(e.public_date) AS public_date
+            SELECT u.issuer_id, u.organ_code, u.com_type_code, u.ticker, k.kind,
+                   min(e.public_date) AS public_date
             FROM uni u
+            CROSS JOIN unnest(cast(:kinds AS text[])) AS k(kind)
             JOIN market.corporate_event e ON e.issuer_id = u.issuer_id
+            LEFT JOIN ops.fundamentals_check c ON c.issuer_id = u.issuer_id AND c.kind = k.kind
             WHERE e.event_type = 'Earning' AND e.public_date > :wm
-            GROUP BY u.issuer_id, u.organ_code, u.com_type_code, u.ticker
-            ORDER BY min(e.public_date) ASC, u.issuer_id
+              AND (c.checked_at IS NULL
+                   OR (c.checked_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date < e.public_date)
+            GROUP BY u.issuer_id, u.organ_code, u.com_type_code, u.ticker, k.kind
+            ORDER BY min(e.public_date) ASC, u.issuer_id, k.kind
             LIMIT :limit
-            """), {"wm": watermark, "limit": max_trigger + 1}).all()
-        if len(rows) > max_trigger:
-            log.info("nhánh trigger vượt trần %d: cắt %d issuer, giữ cũ nhất theo public_date",
-                     max_trigger, len(rows) - max_trigger)
-            rows = rows[:max_trigger]
+            """), {"wm": watermark, "kinds": kinds, "limit": cap + 1}).all()
+        if len(rows) > cap:
+            trigger_cut = rows[cap].public_date
+            log.info("nhánh trigger vượt trần %d cặp (issuer, kind): cắt tại public_date %s",
+                     cap, trigger_cut)
+            rows = rows[:cap]
         for r in rows:
-            for kind in kinds:
-                if (r.issuer_id, kind) not in seen:
-                    seen.add((r.issuer_id, kind))
-                    out.append(_target(r, kind, "event"))
+            if (r.issuer_id, r.kind) not in seen:
+                seen.add((r.issuer_id, r.kind))
+                out.append(_target(r, r.kind, "event"))
 
     for kind in kinds:
         if backfill:
@@ -131,7 +156,7 @@ def due_list(conn, watermark: dt.date, kinds=None, codes=None, backfill: bool = 
             if (r.issuer_id, kind) not in seen:
                 seen.add((r.issuer_id, kind))
                 out.append(_target(r, kind, "floor"))
-    return out
+    return Due(targets=out, trigger_cut=trigger_cut)
 
 
 def remaining(conn, kinds=None) -> int:
