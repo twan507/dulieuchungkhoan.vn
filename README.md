@@ -66,7 +66,7 @@ dulieuchungkhoan.vn/
 ├── frontend/            Next.js — chưa bắt đầu (mới có README)
 ├── backend/             Python — ingester (chạy thật) · etl (omo · refdata · screener · events · price · snapshot · fundamentals) · api (chưa bắt đầu)
 │   ├── agent/skills/    vn-stock-advisor · vn-stock-knowledge — sản phẩm chạy được
-│   └── tests/           593 test *(2026-09-04 tối)*, chạy trên Postgres/ClickHouse/Redis THẬT
+│   └── tests/           596 test *(2026-09-05 sáng)*, chạy trên Postgres/ClickHouse/Redis THẬT
 ├── database/            migrations: Postgres 17 (alembic) · ClickHouse 2
 ├── deploy/infra/        docker compose — Postgres · ClickHouse · Redis
 └── scripts/             register-tasks.ps1 — đăng ký 11 task Windows Scheduler
