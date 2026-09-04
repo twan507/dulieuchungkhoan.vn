@@ -425,7 +425,7 @@ Tính từ [lịch ETL §4.1–4.2](../../20-design/market-data-store.md), tách
 | **`Screener/GetScreenerItems` — phân trang 52 trang** | `FIIN_TOOLS` | Sau 15:00, hằng ngày | **52** |
 | `Calendar/*` — lịch sự kiện | `FIIN_MARKET` | Hằng ngày | ~10 |
 | **Cộng thường nhật** | | **hằng ngày** | **≈ 2.300** *(sửa 2026-09-03; bản cũ ghi 6.040 khi họ Snapshot còn chạy mọi mã mỗi ngày)* |
-| BCTC 3 loại × **1.523** mã *(sửa 2026-09-04 theo [khảo sát BCTC](../../90-records/surveys/2026-09-04-bctc-endpoints/README.md); số cũ 1.974 × 3 = 5.922 đếm trước lượt dọn mã huỷ niêm yết)* | `FIIN_FUND` | **Trigger `Earning` + quét sàn 90 ngày** *(lát 5, 2026-09-04: ≈ 80 lời gọi/ngày thường, tới 1.200/ngày mùa báo cáo)* | điền đầu một lần **6.092** = 4.569 + 1.523 PDF *(≥ 51 phút chỉ tính giãn cách 0,5 s)* |
+| BCTC 3 loại × **1.523** mã *(sửa 2026-09-04 theo [khảo sát BCTC](../../90-records/surveys/2026-09-04-bctc-endpoints/README.md); số cũ 1.974 × 3 = 5.922 đếm trước lượt dọn mã huỷ niêm yết)* | `FIIN_FUND` | **Trigger `Earning` + quét sàn 90 ngày** *(lát 5, 2026-09-04: ≈ 80 lời gọi/ngày thường, tới 1.200/ngày mùa báo cáo)* | điền đầu một lần **6.092** = 4.569 + 1.523 PDF *(≥ 51 phút chỉ tính giãn cách; đo thật §10.8: 6.082 lời gọi, ~1 giờ 45 phút kể cả ghi)* |
 | `getPriceData` mọi trang × 1.523 mã *(sửa 2026-09-04; độ sâu theo tuổi niêm yết, BID 53 trang)* | `FIIN_TECH` | **Một lần**, tuần tự, rải vài đêm | **~50.000–80.000** |
 
 **Vì sao chọn burst Screener để kiểm.** Ba nhóm hằng ngày kia lớn hơn về số lượng nhưng là **nhiều lời gọi độc lập trên nhiều mã**, rải được tuỳ ý. Riêng 52 trang Screener là **một chuỗi phân trang dính liền trên đúng một endpoint của đúng một host** — không rải được, phải đi liền mạch mới lấy đủ 1.549 mã — và là lời gọi **nặng nhất mỗi lượt** trong cả lịch. Nếu chỗ nào bị chặn trước thì là chỗ này.
@@ -515,3 +515,7 @@ Lượt chạy thật đầu tiên của `python -m etl price` (hồ sơ: [ledge
 | Dữ liệu | 91.165 phiên, 1.523/1.523 mã có dữ liệu, 0 mã `Code not valid` |
 
 **Kết luận (dạng "mức tải X an toàn", §4.3 CLAUDE.md):** ~40 request/phút tuần tự kéo dài 38 phút trên `FIIN_TECH` là **mức đã kiểm**. Nhịp 8 luồng vẫn **chưa đo** — và với ngân sách ngày còn 1.523 lời gọi thì **không còn nhu cầu** ([market-data-store §4.3](../../20-design/market-data-store.md)); backfill lịch sử cũng chạy tuần tự cùng nhịp này, rải nhiều đêm.
+
+### 10.8 Đo 2026-09-04 tối — lượt điền đầu BCTC trên `FIIN_FUND`
+
+Lượt `python -m etl fundamentals --backfill` của lát 5, ba lô 40 phút liền nhau (20:09 → 21:55): **6.082 lời gọi tuần tự** trên `FinancialStatement/Get{BalanceSheet,IncomeStatement,CashFlow,FinancialReports}`, giãn cách 0,5 s, **0 retry, 0 HTTP ≠ 200, 0 tín hiệu chặn**. Nhịp thật do độ trễ nguồn quyết định: 2,7 s/lời gọi trong 5 phút đầu, rồi ổn định **0,82–1,16 s/lời gọi** (≈ 52–73 request/phút, lô 2 liên tục 46 phút ở 73/phút). Payload 80–408 KB. Đây là mức tải lớn nhất đã kiểm trên họ `FIIN_FUND` — cao hơn §10.7 (40/phút trên `FIIN_TECH`) — và vẫn **an toàn**; kết luận chỉ ở dạng *"mức tải này an toàn"*, không phải ngưỡng. Bằng chứng: [ledger lát 5 §3, §7](../../90-records/plans/2026-09-04-fundamentals-etl/ledger.md).

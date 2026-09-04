@@ -250,7 +250,7 @@ quét sàn định kỳ toàn bộ         →  bắt phần lịch bỏ sót   
 | `snapshot` | 90 ngày | 24 | 64 ngày |
 | `ownership` · `valuation` · `dividend` | 30 ngày | 70 mỗi kind | 22 ngày |
 
-Cộng lại **234 lời gọi/ngày**, không có đỉnh tải và không cần mốc lịch thứ hai. Sổ kiểm `ops.snapshot_check` *(migration `0016`, một dòng mỗi `(issuer, kind)` — 6.092 dòng đứng yên)* làm hai việc: cấp danh sách tới hạn, và **đếm lỗ của lịch** — mỗi lần quét sàn tìm ra thay đổi mà trigger không bắn là một lỗ, đếm được ở `ops.etl_run.stats`. `checked_at` **chính là con trỏ**, nên job không cần con trỏ riêng.
+Cộng lại **234 lời gọi/ngày**, không có đỉnh tải và không cần mốc lịch thứ hai. Sổ kiểm `ops.snapshot_check` *(migration `0016`, một dòng mỗi `(issuer, kind)` — tối đa 6.092 dòng = 1.523 × 4 kind, không phình; 292 dòng sau ngày quét sàn đầu tiên 2026-09-04)* làm hai việc: cấp danh sách tới hạn, và **đếm lỗ của lịch** — mỗi lần quét sàn tìm ra thay đổi mà trigger không bắn là một lỗ, đếm được ở `ops.etl_run.stats`. `checked_at` **chính là con trỏ**, nên job không cần con trỏ riêng.
 
 ⚠️ **Máy dò sở hữu bằng Screener (nêu ở bảng trên) HOÃN có lý do:** dựng cơ chế dò thứ hai trước khi biết quét sàn tháng có đủ hay không là tối ưu hoá mù. Điều kiện làm: sau 2–3 tháng, nếu `changed_floor` của `ownership` cao thì dựng; nếu thấp thì nhịp tháng là đủ và mục này khép hẳn.
 
@@ -263,7 +263,7 @@ Cộng lại **234 lời gọi/ngày**, không có đỉnh tải và không cầ
 | Việc | Lời gọi | Thời gian |
 |---|---|---|
 | `getPriceData` mọi trang × **1.523** cổ phiếu niêm yết *(đo 2026-09-03 — số 1.974 cũ đếm trước lượt dọn 442 mã huỷ niêm yết; độ sâu mỗi mã theo tuổi niêm yết: BID 53 trang, TD6 6 trang)* | **~50.000–80.000** | **tuần tự**, ~25–40 giờ, rải vài đêm bằng `python -m etl price --backfill --max-minutes N` — con trỏ trong `ops.etl_run.stats.cursor` nên lượt sau đi tiếp từ mã kế, không làm lại ([spec lát 3 §5.5e](../90-records/plans/2026-09-03-price-daily-etl/spec.md)) |
-| BCTC 3 loại × **1.523 mã** + danh sách PDF *(sửa 2026-09-04 theo [khảo sát BCTC](../90-records/surveys/2026-09-04-bctc-endpoints/README.md); số cũ 1.974 đếm trước lượt dọn mã huỷ niêm yết)* | **4.569 + 1.523 = 6.092** | **≥ 51 phút** *(chỉ tính giãn cách 0,5 s)* — lượt điền đầu `python -m etl fundamentals --backfill --stop-before-open`, con trỏ là `ops.fundamentals_check.checked_at`, giết giữa chừng không mất chỗ (lát 5) |
+| BCTC 3 loại × **1.523 mã** + danh sách PDF *(sửa 2026-09-04 theo [khảo sát BCTC](../90-records/surveys/2026-09-04-bctc-endpoints/README.md); số cũ 1.974 đếm trước lượt dọn mã huỷ niêm yết)* | **4.569 + 1.523 = 6.092** | **≥ 51 phút** *(chỉ tính giãn cách 0,5 s; chạy thật 2026-09-04 tối: 6.082 lời gọi, ~1 giờ 45 phút kể cả ghi, 0 retry — quy ước §10.8)* — lượt điền đầu `python -m etl fundamentals --backfill --stop-before-open`, con trỏ là `ops.fundamentals_check.checked_at`, giết giữa chừng không mất chỗ (lát 5) |
 | Lịch sự kiện toàn bộ | 9 | ~2,5 phút |
 
 *(đo 2026-09-03)* Lịch sự kiện tải TRỌN sáu họ mỗi lượt — **backfill và job hằng ngày nay là cùng một đường code** (`python -m etl events`), khác nhau đúng một cờ: `--accept-new` mở khoá lượt tạo nhiều issuer tối thiểu (517 ở lượt đầu), lượt hằng ngày sau đó chạy không cờ vì gần như không còn issuer mới. Xem [`08-fiin-event-calendar.md`](../10-sources/market/08-fiin-event-calendar.md).

@@ -10,7 +10,7 @@
 
 **Đang có:** [`agent/skills/`](agent/skills/) — hai skill sản phẩm `vn-stock-advisor` · `vn-stock-knowledge` (3.046 dòng, đã test 6 vòng). ⚠️ **Trước khi sửa bất cứ gì trong đó, bắt buộc đọc [`docs/30-skills/maintenance.md`](../docs/30-skills/maintenance.md).** `agent/` sau này chứa luôn system prompt và glue function-calling.
 
-**Trạng thái phần code:** `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)) · job `etl screener` (52 trang `GetScreenerItems` → `market.screener_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-screener-daily-etl/)) · job `etl events` (sáu họ `Calendar/GetCorporate*` → `market.corporate_event`, [hồ sơ](../docs/90-records/plans/2026-09-03-events-daily-etl/)) · job `etl price` (`getPriceData` trang 1 mọi cổ phiếu niêm yết + backfill có con trỏ → `market.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-price-daily-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
+**Trạng thái phần code** *(2026-09-04 tối — thêm năm job REST `screener` · `events` · `price` · `snapshot` · `fundamentals`, mỗi job một mục dưới)*: `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)) · job `etl screener` (52 trang `GetScreenerItems` → `market.screener_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-screener-daily-etl/)) · job `etl events` (sáu họ `Calendar/GetCorporate*` → `market.corporate_event`, [hồ sơ](../docs/90-records/plans/2026-09-03-events-daily-etl/)) · job `etl price` (`getPriceData` trang 1 mọi cổ phiếu niêm yết + backfill có con trỏ → `market.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-price-daily-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
 
 ---
 
@@ -239,7 +239,7 @@ chỉnh hồi tố. `reports` upsert theo `source_id`, không xoá. **Rỗng kh�
 rỗng thì giữ nguyên kho, không đánh dấu đã kiểm, đếm vào `tally.empty`.
 
 **Con trỏ là `ops.fundamentals_check.checked_at`** — cả lượt thường lẫn `--backfill`; giết giữa chừng không mất chỗ,
-`stats.remaining` là số cặp (issuer, kind) chưa kiểm còn lại. Lượt điền trọn sàn ≈ 6.092 lời gọi, ≥ 51 phút.
+`stats.remaining` là số cặp (issuer, kind) chưa kiểm còn lại. Lượt điền trọn sàn ≈ 6.092 lời gọi, ≥ 51 phút chỉ tính giãn cách; chạy thật 2026-09-04 tối: 6.082 lời gọi, ~1 giờ 45 phút kể cả ghi, 0 retry (quy ước §10.8).
 
 **Mốc nước** (`ops.data_domain_state('market.fundamentals')`) đo `public_date` của `Earning`, chỉ tiến khi lượt đầy đủ,
 không mã nào hỏng/sai hình dạng/rỗng và không bị cắt giờ. Nhánh trigger **loại cặp đã kiểm sau ngày công bố** rồi mới
