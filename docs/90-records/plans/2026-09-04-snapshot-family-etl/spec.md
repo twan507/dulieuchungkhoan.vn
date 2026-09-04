@@ -136,7 +136,7 @@ Chi tiết và bằng chứng: [measurements.md](measurements.md). Bốn điều
 **`due_list(conn, today, quota)`** — hợp hai nguồn, khử trùng theo `(issuer_id, kind)`:
 
 ```
-A · trigger   corporate_event có greatest(public_date, exright_date) > watermark
+A · trigger   corporate_event có public_date > watermark
               Earning | ShareIssuance      -> kind snapshot
               CashDividend | StockDividend -> kind dividend
               (ownership và valuation KHÔNG có loại sự kiện nào -> chỉ đi đường B)
@@ -152,6 +152,19 @@ B · quét sàn  mỗi kind: issuer chưa có dòng snapshot_check, HOẶC check
 Cộng lại **234 lời gọi/ngày** cho phần quét sàn, cộng trigger (vài chục). `NULLS FIRST` khiến lượt đầu tiên (bảng rỗng) đi đúng quota chứ không nổ 6.092 lời gọi.
 
 **Không có con trỏ, và không cần** — khác lát 3. `checked_at` CHÍNH LÀ con trỏ: lượt sau tự lấy nhóm cũ nhất chưa tới lượt. Nên `--max-minutes` chỉ cần dừng sau mã đang dở, không phải lưu gì; lượt bị giết giữa chừng cũng không mất chỗ.
+
+🔴 **Đính chính 2026-09-04, lộ ra ở lượt chạy thật đầu tiên (AC2):** bản spec đầu định nghĩa mốc nước là `max(greatest(public_date, exright_date))` và trigger theo `greatest(...) > watermark` — **sai**. Kho có **20 sự kiện mang `exright_date` tương lai** (xa nhất 2026-09-22) trong khi `public_date` không bao giờ ở tương lai (0 dòng), nên mốc nước nhảy tới 22/09 và **trigger chết ba tuần**, không có gì báo.
+
+Nguyên nhân là trộn hai khái niệm. Nay tách:
+
+| Câu hỏi | Đo bằng | Dùng cho |
+|---|---|---|
+| Sự kiện nào **mới được công bố** với ta? | `public_date` so với mốc nước | trigger fetch snapshot/dividend |
+| Ngày không hưởng quyền nào **vừa đi qua**? | `exright_date` so với **hôm nay** | re-crawl giá |
+
+⚠️ `ingested_at` **không dùng được** làm mốc: `events_store` upsert kèm `DO UPDATE SET ingested_at = clock_timestamp()`, mà job events tải trọn 110.695 dòng mỗi lượt ⇒ cả bảng được làm mới dấu thời gian mỗi ngày.
+
+Sự kiện lọt khe (cùng `public_date` nhưng đến sau lượt chạy) do **quét sàn** bắt trong vòng 30 ngày — đúng vai trò lưới mà kiến trúc hai lớp đã giao cho nó.
 
 **`apply(conn, results)`** — với mỗi kết quả `ok`:
 
@@ -197,11 +210,11 @@ Từ chối ⇒ toàn bộ lượt rollback, bằng chứng vào `staging.raw_pa
 
 ### 5.6 Re-crawl giá theo sự kiện quyền
 
-Cuối lượt, với mã có `exright_date` mới từ `CashDividend`/`StockDividend`/`ShareIssuance`: gọi `price_job.run(backfill=True, codes=[…])` — đường đã có sẵn của lát 3, **không thêm code trong `price_*`**. Lỗi ở bước này **không** kéo đổ lượt snapshot: bắt riêng, ghi `stats.recrawl = {codes, status}`.
+Cuối lượt, với mã có `exright_date` **rơi trong 3 ngày gần đây** (`BETWEEN current_date - 3 AND current_date`): gọi `price_job.run(backfill=True, codes=[…])` — đường đã có sẵn của lát 3, **không thêm code trong `price_*`**. Lỗi ở bước này **không** kéo đổ lượt snapshot: bắt riêng, ghi `stats.recrawl = {codes, status}`.
 
 Lý do làm tự động thay vì để chạy tay: chuỗi `close_adj` sai **im lặng** cho tới khi có người nhớ ra.
 
-🔴 **Hai chốt chặn bắt buộc, thêm 2026-09-04 khi viết plan:** (a) **bỏ qua re-crawl ở lượt khởi tạo** — watermark `1900-01-01` khiến `recrawl_codes` trả *mọi mã từng có ngày không hưởng quyền*, tức 1.523 mã, đúng bằng một lượt backfill trọn vòng ~20 giờ; (b) **trần `MAX_RECRAWL = 50` mã một lượt**, vượt trần thì ghi vào `stats` và bỏ qua, để người quyết chứ job không tự châm một lượt backfill dài.
+**Không trạng thái, không con trỏ** *(sửa 2026-09-04)*: cửa sổ ngày tự chặn quy mô, nên chốt *"bỏ qua ở lượt khởi tạo"* của bản trước **không còn cần** — nó vốn chỉ để chặn ca watermark `1900-01-01` trả về cả 1.523 mã. Giữ **trần `MAX_RECRAWL = 50` mã một lượt**: vượt trần thì ghi vào `stats` và bỏ qua, để người quyết chứ job không tự châm một lượt backfill dài. Kéo lại nhiều lần là vô hại vì `etl price --backfill --codes` idempotent; cửa sổ 3 ngày để một hôm job không chạy cũng không mất ngày ex nào.
 
 ### 5.7 Lịch và vận hành
 
