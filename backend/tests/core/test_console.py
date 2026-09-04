@@ -53,6 +53,59 @@ def test_manual_runs_do_not_touch_the_terminal_only_scheduler_runs_lock(monkeypa
     assert f.calls[-1] == ("DeleteMenu", 7, console.SC_CLOSE, console.MF_BYCOMMAND)
 
 
+def test_console_say_writes_to_the_console_device_not_to_redirected_stdout():
+    """Output của job đi vào file log (`>> log 2>&1`); lời chào cuối phải ra CỬA SỔ nên ghi thẳng
+    thiết bị console CONOUT$ — người dùng thấy được vì sao cửa sổ sắp đóng."""
+    written = []
+
+    class FakeFile:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def write(self, s):
+            written.append(s)
+
+    opened = []
+
+    def opener(path, mode, **kw):
+        opened.append((path, mode))
+        return FakeFile()
+
+    assert console.console_say("xin chào", opener=opener) is True
+    assert opened == [("CONOUT$", "w")] and written == ["xin chào\n"]
+
+
+def test_console_say_swallows_a_missing_console():
+    def opener(path, mode, **kw):
+        raise OSError("no console")
+
+    assert console.console_say("x", opener=opener) is False
+
+
+def test_banner_and_farewell_only_speak_when_run_from_the_scheduler(monkeypatch):
+    said = []
+    monkeypatch.setattr(console, "console_say", lambda t, opener=open: said.append(t) or True)
+    monkeypatch.setattr(console, "hold", lambda s, sleep=None: True)
+    monkeypatch.delenv(console.ENV_FLAG, raising=False)
+    assert console.banner("bắt đầu") is False and console.farewell("xong") is False and said == []
+    monkeypatch.setenv(console.ENV_FLAG, "1")
+    assert console.banner("bắt đầu") is True and console.farewell("xong", 20) is True
+    assert said[0] == "bắt đầu" and said[1].startswith("xong — cửa sổ tự đóng sau 20 giây")
+
+
+def test_hold_waits_the_given_seconds_and_a_second_ctrl_c_cuts_it_short():
+    slept = []
+    assert console.hold(20, sleep=slept.append) is True and slept == [20]
+
+    def impatient(s):
+        raise KeyboardInterrupt
+
+    assert console.hold(20, sleep=impatient) is False           # Ctrl+C lần hai: đóng luôn, không ném
+
+
 def test_flag_with_trailing_space_from_cmd_set_still_counts(monkeypatch):
     """Đo 2026-09-04: `set DLCK_LOCK_CONSOLE=1 && …` trong cmd cho giá trị '1 ' (có dấu cách) —
     lần chạy thật đầu tiên vì thế không khoá gì. So sánh sau strip()."""

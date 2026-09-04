@@ -56,19 +56,21 @@ function Register-DlckTask {
         [Parameter(Mandatory)][string] $AtTime,      # "HH:mm"
         [Parameter(Mandatory)][string] $ModuleArgs,  # ví dụ "etl omo"
         [Parameter(Mandatory)][string] $LogFile,
+        # Một dòng ngắn hiện trong cửa sổ task: đây là task gì, chạy thế nào, bắt đầu/kết thúc thế nào.
+        [Parameter(Mandatory)][string] $Description,
         # Mặc định ngày làm việc. Task backfill giá chạy thứ 7 (kích hoạt tay buổi tối thì không cần trigger).
         [string[]] $DaysOfWeek = @("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"),
         # 12 giờ đủ cho mọi job trong ngày; backfill giá chạy trọn cuối tuần cần 3 ngày.
         [timespan] $ExecutionTimeLimit = (New-TimeSpan -Hours 12)
     )
-    # Interactive: cửa sổ cmd hiện ra trong lúc job chạy — tiêu đề = tên task và một dòng in job + log,
-    # để nhìn thanh taskbar là biết task nào đang chạy (quyết định chủ dự án 2026-09-04: thích thấy cửa sổ
-    # hơn là phải đăng ký S4U trong cửa sổ admin mỗi lần thêm task). Output thật vẫn đi vào file log.
-    # Dòng echo để ASCII không dấu: cmd.exe hiển thị theo codepage OEM, tiếng Việt có dấu sẽ vỡ.
-    # Nút X bị chính job khoá lúc khởi động (core/console.py) — dừng bằng Ctrl+C hoặc Stop-ScheduledTask.
+    # Interactive: cửa sổ cmd hiện ra trong lúc job chạy — tiêu đề = tên task, thân = MỘT dòng mô tả
+    # (quyết định chủ dự án 2026-09-04: thích thấy cửa sổ hơn là đăng ký S4U trong cửa sổ admin; và chỉ
+    # cần tên task + một dòng ngắn, không đường dẫn). Output thật của job đi vào file log; job giá còn tự
+    # in dòng "bắt đầu …"/"xong …" thẳng ra console (core/console.py). chcp 65001 để tiếng Việt có dấu
+    # hiện đúng trong console cổ điển. Nút X bị chính job khoá (core/console.py) — dừng bằng Ctrl+C.
     # DLCK_LOCK_CONSOLE=1 chỉ đặt ở đây: chạy tay từ terminal thì job không khoá nút X của terminal đó.
-    $inner = 'title {4} && echo [{4}] python -m {2} -- nut X bi khoa khi job chay, dung bang Ctrl+C hoac Stop-ScheduledTask {4} -- log: {3} && cd /d "{0}" && set PYTHONIOENCODING=utf-8 && set "DLCK_LOCK_CONSOLE=1" && "{1}" run python -m {2} >> "{3}" 2>&1' `
-             -f $backend, $uv, $ModuleArgs, (Join-Path $logDir $LogFile), $TaskName
+    $inner = 'title {4} && chcp 65001>nul && echo {5} && cd /d "{0}" && set PYTHONIOENCODING=utf-8 && set "DLCK_LOCK_CONSOLE=1" && "{1}" run python -m {2} >> "{3}" 2>&1' `
+             -f $backend, $uv, $ModuleArgs, (Join-Path $logDir $LogFile), $TaskName, $Description
     # Khởi động qua conhost.exe để mở CONSOLE CỔ ĐIỂN: trên Windows 11 "terminal mặc định" là Windows
     # Terminal, cửa sổ thật thuộc WindowsTerminal.exe còn GetConsoleWindow() chỉ trả cửa sổ OpenConsole ẩn
     # ⇒ khoá nút X (core/console.py) rơi vào cửa sổ ẩn, X của Windows Terminal vẫn giết job (đo 2026-09-04).
@@ -140,26 +142,31 @@ function Assert-TaskPrincipal {
 Write-Host "Đăng ký job crawl OMO (4 mốc/ngày làm việc):"
 foreach ($t in @("11:30", "15:30", "18:00", "21:30")) {
     $name = "dlck-omo-" + ($t -replace ':', '')
-    Register-DlckTask -TaskName $name -AtTime $t -ModuleArgs "etl omo" -LogFile "omo.log"
+    Register-DlckTask -TaskName $name -AtTime $t -ModuleArgs "etl omo" -LogFile "omo.log" `
+                      -Description "OMO SBV: tải và parse phiên đấu thầu hôm nay, vài giây, tự đóng khi xong"
     Assert-TaskCommand -TaskName $name -MustContain "python -m etl omo"
 }
 
 Write-Host "Đăng ký refdata (08:00 ngày làm việc — danh bạ tươi TRƯỚC ingester 08:30 và ETL giá):"
-Register-DlckTask -TaskName "dlck-refdata" -AtTime "08:00" -ModuleArgs "etl refdata" -LogFile "refdata.log"
+Register-DlckTask -TaskName "dlck-refdata" -AtTime "08:00" -ModuleArgs "etl refdata" -LogFile "refdata.log" `
+                  -Description "Danh bạ doanh nghiệp + danh mục mã + cây ICB: 4 lời gọi, ~1 phút, tự đóng khi xong"
 Assert-TaskCommand -TaskName "dlck-refdata" -MustContain "python -m etl refdata"
 
 Write-Host "Đăng ký screener (15:20 ngày làm việc — sau khi ingester ghi xong 15:05, tránh 15:30 của OMO):"
-Register-DlckTask -TaskName "dlck-screener" -AtTime "15:20" -ModuleArgs "etl screener" -LogFile "screener.log"
+Register-DlckTask -TaskName "dlck-screener" -AtTime "15:20" -ModuleArgs "etl screener" -LogFile "screener.log" `
+                  -Description "Screener 52 trang → screener_daily: ~1 phút, ngày nghỉ thì guard từ chối, tự đóng khi xong"
 Assert-TaskCommand -TaskName "dlck-screener" -MustContain "python -m etl screener"
 
 Write-Host "Đăng ký events (18:10 ngày làm việc — sau phiên, sau screener 15:20, và tránh 18:00 của OMO):"
-Register-DlckTask -TaskName "dlck-events" -AtTime "18:10" -ModuleArgs "etl events" -LogFile "events.log"
+Register-DlckTask -TaskName "dlck-events" -AtTime "18:10" -ModuleArgs "etl events" -LogFile "events.log" `
+                  -Description "Lịch sự kiện 6 họ → corporate_event: 9 lời gọi, ~2,5 phút, tự đóng khi xong"
 # -MustNotContain là chốt chặn thật: task tự động KHÔNG BAO GIỜ được mang cờ cho phép
 # đẻ issuer tối thiểu hàng loạt — lượt đó phải chạy tay có người nhìn.
 Assert-TaskCommand -TaskName "dlck-events" -MustContain "python -m etl events" -MustNotContain "--accept-new"
 
 Write-Host "Đăng ký price (15:40 ngày làm việc — sau screener 15:20 và OMO 15:30; ~45 phút tuần tự, xong trước 18:00 của OMO):"
-Register-DlckTask -TaskName "dlck-price" -AtTime "15:40" -ModuleArgs "etl price" -LogFile "price.log"
+Register-DlckTask -TaskName "dlck-price" -AtTime "15:40" -ModuleArgs "etl price" -LogFile "price.log" `
+                  -Description "Giá EOD: trang 1 (60 phiên) của ~1.523 cổ phiếu, ~40 phút tuần tự; xong hiện tổng kết 20 giây rồi tự đóng"
 # -MustNotContain: task tự động KHÔNG BAO GIỜ chạy backfill (25–40 giờ, chạy tay ngoài giờ có người nhìn).
 Assert-TaskCommand -TaskName "dlck-price" -MustContain "python -m etl price" -MustNotContain "--backfill"
 
@@ -170,12 +177,14 @@ Write-Host "Đăng ký price-backfill (thứ 7 00:05 — lùi trọn lịch sử
 # Hết vòng (pass_complete) thì lượt kế là VÒNG MỚI (làm mới toàn bộ chuỗi điều chỉnh) — cân nhắc tắt task
 # sau vòng đầu nếu không muốn ~20 giờ gọi mỗi cuối tuần.
 Register-DlckTask -TaskName "dlck-price-backfill" -AtTime "00:05" -DaysOfWeek Saturday `
+                  -Description "Lùi trọn lịch sử giá ~12,5 năm: nối từ con trỏ, dừng trước 08:45 ngày giao dịch kế hoặc khi hết vòng; Ctrl+C dừng, con trỏ giữ nguyên" `
                   -ModuleArgs "etl price --backfill --stop-before-open" -LogFile "price-backfill.log" `
                   -ExecutionTimeLimit (New-TimeSpan -Days 3)
 Assert-TaskCommand -TaskName "dlck-price-backfill" -MustContain "python -m etl price --backfill --stop-before-open"
 
 Write-Host "Đăng ký ingester theo phiên (08:30, tự thoát sau đối chứng ~15:05):"
-Register-DlckTask -TaskName "dlck-ingester" -AtTime "08:30" -ModuleArgs "ingester" -LogFile "ingester-task.log"
+Register-DlckTask -TaskName "dlck-ingester" -AtTime "08:30" -ModuleArgs "ingester" -LogFile "ingester-task.log" `
+                  -Description "Ingester realtime BVSC → Redis + ClickHouse: chạy tới ~15:05, tự đối chứng rồi thoát; ĐỪNG tắt giữa phiên (mất tick)"
 Assert-TaskCommand -TaskName "dlck-ingester" -MustContain "python -m ingester " -MustNotContain "--measure"
 Enable-ScheduledTask -TaskName "dlck-ingester" | Out-Null
 # Nghiệm thu chính thứ commit này sinh ra để đổi (§3.5: kiểm cái nó THỰC SỰ ở trạng thái
@@ -198,6 +207,7 @@ Write-Host "  * dlck-ingester ĐANG BẬT — ghi tick thật (gate mở 2026-08
 $measureTask = "dlck-ingester-measure"
 Write-Host "Đăng ký phiên đo song song (hằng ngày làm việc, chạy cạnh phiên ghi):"
 Register-DlckTask -TaskName $measureTask -AtTime "08:30" -ModuleArgs "ingester --measure" `
+                  -Description "Phiên đo song song: ghi frame thô BVSC ra đĩa làm lưới an toàn, chạy tới hết phiên, giữ 30 ngày" `
                   -LogFile "ingester-measure.log"
 Assert-TaskCommand -TaskName $measureTask -MustContain "python -m ingester --measure "
 

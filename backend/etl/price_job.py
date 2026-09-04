@@ -17,6 +17,7 @@ from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
 
+from core.console import banner, farewell
 from core.env import load_dotenv
 from etl import omo_store, price_fetch, price_guard, price_normalize, price_store
 
@@ -91,6 +92,8 @@ def _daily(engine, tickers: list[str] | None) -> int:
     try:
         cl = _codes_or_raise(engine, tickers)
         by_organ = {c.organ_code: c for c in cl.codes}
+        banner(f"bắt đầu {datetime.now(VN):%H:%M} · {len(cl.codes)} mã, trang 1 (60 phiên) mỗi mã"
+               f" · ước ~{len(cl.codes) * 1.5 / 60:.0f} phút · dừng bằng Ctrl+C")
         with price_fetch.open_fetcher() as f:
             res = f.many([c.organ_code for c in cl.codes], max_pages=1)
             retries = f.retries
@@ -134,6 +137,7 @@ def _daily(engine, tickers: list[str] | None) -> int:
             omo_store.close_run(engine, run_id, "failed", stats,
                                 error="guard refused: " + "; ".join(e.verdict.reasons))
             log.error("price từ chối: %s", e.verdict.reasons)
+            farewell("[dlck-price] GUARD TỪ CHỐI, không ghi gì: " + "; ".join(e.verdict.reasons))
             return 1
         stats.update({"rows_sent": sent, "rows_changed": changed, "dup_dates": dups,
                       "raw_close_mismatch": mism, "raw_close_mismatch_sample": sample,
@@ -142,16 +146,21 @@ def _daily(engine, tickers: list[str] | None) -> int:
         if not subset:
             price_store.upsert_domain_state(engine, stats["latest_trading_date"])
         log.info("price xong: %s", stats)
+        farewell(f"XONG {datetime.now(VN):%H:%M} · {with_data}/{len(cl.codes)} mã có dữ liệu"
+                 f" · {sent} dòng gửi, {changed} dòng đổi · ngày mới nhất {stats['latest_trading_date']}"
+                 f" · {stats['elapsed_s'] // 60} phút")
         return 0
     except KeyboardInterrupt:
         # Ctrl+C là cách dừng chính thức của cửa sổ task (nút X đã khoá) — sổ phải ghi lý do,
         # không để lượt treo 'running' với traceback.
         omo_store.close_run(engine, run_id, "failed", stats or None, error="dừng tay (Ctrl+C)")
         log.warning("price dừng tay (Ctrl+C)")
+        farewell("[dlck-price] ĐÃ DỪNG bằng Ctrl+C — lượt ghi failed, không ghi dòng nào")
         return 130
     except Exception as e:  # noqa: BLE001 — job biên ngoài: mọi lỗi đều phải vào etl_run
         omo_store.close_run(engine, run_id, "failed", stats or None, error=f"{type(e).__name__}: {e}")
         log.exception("price thất bại")
+        farewell(f"[dlck-price] THẤT BẠI: {type(e).__name__}: {e} — xem log")
         return 2
 
 
@@ -197,6 +206,9 @@ def _backfill(engine, tickers: list[str] | None, max_minutes: float | None,
                              cursor, todo[0].ticker)
         else:
             stats["subset"] = True
+        banner(f"bắt đầu {datetime.now(VN):%H:%M} · con trỏ {(cursor or 'đầu danh sách') if tickers is None else '(--codes)'}"
+               f" · còn {len(todo)} mã, mỗi mã mọi trang (~33 trang, ~50 giây)"
+               f" · hạn {stop_at or 'không đặt'} · Ctrl+C dừng, con trỏ giữ nguyên")
         with price_fetch.open_fetcher() as f:
             for i, c in enumerate(todo, 1):
                 texts: list[str] = []
@@ -239,12 +251,19 @@ def _backfill(engine, tickers: list[str] | None, max_minutes: float | None,
                 stats["pass_complete"] = tickers is None       # hết danh sách, không vì ngân sách
         omo_store.close_run(engine, run_id, "success", stats)
         log.info("backfill xong: %s", stats)
+        farewell(f"XONG {datetime.now(VN):%H:%M} · {stats['codes_done']} mã, {stats['pages']} trang,"
+                 f" {stats['rows_changed']} dòng đổi · con trỏ {stats['cursor']}"
+                 f" · {'HẾT VÒNG' if stats['pass_complete'] else ('hết hạn, lượt sau nối tiếp' if stats['budget_hit'] else 'xong tập --codes')}"
+                 f" · {stats['elapsed_s'] // 60} phút")
         return 0
     except KeyboardInterrupt:
         omo_store.close_run(engine, run_id, "failed", stats, error="dừng tay (Ctrl+C)")   # con trỏ đã lưu
         log.warning("backfill dừng tay (Ctrl+C) tại con trỏ %s", stats.get("cursor"))
+        farewell(f"[dlck-price-backfill] ĐÃ DỪNG bằng Ctrl+C — {stats['codes_done']} mã xong,"
+                 f" con trỏ {stats.get('cursor')} đã lưu, lượt sau nối tiếp")
         return 130
     except Exception as e:  # noqa: BLE001
         omo_store.close_run(engine, run_id, "failed", stats, error=f"{type(e).__name__}: {e}")
         log.exception("backfill thất bại")
+        farewell(f"[dlck-price-backfill] THẤT BẠI: {type(e).__name__}: {e} — con trỏ {stats.get('cursor')} đã lưu, xem log")
         return 2
