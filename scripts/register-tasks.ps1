@@ -61,8 +61,14 @@ function Register-DlckTask {
         # 12 giờ đủ cho mọi job trong ngày; backfill giá chạy trọn cuối tuần cần 3 ngày.
         [timespan] $ExecutionTimeLimit = (New-TimeSpan -Hours 12)
     )
-    $inner = 'cd /d "{0}" && set PYTHONIOENCODING=utf-8 && "{1}" run python -m {2} >> "{3}" 2>&1' `
-             -f $backend, $uv, $ModuleArgs, (Join-Path $logDir $LogFile)
+    # Interactive: cửa sổ cmd hiện ra trong lúc job chạy — tiêu đề = tên task và một dòng in job + log,
+    # để nhìn thanh taskbar là biết task nào đang chạy (quyết định chủ dự án 2026-09-04: thích thấy cửa sổ
+    # hơn là phải đăng ký S4U trong cửa sổ admin mỗi lần thêm task). Output thật vẫn đi vào file log.
+    # Dòng echo để ASCII không dấu: cmd.exe hiển thị theo codepage OEM, tiếng Việt có dấu sẽ vỡ.
+    # Nút X bị chính job khoá lúc khởi động (core/console.py) — dừng bằng Ctrl+C hoặc Stop-ScheduledTask.
+    # DLCK_LOCK_CONSOLE=1 chỉ đặt ở đây: chạy tay từ terminal thì job không khoá nút X của terminal đó.
+    $inner = 'title {4} && echo [{4}] python -m {2} -- nut X bi khoa khi job chay, dung bang Ctrl+C hoac Stop-ScheduledTask {4} -- log: {3} && cd /d "{0}" && set PYTHONIOENCODING=utf-8 && set DLCK_LOCK_CONSOLE=1 && "{1}" run python -m {2} >> "{3}" 2>&1' `
+             -f $backend, $uv, $ModuleArgs, (Join-Path $logDir $LogFile), $TaskName
     $action  = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c $inner"
     $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek $DaysOfWeek -At $AtTime
     # StartWhenAvailable: máy ngủ/tắt qua giờ chạy thì chạy bù khi bật lại.
