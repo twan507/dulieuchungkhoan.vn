@@ -202,6 +202,12 @@ khi còn target chưa phục vụ là mất trigger vĩnh viễn. Còn **re-craw
 số điều chỉnh), trần `MAX_RECRAWL = 50` mã và `RECRAWL_MAX_MINUTES = 20` phút. Lỗi re-crawl **không** kéo đổ lượt
 snapshot; mã chưa kịp kéo được cửa sổ 3 ngày bắt lại.
 
+**Trần trigger và mốc nước** *(sửa 2026-09-04 tối, cùng công thức lát 5)*: nhánh trigger loại những cặp
+`(issuer, kind)` đã có `snapshot_check.checked_at` (ngày VN) từ ngày công bố trở đi — "đã phục vụ" — rồi mới cắt
+trần `MAX_TRIGGER` × số kind; bị cắt thì mốc chỉ tiến tới ngày cắt − 1 (`stats.trigger_cut`), không bao giờ lùi.
+Bản cũ đẩy mốc tới `max(public_date)` toàn cục ⇒ phần bị cắt mất trigger vĩnh viễn; còn "mốc = ngày cắt − 1"
+một mình sẽ kẹt ở ngày hạn nộp khi hàng trăm mã cùng `public_date`.
+
 🔴 **Nếu job bị từ chối nhiều ngày liền, đọc dòng này trước khi nghi nguồn hỏng.** Chốt chặn (i) tính tỷ lệ
 đổi trên **cả lượt**, gộp bốn kind. `ownership` chiếm 70/234 target, và `majorShareHolders`/`boardOfDirectors`
 mang dấu thời gian **kỳ công bố** — khi nguồn cập nhật kỳ mới, mọi mã `ownership` được so trong 30 ngày kế tiếp

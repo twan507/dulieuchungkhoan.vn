@@ -116,13 +116,15 @@ def run(codes=None, kinds=None, max_minutes=None, get=None, sleep=time.sleep) ->
     try:
         with engine.begin() as conn:
             watermark = snapshot_store.load_watermark(conn)
-            targets = snapshot_store.due_list(conn, watermark, kinds=kinds, codes=codes)
+            due = snapshot_store.plan_due(conn, watermark, kinds=kinds, codes=codes)
+            targets = due.targets
             # Lấy 'mốc nước MỚI' ngay CÙNG giao dịch với due_list, ở T0 — không đọc lại sau khi
             # fetch/re-crawl xong (T1, cách nhau tới 20 phút). Đọc hai lần tạo cửa sổ đua: sự
             # kiện `events_job` chèn đúng lúc đó bị mốc T1 nuốt mất mà không job nào phục vụ
             # (review, phát hiện #3). Giá trị này chỉ THỰC SỰ dùng khi lượt đầy đủ và trót lọt —
             # tính sẵn ở đây, rẻ, và loại bỏ hẳn cửa sổ đua.
-            new_wm = snapshot_store.new_watermark(conn)
+            # Bị cắt trần thì mốc chỉ tiến tới ngày cắt − 1, và không bao giờ lùi (lát 5, A1).
+            new_wm = max(snapshot_store.new_watermark(conn, due.trigger_cut), watermark)
         log.info("tới hạn: %d target (%d theo sự kiện)", len(targets),
                  sum(1 for t in targets if t.found_by == "event"))
 
@@ -146,7 +148,8 @@ def run(codes=None, kinds=None, max_minutes=None, get=None, sleep=time.sleep) ->
             return 1
 
         stats = {"tally": vars(tally), "rows_written": written, "calls": calls,
-                 "retries": retries, "stopped_early": stopped, "run_date": run_date.isoformat()}
+                 "retries": retries, "stopped_early": stopped, "run_date": run_date.isoformat(),
+                 "trigger_cut": due.trigger_cut.isoformat() if due.trigger_cut else None}
         if subset:
             stats["subset"] = True             # lượt con không được làm mốc cho lượt toàn tập
 

@@ -68,8 +68,19 @@ def _target(row, kind: str, found_by: str) -> Target:
                   ticker=row.ticker, com_type=row.com_type_code, found_by=found_by)
 
 
+@dataclass(frozen=True)
+class Due:
+    targets: list[Target]
+    trigger_cut: dt.date | None      # public_date của cặp đầu tiên bị cắt trần; None khi không cắt
+
+
 def due_list(conn, watermark: dt.date, kinds=None, codes=None,
              quota=None, cadence=None, max_trigger=None) -> list[Target]:
+    return plan_due(conn, watermark, kinds, codes, quota, cadence, max_trigger).targets
+
+
+def plan_due(conn, watermark: dt.date, kinds=None, codes=None,
+             quota=None, cadence=None, max_trigger=None) -> Due:
     kinds = list(kinds or KINDS)
     quota = quota or QUOTA
     cadence = cadence or CADENCE_DAYS
@@ -79,10 +90,11 @@ def due_list(conn, watermark: dt.date, kinds=None, codes=None,
         rows = conn.execute(sa.text(
             _UNIVERSE + "SELECT * FROM uni WHERE ticker = ANY(:codes) ORDER BY ticker"),
             {"codes": list(codes)}).all()
-        return [_target(r, k, "floor") for r in rows for k in kinds]
+        return Due(targets=[_target(r, k, "floor") for r in rows for k in kinds], trigger_cut=None)
 
     out: list[Target] = []
     seen: set[tuple[int, str]] = set()
+    trigger_cut: dt.date | None = None
 
     event_types = [t for t, ks in TRIGGER_KINDS.items() if any(k in kinds for k in ks)]
     if event_types and watermark == COLD_START:
@@ -93,30 +105,41 @@ def due_list(conn, watermark: dt.date, kinds=None, codes=None,
         log.info("bỏ qua nhánh trigger: mốc nước còn ở mốc khởi tạo %s (cold start) —"
                  " quét sàn sẽ tự phủ trong 30/90 ngày", COLD_START.isoformat())
     elif event_types:
+        # Ánh xạ loại sự kiện → kind (TRIGGER_KINDS, chỉ kind được yêu cầu) đưa vào SQL dưới dạng
+        # hai mảng song song để phép loại "đã phục vụ" xét đúng theo TỪNG kind mà sự kiện bắn.
+        pairs = [(et, k) for et, ks in TRIGGER_KINDS.items() for k in ks if k in kinds]
+        cap = max_trigger * len(kinds)
         rows = conn.execute(sa.text(
             _UNIVERSE + """
-            SELECT DISTINCT u.*, e.event_type, e.public_date
+            SELECT u.issuer_id, u.organ_code, u.com_type_code, u.ticker, m.kind,
+                   min(e.public_date) AS public_date
             FROM uni u
             JOIN market.corporate_event e ON e.issuer_id = u.issuer_id
-            WHERE e.event_type = ANY(:types)
-              AND e.public_date > :wm
-            ORDER BY e.public_date ASC, u.issuer_id
+            JOIN unnest(cast(:types AS text[]), cast(:tkinds AS text[])) AS m(event_type, kind)
+              ON m.event_type = e.event_type
+            LEFT JOIN ops.snapshot_check c ON c.issuer_id = u.issuer_id AND c.kind = m.kind
+            WHERE e.public_date > :wm
+              AND (c.checked_at IS NULL
+                   OR (c.checked_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date < e.public_date)
+            GROUP BY u.issuer_id, u.organ_code, u.com_type_code, u.ticker, m.kind
+            ORDER BY min(e.public_date) ASC, u.issuer_id, m.kind
             LIMIT :limit
-            """), {"types": event_types, "wm": watermark, "limit": max_trigger + 1}).all()
-        if len(rows) > max_trigger:
-            # Một mã hỏng dai dẳng giữ mốc đứng yên ⇒ danh sách trigger phình mỗi ngày, không
-            # có đường tự thoát nếu không có trần. Lấy public_date CŨ NHẤT trước để không bỏ
-            # sót vĩnh viễn cái cũ (review, phát hiện #2).
-            log.info("nhánh trigger vượt trần %d: cắt %d target, giữ %d cũ nhất theo public_date",
-                     max_trigger, len(rows) - max_trigger, max_trigger)
-            rows = rows[:max_trigger]
+            """), {"types": [pr[0] for pr in pairs], "tkinds": [pr[1] for pr in pairs],
+                   "wm": watermark, "limit": cap + 1}).all()
+        if len(rows) > cap:
+            # Trần chống phình (review lát 4, phát hiện #2) — nhưng mốc nước KHÔNG được nhảy qua
+            # phần bị cắt: mốc chỉ tiến tới public_date của cặp đầu tiên bị cắt trừ 1 ngày
+            # (new_watermark), còn cặp đã phục vụ bị loại bằng `checked_at >= public_date` ở
+            # WHERE trên chứ không bằng mốc. Chỉ dùng mốc ngày thì ngày hạn nộp — hàng trăm mã
+            # cùng public_date — sẽ phục vụ lại đúng N cặp đầu mãi mãi (review lát 5, A1).
+            trigger_cut = rows[cap].public_date
+            log.info("nhánh trigger vượt trần %d cặp (issuer, kind): cắt tại public_date %s",
+                     cap, trigger_cut)
+            rows = rows[:cap]
         for r in rows:
-            for kind in TRIGGER_KINDS[r.event_type]:
-                if kind not in kinds:
-                    continue
-                if (r.issuer_id, kind) not in seen:
-                    seen.add((r.issuer_id, kind))
-                    out.append(_target(r, kind, "event"))
+            if (r.issuer_id, r.kind) not in seen:
+                seen.add((r.issuer_id, r.kind))
+                out.append(_target(r, r.kind, "event"))
 
     for kind in kinds:
         rows = conn.execute(sa.text(
@@ -132,7 +155,7 @@ def due_list(conn, watermark: dt.date, kinds=None, codes=None,
             if (r.issuer_id, kind) not in seen:      # trigger đã lấy rồi thì thôi
                 seen.add((r.issuer_id, kind))
                 out.append(_target(r, kind, "floor"))
-    return out
+    return Due(targets=out, trigger_cut=trigger_cut)
 
 
 @dataclass
@@ -192,8 +215,12 @@ def apply(conn, fetched: list[Fetched], run_date: dt.date) -> tuple[Tally, int]:
     return tally, written
 
 
-def new_watermark(conn) -> dt.date:
+def new_watermark(conn, trigger_cut: dt.date | None = None) -> dt.date:
     """Mốc 'sự kiện MỚI CÔNG BỐ' — CHỈ `public_date`.
+
+    `trigger_cut` (từ `plan_due`): nhánh trigger bị cắt trần ⇒ mốc chỉ tiến tới NGÀY TRƯỚC
+    public_date của cặp đầu tiên bị cắt, để lượt sau còn thấy phần dư; cặp đã phục vụ bị loại
+    bằng sổ kiểm, không bằng mốc (cùng công thức `fundamentals_store.new_watermark`, lát 5).
 
     Bug thật đo 2026-09-04 (`--codes A32,BAB,BVB`): bản cũ lấy `max(greatest(public_date,
     exright_date))`. `exright_date` là ngày KHÔNG HƯỞNG QUYỀN — nguồn công bố nó có thể xa
@@ -204,6 +231,8 @@ def new_watermark(conn) -> dt.date:
     khác. Việc re-crawl giá theo `exright_date` chuyển hẳn sang `recrawl_codes()`, không
     dùng watermark nữa.
     """
+    if trigger_cut is not None:
+        return trigger_cut - dt.timedelta(days=1)
     got = conn.execute(sa.text(
         "SELECT max(public_date) FROM market.corporate_event")).scalar()
     return got or dt.date(1900, 1, 1)
