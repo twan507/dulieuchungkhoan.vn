@@ -40,11 +40,13 @@ def _wire(monkeypatch):
     # đúng khuôn test_e20_events_job.py / test_e25_price_job.py.
     monkeypatch.setenv("ETL_DATABASE_URL", os.environ["TEST_DATABASE_URL"])
     monkeypatch.setattr("etl.snapshot_job.load_dotenv", lambda *a, **k: None)
-    # Chặn mạng THẬT cho mọi test trong file: `_recrawl` giờ LUÔN chạy (vòng sửa 3 bỏ nhánh
-    # 'bỏ qua ở lượt khởi tạo' — `recrawl_codes()` tự chặn bằng cửa sổ ngày, không cần watermark
-    # nữa), và nó quét `market.corporate_event` TOÀN CỤC trong cửa sổ đó — nếu bảng test còn sót
-    # dòng có exright_date trong vài ngày gần đây do file test khác để lại, `_recrawl` sẽ gọi
-    # thẳng `etl.price_job.run(...)` KHÔNG có `get` giả (review vòng 1, phát hiện #2).
+    # Chặn mạng THẬT cho mọi test trong file: `_recrawl` chạy ở LƯỢT ĐẦY ĐỦ (không --codes/
+    # --kinds — vòng sửa 4 chặn hẳn nhánh lượt con, xem `run()`), và khi chạy nó quét
+    # `market.corporate_event` TOÀN CỤC trong cửa sổ vài ngày — nếu bảng test còn sót dòng có
+    # exright_date gần đây do file test khác để lại, `_recrawl` sẽ gọi thẳng
+    # `etl.price_job.run(...)` KHÔNG có `get` giả (review vòng 1, phát hiện #2). Patch này vẫn
+    # để mặc định cho MỌI test trong file, kể cả lượt con — phòng hờ, không phải vì lượt con
+    # còn gọi tới `_recrawl`.
     # Không test nào ở đây kiểm nội dung re-crawl nên fake trả 0 là đủ, không cần giả lập gì thêm.
     monkeypatch.setattr("etl.price_job.run", lambda **kw: 0)
 
@@ -221,7 +223,14 @@ def test_recrawl_passes_the_time_budget_to_price_job(snapshot_db, monkeypatch):
 
     Ghi đè fake của `_wire()` (vốn chỉ `lambda **kw: 0`, không ghi lại tham số) bằng một
     fake bắt được `kw` — cùng `monkeypatch` instance nên đè hợp lệ, không cần sửa `_wire`.
+
+    PHẢI là lượt ĐẦY ĐỦ (`codes=None`, `kinds=None`): vòng sửa 4 chặn hẳn `_recrawl` ở lượt
+    con (xem `test_a_codes_run_does_not_trigger_a_price_recrawl` ngay dưới) — test này đổi từ
+    `codes=[TICKER]` sang lượt đầy đủ để còn đứng được sau fix đó, đúng khuôn zero-QUOTA của
+    `test_the_watermark_written_reflects_the_due_list_snapshot_not_a_later_insert` (không zero
+    thì nhánh quét sàn có thể kéo issuer thật còn sót của file test khác vào lượt).
     """
+    monkeypatch.setattr(ss, "QUOTA", {k: 0 for k in ss.QUOTA})
     price_calls = []
     monkeypatch.setattr("etl.price_job.run", lambda **kw: (price_calls.append(kw), 0)[1])
     iid = _seed(snapshot_db)
@@ -230,9 +239,40 @@ def test_recrawl_passes_the_time_budget_to_price_job(snapshot_db, monkeypatch):
         c.execute(sa.text(
             "INSERT INTO market.corporate_event (event_type, issuer_id, exright_date, payload)"
             " VALUES ('CashDividend', :i, current_date, '{}'::jsonb)"), {"i": iid})
-    rc = sj.run(codes=[TICKER], get=_fake_get())
+    rc = sj.run(get=_fake_get())
     assert rc == 0
     assert price_calls == [{"backfill": True, "codes": [TICKER], "max_minutes": sj.RECRAWL_MAX_MINUTES}]
+
+
+def test_a_codes_run_does_not_trigger_a_price_recrawl(snapshot_db, monkeypatch):
+    """Bug thật đo 2026-09-04: ba lượt `--codes` liên tiếp (73 mã, rồi 73 mã, rồi 73 mã ×
+    1 kind) đều kéo lại backfill TRỌN LỊCH SỬ ~12,5 năm cho `['RYG', 'TCH']` — hai mã KHÔNG
+    nằm trong tập `codes` người dùng ép chạy. Nguyên nhân: `recrawl_codes()` quét TOÀN CỤC
+    `market.corporate_event` theo cửa sổ ngày, không lọc theo tham số `codes` của lượt gọi —
+    nên `_recrawl` cũ (gọi ở MỌI lượt, kể cả lượt con) luôn nhặt đúng những mã đang trong cửa
+    sổ ex-right, bất kể ý định của lượt con.
+
+    Lượt con là hành động thủ công phạm vi hẹp — cùng lý do nó không được đẩy mốc nước
+    (`test_a_codes_run_does_not_touch_the_domain_watermark`), nó cũng không được châm một
+    lượt backfill giá cho mã ngoài phạm vi. Seed sự kiện đúng NGAY trên mã trong `codes` (thay
+    vì một mã khác) để phép thử chặt hơn: nếu `_recrawl` lỡ còn chạy, nó chắc chắn nhặt được
+    mã này — sự vắng mặt của `price_calls` chỉ có thể do lượt con bị chặn, không phải tình cờ
+    `recrawl_codes()` trả rỗng.
+    """
+    price_calls = []
+    monkeypatch.setattr("etl.price_job.run", lambda **kw: (price_calls.append(kw), 0)[1])
+    iid = _seed(snapshot_db)
+    with snapshot_db.begin() as c:
+        c.execute(sa.text(
+            "INSERT INTO market.corporate_event (event_type, issuer_id, exright_date, payload)"
+            " VALUES ('CashDividend', :i, current_date, '{}'::jsonb)"), {"i": iid})
+    rc = sj.run(codes=[TICKER], get=_fake_get())
+    assert rc == 0
+    assert price_calls == []
+    with snapshot_db.begin() as c:
+        stats = c.execute(sa.text("SELECT stats FROM ops.etl_run WHERE job = :j"
+                                  " ORDER BY run_id DESC LIMIT 1"), {"j": ss.JOB}).scalar_one()
+    assert stats["recrawl"] == {"skipped": "lượt con"}
 
 
 def test_a_codes_run_does_not_touch_the_domain_watermark(snapshot_db):

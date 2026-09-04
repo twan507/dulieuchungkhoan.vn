@@ -150,7 +150,17 @@ def run(codes=None, kinds=None, max_minutes=None, get=None, sleep=time.sleep) ->
         if subset:
             stats["subset"] = True             # lượt con không được làm mốc cho lượt toàn tập
 
-        if stopped:
+        if subset:
+            # Lượt con (--codes/--kinds) là hành động thủ công phạm vi hẹp — cùng lý do nó
+            # không được đẩy mốc nước (xem push_watermark bên dưới), nó cũng không được châm
+            # một lượt backfill giá TRỌN LỊCH SỬ cho những mã ngoài phạm vi người dùng ép chạy.
+            # `recrawl_codes()` đọc theo cửa sổ ngày trên TOÀN vũ trụ (không lọc theo `codes`
+            # tham số), nên gọi `_recrawl` ở đây từng kéo lại mã hoàn toàn không liên quan tới
+            # ý định của lượt con (bug thật đo 2026-09-04: ba lượt --codes liên tiếp đều kéo
+            # lại ['RYG', 'TCH'] dù hai mã đó không nằm trong `codes` truyền vào).
+            stats["recrawl"] = {"skipped": "lượt con"}
+            log.info("re-crawl bỏ qua: lượt con không được châm backfill giá ngoài phạm vi")
+        elif stopped:
             # `--max-minutes` là trần cho CẢ LƯỢT (backend/README.md), không phải riêng pha
             # fetch — pha fetch vừa bị cắt vì hết giờ thì đừng châm thêm tới 20 phút re-crawl
             # nữa (review, phát hiện #4).
