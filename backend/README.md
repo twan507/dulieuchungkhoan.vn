@@ -217,8 +217,8 @@ theo từng kind làm ca này nổ **dễ hơn** (100% của `ownership`), còn 
 Cần vài tháng số thật của `changed_floor` mới quyết được. Gặp ca này: đọc `stats.tally` của lượt bị từ chối, nếu
 phần đổi dồn hết vào một kind thì chạy tay từng kind bằng `--kinds` để đi tiếp, và ghi số vào hồ sơ lát 4.
 
-⚠️ **Chưa đăng ký task Scheduler** — lịch của job này thuộc lát 7 (bảng lịch trong container `etl`). Chạy tay,
-hoặc để lát 7 gọi. Vị trí trong ngày: **sau `events` 18:10**, vì trigger đọc đúng bảng mà `events` vừa ghi.
+⚠️ **Chưa đăng ký task Scheduler** — lịch của job này thuộc lát 11 (scheduler trong container `etl`). Chạy tay,
+hoặc để lát 11 gọi. Vị trí trong ngày: **sau `events` 18:10**, vì trigger đọc đúng bảng mà `events` vừa ghi.
 
 ## Chạy job fundamentals (báo cáo tài chính + danh sách PDF + từ điển)
 
@@ -253,7 +253,7 @@ khác 0 là nguồn đổi hình dạng (đã gặp: `"quarterly": null` thay ch
 rơi vào mã vừa có kỳ mới mà lịch sự kiện sót. Đọc `stats.tally`, chạy tay `--kinds` để đi tiếp, ghi số vào hồ sơ lát 5;
 **không** nới ngưỡng.
 
-⚠️ **Chưa đăng ký task Scheduler** — lát 7. Vị trí trong ngày: **sau `events` 18:10 và sau `snapshot`**.
+⚠️ **Chưa đăng ký task Scheduler** — lát 11 (scheduler trong `etl`). Vị trí trong ngày: **sau `events` 18:10 và sau `snapshot`**.
 
 ## Lịch chạy (Windows Task Scheduler)
 
