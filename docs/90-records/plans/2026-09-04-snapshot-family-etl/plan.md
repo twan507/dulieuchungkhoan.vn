@@ -223,8 +223,12 @@ Expected: 5 PASS.
 - [ ] **Bước 5: Kiểm migration lên/xuống trên kho dev**
 
 ```bash
-cd database && uv run alembic upgrade head && uv run alembic downgrade -1 && uv run alembic upgrade head
+uv run --project backend alembic -c database/alembic.ini upgrade head
+uv run --project backend alembic -c database/alembic.ini downgrade -1
+uv run --project backend alembic -c database/alembic.ini upgrade head
 ```
+
+*(Lệnh theo `database/README.md`. `database/` không có `pyproject.toml` riêng nên `cd database && uv run alembic` KHÔNG chạy — sửa 2026-09-04 sau khi Task 1 vấp thật.)*
 
 Expected: cả ba lệnh exit 0; lệnh cuối để head ở `0016`.
 
