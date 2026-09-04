@@ -55,17 +55,21 @@ function Register-DlckTask {
         [Parameter(Mandatory)][string] $TaskName,
         [Parameter(Mandatory)][string] $AtTime,      # "HH:mm"
         [Parameter(Mandatory)][string] $ModuleArgs,  # ví dụ "etl omo"
-        [Parameter(Mandatory)][string] $LogFile
+        [Parameter(Mandatory)][string] $LogFile,
+        # Mặc định ngày làm việc. Task backfill giá chạy thứ 7 (kích hoạt tay buổi tối thì không cần trigger).
+        [string[]] $DaysOfWeek = @("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"),
+        # 12 giờ đủ cho mọi job trong ngày; backfill giá chạy trọn cuối tuần cần 3 ngày.
+        [timespan] $ExecutionTimeLimit = (New-TimeSpan -Hours 12)
     )
     $inner = 'cd /d "{0}" && set PYTHONIOENCODING=utf-8 && "{1}" run python -m {2} >> "{3}" 2>&1' `
              -f $backend, $uv, $ModuleArgs, (Join-Path $logDir $LogFile)
     $action  = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c $inner"
-    $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At $AtTime
+    $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek $DaysOfWeek -At $AtTime
     # StartWhenAvailable: máy ngủ/tắt qua giờ chạy thì chạy bù khi bật lại.
     # RestartCount/RestartInterval: tự khởi động lại khi tiến trình chết (spec §3.8).
     $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
                     -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 5) `
-                    -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 12)
+                    -MultipleInstances IgnoreNew -ExecutionTimeLimit $ExecutionTimeLimit
     Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger `
         -Settings $settings -Principal $principal -Force | Out-Null
     # Cùng bài học §3.5 như Assert-TaskCommand, áp cho principal: đăng ký "thành công"
@@ -150,6 +154,17 @@ Register-DlckTask -TaskName "dlck-price" -AtTime "15:40" -ModuleArgs "etl price"
 # -MustNotContain: task tự động KHÔNG BAO GIỜ chạy backfill (25–40 giờ, chạy tay ngoài giờ có người nhìn).
 Assert-TaskCommand -TaskName "dlck-price" -MustContain "python -m etl price" -MustNotContain "--backfill"
 
+Write-Host "Đăng ký price-backfill (thứ 7 00:05 — lùi trọn lịch sử giá ~12,5 năm, ~20 giờ gọi tuần tự; chạy tới 08:45 thứ 2 hoặc tới khi hết vòng):"
+# --stop-before-open: hạn là 08:45 của ngày giao dịch kế tiếp, tính lúc job bắt đầu — nên kích hoạt TAY
+# buổi tối bất kỳ (Start-ScheduledTask dlck-price-backfill) cũng tự dừng trước phiên sáng hôm sau.
+# Con trỏ trong ops.etl_run nối các lượt; máy ngủ 02:00 giữa chừng thì job sống qua và chạy tiếp tới hạn.
+# Hết vòng (pass_complete) thì lượt kế là VÒNG MỚI (làm mới toàn bộ chuỗi điều chỉnh) — cân nhắc tắt task
+# sau vòng đầu nếu không muốn ~20 giờ gọi mỗi cuối tuần.
+Register-DlckTask -TaskName "dlck-price-backfill" -AtTime "00:05" -DaysOfWeek Saturday `
+                  -ModuleArgs "etl price --backfill --stop-before-open" -LogFile "price-backfill.log" `
+                  -ExecutionTimeLimit (New-TimeSpan -Days 3)
+Assert-TaskCommand -TaskName "dlck-price-backfill" -MustContain "python -m etl price --backfill --stop-before-open"
+
 Write-Host "Đăng ký ingester theo phiên (08:30, tự thoát sau đối chứng ~15:05):"
 Register-DlckTask -TaskName "dlck-ingester" -AtTime "08:30" -ModuleArgs "ingester" -LogFile "ingester-task.log"
 Assert-TaskCommand -TaskName "dlck-ingester" -MustContain "python -m ingester " -MustNotContain "--measure"
@@ -177,7 +192,7 @@ Register-DlckTask -TaskName $measureTask -AtTime "08:30" -ModuleArgs "ingester -
                   -LogFile "ingester-measure.log"
 Assert-TaskCommand -TaskName $measureTask -MustContain "python -m ingester --measure "
 
-Write-Host "`nĐã kiểm lệnh của cả 10 task. Xem lại bất cứ lúc nào:"
+Write-Host "`nĐã kiểm lệnh của cả 11 task. Xem lại bất cứ lúc nào:"
 Write-Host '  Get-ScheduledTask -TaskName "dlck-*" | % { $_.TaskName + " -> " + $_.Actions[0].Arguments }'
 # Cảnh báo này KHÔNG phụ thuộc LogonType: `Register-ScheduledTask -Force` thay định
 # nghĩa task ở MỌI lượt chạy, và New-ScheduledTaskSettingsSet không có cờ giữ trạng thái
@@ -190,7 +205,7 @@ if ($script:disabledBefore.Count -gt 0) {
 }
 
 if ($LogonType -eq "S4U") {
-    Write-Host "`n✅ Cả 10 task đăng ký S4U (đã soi Principal thật từng task, không chỉ soi lệnh):"
+    Write-Host "`n✅ Cả 11 task đăng ký S4U (đã soi Principal thật từng task, không chỉ soi lệnh):"
     Write-Host "   chạy cả khi không đăng nhập, KHÔNG hiện cửa sổ cmd để bấm nhầm."
 } else {
     Write-Host "`n⚠️ Task chạy với tài khoản đang đăng nhập (Interactive). Muốn chạy cả khi"

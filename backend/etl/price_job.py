@@ -12,7 +12,7 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
@@ -39,6 +39,17 @@ def _names(by_organ, codes):
     return [by_organ[c].ticker for c in codes[:price_store.SAMPLE]]
 
 
+def _next_open(now: datetime) -> datetime:
+    """08:45 của ngày giao dịch kế tiếp (Thứ 2–6, chưa biết ngày lễ) — hạn cho task backfill:
+    kích hoạt tay tối thứ 3 ⇒ dừng trước phiên sáng thứ 4; chạy thứ 7 ⇒ chạy liền tới sáng thứ 2."""
+    d = now.replace(hour=8, minute=45, second=0, microsecond=0)
+    if d <= now:
+        d += timedelta(days=1)
+    while d.weekday() >= 5:
+        d += timedelta(days=1)
+    return d
+
+
 def _codes_or_raise(engine, tickers):
     with engine.connect() as conn:
         cl = price_store.list_codes(conn, tickers)
@@ -51,7 +62,7 @@ def _codes_or_raise(engine, tickers):
 
 
 def run(backfill: bool = False, codes: list[str] | None = None,
-        max_minutes: float | None = None) -> int:
+        max_minutes: float | None = None, stop_before_open: bool = False) -> int:
     logging.basicConfig(level=logging.INFO, stream=sys.stderr,
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
     # httpx ghi INFO cho TỪNG request — 1.523 dòng "HTTP Request: GET …" mỗi ngày trong price.log,
@@ -67,7 +78,8 @@ def run(backfill: bool = False, codes: list[str] | None = None,
     # sau khi đã gọi xong 1.523 lời gọi. Fetch tự sống qua giấc ngủ nhờ retry exception vận chuyển.
     engine = sa.create_engine(url, pool_pre_ping=True)
     try:
-        return _backfill(engine, codes, max_minutes) if backfill else _daily(engine, codes)
+        return (_backfill(engine, codes, max_minutes, stop_before_open) if backfill
+                else _daily(engine, codes))
     finally:
         engine.dispose()
 
@@ -145,13 +157,22 @@ def _resume_point(todo, cursor):
     return todo[idx + 1:] if idx is not None else [c for c in todo if c.ticker > cursor]
 
 
-def _backfill(engine, tickers: list[str] | None, max_minutes: float | None) -> int:
+def _backfill(engine, tickers: list[str] | None, max_minutes: float | None,
+              stop_before_open: bool = False) -> int:
     run_id = omo_store.open_run(engine, price_store.JOB_BACKFILL)
     t0 = time.monotonic()
     # Hạn theo đồng hồ TƯỜNG, không theo monotonic: máy ngủ 4 giờ giữa chừng thì thức dậy là hết
     # ngân sách ⇒ dừng sau mã đang dở, không đem phần ngân sách còn lại chạy lấn vào giờ giao dịch.
-    deadline = None if max_minutes is None else _wall_clock() + max_minutes * 60
-    stats: dict = {"cursor": None, "codes_done": 0, "pages": 0, "rows_sent": 0, "rows_changed": 0,
+    # Hai cách đặt hạn cộng được với nhau: ngân sách phút, và/hoặc 08:45 ngày giao dịch kế tiếp.
+    deadlines = []
+    if max_minutes is not None:
+        deadlines.append(_wall_clock() + max_minutes * 60)
+    if stop_before_open:
+        deadlines.append(_next_open(datetime.now(VN)).timestamp())
+    deadline = min(deadlines) if deadlines else None
+    stop_at = datetime.fromtimestamp(deadline, VN).isoformat(timespec="minutes") if deadline else None
+    stats: dict = {"cursor": None, "stop_at": stop_at,
+                   "codes_done": 0, "pages": 0, "rows_sent": 0, "rows_changed": 0,
                    "dup_dates": 0, "raw_close_mismatch": 0, "raw_close_mismatch_sample": [],
                    "invalid_tickers": [], "failed_tickers": [], "retries": 0,
                    "budget_hit": False, "pass_complete": False, "elapsed_s": 0}

@@ -170,7 +170,11 @@ Script đã có task thứ 10 (`51850f4`): `dlck-price` 15:40, `Assert-TaskComma
 pwsh scripts/register-tasks.ps1 -LogonType S4U          # cửa sổ admin; script -Force sẽ BẬT lại task đang tắt — tắt lại ngay sau
 (Get-ScheduledTask -TaskName "dlck-price").Triggers[0].StartBoundary   # phải có T15:40:00+07:00
 (Get-ScheduledTask -TaskName "dlck-price").Actions[0].Arguments        # phải có "python -m etl price", KHÔNG có "--backfill"
+(Get-ScheduledTask -TaskName "dlck-price-backfill").Triggers[0].DaysOfWeek          # Saturday
+(Get-ScheduledTask -TaskName "dlck-price-backfill").Settings.ExecutionTimeLimit     # P3D (3 ngày)
+(Get-ScheduledTask -TaskName "dlck-price-backfill").Actions[0].Arguments            # có "--backfill --stop-before-open"
 Get-ScheduledTask -TaskName "dlck-*" | Disable-ScheduledTask           # giữ Disabled theo [4d]
+# Muốn backfill chạy ngay tối nay: Enable-ScheduledTask dlck-price-backfill; Start-ScheduledTask dlck-price-backfill
 ```
 
 **AC1–AC7 ✅ — AC8 ⏳ admin.**
@@ -249,3 +253,19 @@ smoke production: python -m etl price --codes BID  → exit 0, with_data 1, rows
 ```
 
 Cách chạy backfill qua đêm nay ghi ở [backend/README](../../../../backend/README.md): chọn `--max-minutes N` hết trước 02:00; máy ngủ giữa chừng cũng không hỏng, chỉ dừng sớm.
+
+### Backfill chuyển sang task Scheduler — quyết định chủ dự án 2026-09-04 (`6b8b27e`)
+
+Sau merge, `events_fetch`/`screener_fetch` được vá cùng lỗi timeout (`356cdc9`, 442 test). Tôi đã dựng một driver bash ngoài repo chạy backfill trong phiên chat theo cửa sổ ngoài giờ giao dịch; chủ dự án **bác**: backfill phải là **task trên máy**, kích hoạt tay buổi tối khi cần và chạy liên tục thứ 7/chủ nhật, không chạy trong chat. Driver và tiến trình bị kill lúc ~06:55 (`lượt 82`: con trỏ `ACC`, 7 mã, 381 trang trong lượt đó — đóng tay `failed` với lý do, con trỏ còn nguyên; kho **135.629 dòng**).
+
+Thiết kế thay thế, TDD (3 test mới, **444 passed, 2 skipped**):
+
+| Thành phần | Nội dung |
+|---|---|
+| `--stop-before-open` | hạn = **08:45 của ngày giao dịch kế tiếp** (Thứ 2–6, chưa biết ngày lễ), tính lúc job bắt đầu — tối thứ 3 ⇒ sáng thứ 4; thứ 7 ⇒ sáng thứ 2 (~56 giờ, đủ trọn vòng ~20 giờ). Cộng được với `--max-minutes` (lấy hạn sớm hơn); `stats.stop_at` ghi hạn để người vận hành thấy |
+| Task `dlck-price-backfill` | `etl price --backfill --stop-before-open`, trigger **thứ 7 00:05**, `ExecutionTimeLimit` 3 ngày (mặc định 12 giờ sẽ giết lượt cuối tuần), `MultipleInstances IgnoreNew`, đăng ký `Disabled` cùng cả đội; kích hoạt tay: `Start-ScheduledTask dlck-price-backfill` |
+| `Register-DlckTask` | thêm `-DaysOfWeek` (mặc định Thứ 2–6) và `-ExecutionTimeLimit` (mặc định 12 giờ) — hai task cũ không đổi hành vi |
+
+Ghi chú thiết kế: hết vòng thì lượt kế là vòng mới — task bật thường trực nghĩa là làm mới toàn bộ chuỗi điều chỉnh mỗi cuối tuần (~20 giờ gọi); tắt sau vòng đầu nếu chỉ muốn re-crawl theo sự kiện (lát 4). Ghi ở backend/README.
+
+**AC8 nay gồm hai task**, cùng một cửa sổ admin — lệnh cập nhật ở mục AC8 trên (thêm kiểm `dlck-price-backfill`: `Triggers[0].DaysOfWeek` = Saturday, `Settings.ExecutionTimeLimit` = `P3D`, lệnh chứa `--stop-before-open`).

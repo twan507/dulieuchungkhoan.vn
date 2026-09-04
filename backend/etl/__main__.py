@@ -40,9 +40,11 @@ def main(argv: list[str] | None = None) -> int:
         parser.add_argument("--backfill", action="store_true")
         parser.add_argument("--codes", type=lambda s: [t.strip().upper() for t in s.split(",") if t.strip()])
         parser.add_argument("--max-minutes", type=float, dest="max_minutes")
+        parser.add_argument("--stop-before-open", action="store_true", dest="stop_before_open")
         parsed = parser.parse_args(args[1:])
         return etl.price_job.run(backfill=parsed.backfill, codes=parsed.codes,
-                                 max_minutes=parsed.max_minutes)
+                                 max_minutes=parsed.max_minutes,
+                                 stop_before_open=parsed.stop_before_open)
     print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener, events, price)",
           file=sys.stderr)
     return 2
