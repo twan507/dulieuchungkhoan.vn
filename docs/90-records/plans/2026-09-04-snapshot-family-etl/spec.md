@@ -90,7 +90,7 @@ Chi tiết và bằng chứng: [measurements.md](measurements.md). Bốn điều
 
 | Kind | Vào hash | Cố ý ngoài hash |
 |---|---|---|
-| `snapshot` | 18 trường của [market-field-selection §5.1](../../../20-design/market-field-selection.md) | `rtd11` `rtd14` `rtd21` `rtd25` `rtd53` · `highestPrice1Year` `lowestPrice1Year` · `averageMatchVolume1Month` · `foreignerPercentage` `foreignerRoom` `freeFloatRate` |
+| `snapshot` | 18 trường của [market-field-selection §5.1](../../../20-design/market-field-selection.md) — **thực tế 18 ở ngân hàng, 15 ở phi ngân hàng**: `rtq44` `rtq137` `rqq41` chỉ ngân hàng mới có (đo 9/9 mã 2026-09-04). Khoá vắng thì bỏ qua, không phải lỗi | `rtd11` `rtd14` `rtd21` `rtd25` `rtd53` · `highestPrice1Year` `lowestPrice1Year` · `averageMatchVolume1Month` · `foreignerPercentage` `foreignerRoom` `freeFloatRate` |
 | `dividend` | `cashDividendPayouts` · `cashDividendPlans` · `dps` · `dividendPayoutRatio` · `eps` | `priceEarningRatio` · `dividendYield` |
 | `valuation` | `estimatedEPS` `forecastEPS` `estimatedBookValue` `forcastBookValue` · `riskFreeRate` · `recommendMethod` · `rtd7` · `rtq180` · `outstandingShare` | `rtd14` · `rtd35` · `vnIndexEquityRisk` · `valuationSector` |
 | `ownership` | `majorShareHolders` · `boardOfDirectors` · `overviewChartData` · `majorOwnershipsChartData` | — |
@@ -126,6 +126,8 @@ Chi tiết và bằng chứng: [measurements.md](measurements.md). Bốn điều
 - Hết lượt thử ⇒ mã đó **chưa kiểm**: không ghi `snapshot_daily`, không đụng `snapshot_check`, đếm vào `failed`.
 
 ### 5.3 `snapshot_normalize` — thuần, không I/O
+
+🔴 **Đính chính 2026-09-04, phát hiện khi soi mẫu để viết plan:** hai mảng `quarterly` và `yearly` sắp xếp **cũ → mới** (A32 `yearly` 2020→2025; BAB `quarterly` 2024Q2→2026Q2). Bản spec đầu ghi lấy `quarterly[0]`/`yearly[0]` cho `year` · `quarter` · `rtq44` · `rtq137` · `rqq41` — **sai**: đó là kỳ CŨ NHẤT, nên hash sẽ không bao giờ phản ứng khi có báo cáo mới. Quy tắc đúng: chọn kỳ có **`max(year, quarter)`**, không theo chỉ số mảng.
 
 `unwrap(kind, body)` → `items[0]` hoặc `None`; `keep(kind, item)` → dict theo tập trắng §4.3; `keep_hash(kind, item)` → `sha256` của `json.dumps(keep(...), sort_keys=True, ensure_ascii=False, separators=(",", ":"))`.
 
@@ -199,6 +201,8 @@ Cuối lượt, với mã có `exright_date` mới từ `CashDividend`/`StockDiv
 
 Lý do làm tự động thay vì để chạy tay: chuỗi `close_adj` sai **im lặng** cho tới khi có người nhớ ra.
 
+🔴 **Hai chốt chặn bắt buộc, thêm 2026-09-04 khi viết plan:** (a) **bỏ qua re-crawl ở lượt khởi tạo** — watermark `1900-01-01` khiến `recrawl_codes` trả *mọi mã từng có ngày không hưởng quyền*, tức 1.523 mã, đúng bằng một lượt backfill trọn vòng ~20 giờ; (b) **trần `MAX_RECRAWL = 50` mã một lượt**, vượt trần thì ghi vào `stats` và bỏ qua, để người quyết chứ job không tự châm một lượt backfill dài.
+
 ### 5.7 Lịch và vận hành
 
 Không đăng ký task Windows (§3.2). Chạy tay: `uv run python -m etl snapshot`. Vị trí trong bảng lịch của lát 7: **sau `events` 18:10**, vì trigger đọc đúng bảng mà `events` vừa ghi.
@@ -242,4 +246,5 @@ Expected lấy từ mẫu thật trong [`samples/`](samples/) hoặc giải tay,
 
 1. **Quota 24/70/70/70** và nhịp 90/30 ngày — lượt quét trọn sàn đầu tiên vì thế mất **22 ngày** (ba kind tháng) và **64 ngày** (`snapshot`). Muốn phủ nhanh hơn thì nâng quota, đổi lại ngân sách ngày tăng tuyến tính.
 2. **`snapshot_daily.trading_date` = ngày chạy job**, không phải ngày thị trường có phiên — vì họ này không gắn với phiên. Chạy vào ngày nghỉ vẫn ghi hợp lệ.
-3. **Ba tập trắng của `ownership`/`valuation`/`dividend` là suy luận, chưa đo ngày-qua-ngày** — AC5 là chỗ nó bị kiểm thật, và AC5 chỉ chạy được sau một đêm.
+3. **Watermark chỉ tiến khi không target nào hỏng** — còn mã hỏng mà đẩy mốc lên là mất trigger vĩnh viễn; đổi lại, một mã hỏng kéo dài sẽ giữ mốc đứng yên và làm danh sách trigger phình dần.
+4. **Ba tập trắng của `ownership`/`valuation`/`dividend` là suy luận, chưa đo ngày-qua-ngày** — AC5 là chỗ nó bị kiểm thật, và AC5 chỉ chạy được sau một đêm.
