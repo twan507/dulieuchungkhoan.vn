@@ -129,8 +129,10 @@ def run(codes=None, kinds=None, max_minutes=None, get=None, sleep=time.sleep) ->
         _recrawl(engine, watermark, stats)
 
         # Watermark chỉ tiến khi KHÔNG mã nào hỏng: đẩy mốc lên trong lúc còn target chưa
-        # phục vụ là mất trigger vĩnh viễn (§5.1 chú thích 2 của plan).
-        if failed == 0 and not stopped:
+        # phục vụ là mất trigger vĩnh viễn (§5.1 chú thích 2 của plan). `bad_shape` cũng phải
+        # chặn y như `failed` — target đó cũng CHƯA được apply() ghi vào snapshot_check (review
+        # vòng 1, phát hiện #1: brief chỉ cảnh báo đường `failed`, bỏ sót đường `bad_shape`).
+        if failed == 0 and bad_shape == 0 and not stopped:
             with engine.begin() as conn:
                 wm = snapshot_store.new_watermark(conn)
             snapshot_store.upsert_domain_state(engine, wm.isoformat())

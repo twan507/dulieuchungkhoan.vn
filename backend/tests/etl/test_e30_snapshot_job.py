@@ -40,6 +40,12 @@ def _wire(monkeypatch):
     # đúng khuôn test_e20_events_job.py / test_e25_price_job.py.
     monkeypatch.setenv("ETL_DATABASE_URL", os.environ["TEST_DATABASE_URL"])
     monkeypatch.setattr("etl.snapshot_job.load_dotenv", lambda *a, **k: None)
+    # Chặn mạng THẬT cho mọi test trong file: watermark seed khác cold-start (1900-01-01) làm
+    # `_recrawl` không bị bỏ qua, và `recrawl_codes()` quét `market.corporate_event` TOÀN CỤC —
+    # nếu bảng test còn sót dòng có exright_date tương lai do file test khác để lại, `_recrawl`
+    # sẽ gọi thẳng `etl.price_job.run(...)` KHÔNG có `get` giả (review vòng 1, phát hiện #2).
+    # Không test nào ở đây kiểm nội dung re-crawl nên fake trả 0 là đủ, không cần giả lập gì thêm.
+    monkeypatch.setattr("etl.price_job.run", lambda **kw: 0)
 
 
 def _cleanup(engine):
@@ -174,3 +180,57 @@ def test_the_watermark_stays_put_when_a_target_failed(snapshot_db):
     sj.run(codes=[TICKER], get=flaky, sleep=lambda s: None)
     with snapshot_db.connect() as c:
         assert ss.load_watermark(c) == date(2026, 9, 1)
+
+
+def test_the_watermark_stays_put_when_a_target_has_a_bad_shape(snapshot_db):
+    """Review vòng 1, phát hiện #1: target đi đường BadShape KHÔNG bao giờ được `apply()`
+    ghi vào `snapshot_check` (guard.py raise trước khi tới snapshot_store), nhưng nếu điều
+    kiện tiến watermark chỉ nhìn `failed` thì mốc vẫn trôi qua đúng ngày sự kiện của nó —
+    mất trigger vĩnh viễn, cùng hậu quả với `failed`, chỉ khác đường vào (brief cảnh báo
+    đường `failed`, bỏ sót đường `bad_shape`)."""
+    _seed(snapshot_db)
+    with snapshot_db.begin() as c:
+        c.execute(sa.text("INSERT INTO ops.data_domain_state (domain, source, status, watermark)"
+                          " VALUES (:d, :s, 'active', '2026-09-01')"), {"d": ss.DOMAIN, "s": ss.SOURCE})
+    # JSON hợp lệ, status hợp lệ, nhưng thiếu khoá gốc của kind ⇒ bad_shape, không phải failed.
+    bad_shape_payload = '{"items": [{"khac": 1}], "status": 0}'
+
+    def get(u, timeout):
+        if "/Snapshot/" in u:
+            return 200, bad_shape_payload
+        kind = ("ownership" if "/Ownership/" in u else
+                "dividend" if "/CashDividendAnalysis/" in u else "valuation")
+        return 200, _payload(kind)
+
+    rc = sj.run(codes=[TICKER], get=get, sleep=lambda s: None)
+    assert rc == 0                                # guard không từ chối (mẫu quá nhỏ, MIN_SAMPLE)
+    with snapshot_db.connect() as c:
+        assert ss.load_watermark(c) == date(2026, 9, 1)
+
+
+def test_a_partial_outage_refuses_the_run_and_leaves_real_evidence(snapshot_db):
+    """Review vòng 1, phát hiện #3: hai test outage toàn phần ở trên có `fetched` LUÔN RỖNG
+    (payload lỗi khiến classify() không bao giờ trả 'ok') nên chỉ chứng minh
+    `store_refusal_evidence` không nổ với list rỗng — không chứng minh nó GHI được dòng thật.
+    Ở đây 4/20 mã thành công, 16/20 hỏng (80% > ngưỡng 20%) ⇒ guard vẫn từ chối, nhưng
+    `fetched` có 4 bản ghi thật để đứng làm bằng chứng."""
+    tickers = _seed_batch(snapshot_db)
+    ok_organs = set(tickers[:4])
+    failing = (FIX / "BVB-valuation-failed.json").read_text(encoding="utf-8")
+
+    def get(u, timeout):
+        if any(f"OrganCode={o}" in u for o in ok_organs):
+            return 200, _payload("valuation")
+        return 200, failing
+
+    rc = sj.run(codes=tickers, kinds=["valuation"], get=get, sleep=lambda s: None)
+    assert rc == 1
+    with snapshot_db.begin() as c:
+        n_daily = c.execute(sa.text(
+            "SELECT count(*) FROM market.snapshot_daily d"
+            " JOIN market.issuer_external_id x USING (issuer_id)"
+            " WHERE x.source = 'fiintrade' AND x.external_code = ANY(:o)"), {"o": tickers}).scalar_one()
+        rows = c.execute(sa.text("SELECT endpoint_key FROM staging.raw_payload"
+                                 " WHERE source = 'snapshot'")).scalars().all()
+    assert n_daily == 0                            # transaction dữ liệu rollback thật khi guard từ chối
+    assert set(rows) == {f"snapshot:valuation:{o}" for o in ok_organs}
