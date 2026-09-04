@@ -10,7 +10,7 @@ Thực thi bằng subagent (Sonnet, chỉ định tường minh), review hai tr�
 
 | | Nội dung | Kết quả |
 |---|---|---|
-| AC1 | Toàn bộ test xanh | ✅ **523 passed, 2 skipped** *(trước lát này: 456)* |
+| AC1 | Toàn bộ test xanh | ✅ **532 passed, 2 skipped** *(trước lát này: 456)* |
 | AC2 | `--codes` 3 mã → 12 dòng, 4 kind | ✅ run 88 |
 | AC3 | Lượt đầy đủ vào kho production | ✅ run 91 — **234 target, 234 lời gọi, 0 retry** |
 | AC4 | Chạy lại cùng ngày | ✅ run 89 — `unchanged 12`, `rows_written 0` |
@@ -121,11 +121,55 @@ Hai hệ quả vận hành, cùng lộ ra khi chạy thật:
 - **Test `due_list` không cách ly.** 9/20 test đỏ khi chạy chung cả bộ (xanh khi chạy riêng file): chúng assert trên kết quả `due_list` **toàn cục** trong khi CSDL test dùng chung và các test job khác commit issuer thật nằm lại vĩnh viễn. Sửa ở tầng test bằng helper dập nền + lọc theo mã của chính test. Cùng bệnh này còn tái phát ở `new_watermark` (xanh do trùng hợp dữ liệu) — sửa nốt.
 - **Hai test guard-từ-chối bất khả thi.** Plan dựng chúng với 1 mã = 4 target, trong khi `MIN_SAMPLE = 20` khiến chốt chặn **không thể** kích hoạt ở cỡ mẫu đó. Sửa: seed 20 mã, giới hạn một kind.
 
+## 3b. Review toàn nhánh — hai lỗi Critical mà 523 test không thấy
+
+Review độc lập trên toàn nhánh (23 commit) bắt **2 Critical, 8 Important, 9 Minor**. Đã vá gộp một lượt (`b5cbf84` · `8ccbd92` · `08e36c0` · `826ac00`), **532 test xanh** (+9 test, mỗi test đỏ trước xanh sau).
+
+### A1 — lượt con vẫn đẩy mốc nước toàn bảng *(Critical)*
+
+`run()` ghi mốc nước bằng `max(public_date)` **toàn bảng** kể cả lượt `--codes`/`--kinds` chỉ phục vụ vài mã. Mọi sự kiện của ~1.520 issuer còn lại rơi xuống dưới mốc mới ⇒ **mất trigger vĩnh viễn**, chỉ còn lưới quét sàn 30/90 ngày bắt lại.
+
+Luật chống chuyện này đã có trong spec nhưng chỉ soi đường `failed`, bỏ đường lượt con. Và **repo đã có tiền lệ đúng** ở `price_job.py` (`stats["subset"]`, chỉ `upsert_domain_state` khi không phải lượt con) — bản plan không nhân bản.
+
+🔴 **Trớ trêu: chính lệnh AC5 (`--codes` tập mã hôm trước) là lệnh kích hoạt lỗi này.** Chạy AC5 trên code cũ là tự phá bằng chính phép nghiệm thu.
+
+### A2 — nhánh trigger không trần *(Critical)*
+
+Nhánh trigger chỉ lọc `public_date > watermark`, không quota, không đối chiếu sổ kiểm:
+
+- **Cold start** (mốc `1900-01-01`): lấy **mọi issuer từng có** bốn loại sự kiện — gần trọn vũ trụ × nhiều kind. Nhánh quét sàn đã được bảo vệ khỏi đúng ca này bằng quota, nhánh trigger thì không. *(AC3 chỉ đo được 234 lời gọi vì mốc nước lúc đó tình cờ đang hỏng theo hướng ngược lại.)*
+- **Vòng lặp tự khuếch đại**: một mã hỏng dai dẳng giữ mốc đứng yên ⇒ danh sách trigger phình mỗi ngày ⇒ càng dễ có mã hỏng ⇒ mốc càng không tiến.
+
+Vá: bỏ qua nhánh trigger ở cold start (quét sàn phủ trọn trong 30/90 ngày) + trần `MAX_TRIGGER = 300`, lấy `public_date` cũ nhất trước.
+
+### Bảy mục Important còn lại, đã vá
+
+Mốc nước đọc hai lần nên có cửa sổ đua *(nay đọc trong cùng giao dịch với `due_list`)* · `--max-minutes` không phủ pha re-crawl *(nay pha fetch bị cắt thì bỏ luôn re-crawl)* · sáu test còn assert trên trạng thái **toàn cục** · thiếu test cho chính cơ chế chặn cold start *(N issuer chưa kiểm > quota ⇒ đúng quota)* · `valuation` thiếu đường trigger dù tập trắng của nó có `outstandingShare` · thứ tự `close_run`/`upsert_domain_state` ngược với họ job *(mốc nước lỗi làm mất sạch `stats` của lượt đã commit)* · chú thích `changed_at` mô tả trạng thái code không tạo ra được.
+
+### Một hỏng mới do chính lượt vá gây ra — và cách nó bị bắt
+
+Lượt vá cho `ShareIssuance` bắn thêm kind `valuation` là đúng yêu cầu, **nhưng `StockDividend` bị ghi đè chứ không phải cộng thêm**: nó mất hẳn kind `dividend`. Báo cáo của người vá mô tả là *"cộng thêm"* — **sai so với code thật**. Không test nào phủ ánh xạ này nên **531 test xanh vẫn không bắt được**; re-review có phạm vi hẹp đọc thẳng code mới thấy, và kiểm lại bằng `git show` của commit trước lượt vá mới xác nhận được.
+
+Đã khôi phục thành `("snapshot", "valuation", "dividend")` — cổ tức bằng cổ phiếu làm đổi số CP lưu hành **và** là sự kiện cổ tức — kèm test phủ đúng ánh xạ ba kind.
+
+**Bài học:** báo cáo của người thực thi là *lời khai*, không phải *bằng chứng*. Chỗ duy nhất bắt được ca này là đọc diff và đối chiếu với bản trước đó.
+
+### Phát hiện có thật nhưng cố ý chưa sửa — kèm lý do và điều kiện xét lại
+
+| Mục | Vì sao chưa sửa | Xét lại khi |
+|---|---|---|
+| Chốt (i) gộp bốn kind — vừa che được lỗi của kind nhỏ, vừa **tự nổ** khi `ownership` đảo đồng loạt theo kỳ công bố (70/234 = 29,9% > 20%) | Ngưỡng theo từng kind **không** phải lời giải hiển nhiên: nó làm ca `ownership` nổ **dễ hơn** | Có vài tháng số thật của `changed_floor`. Đã cảnh báo ở [backend/README](../../../../backend/README.md) để người trực không tưởng nguồn hỏng |
+| `riskFreeRate` trong tập trắng `valuation` có thể jitter cùng họ với hai trường đã loại | Chưa có hai điểm thời gian để biết nó có nhích không | **AC5** là phép đo đầu tiên |
+| Hash nhạy với **thứ tự phần tử** trong mảng (`ownership` là 4 mảng) | Chưa quan sát được nguồn đảo thứ tự | Thấy `changed_floor` cao bất thường mà nội dung không đổi |
+| `_newest_period` rơi từ `quarterly` sang `yearly` khi mảng rỗng | Nguồn hiện chỉ để `quarterly` rỗng ở 1/9 mã | Nguồn bắt đầu điền `quarterly` cho phi ngân hàng ⇒ lật đồng loạt, mà 24/234 = 10% nên chốt (i) **không bắt** |
+| Target hỏng giữ `checked_at` NULL nên luôn đứng đầu hàng đợi quét sàn | Hành vi đó cũng **đúng nghĩa** (chưa kiểm được thì phải thử lại); thiệt hại có trần là vài lời gọi/ngày | Số mã hỏng vĩnh viễn vượt vài chục |
+| `open_run` ngoài try/except · import giữa file test · `KeyboardInterrupt` · `--kinds` không kiểm giá trị | Đều nhỏ, và sửa `open_run` riêng ở đây sẽ **phá tính đồng nhất của họ job** | Dọn cả họ job trong một lượt riêng |
+
 ## 4. Trạng thái bàn giao
 
 | Mục | Giá trị |
 |---|---|
-| Test | **523 passed, 2 skipped** |
+| Test | **532 passed, 2 skipped** |
 | Migration head | **`0016`** — `ops.snapshot_check` + domain `market.snapshot` |
 | Module mới | `snapshot_fetch` · `snapshot_normalize` · `snapshot_guard` · `snapshot_store` · `snapshot_job` |
 | Dữ liệu đã nạp | `snapshot_daily` **246 dòng**/2026-09-04 · `ops.snapshot_check` 246 dòng |
