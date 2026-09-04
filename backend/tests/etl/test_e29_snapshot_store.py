@@ -129,9 +129,8 @@ def test_a_dividend_event_triggers_the_dividend_kind_not_the_snapshot_kind(db):
     iid = _issuer(db, "Chia co tuc", "ZZCD", "ZZC")
     for kind in ss.CADENCE_DAYS:
         _checked(db, iid, kind, days_ago=1)
-    _event(db, "ZZCD", "CashDividend", date.today() - timedelta(days=2),
-           exright_date=date.today())
-    due = _mine(ss.due_list(db, date.today() - timedelta(days=1)), "ZZCD")
+    _event(db, "ZZCD", "CashDividend", date.today())          # trigger đọc public_date, không
+    due = _mine(ss.due_list(db, date.today() - timedelta(days=1)), "ZZCD")  # còn đọc exright_date
     assert [(t.kind, t.found_by) for t in due] == [("dividend", "event")]
 
 
@@ -143,6 +142,19 @@ def test_an_event_older_than_the_watermark_does_not_fire(db):
     _event(db, "ZZOLDEV", "Earning", date.today() - timedelta(days=10))
     due = _mine(ss.due_list(db, date.today() - timedelta(days=1)), "ZZOLDEV")
     assert due == []
+
+
+def test_due_list_fires_on_publish_even_when_the_ex_right_date_is_far_in_the_future(db):
+    """Chiều ngược của bug đo 2026-09-22: trigger đọc `public_date`, không đọc
+    `exright_date` — một sự kiện vừa công bố phải bắn ngay dù ngày không hưởng quyền của
+    nó còn rất xa, đừng để lần sửa `new_watermark`/`due_list` làm hỏng chiều này."""
+    _quiet_universe(db)
+    iid = _issuer(db, "Cong bo som, ex xa", "ZZPUB", "ZZP")
+    for kind in ss.CADENCE_DAYS:
+        _checked(db, iid, kind, days_ago=1)
+    _event(db, "ZZPUB", "CashDividend", date.today(), exright_date=date(2030, 6, 30))
+    due = _mine(ss.due_list(db, date.today() - timedelta(days=1)), "ZZPUB")
+    assert [(t.kind, t.found_by) for t in due] == [("dividend", "event")]
 
 
 def test_a_target_hit_by_both_paths_appears_once_and_counts_as_event(db):
@@ -265,18 +277,27 @@ def test_apply_run_twice_on_the_same_day_is_idempotent(db):
     assert _rows(db, iid) == 1
 
 
-def test_new_watermark_takes_the_latest_of_both_event_dates(db):
+def test_new_watermark_tracks_the_announcement_date_not_the_ex_right_date(db):
+    """Bug thật đo 2026-09-22: `--codes A32,BAB,BVB` để lại watermark `2026-09-22` — nhảy
+    vào tương lai — vì bản cũ lấy `max(greatest(public_date, exright_date))` và một
+    `exright_date` xa kéo mốc vượt luôn hôm nay, làm trigger chết ba tuần (không sự kiện
+    công bố nào có `public_date` lớn hơn nổi cái mốc giả đó). `new_watermark()` giờ chỉ đo
+    'sự kiện MỚI CÔNG BỐ' — cột `public_date` — bỏ hẳn `exright_date` khỏi phép tính."""
     _quiet_events(db)
-    _issuer(db, "Moc nuoc", "ZZWM", "ZZW")
-    _event(db, "ZZWM", "Earning", date(2026, 8, 1))
-    _event(db, "ZZWM", "CashDividend", date(2026, 8, 20), exright_date=date(2026, 9, 10))
-    assert ss.new_watermark(db) == date(2026, 9, 10)
+    _issuer(db, "Ngay ex xa", "ZZFAR", "ZZX")
+    _event(db, "ZZFAR", "CashDividend", date(2030, 1, 5), exright_date=date(2030, 6, 30))
+    assert ss.new_watermark(db) == date(2030, 1, 5)
 
 
-def test_recrawl_codes_names_only_tickers_with_a_new_exright_date(db):
+def test_recrawl_codes_picks_only_a_ticker_whose_ex_right_date_just_passed(db):
+    """Không còn watermark: cửa sổ ngày (mặc định 3) quanh HÔM NAY. Ba mã, ba đáp số khác
+    nhau — hôm nay lấy, tương lai bỏ, quá cũ (ngoài cửa sổ) cũng bỏ."""
     _quiet_events(db)
-    _issuer(db, "Co quyen", "ZZRC", "ZZQ")
-    _issuer(db, "Khong quyen", "ZZNC", "ZZK")
-    _event(db, "ZZRC", "CashDividend", date(2026, 9, 1), exright_date=date(2026, 9, 3))
-    _event(db, "ZZNC", "Earning", date(2026, 9, 2))
-    assert ss.recrawl_codes(db, date(2026, 9, 1)) == ["ZZQ"]
+    _issuer(db, "Ex hom nay", "ZZTODAY", "ZZT")
+    _issuer(db, "Ex tuong lai", "ZZFUTURE", "ZZU")
+    _issuer(db, "Ex qua cu", "ZZSTALE", "ZZS")
+    _event(db, "ZZTODAY", "CashDividend", date.today() - timedelta(days=5), exright_date=date.today())
+    _event(db, "ZZFUTURE", "CashDividend", date.today(), exright_date=date.today() + timedelta(days=1))
+    _event(db, "ZZSTALE", "CashDividend", date.today() - timedelta(days=10),
+           exright_date=date.today() - timedelta(days=10))
+    assert ss.recrawl_codes(db) == ["ZZT"]

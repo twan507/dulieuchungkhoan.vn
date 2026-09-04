@@ -60,19 +60,15 @@ def _fetch_all(targets, get, sleep, deadline):
         return fetched, failed, bad_shape, stopped, f.calls, f.retries
 
 
-def _recrawl(engine, watermark_before, stats):
+def _recrawl(engine, stats):
     """Sự kiện quyền làm chuỗi close_adj của mã đó sai — kéo lại bằng đường có sẵn của lát 3.
 
-    Bỏ qua ở lượt khởi tạo: watermark 1900-01-01 nghĩa là 'mọi mã từng có ngày không hưởng
-    quyền', tức 1.523 mã — đúng bằng một lượt backfill trọn vòng ~20 giờ.
+    Không còn nhánh 'bỏ qua ở lượt khởi tạo': `recrawl_codes()` (spec mới, đo bug thật
+    2026-09-22) đã đổi sang cửa sổ vài ngày quanh hôm nay thay vì so với watermark, nên tự
+    nó chặn số mã ở MỌI lượt — kể cả lượt khởi tạo — không còn nguy cơ trả cả 1.523 mã.
     """
-    import datetime as dt
-
-    if watermark_before == dt.date(1900, 1, 1):
-        stats["recrawl"] = {"skipped": "lượt khởi tạo"}
-        return
     with engine.begin() as conn:
-        codes = snapshot_store.recrawl_codes(conn, watermark_before)
+        codes = snapshot_store.recrawl_codes(conn)
     if not codes:
         return
     if len(codes) > MAX_RECRAWL:
@@ -126,7 +122,7 @@ def run(codes=None, kinds=None, max_minutes=None, get=None, sleep=time.sleep) ->
 
         stats = {"tally": vars(tally), "rows_written": written, "calls": calls,
                  "retries": retries, "stopped_early": stopped, "run_date": run_date.isoformat()}
-        _recrawl(engine, watermark, stats)
+        _recrawl(engine, stats)
 
         # Watermark chỉ tiến khi KHÔNG mã nào hỏng: đẩy mốc lên trong lúc còn target chưa
         # phục vụ là mất trigger vĩnh viễn (§5.1 chú thích 2 của plan). `bad_shape` cũng phải

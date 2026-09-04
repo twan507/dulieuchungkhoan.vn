@@ -40,10 +40,11 @@ def _wire(monkeypatch):
     # đúng khuôn test_e20_events_job.py / test_e25_price_job.py.
     monkeypatch.setenv("ETL_DATABASE_URL", os.environ["TEST_DATABASE_URL"])
     monkeypatch.setattr("etl.snapshot_job.load_dotenv", lambda *a, **k: None)
-    # Chặn mạng THẬT cho mọi test trong file: watermark seed khác cold-start (1900-01-01) làm
-    # `_recrawl` không bị bỏ qua, và `recrawl_codes()` quét `market.corporate_event` TOÀN CỤC —
-    # nếu bảng test còn sót dòng có exright_date tương lai do file test khác để lại, `_recrawl`
-    # sẽ gọi thẳng `etl.price_job.run(...)` KHÔNG có `get` giả (review vòng 1, phát hiện #2).
+    # Chặn mạng THẬT cho mọi test trong file: `_recrawl` giờ LUÔN chạy (vòng sửa 3 bỏ nhánh
+    # 'bỏ qua ở lượt khởi tạo' — `recrawl_codes()` tự chặn bằng cửa sổ ngày, không cần watermark
+    # nữa), và nó quét `market.corporate_event` TOÀN CỤC trong cửa sổ đó — nếu bảng test còn sót
+    # dòng có exright_date trong vài ngày gần đây do file test khác để lại, `_recrawl` sẽ gọi
+    # thẳng `etl.price_job.run(...)` KHÔNG có `get` giả (review vòng 1, phát hiện #2).
     # Không test nào ở đây kiểm nội dung re-crawl nên fake trả 0 là đủ, không cần giả lập gì thêm.
     monkeypatch.setattr("etl.price_job.run", lambda **kw: 0)
 

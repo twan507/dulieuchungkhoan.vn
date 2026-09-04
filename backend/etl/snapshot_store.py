@@ -78,8 +78,7 @@ def due_list(conn, watermark: dt.date, kinds=None, codes=None,
             FROM uni u
             JOIN market.corporate_event e ON e.issuer_id = u.issuer_id
             WHERE e.event_type = ANY(:types)
-              AND greatest(coalesce(e.public_date, DATE '1900-01-01'),
-                           coalesce(e.exright_date, DATE '1900-01-01')) > :wm
+              AND e.public_date > :wm
             ORDER BY u.issuer_id
             """), {"types": event_types, "wm": watermark}).all()
         for r in rows:
@@ -163,21 +162,37 @@ def apply(conn, fetched: list[Fetched], run_date: dt.date) -> tuple[Tally, int]:
 
 
 def new_watermark(conn) -> dt.date:
+    """Mốc 'sự kiện MỚI CÔNG BỐ' — CHỈ `public_date`.
+
+    Bug thật đo 2026-09-22 (`--codes A32,BAB,BVB`): bản cũ lấy `max(greatest(public_date,
+    exright_date))`. `exright_date` là ngày KHÔNG HƯỞNG QUYỀN — nguồn công bố nó có thể xa
+    hơn hôm nay hàng tuần/tháng — nên một dòng như vậy kéo watermark vượt luôn ngày hiện
+    tại, làm điều kiện trigger `public_date > :wm` của due_list() không bao giờ đúng cho
+    bất kỳ sự kiện MỚI nào công bố trước cái mốc giả đó. `public_date` không bao giờ ở
+    tương lai nên tự nó đã là thước đo "mới với ta" đúng nghĩa — không cần trộn cột nào
+    khác. Việc re-crawl giá theo `exright_date` chuyển hẳn sang `recrawl_codes()`, không
+    dùng watermark nữa.
+    """
     got = conn.execute(sa.text(
-        "SELECT max(greatest(coalesce(public_date, DATE '1900-01-01'),"
-        "                    coalesce(exright_date, DATE '1900-01-01')))"
-        " FROM market.corporate_event")).scalar()
+        "SELECT max(public_date) FROM market.corporate_event")).scalar()
     return got or dt.date(1900, 1, 1)
 
 
-def recrawl_codes(conn, watermark: dt.date) -> list[str]:
-    """Mã có ngày giao dịch không hưởng quyền MỚI — chuỗi close_adj của chúng đã sai."""
+def recrawl_codes(conn, days: int = 3) -> list[str]:
+    """Mã có ngày không hưởng quyền VỪA ĐI QUA trong `days` ngày gần đây.
+
+    Không dùng watermark: mốc nước đo "sự kiện mới công bố", còn việc re-crawl giá phải xảy
+    ra khi ngày ex ĐÃ QUA (trước ngày ex thì chuỗi close_adj chưa đổi, kéo về cũng vô ích).
+    Cửa sổ vài ngày để một hôm job không chạy cũng không mất; kéo lại nhiều lần là vô hại vì
+    `etl price --backfill --codes` idempotent.
+    """
     rows = conn.execute(sa.text(
         _UNIVERSE + """
         SELECT DISTINCT u.ticker FROM uni u
         JOIN market.corporate_event e ON e.issuer_id = u.issuer_id
-        WHERE e.exright_date > :wm ORDER BY u.ticker
-        """), {"wm": watermark}).scalars().all()
+        WHERE e.exright_date BETWEEN current_date - :days AND current_date
+        ORDER BY u.ticker
+        """), {"days": days}).scalars().all()
     return list(rows)
 
 
