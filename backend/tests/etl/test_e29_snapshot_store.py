@@ -224,6 +224,21 @@ def test_a_share_issuance_event_triggers_both_snapshot_and_valuation(db):
     assert sorted((t.kind, t.found_by) for t in due) == [("snapshot", "event"), ("valuation", "event")]
 
 
+def test_a_stock_dividend_event_triggers_snapshot_valuation_and_dividend(db):
+    """Vá lượt trước ghi đè `("snapshot", "valuation")` lên chỗ của `("dividend",)` cũ thay vì
+    cộng thêm — StockDividend vừa đổi số cổ phiếu lưu hành (chạm `snapshot`/`valuation`, giống
+    ShareIssuance) VỪA là một sự kiện cổ tức (chạm `dividend`) — cả ba đều đúng, thiếu vế nào
+    cũng sai."""
+    _quiet_universe(db)
+    iid = _issuer(db, "Chia co phieu", "ZZSD2", "ZZ2")
+    for kind in ss.CADENCE_DAYS:
+        _checked(db, iid, kind, days_ago=1)
+    _event(db, "ZZSD2", "StockDividend", date.today())
+    due = _mine(ss.due_list(db, date.today() - timedelta(days=1)), "ZZSD2")
+    assert sorted((t.kind, t.found_by) for t in due) == [
+        ("dividend", "event"), ("snapshot", "event"), ("valuation", "event")]
+
+
 def test_codes_forces_every_kind_and_ignores_cadence(db):
     iid = _issuer(db, "Ep bang codes", "ZZFORCE", "ZZR")
     for kind in ss.CADENCE_DAYS:

@@ -30,9 +30,14 @@ CADENCE_DAYS = {"snapshot": 90, "valuation": 30, "ownership": 30, "dividend": 30
 QUOTA = {"snapshot": 24, "valuation": 70, "ownership": 70, "dividend": 70}
 # Một loại sự kiện có thể bắn NHIỀU kind: `outstandingShare` nằm trong tập trắng của CẢ
 # `snapshot` lẫn `valuation`, và ShareIssuance/StockDividend là hai loại duy nhất làm nó đổi
-# (review #7) — CashDividend không đổi số cổ phiếu nên chỉ bắn `dividend`.
+# (review #7) — CashDividend không đổi số cổ phiếu nên chỉ bắn `dividend`. StockDividend
+# CŨNG là một sự kiện cổ tức (cổ tức trả bằng cổ phiếu) nên còn phải bắn `dividend` —
+# thiếu vế này thì kind `dividend` của mã vừa chia cổ phiếu bị bỏ đói tới 30 ngày quét sàn
+# (bug review vòng vá trước: gán đè `("snapshot", "valuation")` thế chỗ luôn `("dividend",)`
+# cũ thay vì cộng thêm).
 TRIGGER_KINDS = {"Earning": ("snapshot",), "ShareIssuance": ("snapshot", "valuation"),
-                 "CashDividend": ("dividend",), "StockDividend": ("snapshot", "valuation")}
+                 "CashDividend": ("dividend",),
+                 "StockDividend": ("snapshot", "valuation", "dividend")}
 
 # Vũ trụ: issuer có ÍT NHẤT một cổ phiếu đang niêm yết. Quỹ/ETF tự rơi ra vì không có
 # security dạng stock (đo 2026-09-04) — không cần luật loại riêng.
