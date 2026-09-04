@@ -143,6 +143,12 @@ def _daily(engine, tickers: list[str] | None) -> int:
             price_store.upsert_domain_state(engine, stats["latest_trading_date"])
         log.info("price xong: %s", stats)
         return 0
+    except KeyboardInterrupt:
+        # Ctrl+C là cách dừng chính thức của cửa sổ task (nút X đã khoá) — sổ phải ghi lý do,
+        # không để lượt treo 'running' với traceback.
+        omo_store.close_run(engine, run_id, "failed", stats or None, error="dừng tay (Ctrl+C)")
+        log.warning("price dừng tay (Ctrl+C)")
+        return 130
     except Exception as e:  # noqa: BLE001 — job biên ngoài: mọi lỗi đều phải vào etl_run
         omo_store.close_run(engine, run_id, "failed", stats or None, error=f"{type(e).__name__}: {e}")
         log.exception("price thất bại")
@@ -234,6 +240,10 @@ def _backfill(engine, tickers: list[str] | None, max_minutes: float | None,
         omo_store.close_run(engine, run_id, "success", stats)
         log.info("backfill xong: %s", stats)
         return 0
+    except KeyboardInterrupt:
+        omo_store.close_run(engine, run_id, "failed", stats, error="dừng tay (Ctrl+C)")   # con trỏ đã lưu
+        log.warning("backfill dừng tay (Ctrl+C) tại con trỏ %s", stats.get("cursor"))
+        return 130
     except Exception as e:  # noqa: BLE001
         omo_store.close_run(engine, run_id, "failed", stats, error=f"{type(e).__name__}: {e}")
         log.exception("backfill thất bại")
