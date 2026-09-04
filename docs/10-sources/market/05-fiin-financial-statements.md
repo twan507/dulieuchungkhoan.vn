@@ -49,10 +49,10 @@ Không có tham số giới hạn kỳ, phân trang, hay lọc theo năm.
 
 | Trường | Kiểu | Mô tả |
 |---|---|---|
-| `items[0].quarterly[]` | array | Chuỗi kỳ quý, mới nhất trước |
+| `items[0].quarterly[]` | array | Chuỗi kỳ quý, mới nhất trước *(xác nhận lại 2026-09-04 trên 4 mã: phần tử đầu là 2026Q2, phần tử cuối là kỳ cũ nhất — NGƯỢC với khối `quarterly[]` trong `GetSnapshot*`, khối đó xếp cũ → mới)* |
 | `items[0].yearly[]` | array | Chuỗi kỳ năm |
 | `yearReport` | integer | Năm báo cáo |
-| `quarterReport` | integer | `1`..`4` = quý I–IV · `5` = cả năm |
+| `quarterReport` | integer | `1`..`4` = quý I–IV · `5` = cả năm — **chỉ năm giá trị này** *(đo 2026-09-04: 5 mã BAB · AAS · VNM · HPG · A32, 0 dòng mang giá trị khác; khác với `lengthReport` của `getFinancialReports` bên dưới có thêm `6`/`9`)* |
 | *(các trường khác)* | number \| null | Mã chỉ tiêu FiinGroup — xem dưới |
 
 ### Mã chỉ tiêu theo endpoint
@@ -70,6 +70,9 @@ Tra nghĩa từng mã: [Phụ lục A §A.5](appendix-A-field-codes.md) — **72
 ### Ghi chú & bẫy
 
 - ⚠️ **Không lọc được kỳ.** Muốn hiển thị 5 năm gần nhất vẫn phải tải toàn bộ 21 kỳ năm và 86 kỳ quý.
+- ⚠️ **`GetBalanceSheet` trả hai khoá viết hoa lẫn: `bsI141` và `bsS134`** *(đo 2026-09-04, 4/4 mã BAB · AAS · VNM · HPG, kèm mẫu A32 trong [khảo sát](../../90-records/surveys/2026-09-04-bctc-endpoints/samples/A32-balance_sheet.json))*. Từ điển ghi `bsi141`/`bss134` chữ thường — **hạ chữ thường trước khi tra hoặc ghi kho**. `GetIncomeStatement` và `GetCashFlow` không có khoá nào như vậy.
+- `status` trả `0` *(đo 2026-08-10)* **và** `"Success"` *(đo 2026-09-04, 21/21 lời gọi trên 5 mã BAB · A32 · AAS · VNM · HPG)* trên cùng ba endpoint — kiểm bằng `status ∈ {0, "Success"}` theo [quy ước §6.1](00-conventions.md), không so với một giá trị.
+- Ngoài mã chỉ tiêu, mỗi response còn **8 khoá không phải mã chỉ tiêu**: `organCode` · `ebit` · `ebitDa` · `operating` · `otherAssetBank` · `otherAssetNonBank` · `otherLiabilties` *(nguyên văn, thiếu chữ `i`)* · `rtq29` *(chỉ `GetIncomeStatement`)*. Đếm trọn ba endpoint được **557 khoá phân biệt** = 549 mã từ điển + 8 khoá này *(đối chiếu 2026-09-04 trên 3 mã)* — đừng đọc 557 thành "số mã chỉ tiêu".
 - Số kỳ khác nhau rõ rệt giữa các mã. Ví dụ đo được:
 
 | Mã | Sàn | quarterly (BS/IS/CF) | yearly |
@@ -94,7 +97,7 @@ Tra nghĩa từng mã: [Phụ lục A §A.5](appendix-A-field-codes.md) — **72
 | `GetIncomeStatement` | 20/20 | 30 KB / 165 KB / 278 KB | ~2,41 s |
 | `GetCashFlow` | 20/20 | 25 KB / 126 KB / 194 KB | ~1,90 s |
 
-⚡ **Đo lại 2026-09-04 trên 3 mã (BAB · A32 · AAS): độ trễ chỉ 27–499 ms**, thấp hơn một bậc so với ~1,9–2,45 s đo ngày 2026-08-10. Giữ cả hai số kèm ngày — nguồn đã nhanh lên, không phải số cũ sai. Hệ quả: chi phí một lượt trọn sàn do **giãn cách 0,5 s** quyết định chứ không do độ trễ. Chi tiết: [khảo sát BCTC](../../90-records/surveys/2026-09-04-bctc-endpoints/README.md).
+⚡ **Đo lại 2026-09-04 trên 3 mã (BAB · A32 · AAS): độ trễ chỉ 27–499 ms**, thấp hơn một bậc so với ~1,9–2,45 s đo ngày 2026-08-10. *Chiều cùng ngày, 12 lời gọi trên 4 mã có kỳ quý (BAB · AAS · VNM · HPG): 118–1.069 ms, payload 117–408 KB — lớn nhất là `GetBalanceSheet` của VNM (408 KB, 84 kỳ quý, 1.069 ms).* Giữ cả hai số kèm ngày — nguồn đã nhanh lên, không phải số cũ sai. Hệ quả: chi phí một lượt trọn sàn do **giãn cách 0,5 s** quyết định chứ không do độ trễ. Chi tiết: [khảo sát BCTC](../../90-records/surveys/2026-09-04-bctc-endpoints/README.md).
 
 ---
 
@@ -137,7 +140,7 @@ GET FIIN_FUND/FinancialStatement/GetFinancialReports?OrganCode={organCode}&langu
 | `id` | integer | Định danh báo cáo |
 | `organCode` | string | Mã doanh nghiệp |
 | `yearReport` | integer | Năm báo cáo |
-| `lengthReport` | integer | `1`..`4` = quý · `5` = cả năm |
+| `lengthReport` | integer | `1`..`4` = quý · `5` = cả năm · **`6` = bán niên · `9` = 9 tháng luỹ kế** *(đo 2026-09-04: 28/307 dòng trên 4 mã BID · BAB · A32 · AAS mang `6`/`9`; giải nghĩa từ `title`, chi tiết [khảo sát §5.1](../../90-records/surveys/2026-09-04-bctc-endpoints/README.md))* |
 | `title` | string | Tiêu đề, ví dụ *"BCTC riêng lẻ chưa kiểm toán quý 2 năm 2026"* |
 | `sourceUrl` | string | **URL PDF trực tiếp** trên `cmsv5/cmsv6.fiingroup.vn` |
 
@@ -145,7 +148,9 @@ GET FIIN_FUND/FinancialStatement/GetFinancialReports?OrganCode={organCode}&langu
 
 - ⚠️ `sourceUrl` trỏ tới CDN ngoài (`cmsv5/cmsv6.fiingroup.vn`). Nên **proxy qua backend** thay vì cho trình duyệt tải thẳng: tránh phụ thuộc uptime của CDN bên thứ ba, kiểm soát được timeout, và ghi nhận được lượt tải.
 - Một mã có nhiều bản cho cùng một kỳ (hợp nhất `_HN` và riêng lẻ `_RL`) — phân biệt qua `title`, không có trường riêng.
-- `totalCount` chính xác ở endpoint này.
+- `totalCount` chính xác ở endpoint này *(4/4 mã `len(items) == totalCount`, đo 2026-09-04)*.
+- ⚠️ `sourceUrl` **trùng ngay trong một response** — BID và BAB mỗi mã một cặp: hai `id` khác nhau, cùng năm, cùng `lengthReport`, cùng `title`, cùng URL *(đo 2026-09-04)*. Khử trùng trước khi ghi nếu cột khoá theo URL.
+- `status` trả `0` *(đo 2026-08-10)* và `"Success"` *(đo 2026-09-04, 4/4)* — cùng luật `∈ {0, "Success"}` như ba endpoint trên.
 
 ### Độ phủ & hiệu năng
 

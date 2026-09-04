@@ -120,6 +120,8 @@ cd backend && uv run python -m etl snapshot --codes AAA,ABB,AAM,AAT
 
 Đọc `stats`: `changed_floor = 0` là AC5 đạt. Khác 0 thì so hai dòng `snapshot_daily` liền nhau của mã đổi để tìm trường jitter, rồi **bỏ trường đó khỏi `KEEP`** — đúng điều kiện đảo ngược đã ghi ở [spec §4.3](spec.md), **không** phải nới ngưỡng guard. Lượt đó đồng thời trả lời câu còn bỏ ngỏ: nguồn nạp **cuối ngày** hay **qua đêm**.
 
+*Kiểm lại 17:10 ngày 04/09 (phiên chuẩn bị lát 5): AAA `rtd11 ÷ outstandingShare` = 7.090 — vẫn giá 03/09. Nguồn chưa nạp sau 2 giờ 10 phút; AC5 tiếp tục treo, lệnh đóng không đổi. Chi tiết: [khảo sát BCTC §6.5](../../surveys/2026-09-04-bctc-endpoints/README.md).*
+
 ### 1c. Lỗi cùng họ với A1, lộ ra ở chính lượt kiểm trên
 
 Ba lượt `--codes` liên tiếp đều kéo lại `['RYG','TCH']` — ba lần backfill trọn 12,5 năm cho hai mã **không nằm trong tập người chạy ép**. Lượt đầu đổi dữ liệu thật, hai lượt sau `rows_changed = 0`, thuần lãng phí.

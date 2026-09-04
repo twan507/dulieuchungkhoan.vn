@@ -15,7 +15,7 @@ Ba khối vốn có ba danh sách việc riêng, mỗi danh sách tự cho mình
 | **Tài liệu OMO (SBV)** | ✅ **Mới 2026-08-15** — tải và parse thật 1 phiên | [`macro/sbv-omo.md`](../10-sources/macro/sbv-omo.md) |
 | **Tài liệu 5 nguồn quốc tế** | ✅ **Mới 2026-08-15** — FRED · Frankfurter · Yahoo · LBMA · Binance | [`10-sources/global/`](../10-sources/global/) |
 | Tài liệu nguồn tin | ✅ Đo thật trên 307 URL, 1.408 tiêu đề | ~570 tin/ngày chưa dedupe |
-| Thiết kế kho dữ liệu thị trường | ✅ Đã duyệt · **phần realtime đã có code chạy** (2026-08-26) | schema `rt` + ingester đã dựng; phần REST chưa viết |
+| Thiết kế kho dữ liệu thị trường | ✅ Đã duyệt · **phần realtime đã có code chạy** (2026-08-26) | schema `rt` + ingester đã dựng; phần REST: lát 1–4 của [7] đã chạy thật vào kho (screener · events · price · snapshot, 2026-09-03/04), BCTC là lát 5 |
 | Thiết kế pipeline tin | ✅ Đã duyệt | chưa viết dòng code nào |
 | Hai skill chứng khoán | ✅ Xong, test 6 vòng, **dự án đã đóng 2026-08-14** | 3.046 dòng · [bảo trì skill](../30-skills/maintenance.md) |
 | Tầng ngữ nghĩa nối dữ liệu ↔ skill | 🟡 Mới đề xuất, chưa duyệt | [chatbot-semantic-layer.md](../20-design/chatbot-semantic-layer.md) |
@@ -114,7 +114,7 @@ lát 3  giá theo ngày         ✅ XONG 2026-09-04 — 1.523 lời gọi tuần
                                backfill = task dlck-price-backfill, tự chạy cuối tuần tới khi hết vòng
 lát 4  họ Snapshot           ✅ XONG 2026-09-04 — 234 lời gọi/ngày (quota cuốn chiếu), ghi KHI ĐỔI,
                                sổ kiểm ops.snapshot_check vừa cấp danh sách tới hạn vừa đếm lỗ của lịch
-lát 5  BCTC                  kích hoạt theo getCorporateEarning của lát 2 → financial_statement (**557** mã chỉ tiêu — đếm thật 2026-09-04)
+lát 5  BCTC                  kích hoạt theo getCorporateEarning của lát 2 → financial_statement (**556** mã chỉ tiêu theo từ điển — xem *Điểm vào cho lát 5* về con số 557)
 lát 6  giám sát hợp đồng     [8] contract_snapshot (market-data-store §7.1) — bắt nguồn đổi schema/độ tươi,
                                dùng chung script với 5 lát trên
 lát 7  scheduler trong etl   thay 11 task Windows bằng một bảng lịch trong code — xem "Lát 7" dưới
@@ -156,15 +156,17 @@ lát 8  lên VPS               hồ sơ docker-compose.vps.yml (service-topology
 
 ### Điểm vào cho lát 5 — BCTC, đọc trước khi bắt đầu
 
-**Trạng thái bàn giao 2026-09-04:** nhánh `feat/snapshot-family-etl` · **523 test xanh** · migration head `0016` · `snapshot_daily` 246 dòng ngày 2026-09-04 · `ops.snapshot_check` 246 dòng · **không đăng ký task Scheduler** (lịch thuộc lát 7) · AC5 còn nợ tới 05/09.
+**Trạng thái bàn giao 2026-09-04:** nhánh `feat/snapshot-family-etl` **đã merge `main`** (`27b3171`) · **523 test xanh** · migration head `0016` · `snapshot_daily` 246 dòng ngày 2026-09-04 · `ops.snapshot_check` 246 dòng · **không đăng ký task Scheduler** (lịch thuộc lát 7) · AC5 còn nợ tới 05/09 *(kiểm lại 17:10 ngày 04/09: nguồn vẫn mang giá đóng cửa 03/09 — AAA `rtd11 ÷ outstandingShare` = 7.090, chưa phải 7.130 — nên vẫn chưa đóng được)*.
 
 | Cần biết trước | Ở đâu |
 |---|---|
 | Tín hiệu kích hoạt đã có sẵn: `corporate_event` loại `Earning` kèm `year_report`/`length_report` — lát 4 đã dùng đúng đường này cho kind `snapshot` | [`snapshot_store.due_list`](../../backend/etl/snapshot_store.py) |
 | **Khuôn job đã ổn định qua 3 lát**: `fetch` (classify 3 nhánh, retry, giãn cách) → `normalize` (thuần) → `guard` (ngưỡng + **mẫu tối thiểu**) → `store` → `job`. Nhân bản từ `snapshot_*`, đừng chép từ lát 1 | `backend/etl/snapshot_*.py` |
 | **Ghi khi đổi + sổ kiểm** là mẫu dùng lại được cho BCTC (BCTC cũng chỉ đổi khi có kỳ báo cáo mới) — cân nhắc trước khi mặc định ghi mọi lượt | [spec lát 4 §4.1](../90-records/plans/2026-09-04-snapshot-family-etl/spec.md) |
-| **557** mã chỉ tiêu BCTC và đơn vị của chúng *(đếm thật 2026-09-04 trên 3 endpoint; bản cũ ghi 556)* | [Phụ lục A](../10-sources/market/appendix-A-field-codes.md) · [field-dictionary.json](../10-sources/market/field-dictionary.json) |
-| `snapshot.quarterly[]` / `yearly[]` **đã nằm sẵn trong payload** `snapshot_daily` (mã `bsa*` `isa*` `cfa*`) — cố ý không bóc ở lát 4; lát 5 quyết định bóc từ đó hay gọi endpoint BCTC riêng | [spec lát 4 §3.2](../90-records/plans/2026-09-04-snapshot-family-etl/spec.md) |
+| **556** mã chỉ tiêu BCTC trong từ điển, kèm đơn vị. ⚠️ Con số **557** ghi trong khảo sát 2026-09-04 là số **khoá phân biệt** trên ba endpoint — gồm **8 khoá không phải mã chỉ tiêu** (`organCode` · `ebit` · `ebitDa` · `operating` · `otherAssetBank` · `otherAssetNonBank` · `otherLiabilties` · `rtq29`) và **549** mã từ điển; 7 mã từ điển chưa gặp trên mẫu 3 mã. **Không phải đính chính của 556** — hai số đếm hai thứ khác nhau *(đối chiếu lại 2026-09-04 chiều, [khảo sát §6](../90-records/surveys/2026-09-04-bctc-endpoints/README.md))* | [Phụ lục A](../10-sources/market/appendix-A-field-codes.md) · [field-dictionary.json](../10-sources/market/field-dictionary.json) |
+| `snapshot.quarterly[]` / `yearly[]` **đã nằm sẵn trong payload** `snapshot_daily` (mã `bsa*` `isa*` `cfa*`) — cố ý không bóc ở lát 4. **Đã đóng 2026-09-04:** khối đó chỉ 25 mã / 9 kỳ so với 549 mã / 43 kỳ ở endpoint riêng ⇒ lát 5 **bắt buộc** gọi ba endpoint BCTC | [khảo sát BCTC câu 1](../90-records/surveys/2026-09-04-bctc-endpoints/README.md) |
+| **`financial_statement` KHÔNG cần nới CHECK `length_report`** — ba endpoint số liệu chỉ phát `quarterReport` 1–4 (quý) và 5 (năm) trên 5 mã đo (BAB · AAS · VNM · HPG · A32, 0 dòng ngoài dải). Giá trị `6`/`9` chỉ có ở `getFinancialReports` ⇒ nới CHECK trên `financial_report_file` và `corporate_event` là đủ | [khảo sát §6](../90-records/surveys/2026-09-04-bctc-endpoints/README.md) · [market-data-store §5.4](../20-design/market-data-store.md) |
+| **Khoá viết hoa lẫn trong response:** `GetBalanceSheet` trả `bsI141` và `bsS134` (4/4 mã, 2026-09-04) trong khi từ điển và cột `metric_code` là chữ thường ⇒ **hạ chữ thường khi nạp**, nếu không hai mã này rơi khỏi từ điển | [05-fiin-financial-statements](../10-sources/market/05-fiin-financial-statements.md) |
 
 **Bốn bài học lát 4, áp thẳng được:**
 

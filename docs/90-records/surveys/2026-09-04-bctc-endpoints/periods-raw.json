@@ -1,0 +1,494 @@
+{
+ "NASB/balance_sheet": {
+  "http": 200,
+  "status": "Success",
+  "ms": 653,
+  "kb": 212.1,
+  "n_quarterly": 43,
+  "n_yearly": 17,
+  "quarterReport_quarterly": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "quarterReport_yearly": [
+   5
+  ],
+  "periods_quarterly_first_last": [
+   [
+    2026,
+    2
+   ],
+   [
+    2011,
+    1
+   ]
+  ],
+  "periods_yearly_first_last": [
+   [
+    2025,
+    5
+   ],
+   [
+    2009,
+    5
+   ]
+  ],
+  "dup_periods_quarterly": 0,
+  "n_keys": 235,
+  "mixed_case_keys": [
+   "bsI141",
+   "bsS134"
+  ]
+ },
+ "NASB/income_statement": {
+  "http": 200,
+  "status": "Success",
+  "ms": 219,
+  "kb": 151.9,
+  "n_quarterly": 43,
+  "n_yearly": 17,
+  "quarterReport_quarterly": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "quarterReport_yearly": [
+   5
+  ],
+  "periods_quarterly_first_last": [
+   [
+    2026,
+    2
+   ],
+   [
+    2011,
+    1
+   ]
+  ],
+  "periods_yearly_first_last": [
+   [
+    2025,
+    5
+   ],
+   [
+    2009,
+    5
+   ]
+  ],
+  "dup_periods_quarterly": 0,
+  "n_keys": 180,
+  "mixed_case_keys": []
+ },
+ "NASB/cash_flow": {
+  "http": 200,
+  "status": "Success",
+  "ms": 118,
+  "kb": 134.5,
+  "n_quarterly": 43,
+  "n_yearly": 17,
+  "quarterReport_quarterly": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "quarterReport_yearly": [
+   5
+  ],
+  "periods_quarterly_first_last": [
+   [
+    2026,
+    2
+   ],
+   [
+    2011,
+    1
+   ]
+  ],
+  "periods_yearly_first_last": [
+   [
+    2025,
+    5
+   ],
+   [
+    2009,
+    5
+   ]
+  ],
+  "dup_periods_quarterly": 0,
+  "n_keys": 150,
+  "mixed_case_keys": []
+ },
+ "HAMIS/balance_sheet": {
+  "http": 200,
+  "status": "Success",
+  "ms": 640,
+  "kb": 188.9,
+  "n_quarterly": 39,
+  "n_yearly": 15,
+  "quarterReport_quarterly": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "quarterReport_yearly": [
+   5
+  ],
+  "periods_quarterly_first_last": [
+   [
+    2026,
+    2
+   ],
+   [
+    2015,
+    2
+   ]
+  ],
+  "periods_yearly_first_last": [
+   [
+    2025,
+    5
+   ],
+   [
+    2011,
+    5
+   ]
+  ],
+  "dup_periods_quarterly": 0,
+  "n_keys": 235,
+  "mixed_case_keys": [
+   "bsI141",
+   "bsS134"
+  ]
+ },
+ "HAMIS/income_statement": {
+  "http": 200,
+  "status": "Success",
+  "ms": 399,
+  "kb": 139.8,
+  "n_quarterly": 38,
+  "n_yearly": 15,
+  "quarterReport_quarterly": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "quarterReport_yearly": [
+   5
+  ],
+  "periods_quarterly_first_last": [
+   [
+    2026,
+    2
+   ],
+   [
+    2017,
+    1
+   ]
+  ],
+  "periods_yearly_first_last": [
+   [
+    2025,
+    5
+   ],
+   [
+    2011,
+    5
+   ]
+  ],
+  "dup_periods_quarterly": 0,
+  "n_keys": 180,
+  "mixed_case_keys": []
+ },
+ "HAMIS/cash_flow": {
+  "http": 200,
+  "status": "Success",
+  "ms": 527,
+  "kb": 116.7,
+  "n_quarterly": 38,
+  "n_yearly": 15,
+  "quarterReport_quarterly": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "quarterReport_yearly": [
+   5
+  ],
+  "periods_quarterly_first_last": [
+   [
+    2026,
+    2
+   ],
+   [
+    2017,
+    1
+   ]
+  ],
+  "periods_yearly_first_last": [
+   [
+    2025,
+    5
+   ],
+   [
+    2011,
+    5
+   ]
+  ],
+  "dup_periods_quarterly": 0,
+  "n_keys": 150,
+  "mixed_case_keys": []
+ },
+ "VNM/balance_sheet": {
+  "http": 200,
+  "status": "Success",
+  "ms": 1069,
+  "kb": 408.4,
+  "n_quarterly": 84,
+  "n_yearly": 24,
+  "quarterReport_quarterly": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "quarterReport_yearly": [
+   5
+  ],
+  "periods_quarterly_first_last": [
+   [
+    2026,
+    2
+   ],
+   [
+    2004,
+    4
+   ]
+  ],
+  "periods_yearly_first_last": [
+   [
+    2025,
+    5
+   ],
+   [
+    2002,
+    5
+   ]
+  ],
+  "dup_periods_quarterly": 0,
+  "n_keys": 235,
+  "mixed_case_keys": [
+   "bsI141",
+   "bsS134"
+  ]
+ },
+ "VNM/income_statement": {
+  "http": 200,
+  "status": "Success",
+  "ms": 538,
+  "kb": 285.4,
+  "n_quarterly": 87,
+  "n_yearly": 23,
+  "quarterReport_quarterly": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "quarterReport_yearly": [
+   5
+  ],
+  "periods_quarterly_first_last": [
+   [
+    2026,
+    2
+   ],
+   [
+    2004,
+    4
+   ]
+  ],
+  "periods_yearly_first_last": [
+   [
+    2025,
+    5
+   ],
+   [
+    2003,
+    5
+   ]
+  ],
+  "dup_periods_quarterly": 0,
+  "n_keys": 180,
+  "mixed_case_keys": []
+ },
+ "VNM/cash_flow": {
+  "http": 200,
+  "status": "Success",
+  "ms": 484,
+  "kb": 203.8,
+  "n_quarterly": 67,
+  "n_yearly": 23,
+  "quarterReport_quarterly": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "quarterReport_yearly": [
+   5
+  ],
+  "periods_quarterly_first_last": [
+   [
+    2026,
+    2
+   ],
+   [
+    2008,
+    1
+   ]
+  ],
+  "periods_yearly_first_last": [
+   [
+    2025,
+    5
+   ],
+   [
+    2003,
+    5
+   ]
+  ],
+  "dup_periods_quarterly": 0,
+  "n_keys": 150,
+  "mixed_case_keys": []
+ },
+ "HPG/balance_sheet": {
+  "http": 200,
+  "status": "Success",
+  "ms": 817,
+  "kb": 377.1,
+  "n_quarterly": 78,
+  "n_yearly": 21,
+  "quarterReport_quarterly": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "quarterReport_yearly": [
+   5
+  ],
+  "periods_quarterly_first_last": [
+   [
+    2026,
+    2
+   ],
+   [
+    2007,
+    1
+   ]
+  ],
+  "periods_yearly_first_last": [
+   [
+    2025,
+    5
+   ],
+   [
+    2005,
+    5
+   ]
+  ],
+  "dup_periods_quarterly": 0,
+  "n_keys": 235,
+  "mixed_case_keys": [
+   "bsI141",
+   "bsS134"
+  ]
+ },
+ "HPG/income_statement": {
+  "http": 200,
+  "status": "Success",
+  "ms": 413,
+  "kb": 276.2,
+  "n_quarterly": 86,
+  "n_yearly": 21,
+  "quarterReport_quarterly": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "quarterReport_yearly": [
+   5
+  ],
+  "periods_quarterly_first_last": [
+   [
+    2026,
+    2
+   ],
+   [
+    2005,
+    1
+   ]
+  ],
+  "periods_yearly_first_last": [
+   [
+    2025,
+    5
+   ],
+   [
+    2005,
+    5
+   ]
+  ],
+  "dup_periods_quarterly": 0,
+  "n_keys": 180,
+  "mixed_case_keys": []
+ },
+ "HPG/cash_flow": {
+  "http": 200,
+  "status": "Success",
+  "ms": 332,
+  "kb": 205.7,
+  "n_quarterly": 72,
+  "n_yearly": 19,
+  "quarterReport_quarterly": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "quarterReport_yearly": [
+   5
+  ],
+  "periods_quarterly_first_last": [
+   [
+    2026,
+    2
+   ],
+   [
+    2007,
+    1
+   ]
+  ],
+  "periods_yearly_first_last": [
+   [
+    2025,
+    5
+   ],
+   [
+    2007,
+    5
+   ]
+  ],
+  "dup_periods_quarterly": 0,
+  "n_keys": 150,
+  "mixed_case_keys": []
+ }
+}

@@ -195,7 +195,7 @@ def apply(conn, fetched: list[Fetched], run_date: dt.date) -> tuple[Tally, int]:
 def new_watermark(conn) -> dt.date:
     """Mốc 'sự kiện MỚI CÔNG BỐ' — CHỈ `public_date`.
 
-    Bug thật đo 2026-09-22 (`--codes A32,BAB,BVB`): bản cũ lấy `max(greatest(public_date,
+    Bug thật đo 2026-09-04 (`--codes A32,BAB,BVB`): bản cũ lấy `max(greatest(public_date,
     exright_date))`. `exright_date` là ngày KHÔNG HƯỞNG QUYỀN — nguồn công bố nó có thể xa
     hơn hôm nay hàng tuần/tháng — nên một dòng như vậy kéo watermark vượt luôn ngày hiện
     tại, làm điều kiện trigger `public_date > :wm` của due_list() không bao giờ đúng cho

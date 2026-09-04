@@ -65,7 +65,7 @@ def _recrawl(engine, stats):
     """Sự kiện quyền làm chuỗi close_adj của mã đó sai — kéo lại bằng đường có sẵn của lát 3.
 
     Không còn nhánh 'bỏ qua ở lượt khởi tạo': `recrawl_codes()` (spec mới, đo bug thật
-    2026-09-22) đã đổi sang cửa sổ vài ngày quanh hôm nay thay vì so với watermark, nên tự
+    2026-09-04) đã đổi sang cửa sổ vài ngày quanh hôm nay thay vì so với watermark, nên tự
     nó chặn số mã ở MỌI lượt — kể cả lượt khởi tạo — không còn nguy cơ trả cả 1.523 mã.
 
     Vẫn cần TRẦN THỜI GIAN riêng: mỗi mã re-crawl là một lượt `price --backfill` TRỌN LỊCH SỬ
@@ -74,7 +74,7 @@ def _recrawl(engine, stats):
     quyền — mùa cổ tức chạm gần trần `MAX_RECRAWL = 50` ngay trong cửa sổ 3 ngày. Không chặn
     thời gian thì job snapshot hằng ngày (bản thân ~5 phút) có thể biến thành hàng chục phút
     tới hàng giờ, không trần — đúng thứ gặp thật khi lượt `--codes A32,BAB,BVB` kéo theo
-    backfill của 8 mã và vượt 120 giây (đo 2026-09-22).
+    backfill của 8 mã và vượt 120 giây (đo 2026-09-04).
 
     Cắt giữa chừng AN TOÀN: mã chưa kịp kéo không mất — `recrawl_codes()` dùng cửa sổ ngày
     (không phải con trỏ một lần), nên hai lượt snapshot sau vẫn thấy lại đúng mã đó trong
