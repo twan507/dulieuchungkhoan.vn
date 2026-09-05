@@ -1,6 +1,6 @@
 # Yahoo Finance — Chỉ số quốc tế, lợi suất, biến động
 
-**Phiên bản:** 1.0 · **Ngày khảo sát:** 2026-08-15 · **Trạng thái:** 58 lời gọi thật, Yahoo trả `200` trên 44/44, trung vị **163 ms**, không bị chặn từ Việt Nam
+**Phiên bản:** 1.0 · **Ngày khảo sát:** 2026-08-15, đo lại 2026-09-05 (lát 7, 7b) · **Trạng thái:** 58 lời gọi thật, Yahoo trả `200` trên 44/44, trung vị **163 ms**, không bị chặn từ Việt Nam
 
 > **Vai của nguồn này — đúng một vai.** Yahoo là **nguồn CHÍNH cho chỉ số chứng khoán quốc tế**: 36 chỉ số / 21 nước, lịch sử tới 1927, trễ 0 ngày *(đo 2026-08-15)*. Kèm theo là lợi suất TPCP Mỹ, họ biến động, ETF quốc gia, và **vai dự phòng cho tỷ giá** *(nguồn chính là Frankfurter — xem [`fx.md`](fx.md))*.
 >
@@ -26,7 +26,7 @@ Quy ước chung của bộ tài liệu nguồn *(đánh dấu bẫy, đơn vị
 
 **Host** *(đo 2026-09-05, khi dựng ETL lát 7)*: `https://query1.finance.yahoo.com` và `https://query2.finance.yahoo.com` đều trả `200` cho `v8/finance/chart`, cùng body; ETL dùng `query1`. Không có ETag. *(Sổ đo 2026-08-15 chỉ ghi đường dẫn, không ghi host.)*
 
-🔴 **Hợp đồng đổi so với 2026-08-15** *(đo 2026-09-05, 39 mã)*: `meta` **không còn `quoteType`**; cờ chết nay ở **`meta.instrumentType`** (`TIO=F` → `ALTSYMBOL`, chỉ số → `INDEX`). Cổng 3 ở [mục 8](#8-bộ-giám-sát-hợp-đồng--ba-cổng-bắt-buộc) kiểm cả hai khoá. Cùng đợt đo: **cửa sổ `period1 = now − 40 ngày` trả đúng 1 nến** (nến hiện tại) ở `^SET.BK` và `PSEI.PS`, trong khi 400 ngày trả 272/286 nến và 3.000 ngày trả 1.999/2.144 — cùng họ Bẫy 3, ETL dùng cửa sổ **400 ngày**; `^MERV` trả **`currency: ""`**.
+🔴 **Hợp đồng đổi so với 2026-08-15** *(đo 2026-09-05, 39 mã)*: `meta` **không còn `quoteType`**; cờ chết nay ở **`meta.instrumentType`** (`TIO=F` → `ALTSYMBOL`, chỉ số → `INDEX`). Cổng 3 ở [mục 8](#8-bộ-giám-sát-hợp-đồng--ba-cổng-bắt-buộc) kiểm cả hai khoá. Cùng đợt đo: **cửa sổ `period1 = now − 40 ngày` trả đúng 1 nến** (nến hiện tại) ở `^SET.BK` và `PSEI.PS`, trong khi 400 ngày trả 272/286 nến và 3.000 ngày trả 1.999/2.144 — cùng họ Bẫy 3, ETL dùng cửa sổ **400 ngày**; `^MERV` trả **`currency: ""`**. Cùng họ: cửa sổ **5 ngày** của lượt `--intraday` (lát 7b) cũng trả **1 nến** ở `^SET.BK`/`PSEI.PS` *(đo 2026-09-05)* — xem §5.5.
 
 🔴 **Đây là API nội bộ của Yahoo: không tài liệu, không cam kết, không phiên bản.** Khác hẳn Frankfurter *(mã nguồn mở, tự dựng lại được)*. Mọi thiết kế phải giả định endpoint có thể đổi hình mà không báo trước — xem bộ giám sát ở [mục 8](#8-bộ-giám-sát-hợp-đồng--ba-cổng-bắt-buộc).
 
@@ -117,6 +117,8 @@ Cùng một mã, cùng một ngày. `404` ở đây nói về **tổ hợp tham 
 
 > ### ➜ Luật 3
 > Gặp `404` **phải thử lại bằng `period1`/`period2`** trước khi kết luận mã chết. Kết luận "mã không tồn tại" chỉ được rút ra sau khi cách gọi đúng cũng hỏng.
+
+Bẫy 4 — riêng cho FX ngày (`<CCY>=X`) — ở [§5.5](#55-tỷ-giá--vai-dự-phòng-cho-frankfurter) *(đo 2026-09-05)*.
 
 ---
 
@@ -295,9 +297,24 @@ Châu Á rộng hơn Frankfurter: `CNY=X` `CNH=X` `KRW=X` `THB=X` `SGD=X` `TWD=X
 
 Vấn đề lệch mốc **chỉ nằm ở nến của phiên ĐANG chạy**. Nến ngày **đã đóng** khớp tuyệt đối: `EURUSD=X`, `JPY=X`, `CHF=X` đều đóng **23:00:00 UTC** và chia sẻ **5.925 ngày trùng nhãn** *(đo 2026-08-15)*.
 
-> ➜ **Luật: bỏ nến cuối chưa đóng, chỉ dùng nến chốt 23:00 UTC** → 6 cặp đồng bộ tuyệt đối.
+> ➜ **Luật: bỏ nến cuối chưa đóng, chỉ dùng nến chốt 23:00 UTC** → 6 cặp đồng bộ tuyệt đối. *(đổi ở lát 7b, 2026-09-05: nến đang chạy vào kho, ghi đè tới khi đóng — xem khối đo bên dưới.)*
 
 🔴 **Nhưng 23:00 UTC là nửa đêm London, KHÁC fixing 14:15 CET của ECB.** ⇒ **Không trộn Yahoo và Frankfurter trong cùng một chuỗi DXY.** Chọn một nguồn cho cả chuỗi, không vá chỗ trống bằng nguồn kia.
+
+#### 2026-09-05 (lát 7b) — 17 cặp FX Yahoo thành asset riêng, cập nhật trong phiên
+
+*(đo 2026-09-05 ~17:00 VN, 22 lời gọi)* `<CCY>=X` của Yahoo = số `<CCY>` trên 1 USD; `EUR=X` 0,8605 vs ECB fixing 04/09 0,86044 (+0,007 %); GBP +0,10 %; JPY −0,02 %; CHF −0,03 %; SEK +0,15 %; 17/17 cặp (EUR, GBP, JPY, CAD, SEK, CHF, CNY, KRW, THB, SGD, TWD, INR, IDR, MYR, PHP, HKD, VND) trả `200`, `instrumentType=CURRENCY`, `meta.currency` = mã quote, `exchangeTimezoneName=Europe/London`, phiên `currentTradingPeriod.regular` = `[23:00 UTC hôm trước → 22:59 UTC]`. `EURUSD=X`/`GBPUSD=X` là chiều ngược (`currency=USD`), không dùng.
+
+**Hai nến cùng ngày London:** `EUR=X` cửa sổ 5 ngày có nến `2026-09-03T23:00Z` (London 09-04, o=0,85995 h=0,86301 l=0,85963 c=0,85997 — close≈open, "rỗng") và nến live `2026-09-04T21:29Z` (London 09-04, o=0,85990 h=0,86270 l=0,85940 c=0,8605; h/l khớp `regularMarketDayHigh/Low` của `meta`). Nến live của các cặp **không đồng bộ**: `EUR=X` 21:29Z thứ 6, `JPY=X`/`SEK=X`/`CHF=X` 20:59Z, `CAD=X`/`SGD=X`/`HKD=X` 04:21Z thứ 7, `CNY=X`/`KRW=X`/`INR=X`/`IDR=X`/`MYR=X`/`PHP=X` 03:30Z thứ 7, `THB=X`/`TWD=X` 00:26Z thứ 7, `VND=X` 00:25Z thứ 7 — các nến thứ 7 rất hẹp (CAD h=1,3837 l=1,3835).
+
+**Cửa sổ 5 ngày** *(đo 2026-09-05)*: 50/54 mã trả 5–6 nến, 2 mã 4 nến, `^SET.BK`/`PSEI.PS` trả **1 nến** (chỉ nến hiện tại — cùng họ Bẫy 3).
+
+➜ **Luật ETL: dedupe theo ngày London, nến sau thắng ⇒ lấy nến live.** 17 cặp lưu vào asset riêng `fx.usd_<ccy>.market` (tách khỏi 6 cặp fixing ECB ở Phụ lục B của spec lát 7); `fx.usd_cny` của ECB không đổi vai — Yahoo chỉ là chuỗi thị trường song song.
+
+🔴 **Bẫy 4 — `close` của nến FX ngày = giá ĐẦU ngày, không phải giá cuối ngày** *(đo 2026-09-05 tối, 263 ngày nến `<CCY>=X` từ 2025-09-01)*. Yahoo ghi `close` của nến FX ngày bằng giá tick đầu ngày London — **`close ≈ open` ở MỌI ngày đã chốt**, không riêng ngày đo ở trên. Số đo: trung bình `|close − open| / close` — `fx.usd_eur.market` 0,0095 % · `fx.usd_jpy.market` 0,0135 % · `fx.usd_cny.market` 0,0015 % (đối chứng chỉ số: `idx.sp500` 0,48 % · `idx.nikkei225` 0,98 %); trung bình `|close − open| / (high − low)`: FX 1,8–3,0 % vs chỉ số 46,9–49,4 %. Chỉ **nến live** (nến tại `regularMarketTime`, chỉ tồn tại trong ngày London đang chạy) mang giá hiện tại thật (`close` = `regularMarketPrice`, `high`/`low` = `regularMarketDayHigh`/`Low`); sang ngày London kế tiếp, Yahoo trả lại nến 23:00 UTC với `close` = giá đầu ngày, và dòng hôm qua đã ghi trong kho bị **ghi đè lùi** về giá đó *(dự đoán kiểm chứng sáng thứ Hai 2026-09-07: `fx.usd_eur.market` ngày 2026-09-04 đổi 0,8605 → 0,85997)*. `high`/`low` lịch sử vẫn dùng được — chỉ `close` lịch sử sai. Cổng `band`/`stale`, test, và AC5 (lệch ECB < 1 %) đều **không bắt được** bẫy này.
+
+> ### ➜ Luật 4
+> `fx.usd_<ccy>.market` chỉ mang vai **giá mới nhất trong ngày** (đọc khi nến còn live) + **high/low lịch sử**. **Không dùng `close` lịch sử của `.market` để dựng biểu đồ tỷ giá** — biểu đồ lịch sử tỷ giá dùng `fx.usd_<ccy>` (ECB fixing). Chốt chủ dự án 2026-09-05 tối (phương án 1: chấp nhận, không đổi code). Đảo ngược: nếu tầng đọc cần `close` lịch sử thật của Yahoo FX, xét lại theo phương án 2 — "chỉ ghi dòng ngày đang chạy cho FX Yahoo" (chưa làm).
 
 #### Vì sao Frankfurter là chính, Yahoo là dự phòng
 
@@ -417,6 +434,8 @@ Ngân sách nếu triển khai, gọi thẳng `v8/finance/chart`, 1 request/mã/
 
 🔵 **Lô `v7/quote` là đòn bẩy lớn nhất: 399 mã HOSE chỉ tốn 3 request.**
 
+**Mức tải `--intraday` (lát 7b, đo 2026-09-05 17:20–17:36 VN):** 216 lời gọi (4 lượt × 54 mã) trong 16 phút, giãn cách ngẫu nhiên 1–5 s, **216/216 `200`, 0 lỗi, không header rate-limit**, phản hồi TB 81 ms, max 393 ms. Kết luận: **mức 216 lời gọi/16 phút an toàn** ⇒ nhịp 10 phút × 54 mã nằm dưới mức đó. Chưa đo tổng ngày (≈ 7.800 lời gọi/ngày).
+
 ---
 
 ## 8. Bộ giám sát hợp đồng — ba cổng bắt buộc
@@ -429,7 +448,7 @@ Yahoo là API nội bộ không cam kết, và hỏng theo kiểu **im lặng**.
 | **2** | **Lược đồ** — `meta.dataGranularity` phải khớp `interval` đã xin | Lệch ⇒ **lỗi cứng, dừng ghi kho** | Bẫy 2 |
 | **3** | **Lược đồ** — `meta.instrumentType != "ALTSYMBOL"` *(và `quoteType` nếu còn — khoá đổi tên 2026-09-05)* | `ALTSYMBOL` ⇒ mã đã ngừng | Chết im lặng |
 
-Cổng 1 trong code (`etl/yahoo_normalize.py`, 2026-09-05): `regularMarketTime ≥ now − 14 ngày` (phủ Tết Trung Quốc) **và** ≥ 1 nến trong cửa sổ; kèm luật **bỏ nến cuối chưa đóng** khi `now < currentTradingPeriod.regular.end` — lưu ý `DX-Y.NYB` có `regular.end` = 03:59 UTC ngày kế (ICE gần 24 giờ), nên so với `now`, không so với `regularMarketTime`.
+Cổng 1 trong code (`etl/yahoo_normalize.py`, 2026-09-05): `regularMarketTime ≥ now − 14 ngày` (phủ Tết Trung Quốc) **và** ≥ 1 nến trong cửa sổ; kèm luật **bỏ nến cuối chưa đóng** khi `now < currentTradingPeriod.regular.end` — lưu ý `DX-Y.NYB` có `regular.end` = 03:59 UTC ngày kế (ICE gần 24 giờ), nên so với `now`, không so với `regularMarketTime`. *(bỏ hẳn ở lát 7b, 2026-09-05 — cả lượt trọn lẫn `--intraday`: `currentTradingPeriod` không còn dùng để loại nến, nến đang chạy vào kho; thay bằng dedupe theo ngày sàn, nến sau ghi đè nến trước.)*
 
 Kèm ba luật gọi ở [mục 2](#2--ba-bẫy-cấu-trúc--đều-làm-hỏng-dữ-liệu-mà-không-báo-lỗi): `period1` âm · không dùng `range=` · `404` phải thử lại bằng `period1`/`period2`.
 

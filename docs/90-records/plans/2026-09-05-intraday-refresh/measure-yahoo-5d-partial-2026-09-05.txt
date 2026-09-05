@@ -1,0 +1,3 @@
+A2 phần đầu (dừng sau 44 lời gọi lúc 17:0x VN theo yêu cầu chủ dự án — phép đo trọn 4 lượt sẽ chạy lại ở plan). Cửa sổ 5 ngày, 54 mã, giãn cách ngẫu nhiên 1–5 s:
+HTTP: 44/44 = 200 · ms trung bình 77, tối đa 159
+số nến trả trong cửa sổ 5 ngày: 5 nến ×32 mã · 6 nến ×8 · 4 nến ×2 · 1 nến ×2 (^SET.BK, PSEI.PS — nến hiện tại, cùng họ Bẫy 3 cửa sổ ngắn)

@@ -11,8 +11,8 @@ log = logging.getLogger("etl.yahoo")
 HOST = "https://query1.finance.yahoo.com/v8/finance/chart"
 HEADERS = {"User-Agent": "Mozilla/5.0 (dulieuchungkhoan.vn etl; dulieuchungkhoan.official@gmail.com)"}
 DAILY_WINDOW_DAYS = 400          # 40 ngày trả 1 nến ở ^SET.BK/PSEI.PS (measure-yahoo2)
+INTRADAY_WINDOW_DAYS = 5         # lượt --intraday: nến đang chạy + vài ngày bù (spec 7b §5.3); ^SET.BK/PSEI.PS trả 1 nến — đủ
 BACKFILL_PERIOD1 = -2208988800   # 1900-01-01: period1=0 cắt câm lịch sử ở 1970 (yahoo.md Bẫy 1)
-MIN_INTERVAL = 1.1
 
 
 def url(symbol: str, period1: int, period2: int) -> str:
@@ -36,11 +36,12 @@ def classify(http: int, text: str):
     return "ok", d
 
 
-def fetch_all(series, get, sleep, backfill):
+def fetch_all(series, get, sleep, backfill, intraday=False):
     period2 = int(time.time())
-    period1 = BACKFILL_PERIOD1 if backfill else period2 - DAILY_WINDOW_DAYS * 86400
+    window = INTRADAY_WINDOW_DAYS if intraday else DAILY_WINDOW_DAYS
+    period1 = BACKFILL_PERIOD1 if backfill else period2 - window * 86400
     docs, texts, failed = {}, {}, []
-    with open_fetcher(classify, get=get, sleep=sleep, headers=HEADERS, min_interval=MIN_INTERVAL) as f:
+    with open_fetcher(classify, get=get, sleep=sleep, headers=HEADERS) as f:
         for s in series:
             try:
                 docs[s.external_key], texts[s.external_key] = f.fetch_one(url(s.external_key, period1, period2), s.external_key)

@@ -188,7 +188,7 @@ Không có tên trường. Đọc nhầm vị trí thì không có lỗi nào b�
 
 Phần tử `0` là **thời điểm mở nến**, không phải thời điểm đóng. Tham số `timeZone` mặc định UTC — **phải đặt rõ**. Không đặt rồi ghép với chuỗi giờ Việt Nam sẽ lệch nhãn ngày, đúng loại lỗi đã thật sự xảy ra với WiChart trong đợt đo 2026-08-15 *(xem [`../market/00-conventions.md`](../market/00-conventions.md))*.
 
-⚠️ **Nến cuối là nến ĐANG CHẠY** *(đo 2026-09-05)*: `limit=40` trả cả nến hôm nay với `closeTime` (phần tử `6`) = 23:59:59 UTC hôm nay, tức chưa đóng. ETL bỏ mọi nến có `closeTime > now`; backfill từ `startTime=0`, `limit=1000`: BTC 4 trang, PAXG 3 trang (39 lời gọi cho 11 mã, 30.951 nến).
+⚠️ **Nến cuối là nến ĐANG CHẠY** *(đo 2026-09-05)*: `limit=40` trả cả nến hôm nay với `closeTime` (phần tử `6`) = 23:59:59 UTC hôm nay, tức chưa đóng. *(luật cũ, gỡ ở lát 7b)* ETL bỏ mọi nến có `closeTime > now`; backfill từ `startTime=0`, `limit=1000`: BTC 4 trang, PAXG 3 trang (39 lời gọi cho 11 mã, 30.951 nến). `limit=3` = 2 nến đóng + nến hôm nay đang chạy *(đo 2026-09-05)*; từ lát 7b luật "bỏ `closeTime > now`" gỡ hẳn (cả lượt trọn `limit=40` lẫn `--intraday` `limit=3`) — nến đang chạy vào kho, ghi đè tới khi đóng.
 
 ### ⚠️ Bẫy 4 — Nhịp tin PAXG mỏng
 

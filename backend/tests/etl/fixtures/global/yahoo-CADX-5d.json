@@ -1,0 +1,137 @@
+{
+ "chart": {
+  "result": [
+   {
+    "meta": {
+     "currency": "CAD",
+     "symbol": "CAD=X",
+     "exchangeName": "CCY",
+     "fullExchangeName": "CCY",
+     "instrumentType": "CURRENCY",
+     "firstTradeDate": 1063753200,
+     "regularMarketTime": 1788582071,
+     "hasPrePostMarketData": false,
+     "gmtoffset": 3600,
+     "timezone": "BST",
+     "exchangeTimezoneName": "Europe/London",
+     "regularMarketPrice": 1.3837,
+     "regularMarketChangePercent": 0.3205,
+     "fulldayPrice": 1.3837,
+     "fulldayChange": 0.0044,
+     "fulldayChangePercent": 0.3205,
+     "fiftyTwoWeekHigh": 1.4248,
+     "fiftyTwoWeekLow": 1.3484,
+     "regularMarketDayHigh": 1.3837,
+     "regularMarketDayLow": 1.3835,
+     "regularMarketVolume": 0,
+     "longName": "USD/CAD",
+     "shortName": "USD/CAD",
+     "chartPreviousClose": 1.3899,
+     "priceHint": 4,
+     "currentTradingPeriod": {
+      "pre": {
+       "timezone": "BST",
+       "start": 1788476400,
+       "end": 1788476400,
+       "gmtoffset": 3600
+      },
+      "regular": {
+       "timezone": "BST",
+       "start": 1788476400,
+       "end": 1788562740,
+       "gmtoffset": 3600
+      },
+      "post": {
+       "timezone": "BST",
+       "start": 1788562740,
+       "end": 1788562740,
+       "gmtoffset": 3600
+      }
+     },
+     "dataGranularity": "1d",
+     "range": "",
+     "validRanges": [
+      "1d",
+      "5d",
+      "1mo",
+      "3mo",
+      "6mo",
+      "1y",
+      "2y",
+      "5y",
+      "10y",
+      "ytd",
+      "max"
+     ]
+    },
+    "timestamp": [
+     1788130800,
+     1788217200,
+     1788303600,
+     1788390000,
+     1788476400,
+     1788582071
+    ],
+    "indicators": {
+     "quote": [
+      {
+       "open": [
+        1.389989972114563,
+        1.3852100372314453,
+        1.3895200490951538,
+        1.384559988975525,
+        1.3789399862289429,
+        1.3834999799728394
+       ],
+       "close": [
+        1.3899099826812744,
+        1.38510000705719,
+        1.3894100189208984,
+        1.3844900131225586,
+        1.3789499998092651,
+        1.3837000131607056
+       ],
+       "volume": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "low": [
+        1.385699987411499,
+        1.384469985961914,
+        1.3838399648666382,
+        1.378290057182312,
+        1.3784099817276,
+        1.3834999799728394
+       ],
+       "high": [
+        1.390720009803772,
+        1.3905600309371948,
+        1.3939199447631836,
+        1.384559988975525,
+        1.3871400356292725,
+        1.3837000131607056
+       ]
+      }
+     ],
+     "adjclose": [
+      {
+       "adjclose": [
+        1.3899099826812744,
+        1.38510000705719,
+        1.3894100189208984,
+        1.3844900131225586,
+        1.3789499998092651,
+        1.3837000131607056
+       ]
+      }
+     ]
+    }
+   }
+  ],
+  "error": null
+ }
+}

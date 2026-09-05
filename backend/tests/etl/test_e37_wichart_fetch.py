@@ -31,7 +31,8 @@ def test_fetch_one_retries_a_500_then_returns_the_doc():
     f = wf.Fetcher(get=lambda u, t: answers.pop(0), sleep=slept.append, clock=lambda: 0.0)
     doc, text = f.fetch_one("cpi", "vi_mo")
     assert doc["timeUpdate"] == "Tháng 08/2026" and text == CPI
-    assert f.calls == 2 and f.retries == 1 and slept == [2]                       # BACKOFF[0]
+    assert f.calls == 2 and f.retries == 1
+    assert slept[0] == 2 and len(slept) == 2 and 1.0 <= slept[1] <= 5.0         # BACKOFF[0] rồi giãn cách ngẫu nhiên trước lần thử lại (lát 7b)
 
 
 def test_fetch_one_raises_after_four_failures_including_transport_errors():
@@ -46,15 +47,20 @@ def test_fetch_one_raises_after_four_failures_including_transport_errors():
 
 def test_bad_shape_is_not_retried():
     f = wf.Fetcher(get=lambda u, t: (200, json.dumps({"chart": {}})), sleep=lambda s: None, clock=lambda: 0.0)
-    with pytest.raises(wf.BadShape):
+    with pytest.raises(wf.BadShape, match="cpi: response không có chart.series"):
         f.fetch_one("cpi", "vi_mo")
     assert f.calls == 1
 
 
-def test_min_interval_sleeps_between_two_calls():
-    clock = iter([0.0, 0.0, 0.05, 0.05, 1.0, 1.0])
+def test_random_gap_between_two_calls_is_inside_one_to_five_seconds():
     slept = []
-    f = wf.Fetcher(get=lambda u, t: (200, CPI), sleep=slept.append, clock=lambda: next(clock))
+    f = wf.Fetcher(get=lambda u, t: (200, CPI), sleep=slept.append, clock=lambda: 0.0)
     f.fetch_one("cpi", "vi_mo")
+    assert slept == []                                                             # không ngủ trước lời gọi đầu
     f.fetch_one("cpi", "vi_mo")
-    assert slept and abs(slept[0] - 0.15) < 1e-9                                   # MIN_INTERVAL 0.2 − 0.05
+    assert len(slept) == 1 and 1.0 <= slept[0] <= 5.0 and f.gaps == slept
+
+
+def test_errors_are_the_shared_fetcher_classes():
+    from etl import http_fetch as hf
+    assert wf.FetchError is hf.FetchError and wf.BadShape is hf.BadShape

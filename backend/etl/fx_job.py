@@ -1,4 +1,4 @@
-"""`python -m etl fx` — 6 cặp EUR/USD… từ một lời gọi Frankfurter → asset.price_daily. Spec lát 7."""
+"""`python -m etl fx` — 7 cặp EUR/USD… từ một lời gọi Frankfurter → asset.price_daily (CNY từ lát 7b). Spec lát 7."""
 from __future__ import annotations
 
 import time

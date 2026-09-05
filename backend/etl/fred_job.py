@@ -1,4 +1,4 @@
-"""`python -m etl fred` — 15 series → macro.observation (11) + asset.price_daily (4). Spec lát 7."""
+"""`python -m etl fred` — 14 series → macro.observation (11) + asset.price_daily (3). Spec lát 7."""
 from __future__ import annotations
 
 import os

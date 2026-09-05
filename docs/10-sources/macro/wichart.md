@@ -122,13 +122,17 @@ Neo trong kỳ:
 | gzip | Giảm ~64% (6.255 → 2.255 byte). Luôn gửi `Accept-Encoding: gzip` |
 | **ETag** | Có. `If-None-Match` trả `304`, 0 byte — **dùng cho ETL hàng ngày** |
 | Tầng cache | Header `hit-cached: false/true`. Lần đầu miss, sau đó hit |
-| Rate limit | **Chưa đo.** Không có header `X-RateLimit-*` hay `Retry-After` |
+| Rate limit | **Chưa đo hết ngưỡng.** Không có header `X-RateLimit-*` hay `Retry-After`. Mức tải kế hoạch *(đo 2026-09-05 17:20–17:39 VN, lát 7b)*: 296 lời gọi (47 key tần suất ngày, 6 lượt) trong 19 phút, giãn cách 1–5 s, **296/296 `200`, 0 lỗi**, TB 75 ms, max 275 ms, `hit-cached: true` 43 %. Kết luận: **mức 296 lời gọi/19 phút an toàn** ⇒ nhịp 5 phút × 47 key (~13.500/ngày, chưa đo tổng ngày) |
 | Stack | nginx + Express (helmet.js). HTTP/1.1, quảng cáo h3 |
 
 ```bash
 curl -H 'Accept-Encoding: gzip' -H 'If-None-Match: W/"186f-CySOaOuPFA8zslRCf1wtHyhEjRg"' \
   "https://api.wichart.vn/vietnambiz/vi-mo?name=cpi"
 ```
+
+#### Cập nhật trong ngày
+
+Hàng hoá (43 key, 47 series) và 4 key vĩ mô tần suất ngày (`dhtg`, `lsdh`, `lslnh`, `lshd`) — tổng 47 key / 61 series — cập nhật **trong ngày**; vĩ mô (tháng/quý/năm) cập nhật **1 lần/ngày** — chủ dự án kiểm 2026-09-05. Bằng chứng thêm *(đo 2026-09-05 18:50 VN, thứ 7)*: lượt `wichart --intraday` sau lượt trọn 08:11 VN cùng ngày ⇒ `changed 29` điểm, gồm điểm ngày 05/09 của `gold.sjc_buy/sell`, `coffee_robusta_vn`, `natgas_hh`, `phosphorus_cn`, `galv_sheet_color_hoasen`, và **vá hồi tố** 22 điểm tháng 8 của `cotton_us`. Giờ nạp thật của vĩ mô **chưa đo**.
 
 ---
 
