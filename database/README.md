@@ -81,7 +81,7 @@ Test schema (tự tạo lại `dulieu_test` từ đầu qua `backend/tests/conft
 cd backend && uv run pytest tests/schema -v
 ```
 
-Cả bộ trong một lệnh — 709 test, 2 skipped *(đo 2026-09-05 tối sau lát 7 ETL quốc tế và đợt sửa review toàn nhánh: +59 test `test_e43`–`e49`; 650 chiều cùng ngày sau nợ Ctrl+C `test_e42`; 640 sáng sau lát 6 `etl wichart`; không migration mới, head vẫn `0017`)*, gồm cả `tests/clickhouse` và `tests/ingester` *(hai bộ này tự dựng container ClickHouse riêng ở cổng riêng, không đụng CH production)*:
+Cả bộ trong một lệnh — 729 test, 2 skipped *(đo 2026-09-05 tối sau lát 7b cập nhật trong phiên: +20 test `test_e50`–`e51` và test mới ở e41/e43–e49; 709 sau lát 7 ETL quốc tế và đợt sửa review toàn nhánh; 650 chiều cùng ngày sau nợ Ctrl+C `test_e42`; 640 sáng sau lát 6 `etl wichart`; không migration mới, head vẫn `0017`)*, gồm cả `tests/clickhouse` và `tests/ingester` *(hai bộ này tự dựng container ClickHouse riêng ở cổng riêng, không đụng CH production)*:
 
 ```bash
 cd backend && uv run pytest tests -q

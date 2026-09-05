@@ -185,7 +185,7 @@ Response `series` (metadata) có: `observation_start` · `observation_end` · `f
 | `T10Y2Y` | Chênh 10y − 2y | d | 1976-06-01 → | **1d** | % | 13.099 | 0,51 (08-14) | Vị trí chu kỳ |
 | `T10YIE` | Breakeven lạm phát 10 năm | d | 2003-01-02 → | **1d** | % | 6.162 | 2,27 (08-14) | **Kỳ vọng lạm phát realtime** |
 | `DTWEXBGS` | Chỉ số đô Mỹ (broad, danh nghĩa) | d | 2006-01-02 → | 🔴 **8d** | Index 2006-01=100 | 5.375 | 119,065 (08-07) | **Đồng đô** — mắt xích 2 của chuỗi Fed → tỷ giá |
-| `DEXCHUS` | CNY/USD | d | 1981-01-02 → | 🔴 **8d** | CNY / 1 USD | 11.896 | 6,7474 (08-07) | Neo khu vực cho VND |
+| `DEXCHUS` | CNY/USD | d | 1981-01-02 → | 🔴 **8d** | CNY / 1 USD | 11.896 | 6,7474 (08-07) | Neo khu vực cho VND *(không nạp từ lát 7b 2026-09-05 — CNY lấy ở ECB, một mốc fixing; loại "đã có đường khác")* |
 | `CPIAUCSL` | CPI Mỹ (đã hiệu chỉnh mùa vụ) | m | 1947-01-01 → | 45d | Index 1982-84=100 | 955 | 332,813 · YoY **3,30%** | Lạm phát Mỹ |
 | `PCEPILFE` | Core PCE | m | 1959-01-01 → | 🔴 **75d** | Index 2017=100 | 810 | 130,266 (06/2026) | Thước Fed thật sự nhìn |
 | `UNRATE` | Thất nghiệp Mỹ | m | 1948-01-01 → | 45d | % | 943 | 4,1 (07/2026) | Sức ép hạ lãi suất |

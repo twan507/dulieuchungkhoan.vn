@@ -190,6 +190,8 @@ Ba hệ quả vận hành:
 | ECB SDMX gốc | Đường vòng khi Frankfurter chết | Trả pivot theo EUR, phải tự đổi gốc sang USD |
 | FRED `DEX*` | Đối chứng, không phải nguồn chính | Công bố theo tuần — chính là chỗ hụt cần lấp |
 
+*(2026-09-05, lát 7b)* Yahoo `<CCY>=X` đổi vai: không còn chỉ là dự phòng đối chứng mà nạp thành chuỗi **trong ngày** riêng `fx.usd_<ccy>.market` (17 cặp, asset tách khỏi 6 cặp fixing ECB) — chi tiết [`yahoo.md`](yahoo.md) §5.5. ECB/Frankfurter vẫn là mốc chuẩn fixing, không đổi vai. CNY thêm vào ETL ECB (chuỗi Frankfurter từ 2000-01-13); FRED `DEXCHUS` không nạp nữa cho `fx.usd_cny` — 63 ngày trùng 06–08/2026 lệch ECB/FRED trung bình tuyệt đối 0,021 %, max +0,149 %, đủ gần để dùng một nguồn duy nhất.
+
 **Đã thử và loại:** `currency-api` (Bẫy 1) · exchangerate.host, marketstack, finnhub, tiingo (đều đòi đăng ký — `missing_access_key` / `401` / `403`) · Alpha Vantage và Twelve Data (khoá `demo` chạy được, dùng thật phải đăng ký).
 
 ---
