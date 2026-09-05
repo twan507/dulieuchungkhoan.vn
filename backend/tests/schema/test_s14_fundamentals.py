@@ -1,7 +1,7 @@
 import pytest
 import sqlalchemy as sa
 
-from tests.schema.conftest import expect_violation
+from tests.conftest import expect_violation
 
 
 def _issuer(db, name="Test fundamentals"):

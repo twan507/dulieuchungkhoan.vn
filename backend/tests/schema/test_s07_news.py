@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-from tests.schema.conftest import expect_violation
+from tests.conftest import expect_violation
 
 
 def _article(db, url="https://x.vn/a1", pub="2026-08-20T09:00:00+07"):

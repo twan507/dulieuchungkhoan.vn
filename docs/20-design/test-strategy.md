@@ -23,7 +23,9 @@
 
 5. **Module deterministic quan trọng giữ coverage cao** + để dành mutation testing: điều chỉnh giá (thô→hiển thị), sinh nến, rate limiter phân tán, ghép delta. **Coverage không có ngưỡng % cứng** — chỉ là tín hiệu.
 
-6. **Dev-time nuôi CI, không thay CI.** Agent tự verify bằng lệnh thật (`curl /api/healthz`, chạy `etl` một nhịp, so frame) ngay sau khi sửa, rồi **cập nhật smoke test tương ứng** — công cụ agent bổ sung bộ test, không thay nó.
+6. **Một database test, một fixture** *(2026-09-05)*: `backend/tests/conftest.py` là chủ duy nhất của `migrated_engine` · `db` · `expect_violation` — không tạo conftest con import lại (pytest sẽ coi là hai fixturedef, dựng DB hai lần và che va chạm). Test **job** commit thật vào `dulieu_test` và chỉ dọn dòng của mình, test **schema** chạy trong giao dịch rollback nhưng vẫn nhìn thấy dòng job đã commit ⇒ literal của test schema/store phải là thứ không job nào ghi: quy ước **tiền tố `ZZ`** (`ZZIDX`, `ZZFUND`, `zz_test`…), mỗi file test một họ tiền tố riêng, không dùng mã thật (`VNINDEX`, `rtq12`).
+
+7. **Dev-time nuôi CI, không thay CI.** Agent tự verify bằng lệnh thật (`curl /api/healthz`, chạy `etl` một nhịp, so frame) ngay sau khi sửa, rồi **cập nhật smoke test tương ứng** — công cụ agent bổ sung bộ test, không thay nó.
 
 ## Nhắc lại ranh giới (chi tiết ở CLAUDE.md §4.5)
 
