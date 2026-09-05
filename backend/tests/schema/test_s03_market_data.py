@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-from tests.schema.conftest import expect_violation
+from tests.conftest import expect_violation
 
 
 def _issuer(db):
@@ -178,7 +178,7 @@ def test_metric_dictionary_two_dicts(db):  # seam 6
     db.execute(
         sa.text(
             "INSERT INTO market.metric_dictionary (dictionary, code) "
-            "VALUES ('screener_params', 'rtq12'), ('field_dictionary', 'rtq12')"
+            "VALUES ('screener_params', 'zz_test'), ('field_dictionary', 'zz_test')"   # không đụng 729 mã job fundamentals (e35) đã commit
         )
     )
     assert expect_violation(

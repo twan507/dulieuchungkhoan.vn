@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 
-from tests.schema.conftest import expect_violation
+from tests.conftest import expect_violation
 
 L1 = {"TAICHINH","BATDONGSAN","SANXUAT","XUATKHAU","TIEUDUNG","NANGLUONG"}
 L2 = {"NGANHANG","CHUNGKHOAN","BAOHIEM","DANDUNG","KHUCONGNGHIEP","XAYDUNG","VATLIEU",
@@ -45,13 +45,15 @@ def test_partial_unique_ticker(db):                      # seam 1
 
 
 def test_external_id_two_subs_same_source(db):           # seam 2 + 2b (F4/I-3)
-    sid = _mk_security(db, "VNINDEX", "HOSE", stype="index")
+    # Mã ZZ*: không đụng VNINDEX/HOSE mà job refdata (test e10) đã COMMIT vào cùng DB test — một DB duy nhất
+    # từ 2026-09-05, va chạm không còn được lần dựng lại thứ hai che (review lát 6, I6).
+    sid = _mk_security(db, "ZZIDX", "HOSE", stype="index")
     db.execute(sa.text(
         "INSERT INTO market.security_external_id (security_id, source, external_code, external_sub) "
-        "VALUES (:i,'bvsc','VNINDEX','tvc'), (:i,'bvsc','HOSE','snapshot')"), {"i": sid})
+        "VALUES (:i,'bvsc','ZZIDX','tvc'), (:i,'bvsc','ZZHOSE','snapshot')"), {"i": sid})
     assert expect_violation(db,
         "INSERT INTO market.security_external_id (security_id, source, external_code, external_sub) "
-        f"VALUES ({sid},'bvsc','VNINDEX','tvc2')")        # trùng PK (source, external_code)=('bvsc','VNINDEX')
+        f"VALUES ({sid},'bvsc','ZZIDX','tvc2')")        # trùng PK (source, external_code)=('bvsc','ZZIDX')
     n = db.execute(sa.text(
         "SELECT count(*) FROM market.security_external_id WHERE security_id=:i AND source='bvsc'"),
         {"i": sid}).scalar()

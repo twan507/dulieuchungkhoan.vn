@@ -75,7 +75,7 @@ uv run --project backend alembic -c database/alembic.ini upgrade head
 uv run --project backend alembic -c database/alembic.ini downgrade base   # rollback toàn phần
 ```
 
-Test schema (tự tạo lại `dulieu_test` từ đầu qua `conftest.py`, không đụng DB ở `DATA_DATABASE_URL`):
+Test schema (tự tạo lại `dulieu_test` từ đầu qua `backend/tests/conftest.py` — một lần cho cả bộ, không đụng DB ở `DATA_DATABASE_URL`):
 
 ```bash
 cd backend && uv run pytest tests/schema -v
@@ -87,7 +87,7 @@ Cả bộ trong một lệnh — 640 test, 2 skipped *(đo 2026-09-05 sau lát 6
 cd backend && uv run pytest tests -q
 ```
 
-*(Trước `ff4d0ca` — 2026-08-28 — lệnh gộp chết ở bước collection vì `tests/schema/conftest.py` và `tests/etl/conftest.py` cùng được nạp dưới tên module `conftest`. Đã sửa bằng cách gọi import đủ đường dẫn `from tests.schema.conftest import ...`, đúng lối mà phần còn lại của bộ test vốn đã dùng.)*
+*(Lịch sử fixture: trước `ff4d0ca` — 2026-08-28 — lệnh gộp chết ở bước collection vì `tests/schema/conftest.py` và `tests/etl/conftest.py` cùng nạp dưới tên module `conftest`; sửa bằng import đủ đường dẫn. Cách đó lại tạo **hai fixturedef `migrated_engine`** session-scope ⇒ full suite dựng + migrate `dulieu_test` **hai lần**, và lần dựng lại thứ hai từng che va chạm dữ liệu giữa test job và test schema (review lát 6). **Từ 2026-09-05 chỉ còn một `backend/tests/conftest.py`** giữ `migrated_engine` · `db` · `expect_violation`; hai conftest con đã xoá; test schema dùng literal `ZZ*`/`zz_test` để không đụng dòng mà test job đã commit.)*
 
 ## Luật
 
