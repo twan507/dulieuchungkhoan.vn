@@ -1,0 +1,137 @@
+{
+ "chart": {
+  "result": [
+   {
+    "meta": {
+     "currency": "EUR",
+     "symbol": "EUR=X",
+     "exchangeName": "CCY",
+     "fullExchangeName": "CCY",
+     "instrumentType": "CURRENCY",
+     "firstTradeDate": 1070236800,
+     "regularMarketTime": 1788557390,
+     "hasPrePostMarketData": false,
+     "gmtoffset": 3600,
+     "timezone": "BST",
+     "exchangeTimezoneName": "Europe/London",
+     "regularMarketPrice": 0.8605,
+     "regularMarketChangePercent": 0.0814,
+     "fulldayPrice": 0.8605,
+     "fulldayChange": 0.0007,
+     "fulldayChangePercent": 0.0814,
+     "fiftyTwoWeekHigh": 0.883,
+     "fiftyTwoWeekLow": 0.8317,
+     "regularMarketDayHigh": 0.8627,
+     "regularMarketDayLow": 0.8594,
+     "regularMarketVolume": 0,
+     "longName": "USD/EUR",
+     "shortName": "USD/EUR",
+     "chartPreviousClose": 0.8629,
+     "priceHint": 4,
+     "currentTradingPeriod": {
+      "pre": {
+       "timezone": "BST",
+       "end": 1788476400,
+       "start": 1788476400,
+       "gmtoffset": 3600
+      },
+      "regular": {
+       "timezone": "BST",
+       "end": 1788562740,
+       "start": 1788476400,
+       "gmtoffset": 3600
+      },
+      "post": {
+       "timezone": "BST",
+       "end": 1788562740,
+       "start": 1788562740,
+       "gmtoffset": 3600
+      }
+     },
+     "dataGranularity": "1d",
+     "range": "",
+     "validRanges": [
+      "1d",
+      "5d",
+      "1mo",
+      "3mo",
+      "6mo",
+      "1y",
+      "2y",
+      "5y",
+      "10y",
+      "ytd",
+      "max"
+     ]
+    },
+    "timestamp": [
+     1788130800,
+     1788217200,
+     1788303600,
+     1788390000,
+     1788476400,
+     1788557390
+    ],
+    "indicators": {
+     "quote": [
+      {
+       "low": [
+        0.8604000210762024,
+        0.8601999878883362,
+        0.8617100119590759,
+        0.8599299788475037,
+        0.8596299886703491,
+        0.8593999743461609
+       ],
+       "volume": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "high": [
+        0.8631600141525269,
+        0.8629000186920166,
+        0.8645300269126892,
+        0.8632000088691711,
+        0.8630099892616272,
+        0.8626999855041504
+       ],
+       "close": [
+        0.8628900051116943,
+        0.860759973526001,
+        0.8623999953269958,
+        0.8631600141525269,
+        0.859969973564148,
+        0.8604999780654907
+       ],
+       "open": [
+        0.862820029258728,
+        0.8607900142669678,
+        0.8627899885177612,
+        0.8631899952888489,
+        0.8599500060081482,
+        0.8598999977111816
+       ]
+      }
+     ],
+     "adjclose": [
+      {
+       "adjclose": [
+        0.8628900051116943,
+        0.860759973526001,
+        0.8623999953269958,
+        0.8631600141525269,
+        0.859969973564148,
+        0.8604999780654907
+       ]
+      }
+     ]
+    }
+   }
+  ],
+  "error": null
+ }
+}
