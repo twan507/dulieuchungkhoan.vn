@@ -78,6 +78,31 @@ def main(argv: list[str] | None = None) -> int:
         if parsed.keys is not None and parsed.intraday:
             parser.error("--keys và --intraday loại trừ nhau")
         return etl.wichart_job.run(keys=parsed.keys, dry_run=parsed.dry_run, intraday=parsed.intraday)
+    if args[0] == "news":
+        import etl.news_job
+        parser = argparse.ArgumentParser(prog="etl news")
+        parser.add_argument("--dry-run", action="store_true", dest="dry_run")
+        parser.add_argument("--sources", type=lambda s: [k.strip() for k in s.split(",") if k.strip()])
+        parser.add_argument("--loop", action="store_true")
+        parser.add_argument("--minutes", type=float)
+        parser.add_argument("--backfill-sitemap", action="store_true", dest="backfill_sitemap")
+        parser.add_argument("--from", dest="from_month")
+        parser.add_argument("--to", dest="to_month")
+        parser.add_argument("--max-minutes", type=float, dest="max_minutes")
+        parser.add_argument("--stop-before-open", action="store_true", dest="stop_before_open")
+        parsed = parser.parse_args(args[1:])
+        if parsed.backfill_sitemap:
+            if not parsed.from_month or not etl.news_job.MONTH.match(parsed.from_month):
+                parser.error("--backfill-sitemap cần --from dạng YYYY-MM")
+            if parsed.loop or parsed.dry_run or parsed.sources is not None or parsed.minutes is not None:
+                parser.error("--backfill-sitemap không đi cùng --loop/--dry-run/--sources/--minutes")
+            return etl.news_job.run_backfill(from_month=parsed.from_month, to_month=parsed.to_month,
+                                             max_minutes=parsed.max_minutes, stop_before_open=parsed.stop_before_open)
+        if parsed.to_month is not None or parsed.max_minutes is not None or parsed.stop_before_open:
+            parser.error("--to/--max-minutes/--stop-before-open chỉ đi cùng --backfill-sitemap")
+        if parsed.minutes is not None and not parsed.loop:
+            parser.error("--minutes chỉ đi với --loop")
+        return etl.news_job.run(sources=parsed.sources, dry_run=parsed.dry_run, loop=parsed.loop, minutes=parsed.minutes)
     if args[0] in ("fred", "fx", "lbma", "yahoo", "binance"):
         import importlib
         mod = importlib.import_module(f"etl.{args[0]}_job")
@@ -93,7 +118,7 @@ def main(argv: list[str] | None = None) -> int:
         extra = {"intraday": parsed.intraday} if args[0] in ("yahoo", "binance") else {}
         return mod.run(keys=parsed.keys, dry_run=parsed.dry_run, backfill=getattr(parsed, "backfill", False), **extra)
     print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener, events, price, snapshot, fundamentals,"
-          " wichart, fred, fx, lbma, yahoo, binance)", file=sys.stderr)
+          " wichart, news, fred, fx, lbma, yahoo, binance)", file=sys.stderr)
     return 2
 
 
