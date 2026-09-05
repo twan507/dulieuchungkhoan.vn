@@ -158,7 +158,7 @@ Chung: `Point(domain, code, obs_date, value: Decimal, price_type)` cho `observat
 
 | Nguồn | `obs_date` | Giá trị | Cổng độ tươi (`stale`) | Cổng khác |
 |---|---|---|---|---|
-| FRED | `date` ISO (chuỗi tháng đã neo ngày 1 = luật kho) | `value` chuỗi; `"."` ⇒ **bỏ điểm**, không dòng; `Decimal(str) × scale` | `max(obs_date) ≥ hôm nay(UTC) − max_lag_days` theo series (d: 6; dầu `DCOILWTICO` trễ 4 ngày: 10; H.10 `DTWEXBGS`/`DEXCHUS`: 12; m: 60; `PCEPILFE`: 90 — khớp Phụ lục A) | `count` ≥ số điểm đã có trong kho − 0 (chuỗi không co lại) — chỉ báo, không từ chối |
+| FRED | `date` ISO (chuỗi tháng đã neo ngày 1 = luật kho) | `value` chuỗi; `"."` ⇒ **bỏ điểm**, không dòng; `Decimal(str) × scale` | `max(obs_date) ≥ hôm nay(UTC) − max_lag_days` theo series (d: 6; dầu `DCOILWTICO` trễ 4 ngày: 10; H.10 `DTWEXBGS`/`DEXCHUS`: 12; **m: 75; `PCEPILFE`: 100** — đo lại 2026-09-05 lúc AC2: `CPIAUCSL` neo 07-01 tới 05/09 là 66 ngày mà CPI tháng 8 ra ~10/09, tức "trễ 45 ngày" của fred.md là ảnh chụp ngày 15/08, trước kỳ công bố kế tiếp độ trễ chạm ~72 ngày; PCE 87 — khớp Phụ lục A) | `count` ≥ số điểm đã có trong kho − 0 (chuỗi không co lại) — chỉ báo, không từ chối |
 | ECB | khoá ngày của `rates` | `rates[day][ccy]` số ⇒ `Decimal(str)` | ngày cuối ≥ hôm nay − 6 (TARGET nghỉ dài nhất 4 ngày + cuối tuần) | đủ 6 tiền tệ ở ngày cuối; `start_date` đọc từ response, không giả định |
 | LBMA | `d` | `v[idx]` với `idx` = `external_sub` (0 = USD); `null` ⇒ bỏ điểm | `d` cuối ≥ hôm nay − 6 | mảng `v` đúng 3 phần tử; ngày tăng dần |
 | Yahoo | `timestamp[i]` → múi giờ **`meta.exchangeTimezoneName`** → date (13:30 UTC `^GSPC` = 09:30 New York = 09-04) | `open/high/low/close/volume` theo vị trí, `adjclose` → `close_adj`; nến có `close` null ⇒ bỏ | `regularMarketTime ≥ hôm nay − max_lag_days` (mặc định 14, phủ Tết Trung Quốc; `^BCOM` 2020 chết) **và** ≥ 1 nến trong cửa sổ | (a) `dataGranularity == '1d'`; (b) **`instrumentType != 'ALTSYMBOL'`** (đo hôm nay: `quoteType` không còn); (c) `meta.currency` nếu không rỗng phải bằng registry; (d) **bỏ nến cuối chưa đóng**: nến cuối cùng ngày với `regularMarketTime` **và** `regularMarketTime < currentTradingPeriod.regular.end` |
@@ -248,21 +248,21 @@ Expected từ mẫu thật chụp 2026-09-05 lưu ở `samples/` (một response
 
 ## Phụ lục A — FRED (15 series, `source='fred'`)
 
-`scale` nhân raw; `band` trên điểm mới nhất sau scale; `max_lag` ngày lịch so với hôm nay (UTC), suy từ fred.md §5.1 (T+1 → 6 để phủ cuối tuần dài; H.10 → 12; tháng → 60; PCE → 90).
+`scale` nhân raw; `band` trên điểm mới nhất sau scale; `max_lag` ngày lịch so với hôm nay (UTC), suy từ fred.md §5.1 (T+1 → 6 để phủ cuối tuần dài; H.10 → 12; tháng → 75; PCE → 100 — sửa từ 60/90 lúc AC2, xem §5.3).
 
 | series_id | miền | code | name_vi | unit | freq | scale | band | max_lag | price_type |
 |---|---|---|---|---|---|---|---|---|---|
 | DFF | macro | us.rate.fedfunds.daily | Fed funds hiệu lực (ngày) | % | d | 1 | (−1, 25) | 6 | — |
-| FEDFUNDS | macro | us.rate.fedfunds | Fed funds bình quân tháng | % | m | 1 | (−1, 25) | 60 | — |
+| FEDFUNDS | macro | us.rate.fedfunds | Fed funds bình quân tháng | % | m | 1 | (−1, 25) | 75 | — |
 | SOFR | macro | us.rate.sofr | SOFR | % | d | 1 | (−1, 25) | 6 | — |
 | DGS2 | macro | us.yield.2y | Lợi suất TPCP Mỹ 2 năm | % | d | 1 | (−1, 25) | 6 | — |
 | DGS10 | macro | us.yield.10y | Lợi suất TPCP Mỹ 10 năm | % | d | 1 | (−1, 25) | 6 | — |
 | T10Y2Y | macro | us.yield.spread_10y2y | Chênh lợi suất 10 năm − 2 năm | % | d | 1 | (−5, 5) | 6 | — |
 | T10YIE | macro | us.breakeven.10y | Lạm phát hoà vốn 10 năm | % | d | 1 | (−5, 15) | 6 | — |
-| CPIAUCSL | macro | us.cpi | CPI Mỹ (SA, 1982–84 = 100) | chỉ số (1982-84=100) | m | 1 | (100, 1000) | 60 | — |
-| PCEPILFE | macro | us.pce.core | PCE lõi (2017 = 100) | chỉ số (2017=100) | m | 1 | (50, 500) | 90 | — |
-| UNRATE | macro | us.unemployment | Tỷ lệ thất nghiệp Mỹ | % | m | 1 | (0, 30) | 60 | — |
-| PAYEMS | macro | us.payrolls | Việc làm phi nông nghiệp | người | m | 1000 | (1e8, 3e8) | 60 | — |
+| CPIAUCSL | macro | us.cpi | CPI Mỹ (SA, 1982–84 = 100) | chỉ số (1982-84=100) | m | 1 | (100, 1000) | 75 | — |
+| PCEPILFE | macro | us.pce.core | PCE lõi (2017 = 100) | chỉ số (2017=100) | m | 1 | (50, 500) | 100 | — |
+| UNRATE | macro | us.unemployment | Tỷ lệ thất nghiệp Mỹ | % | m | 1 | (0, 30) | 75 | — |
+| PAYEMS | macro | us.payrolls | Việc làm phi nông nghiệp | người | m | 1000 | (1e8, 3e8) | 75 | — |
 | DCOILWTICO | asset | wti *(có sẵn)* | Giá dầu WTI giao ngay | USD/thùng | d | 1 | (5, 500) | 10 | spot |
 | DTWEXBGS | asset | dxy.broad | Chỉ số đô Mỹ broad (Fed, 01/2006 = 100) | điểm | d | 1 | (50, 200) | 12 | close |
 | VIXCLS | asset | vix | VIX | điểm | d | 1 | (5, 150) | 6 | close |
