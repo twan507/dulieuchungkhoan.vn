@@ -1,0 +1,11 @@
+url cuối: https://api.frankfurter.dev/v1/latest?from=USD&to=EUR%2CJPY%2CGBP%2CCAD%2CSEK%2CCHF · lịch sử redirect: ['https://api.frankfurter.app/latest?from=USD&to=EUR%2CJPY%2CGBP%2CCAD%2CSEK%2CCHF']
+latest: HTTP 200 · 1182 ms · {"amount":1.0,"base":"USD","date":"2026-09-04","rates":{"CAD":1.38,"CHF":0.80924,"EUR":0.86044,"GBP":0.7391,"JPY":156.25,"SEK":9.5513}}
+   etag: W/"ac100498b3d3694d524d4b87e1fc7e3c"
+   cache-control: public, max-age=86400
+   content-encoding: gzip
+   x-ratelimit-limit: None
+   retry-after: None
+trọn chuỗi: HTTP 200 · 2400 ms · 672296 byte · keys=['amount', 'base', 'end_date', 'start_date'] · start_date=1999-01-04 end_date=2026-09-04 · 7086 ngày · đầu 1999-01-04 cuối 2026-09-04
+   ngày thiếu cặp: 0 · ví dụ []
+   dòng cuối: 2026-09-04 {'CAD': 1.38, 'CHF': 0.80924, 'EUR': 0.86044, 'GBP': 0.7391, 'JPY': 156.25, 'SEK': 9.5513}
+v2 providers=ECB: HTTP 200 · [{"date":"2026-09-04","base":"USD","quote":"CAD","rate":1.38},{"date":"2026-09-04","base":"USD","quote":"CHF","rate":0.80924},{"date":"2026-09-04","base":"USD","quote":"EUR","rate":0.86044},{"date":"2026-09-04","base":"USD","quote":"GBP","rate":0.7391},{"date":"2026-09-04","base":"USD","quote":"JPY"

@@ -10,7 +10,7 @@
 
 | | |
 |---|---|
-| Host | `https://api.frankfurter.app` (v1) · `https://api.frankfurter.dev` (v2) |
+| Host | 🔴 **`https://api.frankfurter.dev/v1/`** *(đo 2026-09-05: host cũ `api.frankfurter.app` trả **`301`** về đây; ETL gọi thẳng host mới)* · `https://api.frankfurter.dev/v2` |
 | Chủ dữ liệu gốc | **Ngân hàng Trung ương châu Âu (ECB)** — tỷ giá tham chiếu hằng ngày |
 | Frankfurter là gì | Lớp API mở bọc dữ liệu ECB. **Mã nguồn mở, tự dựng lại được bằng Docker** |
 | Xác thực | ❌ Không khoá, không token, không cookie |
@@ -26,10 +26,12 @@ Chuỗi phụ thuộc: **ECB → Frankfurter → dulieuchungkhoan.vn**. Vì Fran
 ### 2.1 Endpoint
 
 ```
-GET https://api.frankfurter.app/latest?from=USD&to=EUR,JPY,GBP,CAD,SEK,CHF
-GET https://api.frankfurter.app/{YYYY-MM-DD}?from=USD&to=...
-GET https://api.frankfurter.app/{start}..{end}?from=USD&to=...
+GET https://api.frankfurter.dev/v1/latest?from=USD&to=EUR,JPY,GBP,CAD,SEK,CHF
+GET https://api.frankfurter.dev/v1/{YYYY-MM-DD}?from=USD&to=...
+GET https://api.frankfurter.dev/v1/{start}..{end}?from=USD&to=...
 ```
+
+*(Host đổi từ `api.frankfurter.app` sang `api.frankfurter.dev/v1` — đo 2026-09-05, host cũ trả `301`. Trọn chuỗi `1999-01-04..` cùng ngày: **7.086 ngày, 672 KB, 2,4 s, 0 ngày thiếu cặp**; response có ETag yếu + `cache-control: max-age=86400`.)*
 
 **1 lời gọi lấy đủ 6 cặp.** Một lời gọi nữa lấy trọn chuỗi lịch sử → **backfill 27 năm tốn một lời gọi**.
 
@@ -211,7 +213,7 @@ Không mục nào cần khoá API.
 - **Ngưỡng rate limit thật** của Frankfurter — **chủ đích không dò**.
 - Điều khoản đầy đủ của Frankfurter và ECB *(mới quan sát trang `frankfurter.dev`, chưa đọc toàn văn)*.
 - Danh sách trường đầy đủ của response ngoài `base` / `date` / `start_date` / `end_date` / `rates`.
-- ETag / `If-None-Match` / cache header.
+- ~~ETag / `If-None-Match` / cache header.~~ ✅ đo 2026-09-05: ETag yếu (`W/"…"`), `cache-control: public, max-age=86400` — một lời gọi/ngày nên ETL không dùng.
 - Hành vi khi gọi nhiều luồng song song.
 - Trọng số DXY có bị ICE điều chỉnh trong lịch sử không — bộ trọng số dùng ở §3.1 đã **nghiệm đúng trên 248 phiên gần nhất**, chưa kiểm cho giai đoạn trước 2025.
 - `open.er-api.com` có endpoint lịch sử trả phí hay không.

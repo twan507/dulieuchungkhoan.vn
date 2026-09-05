@@ -1,0 +1,36 @@
+== gold_pm: HTTP 200 · 1530 ms · 914061 byte
+   content-type: application/json
+   etag: "df28d-65ab589b53063-gzip"
+   last-modified: Sat, 05 Sep 2026 05:20:06 GMT
+   cache-control: no-cache, no-store, must-revalidate
+   content-encoding: gzip
+   x-ratelimit-limit: None
+   retry-after: None
+   kiểu gốc: list · số phần tử: 14676
+   phần tử đầu: {"is_cms_locked": 0, "d": "1968-04-01", "v": [37.7, 15.68, null]}
+   phần tử [1]: {"is_cms_locked": 0, "d": "1968-04-02", "v": [37.3, 37.3, null]}
+   phần tử cuối-1: {"is_cms_locked": 0, "d": "2026-09-03", "v": [4467.15, 3306.14, 3843.54]}
+   phần tử cuối: {"is_cms_locked": 0, "d": "2026-09-04", "v": [4415.4, 3269.16, 3803.43]}
+   tập khoá: ['d', 'is_cms_locked', 'v']
+   độ dài mảng v: {3: 14676} · số dòng có 0/null: 7737
+   ví dụ dòng 0/null gần đây: []
+   ngày đầu 1968-04-01 · ngày cuối 2026-09-04 · tăng dần? True
+   If-None-Match → HTTP 200 · 914061 byte
+== silver: HTTP 200 · 1280 ms · 897405 byte
+   content-type: application/json
+   etag: "db17d-65ab589c8b898-gzip"
+   last-modified: Sat, 05 Sep 2026 05:20:07 GMT
+   cache-control: no-cache, no-store, must-revalidate
+   content-encoding: gzip
+   x-ratelimit-limit: None
+   retry-after: None
+   kiểu gốc: list · số phần tử: 14839
+   phần tử đầu: {"is_cms_locked": 0, "d": "1968-01-02", "v": [2.173, 0.904, null]}
+   phần tử [1]: {"is_cms_locked": 0, "d": "1968-01-03", "v": [2.225, 0.925, null]}
+   phần tử cuối-1: {"is_cms_locked": 0, "d": "2026-09-03", "v": [65.645, 48.65, 56.57]}
+   phần tử cuối: {"is_cms_locked": 0, "d": "2026-09-04", "v": [66.835, 49.39, 57.51]}
+   tập khoá: ['d', 'is_cms_locked', 'v']
+   độ dài mảng v: {3: 14839} · số dòng có 0/null: 7847
+   ví dụ dòng 0/null gần đây: []
+   ngày đầu 1968-01-02 · ngày cuối 2026-09-04 · tăng dần? True
+   If-None-Match → HTTP 200 · 897405 byte

@@ -46,6 +46,16 @@ class Series:
     def external_sub(self) -> str:
         return str(self.idx)
 
+    # Cùng giao diện với `etl.registry.Series` để đi qua `registry.load_registry` chung (lát 7)
+    @property
+    def external_key(self) -> str:
+        return self.key
+
+    @property
+    def meta(self) -> dict:
+        return {"flags": list(self.flags), "freq": self.freq, "group": self.group, "tier": self.tier,
+                "key_flags": list(self.key_flags)}
+
 
 # (key, idx) -> (code, name_vi). Tăng trưởng = <code>.growth, role growth_ref (theo §9).
 MACRO: dict[tuple[str, int], tuple[str, str]] = {
@@ -134,7 +144,7 @@ ASSET: dict[tuple[str, int], tuple[str, str, str, str, str, str, str]] = {
     ("niken", 0): ("nickel_cn", "Giá niken Trung Quốc", _C, "CNY", "CNY/tấn", "spot", "cn"),
     ("dong", 0): ("copper", "Giá đồng", _C, "USD", "USD/lb", "spot", "global"),
     ("bac", 0): ("silver", "Giá bạc", _C, "USD", "USD/oz", "spot", "global"),
-    ("dau_wti", 0): ("wti", "Giá dầu WTI tương lai", _C, "USD", "USD/thùng", "futures", "us"),
+    ("dau_wti", 0): ("wti", "Giá dầu WTI", _C, "USD", "USD/thùng", "futures", "us"),   # tên trung tính: FRED ghi spot cùng asset (lát 7)
     ("khi_thien_nhien", 0): ("natgas_hh", "Giá khí thiên nhiên Henry Hub", _C, "USD", "USD/MMBtu", "spot", "us"),
     ("than_newcastle", 0): ("coal_newcastle", "Giá than Newcastle", _C, "USD", "USD/tấn", "spot", "global"),
     ("than_coc", 0): ("coke_cn", "Giá than cốc Trung Quốc", _C, "CNY", "CNY/tấn", "spot", "cn"),

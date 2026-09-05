@@ -95,7 +95,7 @@ Response `series` (metadata) có: `observation_start` · `observation_end` · `f
 | Kéo toàn bộ `DGS10` (16.858 điểm, 1962 → nay) | **733 ms · 1.601.211 byte thô · 85.110 byte trên dây** (gzip −94,7%) |
 | gzip | Có, 51/53 lời gọi (2 lời gọi `400` không nén) |
 | **Header hạn mức** | 🔴 **Không có.** Hợp nhất header 53 response: không `X-RateLimit-*`, không `Retry-After` |
-| ETag / `If-None-Match` | **Chưa kiểm** |
+| ETag / `If-None-Match` | **Không có** *(đo 2026-09-05, 15 lời gọi trọn chuỗi: không header ETag)* |
 
 **Hệ quả:** cả lịch sử 64 năm của một chuỗi ngày tốn 85 KB nén và **một** lời gọi. Backfill không phải bài toán ở nguồn này.
 
@@ -135,6 +135,10 @@ Response `series` (metadata) có: `observation_start` · `observation_end` · `f
 | 2026-08-07 | 9999-12-31 | **158.861** (−66) |
 
 → **Một điểm dữ liệu có 3 giá trị.** Lệch tích luỹ 140 nghìn việc làm. Kho lưu bản đầu rồi không cập nhật → biểu đồ dulieuchungkhoan.vn **vĩnh viễn khác** biểu đồ FRED, và không có cách nào phát hiện bằng timestamp.
+
+**Bằng chứng thứ hai** *(đo 2026-09-05, khi dựng ETL lát 7)*: `PAYEMS` tháng 7/2026 lúc khảo sát 2026-08-15 là **158.858**, nay là **158.913** (+55) — vá thêm một lần nữa trong ba tuần. ETL lát 7 vì thế tải **trọn chuỗi** mỗi lượt và UPSERT chỉ-khi-đổi, ghi mẫu dòng đổi `(mã, ngày, cũ, mới)` vào `ops.etl_run.stats.changes_sample` thay cho lưu body (12 MB/lượt).
+
+⚠️ **Độ trễ chuỗi tháng không phải hằng số 45 ngày** *(đo 2026-09-05)*: `CPIAUCSL` neo `2026-07-01` tới 05/09 là **66 ngày** vì CPI tháng 8 chỉ ra ~10/09 — con số 45 ở §5 là ảnh chụp ngày 15/08; ngay trước kỳ công bố kế tiếp độ trễ chạm **~72 ngày** (PCE ~87). Cổng độ tươi cho chuỗi tháng vì vậy đặt **75 ngày** (PCE 100), không phải 60.
 
 ### 4.2 Ba chế độ đọc — đều đã gọi thật
 
@@ -350,6 +354,6 @@ WiChart có 6 key năng lượng (SunSirs, giá CNY) với **cửa sổ trượt
 - `units` = `chg` · `ch1` · `pch` · `pca` · `cch` · `cca` · `log`.
 - `output_type` = 2 và 3; `aggregation_method` = `sum`, `eop`.
 - Nhóm endpoint `category/*` · `releases` · `sources/*` · `maps/*` (GeoFRED).
-- **ETag / `If-None-Match` / cache header** — WiChart có, FRED chưa đo.
+- ~~**ETag / `If-None-Match` / cache header** — WiChart có, FRED chưa đo.~~ ✅ đo 2026-09-05: FRED không trả ETag.
 - Hành vi khi gọi nhiều luồng song song.
 - `DCOILBRENTEU` (Brent) — chưa gọi.

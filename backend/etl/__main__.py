@@ -75,8 +75,18 @@ def main(argv: list[str] | None = None) -> int:
         parser.add_argument("--dry-run", action="store_true", dest="dry_run")
         parsed = parser.parse_args(args[1:])
         return etl.wichart_job.run(keys=parsed.keys, dry_run=parsed.dry_run)
-    print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener, events, price, snapshot, fundamentals, wichart)",
-          file=sys.stderr)
+    if args[0] in ("fred", "fx", "lbma", "yahoo", "binance"):
+        import importlib
+        mod = importlib.import_module(f"etl.{args[0]}_job")
+        parser = argparse.ArgumentParser(prog=f"etl {args[0]}")
+        parser.add_argument("--keys", type=lambda s: [k.strip() for k in s.split(",") if k.strip()])
+        parser.add_argument("--dry-run", action="store_true", dest="dry_run")
+        if args[0] in ("yahoo", "binance"):
+            parser.add_argument("--backfill", action="store_true")
+        parsed = parser.parse_args(args[1:])
+        return mod.run(keys=parsed.keys, dry_run=parsed.dry_run, backfill=getattr(parsed, "backfill", False))
+    print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener, events, price, snapshot, fundamentals,"
+          " wichart, fred, fx, lbma, yahoo, binance)", file=sys.stderr)
     return 2
 
 
