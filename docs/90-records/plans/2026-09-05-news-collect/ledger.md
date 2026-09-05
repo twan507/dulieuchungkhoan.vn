@@ -79,3 +79,9 @@ Minor để lại (ruling): M1 `Seen.load` quét toàn bảng mỗi vòng (13 ms
 10. C1 dữ liệu: điền nhóm cho 98 bài đang thấy ở trang chuyên mục, phần còn lại NULL (gợi ý, lát 9 gán bằng AI) — nếu sai: thiếu tín hiệu `group_overridden` cho ~1.100 bài tháng 8–9.
 11. Minor để lại: M1 `Seen.load`; Task 1 `url = canonical` ở CBTT (load-bearing, đã comment).
 12. Controller tự sửa số test 782→791 ở 4 file tài liệu bằng sed (đợt sửa quên) — nếu sai: một số.
+
+## 6. Bổ sung sau merge (2026-09-06 04:05–04:15)
+
+- **AC8** (`run_id 270`, 03:11–04:12, `--max-minutes 60`): sitemap 2026-08 **1.642 URL**, `skipped_seen 72` (đã có từ collect), **`articles_ok 1.142`**, `refused 9`, `articles_failed 0`, `calls 1.152`, `retries 0`, `budget_hit true`, `months_done []`, `cursor null` (tháng chưa trọn — đúng thiết kế). 3 bài đối chiếu: `published_at` = `meta.cms-date` trên trang (`src='feed'`), ví dụ `post395510` 08/08 10:23 VN; `feed='sitemap'`, `group_from_feed` NULL. Phát hiện: file sitemap tháng **cũ** xếp giảm dần (lượt đi từ 31/08 xuống 08/08) — README §5.2 sửa cùng lượt. Lượt hai (`--max-minutes 30`, 04:13, cửa sổ `dlck-news-backfill2`) nối phần còn lại ~430 URL; số ghi khi rà AC7. ✅
+- **`--loop` bật 04:13** trong cửa sổ `dlck-news-loop` (tách tiến trình, log `D:\twan_projects\dlck-runtime\logs\news-loop.log`, `DLCK_LOCK_CONSOLE=1`), nhịp 5 phút, mỗi vòng một `etl_run` `news.collect`. Dừng bằng Ctrl+C trong cửa sổ. **AC7** tổng hợp sau ≥ 24 giờ (có thứ 2 07/09): `SELECT sum((stats->>'items')::int), sum((stats->>'new')::int), sum((stats->>'merged_title')::int) … FROM ops.etl_run WHERE job='news.collect' AND started_at > '2026-09-05 21:13+00'`.
+- Bài học vận hành: tác vụ nền của công cụ có trần 10 phút — lượt dài phải chạy tách tiến trình (`Start-Process cmd /c …`); log stderr qua `>>` trong cửa sổ đó **trống** (chưa rõ vì sao, stats vẫn ở `etl_run`) — nợ nhỏ cho lát 13.

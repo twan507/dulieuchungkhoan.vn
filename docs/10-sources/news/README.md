@@ -142,7 +142,7 @@ Bù lại sitemap tốt hơn RSS:
 **Ba phát hiện đo lại 2026-09-05** (lùi tới **2015-06**, 1.414 URL; 2020-09 có 2.167, 2024-01 có 1.750, 2026-09 có 245 tính tới 05/09):
 - **Phần tử đầu tiên của mỗi file tháng là URL trang chủ**, `lastmod` của nó là giờ sinh file (đọc chương trình phải bỏ)
 - 🔴 **`lastmod` là giờ SỬA bài, không phải giờ đăng.** Bài `…-post397051.html` có `lastmod 2026-09-05T20:39:34+07:00` nhưng `meta.cms-date` trên trang = `2026-09-05T09:18:48+0700` — ETL lấy giờ trang làm `published_at`, `lastmod` chỉ để dự phòng
-- File tháng lẫn vài bài đầu tháng kế; phần còn lại (sau phần tử trang chủ) xếp tăng dần theo `lastmod`
+- File tháng lẫn vài bài đầu tháng kế. **Thứ tự không cố định** *(đo 2026-09-05/06)*: file tháng **hiện tại** (2026-9) xếp tăng dần theo `lastmod` sau phần tử trang chủ; file tháng **cũ** (2026-8, 2024-1, 2020-9, 2015-6) xếp **giảm dần** — phần tử [1] là bài cuối tháng (kể cả bài đầu tháng kế), phần tử cuối là bài ngày 1. Lượt backfill tháng 8/2026 vì thế đi từ 31/08 xuống 08/08 khi hết hạn 60 phút. Đọc chương trình không được dựa vào vị trí, phải đọc `lastmod`/giờ trang của từng URL
 
 Sitemap cho URL + giờ đăng nhưng **không cho chuyên mục**. Ghép với 3 trang chuyên mục dưới đây theo post ID trong URL:
 
