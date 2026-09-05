@@ -38,8 +38,19 @@ class Written:
 
 
 def load_registry(conn, series: list[Series]) -> tuple[dict[str, Resolved], dict]:
+    # Dòng ánh xạ vắng mặt trong registry hiện tại bị XOÁ trước vòng INSERT (ruling I1): nếu chỉ lật
+    # active=false, một mã đổi external_sub giữa hai lượt sẽ để lại dòng cũ trỏ cùng indicator_id và vỡ
+    # UNIQUE (indicator_id, source) khi INSERT dòng mới. indicator_id/asset_id không bao giờ bị xoá ở đây
+    # nên observation không mất chủ. Cột active giữ lại cho lát 12 (series chết ở nguồn mà vẫn trong registry).
+    present_m = [f"{s.key}/{s.external_sub}" for s in series if s.domain == "macro"]
+    present_a = [f"{s.key}/{s.external_sub}" for s in series if s.domain == "asset"]
+    removed = conn.execute(sa.text(
+        "DELETE FROM macro.indicator_source WHERE source = :src"
+        " AND NOT (external_key || '/' || external_sub = ANY(:present))"), {"src": SOURCE, "present": present_m}).rowcount
+    removed += conn.execute(sa.text(
+        "DELETE FROM asset.asset_external_id WHERE source = :src"
+        " AND NOT (external_code || '/' || external_sub = ANY(:present))"), {"src": SOURCE, "present": present_a}).rowcount
     resolved: dict[str, Resolved] = {}
-    present_m, present_a = [], []
     for s in series:
         meta = json.dumps({"tier_flags": list(s.flags), "freq": s.freq, "group": s.group}, ensure_ascii=False)
         if s.domain == "macro":
@@ -56,7 +67,6 @@ def load_registry(conn, series: list[Series]) -> tuple[dict[str, Resolved], dict
                 " scale = excluded.scale, active = true, meta = excluded.meta"),
                 {"iid": iid, "src": SOURCE, "key": s.key, "sub": s.external_sub, "scale": s.scale, "meta": meta})
             resolved[s.code] = Resolved("macro", iid, None)
-            present_m.append(f"{s.key}/{s.external_sub}")
         else:
             aid = conn.execute(sa.text(
                 "INSERT INTO asset.asset (code, name_vi, asset_class, quote_currency, unit, calendar, region)"
@@ -73,14 +83,7 @@ def load_registry(conn, series: list[Series]) -> tuple[dict[str, Resolved], dict
                 " scale = excluded.scale, active = true, price_type = excluded.price_type, meta = excluded.meta"),
                 {"aid": aid, "src": SOURCE, "key": s.key, "sub": s.external_sub, "scale": s.scale, "pt": s.price_type, "meta": meta})
             resolved[s.code] = Resolved("asset", aid, s.price_type)
-            present_a.append(f"{s.key}/{s.external_sub}")
-    deact = conn.execute(sa.text(
-        "UPDATE macro.indicator_source SET active = false WHERE source = :src AND active"
-        " AND NOT (external_key || '/' || external_sub = ANY(:present))"), {"src": SOURCE, "present": present_m}).rowcount
-    deact += conn.execute(sa.text(
-        "UPDATE asset.asset_external_id SET active = false WHERE source = :src AND active"
-        " AND NOT (external_code || '/' || external_sub = ANY(:present))"), {"src": SOURCE, "present": present_a}).rowcount
-    return resolved, {"macro": len(present_m), "asset": len(present_a), "deactivated": deact}
+    return resolved, {"macro": len(present_m), "asset": len(present_a), "removed": removed}
 
 
 _UPSERT_MACRO = sa.text(

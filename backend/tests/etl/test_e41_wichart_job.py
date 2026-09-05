@@ -92,7 +92,7 @@ def test_full_run_writes_both_domains_and_pushes_two_domain_states(clean, monkey
     assert len(calls) == 68 and len(set(calls)) == 68
     status, stats, _ = _last_run(clean)
     assert status == "success"
-    assert stats["registry"] == {"macro": 53, "asset": 52, "deactivated": 0}
+    assert stats["registry"] == {"macro": 53, "asset": 52, "removed": 0}
     assert stats["tally"]["keys_failed"] == 0 and stats["tally"]["series_shape"] == 0 and stats["tally"]["series_band"] == 0
     assert stats["tally"]["series_ok"] == 105 and stats["changed"] == 0 and stats["inserted"] > 1000
     assert _scalar(clean, "SELECT count(*) FROM macro.observation o JOIN macro.indicator i USING (indicator_id) WHERE i.code='vn.cpi'") == 284

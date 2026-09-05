@@ -1,4 +1,5 @@
 """Ghi kho thật (fixture `db` = một giao dịch, rollback cuối test)."""
+import dataclasses
 from datetime import date
 from decimal import Decimal
 
@@ -16,7 +17,7 @@ def _count(db, sql, **p):
 def test_load_registry_upserts_53_indicators_and_52_assets_idempotently(db):
     series = wr.build()
     resolved, stats = ws.load_registry(db, series)
-    assert stats == {"macro": 53, "asset": 52, "deactivated": 0}
+    assert stats == {"macro": 53, "asset": 52, "removed": 0}
     assert len(resolved) == 105 and resolved["vn.cpi"].domain == "macro" and resolved["wti"].price_type == "futures"
     n_ind = _count(db, "SELECT count(*) FROM macro.indicator WHERE code LIKE 'vn.%'")
     n_src = _count(db, "SELECT count(*) FROM macro.indicator_source WHERE source = 'wichart'")
@@ -34,16 +35,32 @@ def test_load_registry_upserts_53_indicators_and_52_assets_idempotently(db):
     assert tuple(row) == ("commodity", "USD", "USD/lb", "trading_days", "spot", Decimal("0.01"))
 
 
-def test_series_missing_from_registry_is_deactivated_not_deleted(db):
+def test_series_missing_from_registry_has_its_mapping_row_removed_but_keeps_the_indicator(db):
     series = wr.build()
     ws.load_registry(db, series)
     trimmed = [s for s in series if s.code != "vn.pmi"]
     _, stats = ws.load_registry(db, trimmed)
-    assert stats["deactivated"] == 1
+    assert stats["removed"] == 1
     assert _count(db, "SELECT count(*) FROM macro.indicator WHERE code = 'vn.pmi'") == 1
-    assert db.execute(sa.text("SELECT active FROM macro.indicator_source WHERE source='wichart' AND external_key='pmi'")).scalar() is False
-    _, stats = ws.load_registry(db, series)                               # quay lại: active = true
-    assert db.execute(sa.text("SELECT active FROM macro.indicator_source WHERE source='wichart' AND external_key='pmi'")).scalar() is True
+    assert _count(db, "SELECT count(*) FROM macro.indicator_source WHERE source='wichart' AND external_key='pmi'") == 0
+    pmi_id_before = db.execute(sa.text("SELECT indicator_id FROM macro.indicator WHERE code='vn.pmi'")).scalar()
+    _, stats = ws.load_registry(db, series)                               # nạp trọn lại: dòng pmi quay lại
+    assert _count(db, "SELECT count(*) FROM macro.indicator_source WHERE source='wichart' AND external_key='pmi'") == 1
+    pmi_id_after = db.execute(sa.text("SELECT indicator_id FROM macro.indicator WHERE code='vn.pmi'")).scalar()
+    assert pmi_id_before == pmi_id_after                                  # indicator_id không đổi
+
+
+def test_series_with_changed_idx_does_not_violate_unique_constraint(db):
+    series = wr.build()
+    ws.load_registry(db, series)
+    cpi_id_before = db.execute(sa.text("SELECT indicator_id FROM macro.indicator WHERE code='vn.cpi'")).scalar()
+    changed = [dataclasses.replace(s, idx=1) if (s.key, s.idx) == ("cpi", 0) else s for s in series]
+    ws.load_registry(db, changed)                                         # KHÔNG raise UniqueViolation
+    row = db.execute(sa.text("SELECT external_key, external_sub FROM macro.indicator_source"
+                             " WHERE source='wichart' AND external_key='cpi'")).all()
+    assert [tuple(r) for r in row] == [("cpi", "1")]
+    cpi_id_after = db.execute(sa.text("SELECT indicator_id FROM macro.indicator WHERE code='vn.cpi'")).scalar()
+    assert cpi_id_before == cpi_id_after
 
 
 def test_apply_counts_inserted_then_changed_and_leaves_unchanged_rows_untouched(db):
