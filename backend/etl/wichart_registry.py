@@ -38,7 +38,7 @@ class Series:
     quote_currency: str | None = None
     price_type: str | None = None
     region: str = "vn"
-    calendar: str = "trading_days"
+    calendar: str | None = None      # chỉ asset có lịch (asset.asset.calendar); macro để None
     tier: str = "A"                  # §9, cấp KEY (không phải cấp series)
     key_flags: tuple[str, ...] = ()  # §9, cấp KEY (vd WIN2Y, FREQMIS) — khác flags cấp series
 
@@ -211,7 +211,7 @@ def build(md_path: Path = WICHART_MD) -> list[Series]:
         else:
             code, name_vi, cls, ccy, unit, ptype, region = ASSET[(key, idx)]
             out.append(Series(code=code, name_vi=name_vi, unit=unit, asset_class=cls, quote_currency=ccy,
-                              price_type=ptype, region=region, **common))
+                              price_type=ptype, region=region, calendar="trading_days", **common))
     for key, meta in doc.items():
         if meta.get("tier") == "X" or key in tier_x:
             continue
