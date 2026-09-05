@@ -78,6 +78,17 @@ def main(argv: list[str] | None = None) -> int:
         if parsed.keys is not None and parsed.intraday:
             parser.error("--keys và --intraday loại trừ nhau")
         return etl.wichart_job.run(keys=parsed.keys, dry_run=parsed.dry_run, intraday=parsed.intraday)
+    if args[0] == "news":
+        import etl.news_job
+        parser = argparse.ArgumentParser(prog="etl news")
+        parser.add_argument("--dry-run", action="store_true", dest="dry_run")
+        parser.add_argument("--sources", type=lambda s: [k.strip() for k in s.split(",") if k.strip()])
+        parser.add_argument("--loop", action="store_true")
+        parser.add_argument("--minutes", type=float)
+        parsed = parser.parse_args(args[1:])
+        if parsed.minutes is not None and not parsed.loop:
+            parser.error("--minutes chỉ đi với --loop")
+        return etl.news_job.run(sources=parsed.sources, dry_run=parsed.dry_run, loop=parsed.loop, minutes=parsed.minutes)
     if args[0] in ("fred", "fx", "lbma", "yahoo", "binance"):
         import importlib
         mod = importlib.import_module(f"etl.{args[0]}_job")
@@ -93,7 +104,7 @@ def main(argv: list[str] | None = None) -> int:
         extra = {"intraday": parsed.intraday} if args[0] in ("yahoo", "binance") else {}
         return mod.run(keys=parsed.keys, dry_run=parsed.dry_run, backfill=getattr(parsed, "backfill", False), **extra)
     print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener, events, price, snapshot, fundamentals,"
-          " wichart, fred, fx, lbma, yahoo, binance)", file=sys.stderr)
+          " wichart, news, fred, fx, lbma, yahoo, binance)", file=sys.stderr)
     return 2
 
 
