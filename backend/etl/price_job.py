@@ -175,7 +175,6 @@ def _resume_point(todo, cursor):
 
 def _backfill(engine, tickers: list[str] | None, max_minutes: float | None,
               stop_before_open: bool = False) -> int:
-    run_id = omo_store.open_run(engine, price_store.JOB_BACKFILL)
     t0 = time.monotonic()
     # Hạn theo đồng hồ TƯỜNG, không theo monotonic: máy ngủ 4 giờ giữa chừng thì thức dậy là hết
     # ngân sách ⇒ dừng sau mã đang dở, không đem phần ngân sách còn lại chạy lấn vào giờ giao dịch.
@@ -192,6 +191,8 @@ def _backfill(engine, tickers: list[str] | None, max_minutes: float | None,
                    "dup_dates": 0, "raw_close_mismatch": 0, "raw_close_mismatch_sample": [],
                    "invalid_tickers": [], "failed_tickers": [], "retries": 0,
                    "budget_hit": False, "pass_complete": False, "elapsed_s": 0}
+    # Mở sổ là việc CUỐI trước `try`: hỏng ở phần tính hạn giờ phía trên thì không có dòng 'running' treo
+    run_id = omo_store.open_run(engine, price_store.JOB_BACKFILL)
     try:
         cl = _codes_or_raise(engine, tickers)
         todo = cl.codes

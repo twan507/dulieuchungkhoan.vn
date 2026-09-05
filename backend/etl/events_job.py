@@ -67,6 +67,11 @@ def run(accept_new: bool = False) -> int:
         events_store.upsert_domain_state(engine, watermark)
         log.info("events xong: %s", {k: v for k, v in stats.items() if k != "dup_keys"})
         return 0
+    except KeyboardInterrupt:
+        # Ctrl+C là cách dừng chính thức của cửa sổ task — sổ phải ghi lý do, không treo 'running' (khuôn price_job)
+        omo_store.close_run(engine, run_id, "failed", error="dừng tay (Ctrl+C)")
+        log.warning("events dừng tay (Ctrl+C)")
+        return 130
     except Exception as e:  # noqa: BLE001 — job biên ngoài: mọi lỗi đều phải vào etl_run
         omo_store.close_run(engine, run_id, "failed", error=f"{type(e).__name__}: {e}")
         log.exception("events thất bại")
