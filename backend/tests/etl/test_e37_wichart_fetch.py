@@ -21,6 +21,8 @@ def test_classify_ok_retry_bad_shape():
     assert wf.classify(200, "<html>") == ("retry", None)
     assert wf.classify(200, json.dumps({"title": "x", "chart": {}})) == ("bad_shape", None)
     assert wf.classify(200, json.dumps({"chart": {"series": []}}))[0] == "ok"       # rỗng là chuyện của normalize
+    assert wf.classify(200, json.dumps({"chart": []})) == ("bad_shape", None)       # chart không phải dict
+    assert wf.classify(200, json.dumps({"chart": "x"})) == ("bad_shape", None)
 
 
 def test_fetch_one_retries_a_500_then_returns_the_doc():

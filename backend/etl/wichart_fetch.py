@@ -31,7 +31,8 @@ def classify(http: int, text: str) -> tuple[str, dict | None]:
         d = json.loads(text)
     except ValueError:
         return "retry", None
-    series = (d.get("chart") or {}).get("series") if isinstance(d, dict) else None
+    chart = d.get("chart") if isinstance(d, dict) else None
+    series = chart.get("series") if isinstance(chart, dict) else None
     if not isinstance(series, list):
         return "bad_shape", None
     return "ok", d
