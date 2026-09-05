@@ -86,9 +86,11 @@ def collect(engine, registry, *, run_id, now, dry_run, subset, cycle, get, sleep
     ok_sources: set[str] = set()
     with news_fetch.open_news_fetcher(get=get, sleep=sleep, rng=rng) as f:
         for s in registry:
-            if s.kind == "tnck_sitemap" and cycle % SITEMAP_EVERY != 0:
+            if s.backfill_only:                                   # 8b: BNews/NguoiQuanSat sitemap chỉ dùng ở backfill
                 continue
-            url = news_registry.sitemap_url(now_vn) if s.kind == "tnck_sitemap" else s.url
+            if s.kind == "sitemap" and cycle % SITEMAP_EVERY != 0:
+                continue
+            url = news_registry.sitemap_url(s.name, now_vn.strftime("%Y-%m")) if s.kind == "sitemap" else s.url
             try:
                 text = f.fetch_one(url, f"{s.name}/{s.feed_slug}")[1]
                 parsed = PARSERS[s.kind](text, s)
@@ -100,7 +102,7 @@ def collect(engine, registry, *, run_id, now, dry_run, subset, cycle, get, sleep
             ok_sources.add(s.name)
             if not dry_run:
                 with engine.begin() as c:
-                    if news_store.store_list_if_changed(c, s.name, url, text, run_id, "text" if s.kind in ("rss", "tnck_sitemap") else "html"):
+                    if news_store.store_list_if_changed(c, s.name, url, text, run_id, "text" if s.kind in ("rss", "sitemap") else "html"):
                         st["lists_stored"] += 1
             newest = _newest(parsed)
             if s.kind == "rss" and newest and now - newest > timedelta(days=STALE_DAYS):
@@ -287,7 +289,7 @@ def backfill_sitemap(engine, from_month, to_month, *, run_id, max_minutes, stop_
     try:
         with engine.connect() as c:
             seen = news_store.Seen.load(c, now)
-        src = news_registry.Source("tinnhanhck", "tnck_sitemap", news_registry.SITEMAP, None, "sitemap")
+        src = news_registry.Source("tinnhanhck", "sitemap", news_registry.SITEMAPS["tinnhanhck"].url, None, "sitemap")
         streak = 0
 
         def _over_budget() -> bool:
@@ -296,10 +298,9 @@ def backfill_sitemap(engine, from_month, to_month, *, run_id, max_minutes, stop_
         with news_fetch.open_news_fetcher(get=get, sleep=sleep, rng=rng) as f:
             for ym in months_desc(from_month, to_month):
                 st["month"] = ym
-                y, m = int(ym[:4]), int(ym[5:])
                 try:
-                    text = f.fetch_one(news_registry.SITEMAP.format(y=y, m=m), f"sitemap {ym}")[1]
-                    items = PARSERS["tnck_sitemap"](text, src)
+                    text = f.fetch_one(news_registry.sitemap_url("tinnhanhck", ym), f"sitemap {ym}")[1]
+                    items = PARSERS["sitemap"](text, src)
                 except (news_fetch.BadShape, news_fetch.FetchError, ParseError) as e:
                     # I2: tháng hỏng (503/XML rách…) không được làm mất stats/cursor của các tháng khác — ghi nhận rồi qua tháng
                     # sau; KHÔNG đếm vào streak cầu chì (đó là cho lỗi BÀI liên tiếp, không phải lỗi TRANG SITEMAP tháng).

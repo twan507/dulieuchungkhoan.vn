@@ -215,5 +215,5 @@ def parse_bcp_list(html_text: str, src: Source) -> list[Item]:
     return list(out.values())
 
 
-PARSERS = {"rss": parse_rss, "tnck_sitemap": parse_sitemap, "cafef_cbtt": parse_cafef_cbtt,
+PARSERS = {"rss": parse_rss, "sitemap": parse_sitemap, "cafef_cbtt": parse_cafef_cbtt,
            "tnck_category": parse_tnck_category, "bcp_list": parse_bcp_list}
