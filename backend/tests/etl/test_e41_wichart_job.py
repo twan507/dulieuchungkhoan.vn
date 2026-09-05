@@ -49,6 +49,29 @@ def _fake_get(calls=None, fail_all=False):
     return get
 
 
+def _fake_get_partial_failure(fail_count, calls=None):
+    """503 (mọi lần thử) cho `fail_count` key ĐẦU TIÊN theo thứ tự gọi lần đầu; phần còn lại như _fake_get."""
+    order: list[str] = []
+
+    def get(u, timeout):
+        key = u.rsplit("name=", 1)[1]
+        if calls is not None:
+            calls.append(key)
+        if key not in order:
+            order.append(key)
+        if order.index(key) < fail_count:
+            return 503, ""
+        p = FIX / f"{key}.json"
+        return 200, (p.read_text(encoding="utf-8") if p.exists() else _synthetic(key))
+    return get
+
+
+def _last_run_id(engine):
+    with engine.connect() as c:
+        return c.execute(sa.text("SELECT run_id FROM ops.etl_run WHERE job = :j ORDER BY run_id DESC LIMIT 1"),
+                         {"j": ws.JOB}).scalar()
+
+
 def _wire(monkeypatch):
     monkeypatch.setenv("ETL_DATABASE_URL", os.environ["TEST_DATABASE_URL"])
     monkeypatch.setattr("etl.wichart_job.load_dotenv", lambda *a, **k: None)
@@ -125,6 +148,25 @@ def test_all_keys_failing_is_refused_with_nothing_written(clean, monkeypatch):
     assert wj.run(get=_fake_get(fail_all=True), sleep=lambda s: None) == 1
     status, stats, err = _last_run(clean)
     assert status == "failed" and "key hỏng" in err
+    assert _scalar(clean, "SELECT count(*) FROM macro.observation") == 0
+    assert _scalar(clean, "SELECT count(*) FROM ops.data_domain_state WHERE source='wichart'") == 0
+
+
+def test_partial_source_failure_is_refused_and_every_fetched_body_is_kept_as_evidence(clean, monkeypatch):
+    _wire(monkeypatch)
+    calls = []
+    assert wj.run(get=_fake_get_partial_failure(20, calls), sleep=lambda s: None) == 1
+    run_id = _last_run_id(clean)
+    status, stats, err = _last_run(clean)
+    assert status == "failed" and "key hỏng" in err
+    assert stats["tally"]["keys_failed"] == 20
+    rows = None
+    with clean.connect() as c:
+        rows = c.execute(sa.text(
+            "SELECT count(*) FROM staging.raw_payload"
+            " WHERE source='wichart' AND meta->>'refused' = 'true' AND meta->>'run_id' = :rid"),
+            {"rid": str(run_id)}).scalar()
+    assert rows == 48
     assert _scalar(clean, "SELECT count(*) FROM macro.observation") == 0
     assert _scalar(clean, "SELECT count(*) FROM ops.data_domain_state WHERE source='wichart'") == 0
 
