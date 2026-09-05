@@ -10,7 +10,7 @@
 
 **Đang có:** [`agent/skills/`](agent/skills/) — hai skill sản phẩm `vn-stock-advisor` · `vn-stock-knowledge` (3.046 dòng, đã test 6 vòng). ⚠️ **Trước khi sửa bất cứ gì trong đó, bắt buộc đọc [`docs/30-skills/maintenance.md`](../docs/30-skills/maintenance.md).** `agent/` sau này chứa luôn system prompt và glue function-calling.
 
-**Trạng thái phần code** *(2026-09-05 — năm job REST `screener` · `events` · `price` · `snapshot` · `fundamentals` từ 2026-09-04, thêm job `etl wichart` (vĩ mô · tiền tệ · hàng hoá WiChart → `macro.observation` + `asset.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-05-wichart-macro-etl/)), mỗi job một mục dưới)*: `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)) · job `etl screener` (52 trang `GetScreenerItems` → `market.screener_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-screener-daily-etl/)) · job `etl events` (sáu họ `Calendar/GetCorporate*` → `market.corporate_event`, [hồ sơ](../docs/90-records/plans/2026-09-03-events-daily-etl/)) · job `etl price` (`getPriceData` trang 1 mọi cổ phiếu niêm yết + backfill có con trỏ → `market.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-price-daily-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
+**Trạng thái phần code** *(2026-09-05 — năm job REST `screener` · `events` · `price` · `snapshot` · `fundamentals` từ 2026-09-04, thêm job `etl wichart` (vĩ mô · tiền tệ · hàng hoá WiChart → `macro.observation` + `asset.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-05-wichart-macro-etl/)), và **năm job quốc tế** `etl fred` · `fx` · `lbma` · `yahoo` · `binance` từ 2026-09-05 chiều ([hồ sơ lát 7](../docs/90-records/plans/2026-09-05-global-etl/)), mỗi job một mục dưới)*: `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)) · job `etl screener` (52 trang `GetScreenerItems` → `market.screener_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-screener-daily-etl/)) · job `etl events` (sáu họ `Calendar/GetCorporate*` → `market.corporate_event`, [hồ sơ](../docs/90-records/plans/2026-09-03-events-daily-etl/)) · job `etl price` (`getPriceData` trang 1 mọi cổ phiếu niêm yết + backfill có con trỏ → `market.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-price-daily-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
 
 ---
 
@@ -293,6 +293,28 @@ rồi soi rồi chạy `--keys` sau khi hiểu vì sao. **Mốc nước** = ngà
 (`macro.indicator`/`wichart` và `asset`/`wichart`), chỉ tiến ở lượt đầy đủ.
 
 ⚠️ **Chưa đăng ký task Scheduler** — lát 13. Giờ nạp của nguồn chưa đo (giả định trước 08:00 giờ VN); nên xếp **08:15**, chạy cả cuối tuần.
+
+## Chạy 5 job quốc tế (FRED · ECB · LBMA · Yahoo · Binance)
+
+```bash
+uv run python -m etl fred                        # 15 series FRED → macro.observation (11) + asset.price_daily (4); cần FRED_API trong .env
+uv run python -m etl fx                          # 6 cặp ECB qua Frankfurter (1 lời gọi, trọn chuỗi từ 1999) → asset.price_daily, fixing
+uv run python -m etl lbma                        # vàng PM + bạc LBMA (2 lời gọi, trọn lịch sử từ 1968, cột USD) → asset.price_daily, fixing
+uv run python -m etl yahoo [--backfill]          # 36 chỉ số + DXY ICE → asset.ohlc_daily; hằng ngày cửa sổ 400 ngày, --backfill từ 1900 (period1 âm)
+uv run python -m etl binance [--backfill]        # PAXG + 10 coin (quote USDT, 24x7) → asset.ohlc_daily; hằng ngày 40 nến, --backfill phân trang từ 0
+uv run python -m etl <src> --dry-run             # fetch + chuẩn hoá + guard, KHÔNG ghi gì; in stats
+uv run python -m etl <src> --keys DGS10,PAYEMS   # lượt con theo mã nguồn (EUR · gold_pm · ^GSPC · PAXGUSDT…): không guard, không đụng data_domain_state
+```
+
+Đo 2026-09-05: cả 5 lượt hằng ngày **66 lời gọi ≈ 2 phút**, 0 retry; backfill Yahoo 37 lời gọi / 335.601 nến, Binance 39 lời gọi / 30.951 nến. Hồ sơ: [`docs/90-records/plans/2026-09-05-global-etl/`](../docs/90-records/plans/2026-09-05-global-etl/) (spec §5 luật từng nguồn, 6 file đo, ledger nghiệm thu).
+
+**Cùng khuôn với `wichart`, tham số hoá:** phần không phụ thuộc nguồn nằm ở `etl/registry.py` (`Series`, `load_registry(conn, series, source)` — đường ghi duy nhất vào 4 bảng registry, **xoá ánh xạ vắng mặt theo đúng `source`** nên lượt FRED không đụng dòng WiChart), `etl/series_store.py` (UPSERT chỉ-khi-đổi cho `observation`/`price_daily`/`ohlc_daily`, mẫu ≤ 50 dòng đổi `(mã, ngày, cũ, mới)` trong `stats.changes_sample` — thước đo vá hồi tố của FRED), `etl/series_guard.py` và `etl/series_job.py` (`SourceSpec`). Mỗi nguồn chỉ có `<src>_registry.py` (bảng mã của mình + `band` + `max_lag_days` theo series), `<src>_fetch.py` (URL + `classify`), `<src>_normalize.py` (luật thời gian + cổng), `<src>_job.py` (10 dòng).
+
+**Guard hai chế độ:** nguồn ≤ 20 series (FRED 15 · ECB 6 · LBMA 2 · Binance 11) là **tất-cả-hoặc-không** — một series hỏng/sai hình dạng/ngoài dải/không tươi là `failed`, 0 dòng ghi, mọi body vào `staging.raw_payload` với `meta.refused`; Yahoo (37) theo tỷ lệ như wichart (`failed` > 20 % · `shape`/`band` > 5 % · `stale` > 20 %), dưới ngưỡng thì bỏ series đó. **Không lưu body thô khi hash đổi** (khác wichart): FRED trọn chuỗi 12 MB/lượt, chỉ lưu khi từ chối.
+
+**Năm luật thời gian, năm cổng — không dùng chung:** FRED `"."` = thiếu ⇒ không dòng, `max_lag` theo series (ngày 6 · dầu 10 · H.10 12 · tháng **75** · PCE 100 — chuỗi tháng trước kỳ công bố kế trễ tới ~72 ngày, đo 05/09) · ECB ngày cuối phải đủ 6 tiền tệ · LBMA `v[0]` = USD, `null` bỏ, ngày phải tăng · Yahoo `dataGranularity == '1d'`, **`instrumentType != 'ALTSYMBOL'`** (`quoteType` đã biến mất 2026-09-05), `regularMarketTime` ≥ now − 14 ngày, `currency` khớp registry (rỗng thì bỏ qua — `^MERV`), ngày nến theo **múi giờ sàn**, **bỏ nến cuối khi `now < currentTradingPeriod.regular.end`** · Binance nến theo **UTC** của giờ mở, bỏ nến có `closeTime > now`, giá chuỗi ⇒ `Decimal`, `x-mbx-used-weight-1m ≥ 3000` ⇒ nghỉ 60 s, `418` dừng cả lượt.
+
+🔴 **Khoá FRED nằm trong URL** — `http_fetch.Fetcher` chỉ giữ **tên lớp** exception (không `str(e)`), `fred_fetch.redact` che khoá trước khi log, `httpx` bị hạ xuống WARNING; test `test_transport_error_message_never_contains_the_api_key` pin điều này, AC8 lát 7 grep log/stats/evidence ra 0.
 
 ## Lịch chạy (Windows Task Scheduler)
 
