@@ -98,6 +98,7 @@ def test_core_works_under_etl_role_including_ohlc_daily(db):
     assert ss.apply(db, [Point("macro", "zz.yield.10y", date(2026, 9, 3), Decimal("4.77"), None)], resolved).inserted == 1
     assert ss.apply(db, [Point("asset", "wti", date(2026, 9, 1), Decimal("91.48"), "spot")], resolved).inserted == 1
     assert ss.apply_ohlc(db, [Bar("zz.idx.sp500", date(2026, 9, 4), None, None, None, Decimal("7718.6"), None, None)], resolved).inserted == 1
+    assert ss.apply_ohlc(db, [Bar("zz.idx.sp500", date(2026, 9, 4), None, None, None, Decimal("7720.0"), None, None)], resolved).changed == 1
 
 
 # ---- guard ----

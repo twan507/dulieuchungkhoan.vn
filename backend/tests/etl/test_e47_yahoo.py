@@ -72,12 +72,36 @@ def test_exchange_timezone_decides_the_date_for_tokyo_and_ice():
     assert len(dxy) == 8 and dxy[-1].obs_date == date(2026, 9, 4) and dxy[-1].close == Decimal("99.16000366210938")   # 9 nến − 1 null
 
 
-def test_open_candle_is_dropped_while_the_regular_session_is_still_running():
+import dataclasses
+FX_EUR = dataclasses.replace(REG["^GSPC"], external_key="EUR=X", code="fx.usd_eur.market", quote_currency="EUR",
+                             band=(Decimal("0.08"), Decimal("9")), max_lag_days=6)
+FX_CAD = dataclasses.replace(FX_EUR, external_key="CAD=X", code="fx.usd_cad.market", quote_currency="CAD",
+                             band=(Decimal("0.13"), Decimal("14")))
+
+
+def test_open_candle_is_kept_while_the_regular_session_is_still_running():
     during = datetime(2026, 9, 4, 15, 0, tzinfo=timezone.utc)                          # trong phiên NY (13:30–20:00)
     bars = yn.bars(REG["^GSPC"], _doc("GSPC-10d"), during)
-    assert len(bars) == 7 and bars[-1].obs_date == date(2026, 9, 3)
-    early = datetime(2026, 9, 5, 2, 0, tzinfo=timezone.utc)                            # DXY regular.end = 03:59 UTC 09-05
-    assert yn.bars(REG["DX-Y.NYB"], _doc("DXY-10d"), early)[-1].obs_date == date(2026, 9, 3)
+    assert len(bars) == 8 and bars[-1].obs_date == date(2026, 9, 4) and bars[-1].close == Decimal("7718.60009765625")
+    early = datetime(2026, 9, 5, 2, 0, tzinfo=timezone.utc)                            # DXY regular.end = 03:59 UTC 09-05 — không còn cắt
+    assert yn.bars(REG["DX-Y.NYB"], _doc("DXY-10d"), early)[-1].obs_date == date(2026, 9, 4)
+
+
+def test_fx_two_candles_on_the_same_london_date_keep_the_live_one():
+    # EUR=X 2026-09-05: nến 2026-09-03T23:00Z (London 09-04, close≈open "rỗng") và nến live 2026-09-04T21:29Z (London 09-04)
+    s = FX_EUR
+    bars = yn.bars(s, _doc("EURX-5d"), NOW)
+    by = {b.obs_date: b for b in bars}
+    assert sorted(by) == [date(2026, 8, 31), date(2026, 9, 1), date(2026, 9, 2), date(2026, 9, 3), date(2026, 9, 4)]
+    b = by[date(2026, 9, 4)]
+    assert (b.close, b.high, b.low) == (Decimal("0.8604999780654907"), Decimal("0.8626999855041504"), Decimal("0.8593999743461609"))
+    assert b.close != Decimal("0.859969973564148")                                        # nến rỗng 23:00 bị nến live đè
+
+
+def test_fx_weekend_candle_lands_on_its_london_date():
+    bars = yn.bars(FX_CAD, _doc("CADX-5d"), NOW)                                    # nến cuối 2026-09-05T04:21Z = thứ 7 London
+    assert bars[-1].obs_date == date(2026, 9, 5) and bars[-1].close == Decimal("1.3837000131607056")
+    assert bars[-2].obs_date == date(2026, 9, 4) and bars[-2].close == Decimal("1.3789499998092651")
 
 
 def test_three_gates_altsymbol_stale_granularity_and_currency():

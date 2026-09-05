@@ -1,4 +1,4 @@
-"""Nến ngày Yahoo → Bar (spec lát 7 §5.3). Ba cổng bắt buộc + bỏ nến chưa đóng + ngày theo múi giờ SÀN."""
+"""Nến ngày Yahoo → Bar (spec lát 7 §5.3, lát 7b §5.4). Ba cổng bắt buộc + ngày theo múi giờ SÀN. Nến đang chạy ĐƯỢC GIỮ (D1 lát 7b): hai nến cùng ngày sàn thì nến sau ghi đè — với FX chính là nến live tại regularMarketTime đè nến "rỗng" 23:00 UTC (measure-yahoo-fx 2026-09-05)."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
@@ -48,11 +48,9 @@ def bars(s, doc, now) -> list[Bar]:
         raise SeriesError("shape", f"{s.external_key}: thiếu indicators.quote[0].close")
     q = quote_list[0]
     adj = (ind.get("adjclose") or [{}])[0].get("adjclose") or [None] * len(ts)
-    reg = (meta.get("currentTradingPeriod") or {}).get("regular") or {}
-    cut = len(ts) - 1 if reg and now.timestamp() < reg["end"] and ts[-1] >= reg["start"] else None
     out: dict = {}
     for i, t in enumerate(ts):
-        if i == cut or q["close"][i] is None:
+        if q["close"][i] is None:
             continue
         d = _utc(t).astimezone(tz).date()
         out[d] = Bar(s.code, d, _dec(q["open"][i]), _dec(q["high"][i]), _dec(q["low"][i]), _dec(q["close"][i]),

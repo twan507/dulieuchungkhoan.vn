@@ -37,13 +37,20 @@ def test_url_and_classify():
     assert bf.classify(429, "") == ("retry", None)
 
 
-def test_open_time_utc_date_string_prices_and_open_candle_dropped():
+def test_open_time_utc_date_string_prices_and_the_running_candle_is_kept():
     bars = bn.bars(REG["PAXGUSDT"], PAXG, NOW)
-    assert [b.obs_date for b in bars] == [date(2026, 9, 1), date(2026, 9, 2), date(2026, 9, 3), date(2026, 9, 4)]   # 09-05 chưa đóng
-    b = bars[-1]
+    assert [b.obs_date for b in bars] == [date(2026, 9, 1), date(2026, 9, 2), date(2026, 9, 3), date(2026, 9, 4), date(2026, 9, 5)]
+    b = bars[-2]
     assert (b.open, b.high, b.low, b.close, b.volume, b.close_adj, b.code) == (
         Decimal("4481.95"), Decimal("4489.97"), Decimal("4375.00"), Decimal("4431.81"), Decimal("5744.5282"), None, "paxg")
+    assert bars[-1].close == Decimal("4433.56")                                       # nến 09-05 đang chạy (fixture chụp 05/09)
     assert len(bn.bars(REG["PAXGUSDT"], PAXG, datetime(2026, 9, 6, 0, 30, tzinfo=timezone.utc))) == 5
+
+
+def test_limit_3_fixture_has_two_closed_and_one_running_candle_for_today():
+    btc3 = json.loads((FIX / "binance-BTCUSDT-3.json").read_text(encoding="utf-8"))
+    bars = bn.bars(REG["BTCUSDT"], btc3, NOW)
+    assert [b.obs_date for b in bars] == [date(2026, 9, 3), date(2026, 9, 4), date(2026, 9, 5)] and btc3[-1][6] > NOW.timestamp() * 1000
 
 
 def test_seam4_step5_epoch_is_utc_not_vietnam():
@@ -131,17 +138,17 @@ def _last(engine):
         return c.execute(sa.text("SELECT status, stats FROM ops.etl_run WHERE job='global.binance' ORDER BY run_id DESC LIMIT 1")).one()
 
 
-def test_job_writes_44_closed_bars(clean):
+def test_job_writes_55_bars_including_the_running_one(clean):
     calls = []
     assert bj.run(get=_fake_get(calls), sleep=lambda s: None, now=NOW) == 0
     assert len(calls) == 11 and all("limit=40" in u for u in calls)
     status, stats = _last(clean)
-    assert status == "success" and stats["bars"] == 44 and stats["inserted"] == 44 and stats["tally"]["ok"] == 11
+    assert status == "success" and stats["bars"] == 55 and stats["inserted"] == 55 and stats["tally"]["ok"] == 11
     with clean.connect() as c:
         assert c.execute(sa.text("SELECT close FROM asset.ohlc_daily o JOIN asset.asset a USING (asset_id)"
                                  " WHERE a.code='paxg' AND obs_date='2026-09-04'")).scalar() == Decimal("4431.81")
         assert c.execute(sa.text("SELECT count(*) FROM asset.ohlc_daily o JOIN asset.asset a USING (asset_id)"
-                                 " WHERE a.code='paxg' AND obs_date='2026-09-05'")).scalar() == 0
+                                 " WHERE a.code='paxg' AND obs_date='2026-09-05'")).scalar() == 1
         assert c.execute(sa.text("SELECT quote_currency, calendar FROM asset.asset WHERE code='btc'")).one() == ("USDT", "24x7")
     assert bj.run(get=_fake_get(), sleep=lambda s: None, now=NOW) == 0
     assert (_last(clean)[1]["inserted"], _last(clean)[1]["changed"]) == (0, 0)
