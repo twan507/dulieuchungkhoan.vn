@@ -30,6 +30,8 @@ Bảng job sau lát:
 
 Không đăng ký task, lịch thuộc lát 13 (D6). Lát này chỉ làm cho job **chạy được ở nhịp đó** và **đo tải ở đúng nhịp**.
 
+🔴 **"Intraday" ở đây KHÔNG phải dữ liệu intraday.** Không có bảng tick/nến phút, không thêm dòng trong ngày. Mỗi mã vẫn một dòng cho một ngày; lượt `--intraday` chỉ tải lại vài ngày gần nhất rồi UPSERT chỉ-khi-đổi, nên **dòng của ngày hôm nay bị ghi đè liên tục** cho tới khi phiên đóng và tự thành nến chốt. Tên cờ nghĩa là "cửa sổ ngắn, chạy trong phiên" (chủ dự án nói rõ tối 05/09).
+
 ## 2. Dữ kiện đã đo vs giả định *(§4.8 bước 0)*
 
 ### 2.1 Đã đo — 2026-09-05 chiều (thứ 7), ~60 lời gọi thật + đọc kho
@@ -52,7 +54,7 @@ Không đăng ký task, lịch thuộc lát 13 (D6). Lát này chỉ làm cho jo
 |---|---|---|---|
 | A2 | Yahoo chịu **54 lời gọi mỗi 30 phút, giãn cách 1–5 s** | 4 lượt × 54 **nối đuôi** (216 lời gọi/~11 phút — nặng hơn nhịp kế hoạch, sạch thì nhịp 30 phút an toàn a fortiori; chủ dự án chọn đo nén thay vì chờ 2 giờ), 0 lỗi HTTP ⇒ "mức này an toàn" (§4.3 CLAUDE.md), không dò ngưỡng | hạ nhịp 60 phút, ghi vào bảng nhịp cho lát 13 |
 | A4 | WiChart chịu **47 key × 12 lượt/giờ** (~13.500 lời gọi/ngày; đã đo 90 lời gọi liên tiếp sạch 05/09 sáng) | 6 lượt × 47 nối đuôi (282 lời gọi/~14 phút — gấp đôi nhịp 5 phút) | hạ nhịp 15 phút |
-| A5 | Nến Yahoo đang chạy trong cửa sổ 5 ngày **đổi `close` giữa hai lời gọi trong phiên** và ngày sàn không đổi | **không đo được thứ 7** (mọi sàn trong danh sách đóng); đo bằng chính AC3 ở bước nghiệm thu — TA-125 chủ nhật 13:00–21:25 VN hoặc Nikkei thứ 2 07:00–13:00 VN. Không chặn viết code: luật ngày sàn + dedupe đã pin bằng fixture thứ 7 | không có nến live cho chỉ số ⇒ chỉ FX/Binance có trong ngày; D1 vẫn đúng |
+| A5 | Nến Yahoo đang chạy trong cửa sổ 5 ngày **đổi `close` giữa hai lời gọi trong phiên** và ngày sàn không đổi | **không đo được thứ 7** (mọi sàn trong danh sách đóng). **Chủ dự án chốt tối 05/09: coi là đúng** (nến live FX và `regularMarketPrice` các mã khác đều tươi trong cùng phép đo); xác nhận bằng AC3 đầu tuần — trợ lý không ghi "đã đo" | không có nến live cho chỉ số ⇒ chỉ FX/Binance có trong ngày; D1 vẫn đúng |
 | A7 | FX Yahoo cuối tuần: nến "thứ 7" hẹp (`CAD=X` 09-05) là dòng hợp lệ trong `ohlc_daily` (giá thật, nguồn tự ghi) | quan sát sau lượt thật thứ 7/chủ nhật | nếu tầng đọc thấy nhiễu: lọc theo `calendar` ở tầng đọc, không xoá ở ETL |
 
 ## 3. Phạm vi
@@ -201,8 +203,8 @@ Expected từ mẫu thật chụp 2026-09-05 (`samples/yahoo-EURX-5d.json` — b
 |---|---|---|
 | AC1 | Toàn bộ test xanh | số test trước (**709 passed, 2 skipped**) / sau |
 | AC2 | `--intraday --dry-run` trên nguồn sống: `yahoo` 54/54 ok (trừ `stale` ở sàn nghỉ nếu có), mỗi mã ≤ 6 nến; `binance` 11/11, 3 nến/mã; `wichart` 47/47 key | `stats` ba job (`calls`, `bars`/`points`, `intraday: true`) |
-| AC3 | **Nến đang chạy vào kho và đổi** — thay AC7 nửa Yahoo của lát 7: `binance --intraday --keys BTCUSDT` hai lần cách 5 phút (bất kỳ lúc nào) ⇒ dòng ngày UTC hôm nay tồn tại, `close` **khác nhau**, `ingested_at` tiến; `yahoo --intraday --keys ^TA125.TA` (chủ nhật 13:00–21:25 VN) hoặc `^N225` (thứ 2 07:00–13:00 VN) hai lần cách 15 phút ⇒ dòng ngày hôm đó, `close` khác nhau; `wichart --intraday --keys vang_the_gioi,dhtg` hai lần trong giờ làm việc ⇒ điểm ngày hôm đó đổi (WiChart: chờ ngày làm việc — thứ 2) | 6 truy vấn kèm giờ chạy |
-| AC4 | Lượt thường (không `--intraday`) ngay sau AC3: `changed` **chỉ** ở nến/điểm ngày hiện tại, `inserted = 0`, không đụng nến đã chốt (`max(ingested_at)` của dòng < hôm nay không tiến) | `stats.changed` + truy vấn |
+| AC3 | **Nến đang chạy vào kho và đổi** — thay AC7 nửa Yahoo của lát 7: `binance --intraday --keys BTCUSDT` hai lần cách 5 phút (bất kỳ lúc nào — **làm ngay trong lát**) ⇒ dòng ngày UTC hôm nay tồn tại, `close` **khác nhau**, `ingested_at` tiến; `yahoo --intraday --keys ^N225` (thứ 2 07:00–13:00 VN) hai lần cách 15 phút ⇒ dòng ngày hôm đó, `close` khác nhau; `wichart --intraday --keys vang_the_gioi,dhtg` hai lần trong giờ làm việc ⇒ điểm ngày hôm đó đổi. **Nửa Yahoo + WiChart là nợ ghi ở ledger, chạy đầu tuần 07/09 (chủ dự án chốt tối 05/09)** — lát vẫn merge với nửa Binance | 6 truy vấn kèm giờ chạy |
+| AC4 | Lượt thường (không `--intraday`) ngay sau AC3: `changed` **chỉ** ở nến/điểm ngày hiện tại, `inserted = 0`, không đụng nến đã chốt (`max(ingested_at)` của dòng < hôm nay không tiến). **Cùng nợ đầu tuần với AC3** (cần nến đang chạy thật của ba nguồn) | `stats.changed` + truy vấn |
 | AC5 | FX Yahoo: 17 cặp có dòng ngày gần nhất trong `ohlc_daily`; 7 cặp có ECB (6 + CNY) lệch fixing cùng ngày **< 1 %**, đúng chiều quote trên 1 USD; `fx.usd_cny` có dòng ECB `fixing` ngày mới nhất, `min(obs_date)` = **2000-01-13** (không còn dòng FRED 1981), và dòng `(fred, DEXCHUS)` **không còn** trong `asset_external_id` | bảng đối chiếu + 3 truy vấn, kèm số dòng DELETE |
 | AC6 | Giãn cách: từ log có timestamp của một lượt `fred` thật (15 lời gọi), 14 khoảng đều ∈ [1, 5] s (cộng thời gian phản hồi), không hai khoảng nào bằng nhau tới 0,01 s | log + bảng khoảng |
 | AC7 | Tải ở đúng nhịp: A2 Yahoo 4 lượt × 54 cách 30 phút; A4 WiChart 12 lượt × 47 cách 5 phút — **0 lỗi HTTP, 0 tín hiệu chặn** ⇒ ghi "mức này an toàn" vào yahoo.md §7 / wichart.md §2.5 kèm ngày đo | log đếm + số ms |
