@@ -102,6 +102,9 @@ def series_points(s: Series, api_series: list[dict]) -> list[Point]:
     if s.domain == "asset" and s.calendar == "trading_days":
         pts = drop_weekend_carry(pts)
     dedup: dict[date, Point] = {}
-    for p in pts:                                   # hai điểm cùng ngày sau neo → giữ điểm sau (PK không nổ)
+    for p in pts:                                   # hai điểm cùng ngày sau neo, cùng giá → giữ điểm sau, im lặng
+        prev = dedup.get(p.obs_date)
+        if prev is not None and prev.value != p.value:
+            raise SeriesError("shape", f"{s.key}[{s.idx}] hai điểm cùng kỳ {p.obs_date} khác giá trị")
         dedup[p.obs_date] = p
     return list(dedup.values())

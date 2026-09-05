@@ -117,6 +117,16 @@ def test_band_lower_bound_is_signed_for_usd_and_percent_and_level_floor_catches_
     assert ok[-1].value == Decimal("-150")
 
 
+def test_dedup_by_obs_date_is_silent_on_same_value_but_raises_on_conflicting_values():
+    same = [{"name": "Tổng dân số", "data": [[1764522000000, 100.0], [1735664400000, 100.0]]}]  # 2025-12-01 · 2025-01-01 VN
+    pts = wn.series_points(REG[("ds", 0)], same)
+    assert len(pts) == 1 and pts[0].obs_date == date(2025, 1, 1)
+    diff = [{"name": "Tổng dân số", "data": [[1764522000000, 100.0], [1735664400000, 99.0]]}]
+    with pytest.raises(wn.SeriesError) as e:
+        wn.series_points(REG[("ds", 0)], diff)
+    assert e.value.reason == "shape"
+
+
 def test_real_freq_and_anchor_helpers():
     assert wn.real_freq([0, 86_400_000, 2 * 86_400_000]) == "d"
     assert wn.real_freq([1785517200000, 1782838800000, 1780246800000]) == "m"
