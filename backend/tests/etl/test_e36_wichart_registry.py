@@ -1,6 +1,4 @@
 """Registry WiChart: hai chủ sở hữu (khối §9 của wichart.md · bảng mã trong module) phải khớp từng series."""
-import dataclasses
-import pathlib
 from decimal import Decimal
 
 import pytest
@@ -46,6 +44,8 @@ def test_scale_and_unit_come_from_the_doc_or_ours_as_designed():
     assert m[("dau_wti", 0)].price_type == "futures" and m[("dhtg", 0)].price_type == "fixing"
     assert m[("dhtg", 3)].price_type == "spot" and m[("dhtg", 3)].external_sub == "3"
     assert all(s.calendar == "trading_days" for s in m.values() if s.domain == "asset")
+    assert m[("dhtg", 0)].key_flags == ("WIN2Y",)
+    assert m[("chi", 0)].tier == "B"
 
 
 def test_build_raises_when_module_maps_a_series_the_doc_does_not_collect(tmp_path):

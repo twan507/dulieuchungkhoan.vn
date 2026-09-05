@@ -39,6 +39,8 @@ class Series:
     price_type: str | None = None
     region: str = "vn"
     calendar: str = "trading_days"
+    tier: str = "A"                  # §9, cấp KEY (không phải cấp series)
+    key_flags: tuple[str, ...] = ()  # §9, cấp KEY (vd WIN2Y, FREQMIS) — khác flags cấp series
 
     @property
     def external_sub(self) -> str:
@@ -201,7 +203,8 @@ def build(md_path: Path = WICHART_MD) -> list[Series]:
         if role is None:
             raise RegistryError(f"{key}[{idx}] §9 đánh dấu không nạp (role None) mà module vẫn map")
         common = dict(key=key, idx=idx, group=meta["g"], domain=domain, doc_name=doc_name,
-                      scale=Decimal(str(scale)), freq=meta.get("freq", "d"), role=role, flags=tuple(flags))
+                      scale=Decimal(str(scale)), freq=meta.get("freq") or "d", role=role, flags=tuple(flags),
+                      tier=meta.get("tier", "A"), key_flags=tuple(meta.get("flags", [])))
         if domain == "macro":
             code, name_vi = MACRO[(key, idx)]
             out.append(Series(code=code, name_vi=name_vi, unit=unit_doc, **common))

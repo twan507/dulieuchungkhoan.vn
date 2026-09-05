@@ -52,13 +52,14 @@ def load_registry(conn, series: list[Series]) -> tuple[dict[str, Resolved], dict
         " AND NOT (external_code || '/' || external_sub = ANY(:present))"), {"src": SOURCE, "present": present_a}).rowcount
     resolved: dict[str, Resolved] = {}
     for s in series:
-        meta = json.dumps({"tier_flags": list(s.flags), "freq": s.freq, "group": s.group}, ensure_ascii=False)
+        meta = json.dumps({"flags": list(s.flags), "freq": s.freq, "group": s.group,
+                           "tier": s.tier, "key_flags": list(s.key_flags)}, ensure_ascii=False)
         if s.domain == "macro":
             iid = conn.execute(sa.text(
                 "INSERT INTO macro.indicator (code, name_vi, unit, freq, region, role)"
                 " VALUES (:code, :name, :unit, :freq, :region, :role)"
                 " ON CONFLICT (code) DO UPDATE SET name_vi = excluded.name_vi, unit = excluded.unit,"
-                " freq = excluded.freq, role = excluded.role RETURNING indicator_id"),
+                " freq = excluded.freq, role = excluded.role, region = excluded.region RETURNING indicator_id"),
                 {"code": s.code, "name": s.name_vi, "unit": s.unit, "freq": s.freq, "region": s.region, "role": s.role}).scalar_one()
             conn.execute(sa.text(
                 "INSERT INTO macro.indicator_source (indicator_id, source, external_key, external_sub, scale, active, meta)"
@@ -153,9 +154,10 @@ def store_payload_if_changed(conn, key: str, text: str, run_id: int) -> bool:
 
 def store_refusal_evidence(engine, texts: dict[str, str], run_id: int, verdict: Verdict) -> None:
     """Bằng chứng ở giao dịch RIÊNG — lượt chính không ghi gì."""
-    meta = json.dumps({"run_id": run_id, "reasons": verdict.reasons, "refused": True}, ensure_ascii=False)
     with engine.begin() as conn:
         for key, text in texts.items():
+            meta = json.dumps({"run_id": run_id, "reasons": verdict.reasons, "refused": True, "hash": _hash(text)},
+                              ensure_ascii=False)
             conn.execute(sa.text(
                 "INSERT INTO staging.raw_payload (source, endpoint_key, content_type, payload, meta)"
                 " VALUES (:src, :ek, 'json', cast(:p AS jsonb), cast(:m AS jsonb))"),

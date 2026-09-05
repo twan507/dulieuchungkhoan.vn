@@ -103,7 +103,8 @@ def run(keys=None, dry_run=False, get=None, sleep=time.sleep) -> int:
         if dry_run:
             stats["dry_run"] = True
             stats["refused"] = verdict.reasons
-            omo_store.close_run(engine, run_id, "success", stats)
+            omo_store.close_run(engine, run_id, "success" if verdict.ok else "failed", stats,
+                                error=None if verdict.ok else "guard refused (dry-run): " + "; ".join(verdict.reasons))
             log.info("wichart dry-run: %s", stats)
             return 0 if verdict.ok else 1
         if not verdict.ok:

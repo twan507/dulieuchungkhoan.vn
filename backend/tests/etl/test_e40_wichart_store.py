@@ -87,13 +87,13 @@ def test_apply_counts_inserted_then_changed_and_leaves_unchanged_rows_untouched(
 def test_series_break_seed_makes_the_spliced_view_scale_the_old_segment(db):
     resolved, _ = ws.load_registry(db, wr.build())
     ws.apply(db, [Point("macro", "vn.gdp.real", date(2025, 10, 1), Decimal("1642683"), None),
-                  Point("macro", "vn.gdp.real", date(2026, 1, 1), Decimal("2401927"), None)], resolved)
+                  Point("macro", "vn.gdp.real", date(2026, 1, 1), Decimal("2592640"), None)], resolved)
     ws.seed_series_break(db)
     ws.seed_series_break(db)                                                # idempotent
     rows = dict(db.execute(sa.text("SELECT obs_date, value_spliced FROM macro.observation_spliced v"
                                    " JOIN macro.indicator i USING (indicator_id) WHERE i.code='vn.gdp.real'")).all())
     assert rows[date(2025, 10, 1)] == Decimal("1642683") * Decimal("1.6005")   # đoạn CŨ × hệ số
-    assert rows[date(2026, 1, 1)] == Decimal("2401927")                        # kỳ đầu của nền mới, không nhân
+    assert rows[date(2026, 1, 1)] == Decimal("2592640")                        # kỳ đầu của nền mới, không nhân
     n = db.execute(sa.text("SELECT count(*), max(factor), max(verified_at)::date FROM macro.series_break")).one()
     assert n[0] == 1 and n[1] == Decimal("1.6005") and n[2] == date(2026, 9, 5)
 
