@@ -10,7 +10,7 @@ def test_codes_unique_across_all_registries_except_wti():
         codes.update(s.code for s in mod.build())
     dup = {c: n for c, n in codes.items() if n > 1}
     assert dup == {"wti": 2}
-    assert sum(codes.values()) == 15 + 6 + 2 + 37 + 11 + 105
+    assert sum(codes.values()) == 14 + 7 + 2 + 54 + 11 + 105
 
 
 def test_external_ids_unique_within_each_source():

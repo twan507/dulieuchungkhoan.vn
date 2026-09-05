@@ -1,4 +1,4 @@
-"""Yahoo: 37 chỉ số, ba cổng (granularity · instrumentType · độ tươi), múi giờ sàn, nến chưa đóng — fixture 2026-09-05."""
+"""Yahoo: 37 chỉ số, ba cổng (granularity · instrumentType · độ tươi), múi giờ sàn, nến đang chạy được giữ (lát 7b) — fixture 2026-09-05."""
 import json
 import os
 import pathlib
@@ -24,13 +24,19 @@ def _doc(name):
     return json.loads((FIX / f"yahoo-{name}.json").read_text(encoding="utf-8"))
 
 
-def test_registry_37_indices_all_ohlc():
+def test_registry_54_series_37_indices_plus_17_fx_all_ohlc():
     s = yr.build()
-    assert len(s) == 37 and all(x.shape == "ohlc" and x.asset_class == "index" and x.price_type is None and x.source == "yahoo"
-                                and x.unit == "điểm" and x.calendar == "trading_days" and x.max_lag_days == 14 for x in s)
+    idx = [x for x in s if x.asset_class == "index"]
+    fx = [x for x in s if x.asset_class == "fx"]
+    assert len(s) == 54 and len(idx) == 37 and len(fx) == 17
+    assert all(x.shape == "ohlc" and x.price_type is None and x.source == "yahoo" and x.calendar == "trading_days" for x in s)
+    assert all(x.unit == "điểm" and x.max_lag_days == 14 for x in idx)
+    assert all(x.unit == f"{x.quote_currency}/1 USD" and x.max_lag_days == 6 and x.code == f"fx.usd_{x.quote_currency.lower()}.market" for x in fx)
     assert REG["^GSPC"].code == "idx.sp500" and REG["DX-Y.NYB"].code == "dxy.ice" and REG["^KS11"].code == "idx.kospi"
     assert REG["^N225"].quote_currency == "JPY" and REG["^MERV"].quote_currency == "ARS" and REG["^GSPC"].band == (Decimal(700), Decimal(80000))
-    assert len({x.code for x in s}) == 37
+    assert REG["EUR=X"].band == (Decimal("0.08"), Decimal("9")) and REG["VND=X"].code == "fx.usd_vnd.market" and REG["VND=X"].region == "vn"
+    assert REG["EUR=X"].band[0] <= Decimal("0.8605") <= REG["EUR=X"].band[1] and not (REG["EUR=X"].band[0] <= Decimal("86.05") <= REG["EUR=X"].band[1])
+    assert len({x.code for x in s}) == 54
 
 
 def test_url_uses_period_not_range_and_backfill_period1_is_negative():
@@ -72,13 +78,6 @@ def test_exchange_timezone_decides_the_date_for_tokyo_and_ice():
     assert len(dxy) == 8 and dxy[-1].obs_date == date(2026, 9, 4) and dxy[-1].close == Decimal("99.16000366210938")   # 9 nến − 1 null
 
 
-import dataclasses
-FX_EUR = dataclasses.replace(REG["^GSPC"], external_key="EUR=X", code="fx.usd_eur.market", quote_currency="EUR",
-                             band=(Decimal("0.08"), Decimal("9")), max_lag_days=6)
-FX_CAD = dataclasses.replace(FX_EUR, external_key="CAD=X", code="fx.usd_cad.market", quote_currency="CAD",
-                             band=(Decimal("0.13"), Decimal("14")))
-
-
 def test_open_candle_is_kept_while_the_regular_session_is_still_running():
     during = datetime(2026, 9, 4, 15, 0, tzinfo=timezone.utc)                          # trong phiên NY (13:30–20:00)
     bars = yn.bars(REG["^GSPC"], _doc("GSPC-10d"), during)
@@ -89,7 +88,7 @@ def test_open_candle_is_kept_while_the_regular_session_is_still_running():
 
 def test_fx_two_candles_on_the_same_london_date_keep_the_live_one():
     # EUR=X 2026-09-05: nến 2026-09-03T23:00Z (London 09-04, close≈open "rỗng") và nến live 2026-09-04T21:29Z (London 09-04)
-    s = FX_EUR
+    s = REG["EUR=X"]
     bars = yn.bars(s, _doc("EURX-5d"), NOW)
     by = {b.obs_date: b for b in bars}
     assert sorted(by) == [date(2026, 8, 31), date(2026, 9, 1), date(2026, 9, 2), date(2026, 9, 3), date(2026, 9, 4)]
@@ -99,7 +98,7 @@ def test_fx_two_candles_on_the_same_london_date_keep_the_live_one():
 
 
 def test_fx_weekend_candle_lands_on_its_london_date():
-    bars = yn.bars(FX_CAD, _doc("CADX-5d"), NOW)                                    # nến cuối 2026-09-05T04:21Z = thứ 7 London
+    bars = yn.bars(REG["CAD=X"], _doc("CADX-5d"), NOW)                              # nến cuối 2026-09-05T04:21Z = thứ 7 London
     assert bars[-1].obs_date == date(2026, 9, 5) and bars[-1].close == Decimal("1.3837000131607056")
     assert bars[-2].obs_date == date(2026, 9, 4) and bars[-2].close == Decimal("1.3789499998092651")
 
@@ -204,9 +203,9 @@ def _last(engine):
 def test_job_writes_296_bars_and_is_idempotent(clean):
     calls = []
     assert yj.run(get=_fake_get(calls), sleep=lambda s: None, now=NOW) == 0
-    assert len(calls) == 37 and all("period1=" in u and "range=" not in u for u in calls)
+    assert len(calls) == 54 and all("period1=" in u and "range=" not in u for u in calls)
     status, stats, _ = _last(clean)
-    assert status == "success" and stats["tally"]["ok"] == 37 and stats["bars"] == 296 and stats["inserted"] == 296
+    assert status == "success" and stats["tally"]["ok"] == 54 and stats["bars"] == 432 and stats["inserted"] == 432
     with clean.connect() as c:
         row = c.execute(sa.text("SELECT close, volume FROM asset.ohlc_daily o JOIN asset.asset a USING (asset_id)"
                                 " WHERE a.code='idx.sp500' AND obs_date='2026-09-04'")).one()
@@ -224,12 +223,12 @@ def test_backfill_uses_negative_period1(clean):
 
 
 def test_ratio_guard_refuses_three_dead_symbols_but_tolerates_one(clean):
-    assert yj.run(get=_fake_get(dead=("^AEX", "^BFX", "^OMX")), sleep=lambda s: None, now=NOW) == 1      # 8,1 % > 5 %
+    assert yj.run(get=_fake_get(dead=("^AEX", "^BFX", "^OMX")), sleep=lambda s: None, now=NOW) == 1      # 5,6 % > 5 %
     status, stats, error = _last(clean)
     assert status == "failed" and stats["tally"]["shape"] == 3 and "sai hình dạng" in error
     with clean.connect() as c:
         assert c.execute(sa.text("SELECT count(*) FROM asset.asset_external_id WHERE source='yahoo'")).scalar() == 0
-        assert c.execute(sa.text("SELECT count(*) FROM staging.raw_payload WHERE source='yahoo' AND (meta->>'refused')::bool")).scalar() == 37
-    assert yj.run(get=_fake_get(dead=("^AEX",)), sleep=lambda s: None, now=NOW) == 0                      # 2,7 %: bỏ series đó
+        assert c.execute(sa.text("SELECT count(*) FROM staging.raw_payload WHERE source='yahoo' AND (meta->>'refused')::bool")).scalar() == 54
+    assert yj.run(get=_fake_get(dead=("^AEX",)), sleep=lambda s: None, now=NOW) == 0                      # 1,9 %: bỏ series đó
     status, stats, _ = _last(clean)
-    assert status == "success" and stats["tally"]["shape"] == 1 and stats["bars"] == 288
+    assert status == "success" and stats["tally"]["shape"] == 1 and stats["bars"] == 424

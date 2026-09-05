@@ -39,5 +39,5 @@ def build() -> list[Series]:
         _a("DCOILWTICO", "wti", "Giá dầu WTI", "commodity", "USD", "USD/thùng", "spot", "us", (5, 500), 10),
         _a("DTWEXBGS", "dxy.broad", "Chỉ số đô Mỹ broad (Fed, 01/2006 = 100)", "index", "USD", "điểm", "close", "us", (50, 200), 12),
         _a("VIXCLS", "vix", "VIX", "index", "USD", "điểm", "close", "us", (5, 150), 6),
-        _a("DEXCHUS", "fx.usd_cny", "Tỷ giá CNY/USD (Fed H.10, noon NY)", "fx", "CNY", "CNY/1 USD", "fixing", "cn", (3, 15), 12),
+        # DEXCHUS (CNY noon NY) bỏ ở lát 7b — CNY về ECB, một mốc fixing (spec 7b §4.2)
     ]

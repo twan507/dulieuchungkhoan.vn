@@ -1,4 +1,5 @@
-"""Registry ECB qua Frankfurter (spec lát 7 Phụ lục B). source='ecb' là danh tính dữ liệu, không phải tên API."""
+"""Registry ECB qua Frankfurter (spec lát 7 Phụ lục B). source='ecb' là danh tính dữ liệu, không phải tên API.
+CNY từ lát 7b — thay FRED DEXCHUS, chuỗi thuần ECB (spec 7b §4.2)."""
 from __future__ import annotations
 
 from decimal import Decimal
@@ -11,7 +12,8 @@ _ROWS = [("EUR", "fx.usd_eur", "Tỷ giá EUR/USD (fixing ECB 14:15 CET)", "0.5"
          ("GBP", "fx.usd_gbp", "Tỷ giá GBP/USD (fixing ECB)", "0.4", "1.5"),
          ("CAD", "fx.usd_cad", "Tỷ giá CAD/USD (fixing ECB)", "0.8", "2.5"),
          ("SEK", "fx.usd_sek", "Tỷ giá SEK/USD (fixing ECB)", "4", "20"),
-         ("CHF", "fx.usd_chf", "Tỷ giá CHF/USD (fixing ECB)", "0.5", "2")]
+         ("CHF", "fx.usd_chf", "Tỷ giá CHF/USD (fixing ECB)", "0.5", "2"),
+         ("CNY", "fx.usd_cny", "Tỷ giá CNY/USD (fixing ECB)", "3", "15")]
 
 
 def build() -> list[Series]:

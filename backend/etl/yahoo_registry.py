@@ -1,4 +1,5 @@
-"""Registry Yahoo (spec lát 7 Phụ lục D): 36 chỉ số + DXY ICE → asset.ohlc_daily. quote_currency chép từ meta.currency đo 2026-09-05."""
+"""Registry Yahoo (spec lát 7 Phụ lục D): 36 chỉ số + DXY ICE → asset.ohlc_daily. quote_currency chép từ meta.currency đo 2026-09-05.
++ 17 cặp FX `.market` (lát 7b)."""
 from __future__ import annotations
 
 from decimal import Decimal
@@ -48,8 +49,29 @@ _ROWS = [
 ]
 
 
+# FX (lát 7b, spec Phụ lục F): <CCY>=X = số <CCY> trên 1 USD (đo 2026-09-05: EUR=X 0,8605 vs ECB 0,86044). Asset RIÊNG
+# so với fixing ECB `fx.usd_<ccy>` (khác mốc chốt = asset khác); ECB vẫn là mốc chuẩn (fx.md). VND=X là tỷ giá thị
+# trường, KHÔNG thay dhtg (yahoo.md §6.1). band = (đo ÷ 10, × 10) trên regularMarketPrice 2026-09-05.
+# (symbol, ccy, region, band_lo, band_hi)
+_FX_ROWS = [
+    ("EUR=X", "EUR", "eu", "0.08", "9"), ("GBP=X", "GBP", "gb", "0.07", "7.5"), ("JPY=X", "JPY", "jp", "15", "1600"),
+    ("CAD=X", "CAD", "ca", "0.13", "14"), ("SEK=X", "SEK", "se", "0.9", "96"), ("CHF=X", "CHF", "ch", "0.08", "8.1"),
+    ("CNY=X", "CNY", "cn", "0.67", "67"), ("KRW=X", "KRW", "kr", "135", "13500"), ("THB=X", "THB", "th", "3.2", "330"),
+    ("SGD=X", "SGD", "sg", "0.12", "13"), ("TWD=X", "TWD", "tw", "3.1", "320"), ("INR=X", "INR", "in", "9.4", "950"),
+    ("IDR=X", "IDR", "id", "1760", "176000"), ("MYR=X", "MYR", "my", "0.4", "41"), ("PHP=X", "PHP", "ph", "6.2", "630"),
+    ("HKD=X", "HKD", "hk", "0.78", "79"), ("VND=X", "VND", "vn", "2600", "261000"),
+]
+
+
 def build() -> list[Series]:
-    return [Series(source=SOURCE, external_key=sym, domain="asset", code=code, name_vi=name, unit="điểm", freq="d",
-                   region=region, asset_class="index", quote_currency=ccy, price_type=None, calendar="trading_days",
-                   band=(Decimal(lo), Decimal(hi)), max_lag_days=14, shape="ohlc")
-            for sym, code, name, ccy, region, lo, hi in _ROWS]
+    idx = [Series(source=SOURCE, external_key=sym, domain="asset", code=code, name_vi=name, unit="điểm", freq="d",
+                  region=region, asset_class="index", quote_currency=ccy, price_type=None, calendar="trading_days",
+                  band=(Decimal(lo), Decimal(hi)), max_lag_days=14, shape="ohlc")
+           for sym, code, name, ccy, region, lo, hi in _ROWS]
+    fx = [Series(source=SOURCE, external_key=sym, domain="asset", code=f"fx.usd_{ccy.lower()}.market",
+                 name_vi=(f"Tỷ giá {ccy}/USD (thị trường, Yahoo)" if ccy != "VND"
+                          else "Tỷ giá USD/VND thị trường (Yahoo, đối chứng — không thay dhtg)"),
+                 unit=f"{ccy}/1 USD", freq="d", region=region, asset_class="fx", quote_currency=ccy, price_type=None,
+                 calendar="trading_days", band=(Decimal(lo), Decimal(hi)), max_lag_days=6, shape="ohlc")
+          for sym, ccy, region, lo, hi in _FX_ROWS]
+    return idx + fx

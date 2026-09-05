@@ -1,5 +1,6 @@
-"""FRED: registry 15 series, classify, normalize từ fixture thật 2026-09-05, job trọn vòng với `get` giả.
-Expected là literal đọc tay từ fixture/fred.md — không tính lại theo code. Khoá KHÔNG được lộ (Bẫy 7)."""
+"""FRED: registry 14 series (11 macro + 3 asset; DEXCHUS bỏ ở lát 7b), classify, normalize từ fixture thật
+2026-09-05, job trọn vòng với `get` giả. Expected là literal đọc tay từ fixture/fred.md — không tính lại
+theo code. Khoá KHÔNG được lộ (Bẫy 7)."""
 import json
 import logging
 import os
@@ -27,15 +28,14 @@ def _doc(name):
     return json.loads((FIX / f"fred-{name}-tail.json").read_text(encoding="utf-8"))
 
 
-def test_registry_has_15_series_split_11_macro_4_asset_with_spec_codes():
+def test_registry_has_14_series_split_11_macro_3_asset_with_spec_codes():
     s = fr.build()
-    assert len(s) == 15 and sum(1 for x in s if x.domain == "macro") == 11
+    assert len(s) == 14 and sum(1 for x in s if x.domain == "macro") == 11
     assert REG["DCOILWTICO"].code == "wti" and REG["DCOILWTICO"].price_type == "spot" and REG["DCOILWTICO"].max_lag_days == 10
     assert REG["DTWEXBGS"].price_type == "close" and REG["DTWEXBGS"].code == "dxy.broad" and REG["DTWEXBGS"].max_lag_days == 12
-    assert REG["DEXCHUS"].price_type == "fixing" and REG["DEXCHUS"].quote_currency == "CNY" and REG["DEXCHUS"].asset_class == "fx"
     assert REG["PAYEMS"].scale == Decimal(1000) and REG["PAYEMS"].unit == "người" and REG["PAYEMS"].freq == "m"
     assert REG["DGS10"].code == "us.yield.10y" and REG["DGS10"].region == "us" and REG["DGS10"].band == (Decimal(-1), Decimal(25))
-    assert all(x.source == "fred" for x in s) and len({x.code for x in s}) == 15
+    assert all(x.source == "fred" for x in s) and len({x.code for x in s}) == 14
 
 
 def test_classify_400_is_bad_shape_and_xml_body_is_bad_shape():
@@ -153,10 +153,10 @@ def _last(engine):
 def test_job_writes_both_domains_and_wti_spot_beside_futures(clean):
     calls = []
     assert fj.run(get=_fake_get(calls), sleep=lambda s: None, now=NOW) == 0
-    assert len(calls) == 15
+    assert len(calls) == 14
     status, stats, _ = _last(clean)
-    assert status == "success" and stats["registry"] == {"macro": 11, "asset": 4, "removed": 0}
-    assert stats["tally"]["ok"] == 15 and stats["inserted"] >= 97 + 12 + 20 + 12 and stats["changed"] == 0
+    assert status == "success" and stats["registry"] == {"macro": 11, "asset": 3, "removed": 0}
+    assert stats["tally"]["ok"] == 14 and stats["inserted"] >= 97 + 12 + 20 + 11 and stats["changed"] == 0
     assert KEY not in json.dumps(stats)
     with clean.connect() as c:
         v = c.execute(sa.text("SELECT value FROM macro.observation o JOIN macro.indicator i USING (indicator_id)"
@@ -178,7 +178,7 @@ def test_job_refuses_when_one_series_fails(clean):
     assert status == "failed" and stats["tally"]["failed"] == 1 and "tất cả hoặc không gì" in error
     with clean.connect() as c:
         assert c.execute(sa.text("SELECT count(*) FROM macro.indicator_source WHERE source='fred'")).scalar() == 0
-        assert c.execute(sa.text("SELECT count(*) FROM staging.raw_payload WHERE source='fred' AND (meta->>'refused')::bool")).scalar() == 14
+        assert c.execute(sa.text("SELECT count(*) FROM staging.raw_payload WHERE source='fred' AND (meta->>'refused')::bool")).scalar() == 13
 
 
 def test_backfill_flag_is_rejected_for_fred(clean):

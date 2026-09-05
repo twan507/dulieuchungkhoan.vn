@@ -1,4 +1,4 @@
-"""`python -m etl yahoo` — 37 chỉ số quốc tế → asset.ohlc_daily. Spec lát 7."""
+"""`python -m etl yahoo` — 37 chỉ số quốc tế + 17 FX `.market` (lát 7b) → asset.ohlc_daily. Spec lát 7."""
 from __future__ import annotations
 
 import time

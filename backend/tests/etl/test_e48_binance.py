@@ -1,4 +1,4 @@
-"""Binance: nến định danh bằng thời điểm MỞ theo UTC, giá chuỗi ⇒ Decimal, bỏ nến chưa đóng, header weight."""
+"""Binance: nến định danh bằng thời điểm MỞ theo UTC, giá chuỗi ⇒ Decimal, nến đang chạy được giữ (lát 7b), header weight."""
 import dataclasses
 import json
 import os

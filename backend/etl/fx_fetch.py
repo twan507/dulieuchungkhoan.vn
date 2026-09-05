@@ -1,4 +1,4 @@
-"""Một lời gọi Frankfurter cho trọn chuỗi 6 cặp (spec lát 7 §5.2). Host mới đo 2026-09-05 (host cũ trả 301)."""
+"""Một lời gọi Frankfurter cho trọn chuỗi 7 cặp (spec lát 7 §5.2). Host mới đo 2026-09-05 (host cũ trả 301)."""
 from __future__ import annotations
 
 import json
@@ -7,7 +7,7 @@ import logging
 from etl.http_fetch import BadShape, FetchError, open_fetcher
 
 log = logging.getLogger("etl.fx")
-PAIRS = "EUR,JPY,GBP,CAD,SEK,CHF"
+PAIRS = "EUR,JPY,GBP,CAD,SEK,CHF,CNY"
 URL = f"https://api.frankfurter.dev/v1/1999-01-04..?from=USD&to={PAIRS}"
 
 
