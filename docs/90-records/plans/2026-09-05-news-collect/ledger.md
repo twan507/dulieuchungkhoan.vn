@@ -54,3 +54,28 @@ Mọi lượt dưới `ETL_DATABASE_URL` (user thuộc role `dlck_etl`, không s
 **Lỗ §4.6-VII** (controller phát hiện ở AC4, reviewer đo hệ quả): bằng chứng từ chối 269 KB/dòng × 21 URL × 288 vòng ≈ **1,6 GB/ngày** nếu bật loop; guard tự vô hiệu; số AC7 bị đầu độc (`new` +21/vòng); tải A2 +6.000 lời gọi/ngày. **Ruling:** nhớ URL từ chối 7 ngày trong `Seen` (`refused_recent`, đếm `skipped_refused`), bằng chứng một dòng/URL/7 ngày — nhịp thử lại đổi 5 phút → 7 ngày, tinh thần §4.6-VII giữ.
 **Ruling (C1 dữ liệu đã ghi):** 392 bài TNCK `feed='sitemap'` NULL nhóm là **gợi ý** (`group_from_feed`), lát 9 gán `group_no` bằng AI nên không mất gì; sau đợt sửa, controller chạy một UPDATE điền `group_from_feed`/`feed` cho bài TNCK có URL đang xuất hiện ở 3 trang chuyên mục (bằng chứng ghi dưới); phần còn lại để NULL.
 **Triage Minor đã hoãn:** Task 1 `url = canonical` ở CBTT — giữ (load-bearing: href thật kèm `?utm_source`), thêm comment; Task 3 hai comment — gộp đợt sửa.
+
+**Đợt sửa (một implementer Sonnet, TDD từng mục, commit `b9e57b8`):** C1 registry `tnck_sitemap` cuối + `merge_items` giữ bản có nhóm (test đơn vị + e56 sửa assert) · C2 `insert_article -> (aid, inserted)` với `ON CONFLICT (canonical_url) DO NOTHING`, mọi item bọc `except Exception` ⇒ `articles_failed` (Ctrl+C không bị bắt) · I1 `meta` thiếu `content` · I2 sitemap tháng hỏng ⇒ `months_failed`, exception mang `stats` · I3 `TITLE_MIN_CHARS = 30` · I4 `p.imgdesc` (TNCK text sạch 4.371 → 4.287; article-structure §2.9 cập nhật) · I5 `--minutes` không vượt hạn · I6 README "cả hai tầng" · lỗ §4.6-VII: `Seen.refused` 7 ngày, `refused_recent`/`skipped_refused`, `store_refused` một dòng/URL/7 ngày, áp cả backfill · M2 số đếm chính xác (CBTT 21, TNCK 98) · M3 `startswith` 4 nguồn · M4 CLI loại trừ chéo · M5 URL sitemap = mẫu `SITEMAP` · M6/M8/M9 tài liệu · M10 test role phủ đường đọc · 3 comment. Re-review có phạm vi (Sonnet): 18/18 ADDRESSED, 62 test e52–e58, toàn bộ **791 passed, 2 skipped** (+9); một lệch số test ở README (782) — controller sửa 4 file bằng sed cùng commit.
+**Sửa dữ liệu C1 trên kho (controller, 04:03, 3 lời gọi + UPDATE):** 1.227 bài TNCK `feed='sitemap'` NULL nhóm (phần lớn là bài tháng 8 do backfill đang chạy — hợp lệ) ⇒ **98** bài có ở 3 trang chuyên mục được điền `feed`/`group_from_feed`/`ticker_step_ran`; 42 bài nhóm 3 chạy tầng 2 ⇒ **+11** mã. TNCK sau sửa: sitemap 1.129 · ck-quoc-te 104 · dau-tu 55 · chung-khoan 42.
+Minor để lại (ruling): M1 `Seen.load` quét toàn bảng mỗi vòng (13 ms/1.863 URL; sửa khi ~100k dòng — nạp một lần khi mở `--loop`, nạp lại mỗi N vòng) · M7 run 270 đang chạy đúng (không phải rác).
+
+## 4. Trạng thái bàn giao
+
+- Nhánh `feat/news-collect` gộp `main` bằng `--no-ff` (commit ghi ở dòng dưới sau merge); **791 passed, 2 skipped**; không migration (`0017` head).
+- Kho production 04:05 VN: `news.article` ≈ 1.736 + backfill tháng 8 đang chạy (988 bài sitemap tới 04:03); `article_ticker` 447; `data_domain_state ('news', <báo>)` 8 dòng mốc 2026-09-06; `raw_payload` 117 danh sách + 42 từ chối (từ đợt sửa: một dòng/URL/7 ngày).
+- **Nợ:** AC7 (tổng hợp `stats` sau ≥ 24 giờ `--loop`, có ngày làm việc — thứ 2 07/09); tải lại bài để bắt bản sửa (lát 12); sitemap BNews/NguoiQuanSat (lát 8b); `Seen.load` tối ưu khi ~100k dòng (M1); VnEconomy dạng tạp chí/interactive và CafeF video/infographic bị từ chối có chủ đích (article-structure §4).
+
+## 5. Rulings (toàn bộ, theo thứ tự)
+
+1. Rà tiền kiểm: `articles_failed == 0` trong test e56 là đúng với fake get; kiểm `grep -c <loc>` trước khi tin 244/245.
+2. Task 1: `decode` chuẩn NFC; `time_from_url` VietnamBiz thử cả độ rộng ngày; test BCP `== 5` (fixture thật) — nếu sai: literal test.
+3. Task 2: Vietstock giờ từ `p.pPublishTimeSource`; CafeF `%H` với nhãn PM; BNews NFC ở `_text`; khoảng độ dài siết ±5 %; hai chuỗi vắng thay bằng boilerplate thật.
+4. Task 3: `decide` chỉ `seen` khi URL thô trùng; tiêu đề lưu = feed (CBTT = trang); cửa sổ `< WINDOW`.
+5. Task 4: fake page ×9; seed 21 mã CBTT; HPG trong tiêu đề; chặn `_throttle` thay lọc dải; thêm test Ctrl+C giữa hai vòng.
+6. Task 5: `cursor < to_month`; hạn giờ kiểm sau mọi URL; `SourceDown` mang stats.
+7. Task 7: header "đã cài đặt" + đồng bộ `docs/20-design/README.md`.
+8. AC3: `published_at` TNCK theo `cms-date`, `lastmod` dự phòng — spec §5.7/AC8 không sửa (lịch sử), đính chính ở ledger — nếu sai: lệch giờ đăng bài bị sửa.
+9. Lỗ §4.6-VII: nhớ URL từ chối 7 ngày, bằng chứng một dòng/URL — nhịp thử lại 5 phút → 7 ngày — nếu sai: bài bóc hụt vì lỗi tạm thời chờ 7 ngày mới thử lại.
+10. C1 dữ liệu: điền nhóm cho 98 bài đang thấy ở trang chuyên mục, phần còn lại NULL (gợi ý, lát 9 gán bằng AI) — nếu sai: thiếu tín hiệu `group_overridden` cho ~1.100 bài tháng 8–9.
+11. Minor để lại: M1 `Seen.load`; Task 1 `url = canonical` ở CBTT (load-bearing, đã comment).
+12. Controller tự sửa số test 782→791 ở 4 file tài liệu bằng sed (đợt sửa quên) — nếu sai: một số.
