@@ -47,7 +47,7 @@ def test_fetch_one_raises_after_four_failures_including_transport_errors():
 
 def test_bad_shape_is_not_retried():
     f = wf.Fetcher(get=lambda u, t: (200, json.dumps({"chart": {}})), sleep=lambda s: None, clock=lambda: 0.0)
-    with pytest.raises(wf.BadShape):
+    with pytest.raises(wf.BadShape, match="cpi: response không có chart.series"):
         f.fetch_one("cpi", "vi_mo")
     assert f.calls == 1
 

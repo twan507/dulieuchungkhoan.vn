@@ -51,3 +51,7 @@ Mọi lượt dưới `ETL_DATABASE_URL` (role `dlck_etl`), kho production, 2026
 | AC8 | log stderr lượt `fred` (361 byte): khoá **0** lần; `ops.etl_run.stats||error` của `global.fred` (1.995 ký tự): 0; `raw_payload` fred: 0 | ✅ |
 
 **Ruling (Task 7):** lịch sử FX Yahoo chỉ có 400 ngày (cửa sổ lượt thường); `etl yahoo --backfill` sẽ kéo từ 2003 cho 17 cặp (~3 phút) — không thuộc AC, để chủ dự án chạy khi cần; nếu sai chỉ thiếu lịch sử FX trước 08/2025.
+
+## 3. Task 8 và review toàn nhánh
+
+- Task 8: implementer (Sonnet) DONE — 12 file tài liệu; `git grep` sweep phân loại đủ (hit còn lại: đã chú lát 7b · code hợp lệ `price/snapshot/fundamentals_fetch` · lịch sử `90-records/` · trùng chữ "30 phút" ở corpus). Review (Sonnet) ✅ 12/12 mục, Approved; Minor (deferred): `crypto.md:188` câu cũ "bỏ nến closeTime > now" đứng trước câu mới dễ đọc nhầm; chú ở `10-sources/README.md` gắn cùng chuỗi cho cả FRED/Frankfurter/LBMA (plan-mandated). complete (commit `d9b9ec9`)

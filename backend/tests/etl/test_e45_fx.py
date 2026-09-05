@@ -20,7 +20,7 @@ REG = {s.external_key: s for s in xr.build()}
 NOW = datetime(2026, 9, 3, 12, 0, tzinfo=timezone.utc)            # fixture kết thúc 08-31: trễ 3 ngày ≤ 6
 
 
-def test_registry_six_fx_assets_fixing():
+def test_registry_seven_fx_assets_fixing():
     s = xr.build()
     assert [x.external_key for x in s] == ["EUR", "JPY", "GBP", "CAD", "SEK", "CHF", "CNY"]
     assert all(x.asset_class == "fx" and x.price_type == "fixing" and x.source == "ecb" and x.region == "eu" for x in s)
@@ -28,7 +28,7 @@ def test_registry_six_fx_assets_fixing():
     assert REG["CNY"].code == "fx.usd_cny" and REG["CNY"].band == (Decimal(3), Decimal(15)) and REG["CNY"].region == "eu"
 
 
-def test_url_is_the_new_host_with_six_quotes():
+def test_url_is_the_new_host_with_seven_quotes():
     assert xf.URL == "https://api.frankfurter.dev/v1/1999-01-04..?from=USD&to=EUR,JPY,GBP,CAD,SEK,CHF,CNY"
 
 
@@ -81,7 +81,7 @@ def clean(migrated_engine, monkeypatch):
     _cleanup(migrated_engine)
 
 
-def test_job_one_call_writes_132_fixing_rows(clean):
+def test_job_one_call_writes_154_fixing_rows(clean):
     calls = []
     assert xj.run(get=lambda u, t: (calls.append(u), (200, json.dumps(DOC), {}))[1], sleep=lambda s: None, now=NOW) == 0
     assert calls == [xf.URL]

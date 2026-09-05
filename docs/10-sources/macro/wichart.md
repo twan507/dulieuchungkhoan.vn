@@ -132,7 +132,7 @@ curl -H 'Accept-Encoding: gzip' -H 'If-None-Match: W/"186f-CySOaOuPFA8zslRCf1wtH
 
 #### Cập nhật trong ngày
 
-Hàng hoá (61 key) và 4 key tần suất ngày `dhtg`/`lsdh`/`lslnh`/`lshd` cập nhật **trong ngày**; vĩ mô (tháng/quý/năm) cập nhật **1 lần/ngày** — chủ dự án kiểm 2026-09-05. Bằng chứng thêm *(đo 2026-09-05 18:50 VN, thứ 7)*: lượt `wichart --intraday` sau lượt trọn 08:11 VN cùng ngày ⇒ `changed 29` điểm, gồm điểm ngày 05/09 của `gold.sjc_buy/sell`, `coffee_robusta_vn`, `natgas_hh`, `phosphorus_cn`, `galv_sheet_color_hoasen`, và **vá hồi tố** 22 điểm tháng 8 của `cotton_us`. Giờ nạp thật của vĩ mô **chưa đo**.
+Hàng hoá (43 key, 47 series) và 4 key vĩ mô tần suất ngày (`dhtg`, `lsdh`, `lslnh`, `lshd`) — tổng 47 key / 61 series — cập nhật **trong ngày**; vĩ mô (tháng/quý/năm) cập nhật **1 lần/ngày** — chủ dự án kiểm 2026-09-05. Bằng chứng thêm *(đo 2026-09-05 18:50 VN, thứ 7)*: lượt `wichart --intraday` sau lượt trọn 08:11 VN cùng ngày ⇒ `changed 29` điểm, gồm điểm ngày 05/09 của `gold.sjc_buy/sell`, `coffee_robusta_vn`, `natgas_hh`, `phosphorus_cn`, `galv_sheet_color_hoasen`, và **vá hồi tố** 22 điểm tháng 8 của `cotton_us`. Giờ nạp thật của vĩ mô **chưa đo**.
 
 ---
 

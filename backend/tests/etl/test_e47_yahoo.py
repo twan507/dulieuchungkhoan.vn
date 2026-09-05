@@ -200,7 +200,7 @@ def _last(engine):
         return c.execute(sa.text("SELECT status, stats, error FROM ops.etl_run WHERE job='global.yahoo' ORDER BY run_id DESC LIMIT 1")).one()
 
 
-def test_job_writes_296_bars_and_is_idempotent(clean):
+def test_job_writes_432_bars_and_is_idempotent(clean):
     calls = []
     assert yj.run(get=_fake_get(calls), sleep=lambda s: None, now=NOW) == 0
     assert len(calls) == 54 and all("period1=" in u and "range=" not in u for u in calls)
