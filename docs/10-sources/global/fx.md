@@ -192,6 +192,8 @@ Ba hệ quả vận hành:
 
 *(2026-09-05, lát 7b)* Yahoo `<CCY>=X` đổi vai: không còn chỉ là dự phòng đối chứng mà nạp thành chuỗi **trong ngày** riêng `fx.usd_<ccy>.market` (17 cặp, asset tách khỏi 6 cặp fixing ECB) — chi tiết [`yahoo.md`](yahoo.md) §5.5. ECB/Frankfurter vẫn là mốc chuẩn fixing, không đổi vai. CNY thêm vào ETL ECB (chuỗi Frankfurter từ 2000-01-13); FRED `DEXCHUS` không nạp nữa cho `fx.usd_cny` — 63 ngày trùng 06–08/2026 lệch ECB/FRED trung bình tuyệt đối 0,021 %, max +0,149 %, đủ gần để dùng một nguồn duy nhất.
 
+🔴 `.market` chỉ là chuỗi **trong ngày** + `high`/`low`; `close` lịch sử của nó thực ra là giá **đầu ngày** London, không phải giá cuối ngày (Bẫy 4, [`yahoo.md`](yahoo.md) §5.5, đo 2026-09-05) — biểu đồ **lịch sử tỷ giá** vẫn dùng ECB.
+
 **Đã thử và loại:** `currency-api` (Bẫy 1) · exchangerate.host, marketstack, finnhub, tiingo (đều đòi đăng ký — `missing_access_key` / `401` / `403`) · Alpha Vantage và Twelve Data (khoá `demo` chạy được, dùng thật phải đăng ký).
 
 ---

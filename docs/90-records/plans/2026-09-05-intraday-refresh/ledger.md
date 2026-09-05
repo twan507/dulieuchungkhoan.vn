@@ -61,3 +61,5 @@ Mọi lượt dưới `ETL_DATABASE_URL` (role `dlck_etl`), kho production, 2026
 - Important I1–I4 + Minor M1/M2: sửa một đợt (Sonnet), re-review có phạm vi 6/6 ADDRESSED, commit `2337e22`.
 - Minor để lại (ruling): e50 đọc `_rng.seen` · `noqa F401` rộng · `clock` chết ở `wichart_fetch` (giữ chữ ký lát 6) · `--keys`+`--intraday` ở `wichart_job` ném sau `open_run` (CLI đã chặn trước; khác khuôn `series_job`) · e37 assert dải [1, 5] thay vì tiêm `rng` · `INTRADAY_KEYS` cùng predicate · roadmap ghi "`main` = lát 7b" trước merge (sửa khi merge).
 - **Trục Spec ❌** chỉ vì C1 (lỗ của spec §2.1: chỉ đo trạng thái trong ngày) và I4 (đã sửa). Mọi mục khác khớp, không scope-creep.
+
+**Ruling (C1, chủ dự án 2026-09-05 tối): phương án 1 — chấp nhận, ghi bẫy ở yahoo.md/fx.md/market-data-store.md/spec §2.1·§5.4·§9; không đổi code. Nếu sai: tầng đọc dùng nhầm close lịch sử của .market cho biểu đồ FX — chi phí là một luật đọc, không mất dữ liệu.**

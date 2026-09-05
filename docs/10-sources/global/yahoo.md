@@ -118,6 +118,8 @@ Cùng một mã, cùng một ngày. `404` ở đây nói về **tổ hợp tham 
 > ### ➜ Luật 3
 > Gặp `404` **phải thử lại bằng `period1`/`period2`** trước khi kết luận mã chết. Kết luận "mã không tồn tại" chỉ được rút ra sau khi cách gọi đúng cũng hỏng.
 
+Bẫy 4 — riêng cho FX ngày (`<CCY>=X`) — ở [§5.5](#55-tỷ-giá--vai-dự-phòng-cho-frankfurter) *(đo 2026-09-05)*.
+
 ---
 
 ## 3. 🔴 Chết im lặng — mã đã ngừng vẫn trả `200` kèm giá hợp lệ
@@ -308,6 +310,11 @@ Vấn đề lệch mốc **chỉ nằm ở nến của phiên ĐANG chạy**. N�
 **Cửa sổ 5 ngày** *(đo 2026-09-05)*: 50/54 mã trả 5–6 nến, 2 mã 4 nến, `^SET.BK`/`PSEI.PS` trả **1 nến** (chỉ nến hiện tại — cùng họ Bẫy 3).
 
 ➜ **Luật ETL: dedupe theo ngày London, nến sau thắng ⇒ lấy nến live.** 17 cặp lưu vào asset riêng `fx.usd_<ccy>.market` (tách khỏi 6 cặp fixing ECB ở Phụ lục B của spec lát 7); `fx.usd_cny` của ECB không đổi vai — Yahoo chỉ là chuỗi thị trường song song.
+
+🔴 **Bẫy 4 — `close` của nến FX ngày = giá ĐẦU ngày, không phải giá cuối ngày** *(đo 2026-09-05 tối, 263 ngày nến `<CCY>=X` từ 2025-09-01)*. Yahoo ghi `close` của nến FX ngày bằng giá tick đầu ngày London — **`close ≈ open` ở MỌI ngày đã chốt**, không riêng ngày đo ở trên. Số đo: trung bình `|close − open| / close` — `fx.usd_eur.market` 0,0095 % · `fx.usd_jpy.market` 0,0135 % · `fx.usd_cny.market` 0,0015 % (đối chứng chỉ số: `idx.sp500` 0,48 % · `idx.nikkei225` 0,98 %); trung bình `|close − open| / (high − low)`: FX 1,8–3,0 % vs chỉ số 46,9–49,4 %. Chỉ **nến live** (nến tại `regularMarketTime`, chỉ tồn tại trong ngày London đang chạy) mang giá hiện tại thật (`close` = `regularMarketPrice`, `high`/`low` = `regularMarketDayHigh`/`Low`); sang ngày London kế tiếp, Yahoo trả lại nến 23:00 UTC với `close` = giá đầu ngày, và dòng hôm qua đã ghi trong kho bị **ghi đè lùi** về giá đó *(dự đoán kiểm chứng sáng thứ Hai 2026-09-07: `fx.usd_eur.market` ngày 2026-09-04 đổi 0,8605 → 0,85997)*. `high`/`low` lịch sử vẫn dùng được — chỉ `close` lịch sử sai. Cổng `band`/`stale`, test, và AC5 (lệch ECB < 1 %) đều **không bắt được** bẫy này.
+
+> ### ➜ Luật 4
+> `fx.usd_<ccy>.market` chỉ mang vai **giá mới nhất trong ngày** (đọc khi nến còn live) + **high/low lịch sử**. **Không dùng `close` lịch sử của `.market` để dựng biểu đồ tỷ giá** — biểu đồ lịch sử tỷ giá dùng `fx.usd_<ccy>` (ECB fixing). Chốt chủ dự án 2026-09-05 tối (phương án 1: chấp nhận, không đổi code). Đảo ngược: nếu tầng đọc cần `close` lịch sử thật của Yahoo FX, xét lại theo phương án 2 — "chỉ ghi dòng ngày đang chạy cho FX Yahoo" (chưa làm).
 
 #### Vì sao Frankfurter là chính, Yahoo là dự phòng
 

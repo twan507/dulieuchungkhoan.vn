@@ -47,6 +47,7 @@ Không đăng ký task, lịch thuộc lát 13 (D6). Lát này chỉ làm cho jo
 | **WiChart registry**: 47 series `hang_hoa` đều `freq='d'`; nhóm `vi_mo` 25 key chỉ **4 key ngày** (`dhtg` 5 series, `lsdh` 3, `lslnh` 3, `lshd` 3), 21 key còn lại tháng/quý/năm | `wichart_registry.build()` |
 | **WiChart hàng hoá có cập nhật trong ngày, vĩ mô một lần/ngày** — *chủ dự án đã kiểm, chốt 2026-09-05 tối*; giả định A3 của brief đóng theo lời chủ dự án, không phải theo số đo của trợ lý | brainstorm câu 4 |
 | Kho trước lát: `ohlc_daily` Yahoo 335.601 nến / Binance 30.951, cả hai dừng ở **2026-09-04** (nến 09-05 đang chạy chưa vào — đúng lát 7); `wichart_guard.MIN_SAMPLE = 20` | truy vấn kho |
+| 🔴 **Đã đo *(2026-09-05 tối, review toàn nhánh)*: `close` của nến FX ngày Yahoo (`<CCY>=X`, `interval=1d`) = giá ĐẦU ngày London ở MỌI ngày đã chốt, không riêng ngày đo A1b** — 263 ngày nến từ 2025-09-01. Trung bình `\|close − open\|/close`: `fx.usd_eur.market` 0,0095 % · `fx.usd_jpy.market` 0,0135 % · `fx.usd_cny.market` 0,0015 % (đối chứng: `idx.sp500` 0,48 % · `idx.nikkei225` 0,98 %); trung bình `\|close − open\|/(high−low)`: FX 1,8–3,0 % vs chỉ số 46,9–49,4 %. Chỉ nến live mang giá hiện tại thật; sang ngày kế Yahoo ghi đè lùi dòng hôm qua về giá đầu ngày. Cổng `band`/`stale`, test, AC5 đều không bắt được. Chi tiết: [`yahoo.md`](../../10-sources/global/yahoo.md) §5.5 Bẫy 4 | review toàn nhánh, `measure-yahoo-fx-close-vs-open` |
 
 ### 2.2 Giả định — CHƯA kiểm, đo trong plan (Task đo, trước khi chạy thật)
 
@@ -148,7 +149,7 @@ Thời gian một lượt với trung bình 3 s: Yahoo 54 ≈ 2,7 phút · Binan
 
 | Nguồn | Bỏ | Giữ | Ngày của nến đang chạy |
 |---|---|---|---|
-| Yahoo | biến `cut` (cổng (d) §5.3 lát 7) và mọi tham chiếu `currentTradingPeriod` trong `bars` | dedupe theo ngày sàn "nến sau ghi đè nến trước" — với FX chính là luật chọn nến live thay nến rỗng 23:00 UTC (§2.1); cổng (a)(b)(c), `stale`, `band` trên nến cuối | `_utc(ts).astimezone(exchangeTimezoneName).date()` — chỉ số: ngày phiên; FX: ngày London của `regularMarketTime` |
+| Yahoo | biến `cut` (cổng (d) §5.3 lát 7) và mọi tham chiếu `currentTradingPeriod` trong `bars` | dedupe theo ngày sàn "nến sau ghi đè nến trước" — với FX chính là luật chọn nến live thay nến rỗng 23:00 UTC (§2.1); cổng (a)(b)(c), `stale`, `band` trên nến cuối | `_utc(ts).astimezone(exchangeTimezoneName).date()` — chỉ số: ngày phiên; FX: ngày London của `regularMarketTime` *(bổ sung sau review toàn nhánh: luật này giữ nến live chỉ trong ngày London đang chạy — xem §2.1 dòng Bẫy 4; chủ dự án chốt phương án 1)* |
 | Binance | `if k[6]/1000 > now.timestamp(): continue` | `stale` đổi câu chữ: "nến cuối" thay "nến đóng cuối" (`last_day ≥ today − max_lag`); `band` | ngày UTC của `k[0]` (seam 4 bước 5) |
 
 Hệ quả cho lát 13 (ghi §5.7): ruling "xếp `yahoo` sau 11:00 VN vì DXY" của lát 7 **hết hiệu lực** — nến DXY vào kho ngay trong lượt intraday. `changes_sample` chỉ có ở `apply` (điểm) nên FRED không nhiễu; `stats.changed` của Yahoo/Binance/WiChart-hàng-hoá > 0 mỗi lượt intraday là **hành vi mong đợi** (lát 12 không coi là bất thường).
@@ -233,6 +234,7 @@ Expected từ mẫu thật chụp 2026-09-05 (`samples/yahoo-EURX-5d.json` — b
 5. `max_lag_days = 6` cho FX Yahoo (chỉ số giữ 14).
 6. A5 đo bằng chính AC3 trên phiên thật (TA-125 chủ nhật hoặc Nikkei thứ 2), không có phép đo riêng.
 7. Lượt intraday ghi `ops.etl_run` mỗi lần (≈ 624 dòng/ngày cho 3 job).
+8. Chấp nhận `close` lịch sử của `.market` = giá đầu ngày (phương án 1, chốt 2026-09-05 tối); đảo ngược: phương án 2 khi lát 10 cần.
 
 ---
 
