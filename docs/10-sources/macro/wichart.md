@@ -807,7 +807,7 @@ Yêu cầu cụ thể:
 5. **Lịch sử đầy đủ cho chuỗi ngày** — gói trả phí phải bỏ giới hạn cửa sổ 2 năm.
 6. **Độ chính xác đầy đủ cho series tăng trưởng** — hoặc cam kết luôn cung cấp series tuyệt đối kèm theo.
 7. **Thông báo trước khi đổi năm gốc / rebasing** — kèm hệ số nối chính thức.
-8. **Ngưỡng rate limit** — chưa đo, cần con số cam kết.
+8. **Ngưỡng rate limit** — chưa có con số cam kết. *(Mức tải đã kiểm 2026-09-05 theo đúng tải kế hoạch: **68 lời gọi liên tiếp, giãn cách 0,2 s** của job `etl wichart`, cộng ~230 lời gọi đo đạc trong cùng buổi sáng — 0 lỗi HTTP, 0 tín hiệu chặn. Kết luận chỉ ở mức đó, không suy ra ngưỡng.)*
 9. **Sửa hoặc xác nhận các lỗi metadata** đã liệt kê: nhãn `td`, đơn vị `vdtnsnn`, `timeArray` của 16 key, `xi_mang_pcb` trả 500.
 10. **Xác nhận chuẩn của `dau_wti`** — hợp đồng tương lai tháng nào, sàn nào, lấy giá lúc nào. Đo 2026-08-15 cho thấy đây là **giá tương lai** chứ không phải giao ngay, trong khi nhãn chỉ ghi "Giá dầu WTI"; cần họ ghi rõ trong từ điển chỉ tiêu.
 

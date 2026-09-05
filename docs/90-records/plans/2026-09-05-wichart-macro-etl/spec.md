@@ -170,7 +170,7 @@ Một series `band` lẻ (ví dụ vàng đột biến) không từ chối cả 
 
 - `load_registry(conn)`: đọc khối §9 + module, upsert 4 bảng, trả `dict[(key, idx)] -> (domain, id, price_type, calendar)`; `active=false` cho dòng có trong DB mà vắng registry.
 - `apply(conn, points)`: `INSERT … ON CONFLICT (pk) DO UPDATE SET value = EXCLUDED.value, ingested_at = clock_timestamp() WHERE t.value IS DISTINCT FROM EXCLUDED.value` — dòng không đổi **không được chạm** (`ingested_at` = lúc giá trị hiện tại về, đúng nghĩa bước 4); `changed` = rowcount của câu lệnh trừ số dòng chèn mới (`inserted` đếm qua `RETURNING (xmax = 0)`). Test pin: chạy lại ⇒ rowcount 0.
-- `series_break` seed: upsert một dòng `(vn.gdp.real, 2026-03-01, 1.6005, 'Đổi năm gốc giá so sánh; trung bình hai ước lượng độc lập 1.6032 / 1.5978 (wichart.md Bẫy 6)', verified_by NULL, verified_at 2026-09-05)` — §9.4.
+- `series_break` seed: upsert một dòng `(vn.gdp.real, **2026-01-01**, 1.6005, 'Đổi năm gốc giá so sánh; trung bình hai ước lượng độc lập 1.6032 / 1.5978 (wichart.md Bẫy 6)', verified_by NULL, verified_at 2026-09-05)` — §9.4. *(Sửa 2026-09-05 khi viết plan: bản đầu chép `2026-03-01` là neo tháng cuối quý **của nguồn**; kho neo đầu kỳ nên Q1/2026 = `01-01`, và view nhân hệ số cho `obs_date < break_date` — xem ruling pre-flight trong [ledger](ledger.md).)*
 - Bằng chứng: `raw_payload` khi hash đổi (§4.4); khi guard từ chối: mọi body của lượt vào `raw_payload` với `meta.refused = reasons` trong giao dịch riêng (y lát 1–5).
 - Mốc nước `data_domain_state.watermark` = ngày VN của lượt (`max(obs_date)` không có nghĩa khi tần suất trộn).
 
