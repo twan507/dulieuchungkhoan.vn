@@ -1,0 +1,6 @@
+Frankfurter CNY — đo 2026-09-05 17:0x VN, 2 lời gọi:
+GET https://api.frankfurter.dev/v1/2026-08-25..?from=USD&to=EUR,JPY,GBP,CAD,SEK,CHF,CNY → HTTP 200 base USD start 2026-08-25 end 2026-09-04
+2026-09-02 {'CAD': 1.3925, 'CHF': 0.81396, 'CNY': 6.7215, 'EUR': 0.86371, 'GBP': 0.74167, 'JPY': 159.6, 'SEK': 9.6368}
+2026-09-03 {'CAD': 1.3792, 'CHF': 0.80844, 'CNY': 6.7191, 'EUR': 0.86096, 'GBP': 0.7409, 'JPY': 156.01, 'SEK': 9.5777}
+2026-09-04 {'CAD': 1.38, 'CHF': 0.80924, 'CNY': 6.7109, 'EUR': 0.86044, 'GBP': 0.7391, 'JPY': 156.25, 'SEK': 9.5513}
+GET /v1/currencies → có CNY, tổng 30 tiền tệ

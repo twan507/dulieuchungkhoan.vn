@@ -1,0 +1,9 @@
+đo lúc 2026-09-05T09:55:15+00:00 UTC
+BTCUSDT: HTTP 200 weight-1m=2 · 3 nến
+   open=2026-09-03T00:00+00:00 close=2026-09-03T23:59+00:00 closeTime>now=False · close=81270.37000000 trades=4460645
+   open=2026-09-04T00:00+00:00 close=2026-09-04T23:59+00:00 closeTime>now=False · close=79660.77000000 trades=3417900
+   open=2026-09-05T00:00+00:00 close=2026-09-05T23:59+00:00 closeTime>now=True · close=79646.00000000 trades=428465
+PAXGUSDT: HTTP 200 weight-1m=4 · 3 nến
+   open=2026-09-03T00:00+00:00 close=2026-09-03T23:59+00:00 closeTime>now=False · close=4482.51000000 trades=38205
+   open=2026-09-04T00:00+00:00 close=2026-09-04T23:59+00:00 closeTime>now=False · close=4431.81000000 trades=42985
+   open=2026-09-05T00:00+00:00 close=2026-09-05T23:59+00:00 closeTime>now=True · close=4433.17000000 trades=2915
