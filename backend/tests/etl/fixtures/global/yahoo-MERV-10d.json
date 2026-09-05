@@ -1,0 +1,151 @@
+{
+ "chart": {
+  "result": [
+   {
+    "meta": {
+     "currency": "",
+     "symbol": "^MERV",
+     "exchangeName": "BUE",
+     "fullExchangeName": "Buenos Aires",
+     "instrumentType": "INDEX",
+     "firstTradeDate": 844783200,
+     "regularMarketTime": 1788553443,
+     "hasPrePostMarketData": false,
+     "gmtoffset": -10800,
+     "timezone": "ART",
+     "exchangeTimezoneName": "America/Argentina/Buenos_Aires",
+     "regularMarketPrice": 3049121.5,
+     "regularMarketChangePercent": -0.293,
+     "fulldayPrice": 3049121.5,
+     "fulldayChange": -8971.5,
+     "fulldayChangePercent": -0.293,
+     "fiftyTwoWeekHigh": 3395937.0,
+     "fiftyTwoWeekLow": 1635451.0,
+     "regularMarketDayHigh": 3075301.5,
+     "regularMarketDayLow": 3022601.2,
+     "regularMarketVolume": 0,
+     "longName": "MERVAL",
+     "shortName": "MERVAL",
+     "chartPreviousClose": 3009029.0,
+     "priceHint": 2,
+     "currentTradingPeriod": {
+      "pre": {
+       "timezone": "ART",
+       "end": 1788530400,
+       "start": 1788528600,
+       "gmtoffset": -10800
+      },
+      "regular": {
+       "timezone": "ART",
+       "end": 1788552000,
+       "start": 1788530400,
+       "gmtoffset": -10800
+      },
+      "post": {
+       "timezone": "ART",
+       "end": 1788552000,
+       "start": 1788552000,
+       "gmtoffset": -10800
+      }
+     },
+     "dataGranularity": "1d",
+     "range": "",
+     "validRanges": [
+      "1d",
+      "5d",
+      "1mo",
+      "3mo",
+      "6mo",
+      "1y",
+      "2y",
+      "5y",
+      "10y",
+      "ytd",
+      "max"
+     ]
+    },
+    "timestamp": [
+     1787752800,
+     1787839200,
+     1787925600,
+     1788184800,
+     1788271200,
+     1788357600,
+     1788444000,
+     1788530400
+    ],
+    "indicators": {
+     "quote": [
+      {
+       "close": [
+        3024971.0,
+        3001209.0,
+        2979472.0,
+        3033848.0,
+        3049455.0,
+        3106216.0,
+        3058093.0,
+        3049122.0
+       ],
+       "high": [
+        3047425.0,
+        3039704.0,
+        3010991.0,
+        3062969.0,
+        3090512.0,
+        3112480.0,
+        3155311.0,
+        3075302.0
+       ],
+       "volume": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "open": [
+        3009029.0,
+        3024971.0,
+        3001209.0,
+        2979472.0,
+        3033848.0,
+        3049455.0,
+        3113855.0,
+        3058093.0
+       ],
+       "low": [
+        3003211.0,
+        2990196.0,
+        2967094.0,
+        2979472.0,
+        3021623.0,
+        3047620.0,
+        3043212.0,
+        3022601.0
+       ]
+      }
+     ],
+     "adjclose": [
+      {
+       "adjclose": [
+        3024971.0,
+        3001209.0,
+        2979472.0,
+        3033848.0,
+        3049455.0,
+        3106216.0,
+        3058093.0,
+        3049122.0
+       ]
+      }
+     ]
+    }
+   }
+  ],
+  "error": null
+ }
+}

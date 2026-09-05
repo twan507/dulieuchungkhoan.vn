@@ -1,0 +1,78 @@
+{
+ "chart": {
+  "result": [
+   {
+    "meta": {
+     "currency": "USD",
+     "symbol": "^BCOM",
+     "exchangeName": "WCB",
+     "fullExchangeName": "Chicago Options",
+     "instrumentType": "INDEX",
+     "firstTradeDate": 662826600,
+     "regularMarketTime": 1590678885,
+     "hasPrePostMarketData": false,
+     "gmtoffset": -14400,
+     "timezone": "EDT",
+     "exchangeTimezoneName": "America/New_York",
+     "regularMarketPrice": 62.5325,
+     "regularMarketChangePercent": -0.2188,
+     "fulldayPrice": 62.5325,
+     "fulldayChange": -0.1371,
+     "fulldayChangePercent": -0.2188,
+     "fiftyTwoWeekHigh": 84.27,
+     "fiftyTwoWeekLow": 58.87,
+     "regularMarketDayHigh": 62.8001,
+     "regularMarketDayLow": 62.3513,
+     "regularMarketVolume": 0,
+     "shortName": "BBG Commodity",
+     "chartPreviousClose": 62.6696,
+     "priceHint": 2,
+     "currentTradingPeriod": {
+      "pre": {
+       "timezone": "EDT",
+       "start": 1788508800,
+       "end": 1788528600,
+       "gmtoffset": -14400
+      },
+      "regular": {
+       "timezone": "EDT",
+       "start": 1788528600,
+       "end": 1788552000,
+       "gmtoffset": -14400
+      },
+      "post": {
+       "timezone": "EDT",
+       "start": 1788552000,
+       "end": 1788566400,
+       "gmtoffset": -14400
+      }
+     },
+     "dataGranularity": "1d",
+     "range": "",
+     "validRanges": [
+      "1d",
+      "5d",
+      "1mo",
+      "3mo",
+      "6mo",
+      "1y",
+      "2y",
+      "5y",
+      "10y",
+      "ytd",
+      "max"
+     ]
+    },
+    "indicators": {
+     "quote": [
+      {}
+     ],
+     "adjclose": [
+      {}
+     ]
+    }
+   }
+  ],
+  "error": null
+ }
+}

@@ -1,0 +1,151 @@
+{
+ "chart": {
+  "result": [
+   {
+    "meta": {
+     "currency": "USD",
+     "symbol": "^GSPC",
+     "exchangeName": "SNP",
+     "fullExchangeName": "SNP",
+     "instrumentType": "INDEX",
+     "firstTradeDate": -1325583000,
+     "regularMarketTime": 1788553986,
+     "hasPrePostMarketData": false,
+     "gmtoffset": -14400,
+     "timezone": "EDT",
+     "exchangeTimezoneName": "America/New_York",
+     "regularMarketPrice": 7718.6,
+     "regularMarketChangePercent": -0.376,
+     "fulldayPrice": 7718.6,
+     "fulldayChange": -29.11,
+     "fulldayChangePercent": -0.376,
+     "fiftyTwoWeekHigh": 7816.7,
+     "fiftyTwoWeekLow": 6316.91,
+     "regularMarketDayHigh": 7750.19,
+     "regularMarketDayLow": 7706.12,
+     "regularMarketVolume": 2531375000,
+     "longName": "S&P 500",
+     "shortName": "S&P 500",
+     "chartPreviousClose": 7677.28,
+     "priceHint": 2,
+     "currentTradingPeriod": {
+      "pre": {
+       "timezone": "EDT",
+       "start": 1788508800,
+       "end": 1788528600,
+       "gmtoffset": -14400
+      },
+      "regular": {
+       "timezone": "EDT",
+       "start": 1788528600,
+       "end": 1788552000,
+       "gmtoffset": -14400
+      },
+      "post": {
+       "timezone": "EDT",
+       "start": 1788552000,
+       "end": 1788566400,
+       "gmtoffset": -14400
+      }
+     },
+     "dataGranularity": "1d",
+     "range": "",
+     "validRanges": [
+      "1d",
+      "5d",
+      "1mo",
+      "3mo",
+      "6mo",
+      "1y",
+      "2y",
+      "5y",
+      "10y",
+      "ytd",
+      "max"
+     ]
+    },
+    "timestamp": [
+     1787751000,
+     1787837400,
+     1787923800,
+     1788183000,
+     1788269400,
+     1788355800,
+     1788442200,
+     1788528600
+    ],
+    "indicators": {
+     "quote": [
+      {
+       "close": [
+        7675.7001953125,
+        7730.990234375,
+        7711.759765625,
+        7686.14013671875,
+        7631.47021484375,
+        7666.60009765625,
+        7747.7099609375,
+        7718.60009765625
+       ],
+       "open": [
+        7666.8798828125,
+        7710.33984375,
+        7735.169921875,
+        7697.52001953125,
+        7635.47021484375,
+        7634.580078125,
+        7686.7099609375,
+        7750.18994140625
+       ],
+       "low": [
+        7657.41015625,
+        7689.89013671875,
+        7700.91015625,
+        7665.06005859375,
+        7611.2001953125,
+        7633.6201171875,
+        7686.7099609375,
+        7706.1201171875
+       ],
+       "volume": [
+        4100600000,
+        4362240000,
+        4297560000,
+        5386090000,
+        4858180000,
+        4738910000,
+        4726400000,
+        4103570000
+       ],
+       "high": [
+        7690.72998046875,
+        7741.27001953125,
+        7771.47998046875,
+        7697.52001953125,
+        7663.6298828125,
+        7681.18994140625,
+        7756.759765625,
+        7750.18994140625
+       ]
+      }
+     ],
+     "adjclose": [
+      {
+       "adjclose": [
+        7675.7001953125,
+        7730.990234375,
+        7711.759765625,
+        7686.14013671875,
+        7631.47021484375,
+        7666.60009765625,
+        7747.7099609375,
+        7718.60009765625
+       ]
+      }
+     ]
+    }
+   }
+  ],
+  "error": null
+ }
+}
