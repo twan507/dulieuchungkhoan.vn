@@ -1099,6 +1099,10 @@ def _cleanup(engine):
         c.execute(sa.text("DELETE FROM asset.asset_external_id WHERE source='fred'"))
         c.execute(sa.text("DELETE FROM macro.indicator WHERE code = ANY(:c)"), {"c": MACRO_CODES})
         c.execute(sa.text("DELETE FROM asset.asset WHERE code = ANY(:c)"), {"c": ASSET_CODES})
+        # 'wti' dùng chung với wichart: chỉ xoá khi không còn dòng ánh xạ nào trỏ tới — để lại là test_s06_asset
+        # (literal 'wti') vỡ UNIQUE(code) khi chạy cả bộ (bẫy I6 lát 6, gặp lại ở Task 1)
+        c.execute(sa.text("DELETE FROM asset.asset a WHERE a.code='wti'"
+                          " AND NOT EXISTS (SELECT 1 FROM asset.asset_external_id x WHERE x.asset_id = a.asset_id)"))
 
 
 @pytest.fixture()
