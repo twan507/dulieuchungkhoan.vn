@@ -32,12 +32,22 @@ def bars(s, doc, now) -> list[Bar]:
     if ccy and ccy != s.quote_currency:
         raise SeriesError("shape", f"{s.external_key}: currency {ccy!r} ≠ registry {s.quote_currency!r}")
     ts = res.get("timestamp") or []
-    rmt = _utc(meta["regularMarketTime"])
+    rmt_raw = meta.get("regularMarketTime")
+    if not isinstance(rmt_raw, (int, float)):
+        raise SeriesError("shape", f"{s.external_key}: thiếu/sai kiểu meta.regularMarketTime")
+    rmt = _utc(rmt_raw)
     if not ts or rmt < now - timedelta(days=s.max_lag_days):
         raise SeriesError("stale", f"{s.external_key}: regularMarketTime {rmt.date()} / {len(ts)} nến — quá {s.max_lag_days} ngày")
-    tz = ZoneInfo(meta["exchangeTimezoneName"])
-    q = res["indicators"]["quote"][0]
-    adj = (res["indicators"].get("adjclose") or [{}])[0].get("adjclose") or [None] * len(ts)
+    tzname = meta.get("exchangeTimezoneName")
+    if not isinstance(tzname, str):
+        raise SeriesError("shape", f"{s.external_key}: thiếu/sai kiểu meta.exchangeTimezoneName")
+    tz = ZoneInfo(tzname)
+    ind = res.get("indicators")
+    quote_list = ind.get("quote") if isinstance(ind, dict) else None
+    if not isinstance(quote_list, list) or not quote_list or not isinstance(quote_list[0], dict) or "close" not in quote_list[0]:
+        raise SeriesError("shape", f"{s.external_key}: thiếu indicators.quote[0].close")
+    q = quote_list[0]
+    adj = (ind.get("adjclose") or [{}])[0].get("adjclose") or [None] * len(ts)
     reg = (meta.get("currentTradingPeriod") or {}).get("regular") or {}
     cut = len(ts) - 1 if reg and now.timestamp() < reg["end"] and ts[-1] >= reg["start"] else None
     out: dict = {}

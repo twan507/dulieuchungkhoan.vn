@@ -35,6 +35,7 @@ class SourceSpec:
     fetch_all: Callable[..., tuple[dict, dict, list, int, int]]   # (series, get, sleep, backfill) -> docs, texts, failed, calls, retries
     normalize: Callable[..., list]                                # (series, doc, now) -> list[Point] | list[Bar]; raise SeriesError
     supports_backfill: bool = False
+    redact: Callable[[str], str] = staticmethod(lambda s: s)      # che khoá trong lỗi/log (FRED — khoá đi trong URL)
 
 
 def _engine():
@@ -62,6 +63,30 @@ def _normalize_all(spec, series, docs, failed, now):
             t.details.append(f"{s.external_key} {e.reason}: {e}")
     t.details = t.details[:MAX_DETAILS]
     return points, bars, t
+
+
+def _apply_backfill_per_code(engine, points, bars, resolved) -> series_store.Written:
+    """`--backfill`: một mã một giao dịch (spec §5.1) — một mã hỏng dừng lượt nhưng không kéo lùi
+    các mã đã ghi và commit xong trước đó. Thứ tự xử lý theo `code` sắp xếp, để deterministic."""
+    by_code: dict[str, dict] = {}
+    for p in points:
+        by_code.setdefault(p.code, {"points": [], "bars": []})["points"].append(p)
+    for b in bars:
+        by_code.setdefault(b.code, {"points": [], "bars": []})["bars"].append(b)
+    w = series_store.Written()
+    for code in sorted(by_code):
+        group = by_code[code]
+        with engine.begin() as conn:
+            if group["points"]:
+                w1 = series_store.apply(conn, group["points"], resolved)
+                w.inserted += w1.inserted
+                w.changed += w1.changed
+                w.changes_sample.extend(w1.changes_sample)
+            if group["bars"]:
+                w2 = series_store.apply_ohlc(conn, group["bars"], resolved)
+                w.inserted += w2.inserted
+                w.changed += w2.changed
+    return w
 
 
 def run(spec: SourceSpec, keys=None, dry_run=False, backfill=False, get=None, sleep=time.sleep, now=None) -> int:
@@ -110,12 +135,19 @@ def run(spec: SourceSpec, keys=None, dry_run=False, backfill=False, get=None, sl
             omo_store.close_run(engine, run_id, "failed", stats, error="guard refused: " + "; ".join(verdict.reasons))
             log.error("%s từ chối: %s", spec.log_name, verdict.reasons)
             return 1
-        with engine.begin() as conn:
-            resolved, reg_stats = load_registry(conn, registry, spec.source)     # registry TRỌN, kể cả lượt con
-            w1 = series_store.apply(conn, points, resolved)
-            w2 = series_store.apply_ohlc(conn, bars, resolved)
-        stats.update({"registry": reg_stats, "inserted": w1.inserted + w2.inserted, "changed": w1.changed + w2.changed,
-                      "changes_sample": [[str(x) for x in c] for c in w1.changes_sample]})
+        if backfill:
+            with engine.begin() as conn:
+                resolved, reg_stats = load_registry(conn, registry, spec.source)     # registry TRỌN, riêng giao dịch
+            w = _apply_backfill_per_code(engine, points, bars, resolved)             # rồi một mã một giao dịch
+            stats.update({"registry": reg_stats, "inserted": w.inserted, "changed": w.changed,
+                          "changes_sample": [[str(x) for x in c] for c in w.changes_sample]})
+        else:
+            with engine.begin() as conn:
+                resolved, reg_stats = load_registry(conn, registry, spec.source)     # registry TRỌN, kể cả lượt con
+                w1 = series_store.apply(conn, points, resolved)
+                w2 = series_store.apply_ohlc(conn, bars, resolved)
+            stats.update({"registry": reg_stats, "inserted": w1.inserted + w2.inserted, "changed": w1.changed + w2.changed,
+                          "changes_sample": [[str(x) for x in c] for c in w1.changes_sample]})
         if not subset:
             stats["watermark"] = run_date.isoformat()
         omo_store.close_run(engine, run_id, "success", stats)      # close_run TRƯỚC, domain state SAU
@@ -129,8 +161,9 @@ def run(spec: SourceSpec, keys=None, dry_run=False, backfill=False, get=None, sl
         log.warning("%s dừng tay (Ctrl+C)", spec.log_name)
         return 130
     except Exception as e:                    # noqa: BLE001 — job biên ngoài: mọi lỗi vào etl_run
-        omo_store.close_run(engine, run_id, "failed", error=f"{type(e).__name__}: {e}")
-        log.exception("%s thất bại", spec.log_name)
+        err = spec.redact(f"{type(e).__name__}: {e}")
+        omo_store.close_run(engine, run_id, "failed", error=err)
+        log.exception("%s thất bại: %s", spec.log_name, err)
         return 2
     finally:
         engine.dispose()

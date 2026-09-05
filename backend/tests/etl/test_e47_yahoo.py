@@ -41,7 +41,8 @@ def test_url_uses_period_not_range_and_backfill_period1_is_negative():
 def test_classify():
     assert yf.classify(200, json.dumps(_doc("GSPC-10d")))[0] == "ok"
     assert yf.classify(200, '{"chart":{"result":null,"error":{"code":"Not Found"}}}') == ("bad_shape", None)
-    assert yf.classify(404, "") == ("retry", None)                      # Luật 3: 404 nói về tổ hợp tham số
+    assert yf.classify(404, "") == ("bad_shape", None)                  # period1/period2 cố định: 404 = mã đã chết
+    assert yf.classify(503, "") == ("retry", None)
     assert yf.classify(200, "not json") == ("retry", None)
 
 
@@ -85,6 +86,19 @@ def test_three_gates_altsymbol_stale_granularity_and_currency():
         yn.bars(REG["^GSPC"], doc, NOW)
     assert e.value.reason == "shape"
     assert yn.bars(REG["^MERV"], _doc("MERV-10d"), NOW)[-1].close == Decimal("3049122.0")   # currency rỗng ⇒ qua
+
+
+def test_missing_regular_market_time_or_indicators_is_a_shape_error_not_a_crash():
+    doc = json.loads(json.dumps(_doc("GSPC-10d")))
+    del doc["chart"]["result"][0]["meta"]["regularMarketTime"]
+    with pytest.raises(SeriesError) as e:
+        yn.bars(REG["^GSPC"], doc, NOW)
+    assert e.value.reason == "shape"
+    doc = json.loads(json.dumps(_doc("GSPC-10d")))
+    del doc["chart"]["result"][0]["indicators"]
+    with pytest.raises(SeriesError) as e:
+        yn.bars(REG["^GSPC"], doc, NOW)
+    assert e.value.reason == "shape"
 
 
 def test_band_catches_100x_error():

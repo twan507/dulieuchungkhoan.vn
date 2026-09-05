@@ -20,8 +20,10 @@ def url(symbol: str, period1: int, period2: int) -> str:
 
 
 def classify(http: int, text: str):
+    if http == 404:
+        return "bad_shape", None            # period1/period2 đã cố định trong URL: 404 nghĩa là mã đã chết, thử lại vô ích
     if http != 200:
-        return "retry", None                                   # kể cả 404 — thử lại rồi mới coi là hỏng (Luật 3)
+        return "retry", None
     try:
         d = json.loads(text)
     except ValueError:

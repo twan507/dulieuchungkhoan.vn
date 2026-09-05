@@ -9,7 +9,8 @@ from decimal import Decimal
 import sqlalchemy as sa
 
 from etl import series_store
-from etl.series_store import Resolved, Written, _hash, apply  # noqa: F401 — test lát 6 import từ đây
+from etl.registry import load_registry as _load
+from etl.series_store import Resolved, Written, apply, hash_text  # noqa: F401 — test lát 6 import từ đây
 from etl.wichart_guard import Verdict
 from etl.wichart_registry import SOURCE
 
@@ -24,7 +25,6 @@ GDP_BREAK = dict(code="vn.gdp.real", break_date=date(2026, 1, 1), factor=Decimal
 
 
 def load_registry(conn, series) -> tuple[dict[str, Resolved], dict]:
-    from etl.registry import load_registry as _load       # import trễ: registry.py import series_store, tránh vòng
     return _load(conn, series, SOURCE)
 
 
@@ -40,7 +40,7 @@ def seed_series_break(conn) -> None:
 
 def store_payload_if_changed(conn, key: str, text: str, run_id: int) -> bool:
     ek = f"wichart:{key}"
-    h = _hash(text)
+    h = hash_text(text)
     last = conn.execute(sa.text(
         "SELECT meta->>'hash' FROM staging.raw_payload WHERE source = :src AND endpoint_key = :ek"
         " ORDER BY payload_id DESC LIMIT 1"), {"src": SOURCE, "ek": ek}).scalar()

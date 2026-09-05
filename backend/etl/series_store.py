@@ -31,18 +31,18 @@ _UPSERT_MACRO = sa.text(
     " SELECT * FROM unnest(cast(:ids AS bigint[]), cast(:dates AS date[]), cast(:vals AS numeric[]))"
     " ON CONFLICT (indicator_id, obs_date) DO UPDATE SET value = excluded.value, ingested_at = clock_timestamp()"
     " WHERE macro.observation.value IS DISTINCT FROM excluded.value"
-    " RETURNING (xmax = 0) AS inserted, indicator_id AS rid, obs_date")
+    " RETURNING (xmax = 0) AS inserted, indicator_id AS rid, obs_date, NULL::text AS price_type")
 _UPSERT_ASSET = sa.text(
     "INSERT INTO asset.price_daily (asset_id, obs_date, price_type, value)"
     " SELECT * FROM unnest(cast(:ids AS bigint[]), cast(:dates AS date[]), cast(:types AS text[]), cast(:vals AS numeric[]))"
     " ON CONFLICT (asset_id, obs_date, price_type) DO UPDATE SET value = excluded.value, ingested_at = clock_timestamp()"
     " WHERE asset.price_daily.value IS DISTINCT FROM excluded.value"
-    " RETURNING (xmax = 0) AS inserted, asset_id AS rid, obs_date")
+    " RETURNING (xmax = 0) AS inserted, asset_id AS rid, obs_date, price_type")
 _OLD_MACRO = sa.text(
-    "SELECT o.indicator_id, o.obs_date, o.value FROM macro.observation o"
+    "SELECT o.indicator_id, o.obs_date, NULL::text AS price_type, o.value FROM macro.observation o"
     " JOIN unnest(cast(:ids AS bigint[]), cast(:dates AS date[])) AS u(id, d) ON u.id = o.indicator_id AND u.d = o.obs_date")
 _OLD_ASSET = sa.text(
-    "SELECT p.asset_id, p.obs_date, p.value FROM asset.price_daily p"
+    "SELECT p.asset_id, p.obs_date, p.price_type, p.value FROM asset.price_daily p"
     " JOIN unnest(cast(:ids AS bigint[]), cast(:dates AS date[]), cast(:types AS text[])) AS u(id, d, t)"
     " ON u.id = p.asset_id AND u.d = p.obs_date AND u.t = p.price_type")
 _UPSERT_OHLC = sa.text(
@@ -58,15 +58,17 @@ _UPSERT_OHLC = sa.text(
 
 
 def _run_points(conn, w: Written, chunk, resolved, code_of, upsert, old_sql, params):
-    old = {(r[0], r[1]): r[2] for r in conn.execute(old_sql, params).all()}
-    new = {(resolved[p.code].row_id, p.obs_date): p.value for p in chunk}
-    for inserted, rid, d in conn.execute(upsert, params).all():
+    # Dưới cap: cần giá trị cũ cho mẫu. Đã đủ cap: mẫu không nhận thêm — SELECT giá trị cũ vô ích, bỏ qua.
+    old = ({} if len(w.changes_sample) >= SAMPLE_CAP
+           else {(r[0], r[1], r[2]): r[3] for r in conn.execute(old_sql, params).all()})
+    new = {(resolved[p.code].row_id, p.obs_date, p.price_type): p.value for p in chunk}
+    for inserted, rid, d, pt in conn.execute(upsert, params).all():
         if inserted:
             w.inserted += 1
         else:
             w.changed += 1
             if len(w.changes_sample) < SAMPLE_CAP:
-                w.changes_sample.append((code_of[rid], d.isoformat(), old.get((rid, d)), new[(rid, d)]))
+                w.changes_sample.append((code_of[rid], d.isoformat(), old.get((rid, d, pt)), new[(rid, d, pt)]))
 
 
 def apply(conn, points, resolved) -> Written:
@@ -101,7 +103,7 @@ def apply_ohlc(conn, bars, resolved) -> Written:
     return w
 
 
-def _hash(text: str) -> str:
+def hash_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
@@ -109,7 +111,7 @@ def store_refusal_evidence(engine, source: str, texts: dict[str, str], run_id: i
     """Bằng chứng ở giao dịch RIÊNG — lượt chính không ghi gì. JSON hợp lệ vào payload; body khác vào text."""
     with engine.begin() as conn:
         for key, text in texts.items():
-            meta = json.dumps({"run_id": run_id, "reasons": reasons, "refused": True, "hash": _hash(text)}, ensure_ascii=False)
+            meta = json.dumps({"run_id": run_id, "reasons": reasons, "refused": True, "hash": hash_text(text)}, ensure_ascii=False)
             try:
                 json.loads(text)
                 conn.execute(sa.text(

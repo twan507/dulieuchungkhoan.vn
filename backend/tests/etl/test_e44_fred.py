@@ -118,7 +118,10 @@ def _fake_get(calls=None, fail=()):
 def _cleanup(engine):
     with engine.begin() as c:
         c.execute(sa.text("DELETE FROM macro.observation WHERE indicator_id IN (SELECT indicator_id FROM macro.indicator_source WHERE source='fred')"))
-        c.execute(sa.text("DELETE FROM asset.price_daily WHERE asset_id IN (SELECT asset_id FROM asset.asset_external_id WHERE source='fred')"))
+        c.execute(sa.text("DELETE FROM asset.price_daily WHERE asset_id IN (SELECT asset_id FROM asset.asset_external_id WHERE source='fred')"
+                          " AND (price_type = 'spot' OR asset_id NOT IN (SELECT asset_id FROM asset.asset WHERE code='wti'))"))
+        # 'wti' dùng chung: chỉ xoá dòng 'spot' của fred, không đụng dòng 'futures' của wichart; mã khác của fred
+        # (dxy.broad/vix/fx.usd_cny) không share asset_id nên vẫn xoá trọn mọi price_type
         c.execute(sa.text("DELETE FROM staging.raw_payload WHERE source='fred'"))
         c.execute(sa.text("DELETE FROM ops.etl_run WHERE job='global.fred'"))
         c.execute(sa.text("DELETE FROM ops.data_domain_state WHERE source='fred'"))
@@ -180,3 +183,12 @@ def test_job_refuses_when_one_series_fails(clean):
 
 def test_backfill_flag_is_rejected_for_fred(clean):
     assert fj.run(backfill=True, get=_fake_get(), sleep=lambda s: None, now=NOW) == 2
+
+
+def test_generic_exception_redacts_the_api_key_from_the_run_error(clean, monkeypatch):
+    def boom(series, get, sleep, backfill):
+        raise RuntimeError(f"boom {KEY}")
+    monkeypatch.setattr(fj.SPEC, "fetch_all", boom)
+    assert fj.run(get=_fake_get(), sleep=lambda s: None, now=NOW) == 2
+    status, stats, error = _last(clean)
+    assert status == "failed" and KEY not in error and "<REDACTED>" in error

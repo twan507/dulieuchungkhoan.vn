@@ -61,6 +61,10 @@ def test_apply_reports_a_sample_of_changed_rows_with_old_and_new_values(db):
     assert w.changes_sample == [("zz.yield.10y", "2026-09-02", Decimal("4.79"), Decimal("4.80"))]
     assert _count(db, "SELECT count(*) FROM asset.price_daily p JOIN asset.asset a USING (asset_id)"
                       " WHERE a.code='wti' AND price_type='spot'") == 1
+    pts[2] = Point("asset", "wti", date(2026, 9, 1), Decimal("92.00"), "spot")     # đổi giá trị wti spot
+    w = ss.apply(db, pts, resolved)
+    assert (w.inserted, w.changed) == (0, 1)
+    assert w.changes_sample == [("wti", "2026-09-01", Decimal("91.48"), Decimal("92.00"))]
 
 
 def test_apply_ohlc_upserts_only_when_a_field_changes_and_keeps_close_when_close_adj_changes(db):
@@ -92,6 +96,7 @@ def test_core_works_under_etl_role_including_ohlc_daily(db):
     db.execute(sa.text("SET LOCAL ROLE dlck_etl"))
     resolved, _ = rg.load_registry(db, FAKE, "zz")
     assert ss.apply(db, [Point("macro", "zz.yield.10y", date(2026, 9, 3), Decimal("4.77"), None)], resolved).inserted == 1
+    assert ss.apply(db, [Point("asset", "wti", date(2026, 9, 1), Decimal("91.48"), "spot")], resolved).inserted == 1
     assert ss.apply_ohlc(db, [Bar("zz.idx.sp500", date(2026, 9, 4), None, None, None, Decimal("7718.6"), None, None)], resolved).inserted == 1
 
 
@@ -124,7 +129,8 @@ from etl import series_job as sj  # noqa: E402
 def _cleanup_zz(engine):
     with engine.begin() as c:
         c.execute(sa.text("DELETE FROM macro.observation WHERE indicator_id IN (SELECT indicator_id FROM macro.indicator_source WHERE source='zz')"))
-        c.execute(sa.text("DELETE FROM asset.price_daily WHERE asset_id IN (SELECT asset_id FROM asset.asset_external_id WHERE source='zz')"))
+        c.execute(sa.text("DELETE FROM asset.price_daily WHERE asset_id IN (SELECT asset_id FROM asset.asset_external_id WHERE source='zz')"
+                          " AND price_type = 'spot'"))   # 'wti' dùng chung: không đụng dòng 'futures' của wichart
         c.execute(sa.text("DELETE FROM asset.ohlc_daily WHERE asset_id IN (SELECT asset_id FROM asset.asset_external_id WHERE source='zz')"))
         c.execute(sa.text("DELETE FROM staging.raw_payload WHERE source='zz'"))
         c.execute(sa.text("DELETE FROM ops.etl_run WHERE job='global.zz'"))
@@ -159,9 +165,10 @@ def _fake_normalize(s, doc, now):
     return [Point("asset", s.code, date(2026, 9, 1), Decimal("91.48"), "spot")]
 
 
-def _spec(normalize=_fake_normalize, mode="all_or_nothing"):
+def _spec(normalize=_fake_normalize, mode="all_or_nothing", supports_backfill=False):
     return sj.SourceSpec(job="global.zz", source="zz", domains=("macro.indicator", "asset"), guard_mode=mode,
-                         log_name="zz", build=lambda: FAKE, fetch_all=_fake_fetch_all, normalize=normalize)
+                         log_name="zz", build=lambda: FAKE, fetch_all=_fake_fetch_all, normalize=normalize,
+                         supports_backfill=supports_backfill)
 
 
 def _wire(monkeypatch):
@@ -188,6 +195,43 @@ def test_runner_full_run_writes_points_and_bars_and_two_domain_states(zz, monkey
     assert rows == {"macro.indicator": "2026-09-05", "asset": "2026-09-05"} and n == 1
     assert sj.run(_spec(), get=lambda u, t: (200, "{}", {}), sleep=lambda s: None, now=now) == 0
     assert (_last_run(zz)[1]["inserted"], _last_run(zz)[1]["changed"]) == (0, 0)
+
+
+def _backfill_normalize(s, doc, now):
+    if s.shape == "ohlc":
+        return [Bar(s.code, date(2026, 9, 4), None, None, None, Decimal("7718.6"), Decimal("7718.6"), None)]
+    if s.external_key == "DGS10":
+        return [Point("macro", s.code, date(2026, 9, 3), Decimal("4.77"), None)]
+    return []                                   # 'wti': không sinh điểm nào trong hai test backfill dưới đây
+
+
+def test_backfill_writes_one_transaction_per_code_and_reports_the_backfill_flag(zz, monkeypatch):
+    _wire(monkeypatch)
+    now = datetime(2026, 9, 5, 12, 0, tzinfo=timezone.utc)
+    assert sj.run(_spec(_backfill_normalize, supports_backfill=True), backfill=True,
+                  get=lambda u, t: (200, "{}", {}), sleep=lambda s: None, now=now) == 0
+    status, stats, _ = _last_run(zz)
+    assert status == "success" and stats["backfill"] is True
+    assert (stats["inserted"], stats["changed"]) == (2, 0)      # 1 bar (zz.idx.sp500) + 1 điểm macro (zz.yield.10y)
+
+
+def test_backfill_per_code_transaction_keeps_the_code_already_committed_when_a_later_code_fails(zz, monkeypatch):
+    _wire(monkeypatch)
+    now = datetime(2026, 9, 5, 12, 0, tzinfo=timezone.utc)
+
+    def boom(*a, **k):
+        raise RuntimeError("boom")
+    monkeypatch.setattr("etl.series_store.apply", boom)         # chỉ chặn apply() (điểm) — apply_ohlc() vẫn chạy thật
+    assert sj.run(_spec(_backfill_normalize, supports_backfill=True), backfill=True,
+                  get=lambda u, t: (200, "{}", {}), sleep=lambda s: None, now=now) == 2
+    status, _, error = _last_run(zz)
+    assert status == "failed" and "boom" in error
+    with zz.connect() as c:
+        n_bar = c.execute(sa.text("SELECT count(*) FROM asset.ohlc_daily o JOIN asset.asset a USING (asset_id)"
+                                  " WHERE a.code='zz.idx.sp500'")).scalar()
+        n_macro = c.execute(sa.text("SELECT count(*) FROM macro.observation o JOIN macro.indicator i USING (indicator_id)"
+                                    " WHERE i.code='zz.yield.10y'")).scalar()
+    assert n_bar == 1 and n_macro == 0           # mã 'zz.idx.sp500' (< 'zz.yield.10y') đã commit riêng trước khi vỡ
 
 
 def test_runner_refuses_whole_run_on_one_stale_series_and_keeps_evidence(zz, monkeypatch):
