@@ -75,6 +75,23 @@ def test_backfill_one_month_skips_homepage_and_seen_urls_and_sets_cursor(clean):
     assert _last(clean)[1]["articles_ok"] == 0 and _last(clean)[1]["skipped_seen"] == 3
 
 
+def test_month_fetch_failure_is_recorded_and_backfill_continues_to_next_month(clean):
+    # I2: tháng đầu (2026-09, to_month mặc định = tháng hiện tại theo NOW) hỏng (503) không được làm mất
+    # stats/cursor của tháng sau — ghi nhận vào months_failed rồi ĐI TIẾP, không đếm vào streak cầu chì bài.
+    def get(u, timeout):
+        if "/sitemaps/news-2026-9.xml" in u:
+            return 503, "", {}
+        if "/sitemaps/news-" in u:
+            return 200, SM, {}
+        return 200, _page("tinnhanhck", "Bài " + u.rsplit("/", 1)[1]) * 9, {}
+    assert nj.run_backfill("2026-08", get=get, sleep=lambda s: None, now=NOW) == 0
+    status, stats, _ = _last(clean)
+    assert status == "success" and stats["months_failed"] == ["2026-09"]
+    assert stats["months_done"] == ["2026-08"] and stats["cursor"] == "2026-08"
+    assert stats["articles_ok"] == 3                              # SM (tháng 08) có 3 URL bài thật, kho trống ⇒ cả 3 mới
+    assert _n(clean, "SELECT count(*) FROM news.article") == stats["articles_ok"]
+
+
 def test_cursor_resumes_from_month_before_last_done(clean):
     months = []
     assert nj.run_backfill("2026-07", "2026-09", get=_get(months), sleep=lambda s: None, now=NOW, max_minutes=None) == 0

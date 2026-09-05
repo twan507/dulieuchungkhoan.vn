@@ -94,10 +94,12 @@ def main(argv: list[str] | None = None) -> int:
         if parsed.backfill_sitemap:
             if not parsed.from_month or not etl.news_job.MONTH.match(parsed.from_month):
                 parser.error("--backfill-sitemap cần --from dạng YYYY-MM")
-            if parsed.loop or parsed.dry_run or parsed.sources is not None:
-                parser.error("--backfill-sitemap không đi cùng --loop/--dry-run/--sources")
+            if parsed.loop or parsed.dry_run or parsed.sources is not None or parsed.minutes is not None:
+                parser.error("--backfill-sitemap không đi cùng --loop/--dry-run/--sources/--minutes")
             return etl.news_job.run_backfill(from_month=parsed.from_month, to_month=parsed.to_month,
                                              max_minutes=parsed.max_minutes, stop_before_open=parsed.stop_before_open)
+        if parsed.to_month is not None or parsed.max_minutes is not None or parsed.stop_before_open:
+            parser.error("--to/--max-minutes/--stop-before-open chỉ đi cùng --backfill-sitemap")
         if parsed.minutes is not None and not parsed.loop:
             parser.error("--minutes chỉ đi với --loop")
         return etl.news_job.run(sources=parsed.sources, dry_run=parsed.dry_run, loop=parsed.loop, minutes=parsed.minutes)

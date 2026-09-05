@@ -42,6 +42,8 @@ def test_vietstock_drops_title_sapo_signature_and_keeps_body():
     assert not x.content.startswith("Chỉ 2 phiên giao dịch") and "Huy Khải" not in x.content and "FILI" not in x.content
     assert 1211 <= len(x.content) <= 1339 and x.published_at == datetime(2026, 9, 5, 19, 30, tzinfo=VN)
     assert x.sapo and "<" not in x.sapo
+    # M3: literal đọc bằng mắt 40 ký tự đầu của text sạch (đo 2026-09-06) — câu thật của bài, không phải boilerplate.
+    assert x.content.startswith("Trở lại sau kỳ nghỉ, VN-Index lập tức gi")
 
 
 def test_vneconomy_keeps_body_and_drops_lead():
@@ -79,6 +81,8 @@ def test_nguoiquansat_drops_header_block():
     assert x.content.endswith("trong những năm tới.") and "Tổng điều tra kinh tế năm 2025" not in x.content
     assert 2900 <= len(x.content) <= 3050
     assert x.title.startswith("Doanh nghiệp cấp nước cho hơn 32 triệu dân")
+    # M3: literal đọc bằng mắt 40 ký tự đầu của text sạch (đo 2026-09-06) — câu thật của bài, không phải boilerplate.
+    assert x.content.startswith("Nhà máy điện rác BIWASE do CTCP - Tổng C")
 
 
 def test_baochinhphu_drops_comments_and_related_box():
@@ -89,14 +93,27 @@ def test_baochinhphu_drops_comments_and_related_box():
     assert x.sapo and not x.sapo.startswith("(Chinhphu.vn)")
     # published_at đọc từ div.detail-time trang bài: 05/09/2026 13:30
     assert x.published_at == datetime(2026, 9, 5, 13, 30, tzinfo=VN)
+    # M3: literal đọc bằng mắt 40 ký tự đầu của text sạch (đo 2026-09-06) — câu thật của bài, không phải boilerplate.
+    assert x.content.startswith("Theo Nghị quyết, cơ chế, chính sách xác ")
 
 
 def test_tinnhanhck_uses_cms_date_not_sitemap_lastmod():
     x = ne.extract(_page("tinnhanhck"), "tinnhanhck")
     assert x.title.startswith("Thái Nguyên: Dự án 1.100 tỷ đồng dang dở sau 4 năm")
     assert x.published_at == datetime(2026, 9, 5, 9, 18, 48, tzinfo=VN)
-    assert x.content.endswith("không còn là lãnh đạo tại Hừng Đông.") and 4152 <= len(x.content) <= 4590 and "Từ Khoá" not in x.content
+    assert x.content.endswith("không còn là lãnh đạo tại Hừng Đông.") and "Từ Khoá" not in x.content
     assert x.sapo and not x.sapo.startswith("(ĐTCK)")
+    # I4: p.imgdesc (chú thích ảnh ngoài figure) bị bỏ ⇒ câu thật mở đầu ngay, không phải caption ảnh.
+    # Độ dài đo được sau khi bỏ: 4.287 ký tự (đo 2026-09-06) — ±5%.
+    assert x.content.startswith("Theo văn bản số 04/2026/CV-HĐ") and 4073 <= len(x.content) <= 4501
+
+
+def test_tinnhanhck_meta_missing_content_attr_is_none_not_crash():
+    # I1: <meta class="cms-date"> không có attr content ⇒ published_at None, KHÔNG ném lỗi.
+    html = ('<html><h1 class="article__header">Tiêu đề</h1><meta class="cms-date">'
+            '<div class="article__body">' + "Nội dung dài đủ trăm ký tự để qua ngưỡng min_chars. " * 3 + "</div></html>")
+    x = ne.extract(html, "tinnhanhck")
+    assert x.published_at is None
 
 
 def test_errors_no_container_no_title_too_short():

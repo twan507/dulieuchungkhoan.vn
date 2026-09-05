@@ -58,7 +58,8 @@ def test_insert_article_writes_four_tables_and_second_time_is_seen(db):
     it = _item("https://cafef.vn/a-1.chn?utm_source=rss", ticker=None)
     with db.begin() as c:
         listed = ns.load_listed(c)
-        aid = ns.insert_article(c, it, _ext(), fetched_at=NOW, tickers=[("ZZA", "lookup", listed["ZZA"])])
+        aid, inserted = ns.insert_article(c, it, _ext(), fetched_at=NOW, tickers=[("ZZA", "lookup", listed["ZZA"])])
+    assert inserted is True
     assert _scalar(db, "SELECT canonical_url FROM news.article WHERE article_id=:a", a=aid) == "https://cafef.vn/a-1.chn"
     assert _scalar(db, "SELECT primary_source || '|' || feed || '|' || published_at_src || '|' || group_from_feed::text || '|' || ticker_step_ran::text FROM news.article WHERE article_id=:a", a=aid) == "cafef|x|feed|3|true"
     assert _scalar(db, "SELECT version FROM news.article_revision WHERE article_id=:a", a=aid) == 1
@@ -70,22 +71,37 @@ def test_insert_article_writes_four_tables_and_second_time_is_seen(db):
 
 
 def test_decide_merge_url_merge_title_and_new(db):
+    # I3: title dùng khoá chuẩn hoá 32 ký tự ("vnindexgiamdiemmanhphienchieunay") — >= TITLE_MIN_CHARS nên vẫn dedupe.
     with db.begin() as c:
-        aid = ns.insert_article(c, _item("https://cafef.vn/a-2.chn", title="VN-Index tăng 25 điểm"), _ext(), fetched_at=NOW, tickers=[])
+        aid, inserted = ns.insert_article(c, _item("https://cafef.vn/a-2.chn", title="VN-Index giảm điểm mạnh phiên chiều nay"), _ext(), fetched_at=NOW, tickers=[])
+    assert inserted is True
     with db.connect() as c:
         seen = ns.Seen.load(c, NOW)
     assert seen.decide(_item("https://cafef.vn/a-2.chn?utm_medium=x"), NOW) == ("merge_url", aid)              # khác URL, cùng canonical
-    assert seen.decide(_item("https://bnews.vn/b/1.html", title="VN-INDEX TĂNG 25 ĐIỂM!", source="bnews"), NOW) == ("merge_title", aid)
-    assert seen.decide(_item("https://bnews.vn/b/2.html", title="VN-Index tăng 25 điểm", pub=NOW - timedelta(hours=49), source="bnews"), NOW)[0] == "new"
+    assert seen.decide(_item("https://bnews.vn/b/1.html", title="VN-INDEX GIẢM ĐIỂM MẠNH PHIÊN CHIỀU NAY!", source="bnews"), NOW) == ("merge_title", aid)
+    assert seen.decide(_item("https://bnews.vn/b/2.html", title="VN-Index giảm điểm mạnh phiên chiều nay", pub=NOW - timedelta(hours=49), source="bnews"), NOW)[0] == "new"
     assert seen.decide(_item("https://bnews.vn/b/3.html", title="Tin hoàn toàn khác", source="bnews"), NOW) == ("new", None)
-    assert seen.decide(_item("https://bnews.vn/b/4.html", title="VN-Index tăng 25 điểm", pub=None, src="unknown", source="bnews"), NOW) == ("merge_title", aid)   # NULL ⇒ fetched_at
-    seen.remember(_item("https://x.vn/n", title="Mới toanh"), 999, NOW)
-    assert seen.decide(_item("https://y.vn/n2", title="mới toanh"), NOW) == ("merge_title", 999)
+    assert seen.decide(_item("https://bnews.vn/b/4.html", title="VN-Index giảm điểm mạnh phiên chiều nay", pub=None, src="unknown", source="bnews"), NOW) == ("merge_title", aid)   # NULL ⇒ fetched_at
+    seen.remember(_item("https://x.vn/n", title="VN-Index giảm điểm mạnh phiên chiều nay khác"), 999, NOW)
+    assert seen.decide(_item("https://y.vn/n2", title="vn-index giảm điểm mạnh phiên chiều nay khác"), NOW) == ("merge_title", 999)
+
+
+def test_title_dedupe_only_when_key_at_least_30_chars(db):
+    # I3 (TITLE_MIN_CHARS=30): khoá 14 ký tự trùng tuyệt đối vẫn KHÔNG gộp (tiêu đề chung chung);
+    # khoá 32 ký tự trùng thì gộp đúng như trước.
+    short = "Giá vàng tăng nhẹ"                              # norm_title == 14 ký tự
+    long_ = "VN-Index giảm điểm mạnh phiên chiều nay"        # norm_title == 32 ký tự
+    assert len(np_.norm_title(short)) == 14 and len(np_.norm_title(long_)) == 32
+    seen = ns.Seen()
+    seen.remember(_item("https://x.vn/short-1", title=short), 111, NOW)
+    seen.remember(_item("https://x.vn/long-1", title=long_), 222, NOW)
+    assert seen.decide(_item("https://x.vn/short-2", title=short), NOW) == ("new", None)
+    assert seen.decide(_item("https://x.vn/long-2", title=long_), NOW) == ("merge_title", 222)
 
 
 def test_add_source_is_idempotent_and_keeps_coverage(db):
     with db.begin() as c:
-        aid = ns.insert_article(c, _item("https://cafef.vn/a-3.chn"), _ext(), fetched_at=NOW, tickers=[])
+        aid, _ = ns.insert_article(c, _item("https://cafef.vn/a-3.chn"), _ext(), fetched_at=NOW, tickers=[])
         assert ns.add_source(c, aid, "bnews", "https://bnews.vn/c/3.html") is True
         assert ns.add_source(c, aid, "bnews", "https://bnews.vn/c/3.html") is False
     assert _scalar(db, "SELECT count(DISTINCT source_name) FROM news.article_source WHERE article_id=:a", a=aid) == 2
@@ -93,11 +109,37 @@ def test_add_source_is_idempotent_and_keeps_coverage(db):
 
 def test_add_revision_appends_version_only_when_content_differs(db):
     with db.begin() as c:
-        aid = ns.insert_article(c, _item("https://cafef.vn/a-4.chn"), _ext("bản một " * 30), fetched_at=NOW, tickers=[])
+        aid, _ = ns.insert_article(c, _item("https://cafef.vn/a-4.chn"), _ext("bản một " * 30), fetched_at=NOW, tickers=[])
         assert ns.add_revision(c, aid, _ext("bản một " * 30), NOW + timedelta(hours=1)) is False
         assert ns.add_revision(c, aid, _ext("bản hai " * 30, title="Sửa tiêu đề"), NOW + timedelta(hours=2)) is True
     assert _scalar(db, "SELECT max(version) FROM news.article_revision WHERE article_id=:a", a=aid) == 2
     assert _scalar(db, "SELECT title FROM news.article_revision WHERE article_id=:a AND version=1", a=aid) == "Tiêu đề A"
+
+
+def test_insert_article_conflict_on_canonical_only_adds_source(db):
+    # C2: hai Item cùng canonical (khác URL thô — vd hai giao dịch song song, --loop + backfill) không được vỡ UNIQUE
+    # và giết cả vòng — ON CONFLICT DO NOTHING, lần thua chỉ add_source, không ghi revision/ticker mới.
+    it1 = _item("https://cafef.vn/a-race.chn?utm_source=rss")
+    it2 = _item("https://cafef.vn/a-race.chn?utm_source=fb", title="Tiêu đề khác nguồn")
+    with db.begin() as c:
+        aid1, ins1 = ns.insert_article(c, it1, _ext(), fetched_at=NOW, tickers=[])
+    with db.begin() as c:
+        aid2, ins2 = ns.insert_article(c, it2, _ext(), fetched_at=NOW, tickers=[])
+    assert ins1 is True and ins2 is False and aid1 == aid2
+    assert _scalar(db, "SELECT count(*) FROM news.article WHERE canonical_url='https://cafef.vn/a-race.chn'") == 1
+    assert _scalar(db, "SELECT count(*) FROM news.article_source WHERE article_id=:a", a=aid1) == 2
+    assert _scalar(db, "SELECT count(*) FROM news.article_revision WHERE article_id=:a", a=aid1) == 1
+
+
+def test_store_refused_dedupes_within_seven_days_and_seen_load_picks_it_up(db):
+    with db.begin() as c:
+        assert ns.store_refused(c, "bnews", "https://bnews.vn/refused-1.html", "<html>x</html>", "too_short", 1) is True
+        assert ns.store_refused(c, "bnews", "https://bnews.vn/refused-1.html", "<html>y</html>", "too_short", 2) is False
+    assert _scalar(db, "SELECT count(*) FROM staging.raw_payload WHERE source='bnews' AND endpoint_key='https://bnews.vn/refused-1.html'") == 1
+    with db.connect() as c:
+        seen = ns.Seen.load(c, NOW)
+    assert "https://bnews.vn/refused-1.html" in seen.refused
+    assert seen.decide(_item("https://bnews.vn/refused-1.html", source="bnews"), NOW) == ("refused_recent", None)
 
 
 def test_tsv_search_unaccented(db):
@@ -138,9 +180,20 @@ def test_store_works_under_etl_role(db):
     with db.begin() as c:
         c.execute(sa.text("SET LOCAL ROLE dlck_etl"))
         listed = ns.load_listed(c)
-        aid = ns.insert_article(c, _item("https://cafef.vn/a-9.chn"), _ext(), fetched_at=NOW, tickers=[("ZZA", "url", listed["ZZA"])])
+        aid, inserted = ns.insert_article(c, _item("https://cafef.vn/a-9.chn"), _ext(), fetched_at=NOW, tickers=[("ZZA", "url", listed["ZZA"])])
+        assert inserted is True
         ns.add_source(c, aid, "bnews", "https://bnews.vn/z/9.html")
         ns.add_revision(c, aid, _ext("khác " * 30), NOW)
         ns.store_list_if_changed(c, "cafef", "u", "t", 1, "text")
         ns.store_refused(c, "cafef", "u2", "<html></html>", "no_container", 1)
     assert _scalar(db, "SELECT count(*) FROM news.article_revision WHERE article_id=:a", a=aid) == 2
+    with db.begin() as c:                          # M10: đường ĐỌC lúc khởi động job cũng phải chạy được dưới role thật (§3.5)
+        c.execute(sa.text("SET LOCAL ROLE dlck_etl"))
+        seen = ns.Seen.load(c, NOW)
+        assert isinstance(seen, ns.Seen)
+        listed2 = ns.load_listed(c)
+        assert "ZZA" in listed2
+        cursor = c.execute(sa.text(
+            "SELECT stats->>'cursor' FROM ops.etl_run WHERE job = :j AND stats->>'cursor' IS NOT NULL"
+            " ORDER BY run_id DESC LIMIT 1"), {"j": "news.backfill_sitemap"}).scalar()
+        assert cursor is None or isinstance(cursor, str)

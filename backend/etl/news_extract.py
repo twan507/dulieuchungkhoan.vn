@@ -68,7 +68,8 @@ RULES: dict[str, Rule] = {
                         ("div.VCSortableInPreviewMode", "figure", "figcaption", "div.detail-relate", "div.c-banner", "div.admzone", "table"),
                         sapo="h2.detail-sapo", sapo_prefix=r"^\(Chinhphu\.vn\)\s*-\s*", time="div.detail-time", time_fmt=("%d/%m/%Y %H:%M",)),
     "tinnhanhck": Rule("div.article__body", "h1.article__header",
-                       ("div.ads_middle", "div[id^=adsWeb_]", "figure.article__avatar", "a.cms-relate", "div.article__tag", "figcaption", "table"),
+                       ("div.ads_middle", "div[id^=adsWeb_]", "figure.article__avatar", "a.cms-relate", "div.article__tag",
+                        "p.imgdesc", "figcaption", "table"),                     # p.imgdesc: chú thích ảnh ngoài figure (đo 2026-09-06: 26/453 bài mở đầu bằng caption)
                        sapo="div.article__sapo", sapo_prefix=r"^\(ĐTCK\)\s*", time="meta.cms-date", time_fmt=("iso",),
                        text_drop=(r"\.\.>>\s*",)),
 }
@@ -117,7 +118,7 @@ def extract(html_text: str, rule: str) -> Extracted:
     if r.time:
         tn = soup.select_one(r.time)
         if tn is not None:
-            published = _parse_time(tn.get("content") if tn.name == "meta" else tn.get_text(" "), r.time_fmt)
+            published = _parse_time((tn.get("content") or "") if tn.name == "meta" else tn.get_text(" "), r.time_fmt)
     for sel in r.drop:                                                     # tầng 2: bỏ boilerplate TRONG container
         for n in container.select(sel):
             n.decompose()

@@ -32,6 +32,10 @@ def test_registry_53_sources_groups_and_slugs():
     tn = {x.feed_slug: x.group_from_feed for x in s if x.kind == "tnck_category"}
     assert tn == {"ck-quoc-te": 2, "chung-khoan": 3, "dau-tu": 1}
     assert nr.sitemap_url(datetime(2026, 9, 5, tzinfo=VN)) == "https://www.tinnhanhchungkhoan.vn/sitemaps/news-2026-9.xml"
+    # C1 (spec §4.6-III): chuyên mục trước, sitemap sau — sitemap chỉ vá lỗ, không được thắng bản có nhóm.
+    assert s[-1].kind == "tnck_sitemap"
+    # M5: url của tnck_sitemap là mẫu {y}-{m} (hằng SITEMAP), không phải literal năm cứng 2026 chép từ feeds.json.
+    assert REG[("tinnhanhck", "tnck_sitemap", "sitemap")].url == nr.SITEMAP
 
 
 def test_registry_refuses_when_counts_drift(tmp_path):
@@ -118,8 +122,10 @@ def test_parse_sitemap_drops_homepage_entry_and_keeps_lastmod():
 
 
 def test_parse_cafef_cbtt_extracts_ticker_and_drops_exchanges():
+    # M2: số chính xác, đếm độc lập với code — grep -oE '/du-lieu/[A-Z0-9]{2,6}-[0-9]+/[^"'"'"' ]*\.chn'
+    #   tests/etl/fixtures/news/list-cafef-cbtt.html | sort -u | wc -l  ⇒ 21
     items = np_.parse_cafef_cbtt((FIX / "list-cafef-cbtt.html").read_text(encoding="utf-8"), _src("cafef", "cafef_cbtt", "cbtt"))
-    assert 15 <= len(items) <= 21 and items[0].canonical_url == "https://cafef.vn/du-lieu/HBC-2970021/hbc-bao-cao-tai-chinh-ban-nien-nam-2026.chn"
+    assert len(items) == 21 and items[0].canonical_url == "https://cafef.vn/du-lieu/HBC-2970021/hbc-bao-cao-tai-chinh-ban-nien-nam-2026.chn"
     assert items[0].ticker_from_url == "HBC" and items[0].rule == "cafef_cbtt" and items[0].published_at is None and items[0].published_at_src == "unknown"
     assert all(it.ticker_from_url not in ("HNX", "HOSE", "UPCOM") for it in items)
     html = '<a href="/du-lieu/HNX-1/x.chn">x</a><a href="/du-lieu/ABC-2/y.chn?utm_source=du-lieu">y</a><a href="/du-lieu/ABC-2/y.chn">y</a>'
@@ -128,8 +134,10 @@ def test_parse_cafef_cbtt_extracts_ticker_and_drops_exchanges():
 
 
 def test_parse_tnck_category_and_bcp_list_unique_article_links():
+    # M2: số chính xác, đếm độc lập với code — grep -oE 'https://www\.tinnhanhchungkhoan\.vn[^"'"'"' >]*-post[0-9]+\.html'
+    #   tests/etl/fixtures/news/list-tnck-chung-khoan.html | sort -u | wc -l  ⇒ 98
     tn = np_.parse_tnck_category((FIX / "list-tnck-chung-khoan.html").read_text(encoding="utf-8"), _src("tinnhanhck", "tnck_category", "chung-khoan", 3))
-    assert 60 <= len(tn) <= 182 and len({i.canonical_url for i in tn}) == len(tn) and all(i.group_from_feed == 3 and i.rule == "tinnhanhck" for i in tn)
+    assert len(tn) == 98 and len({i.canonical_url for i in tn}) == len(tn) and all(i.group_from_feed == 3 and i.rule == "tinnhanhck" for i in tn)
     assert any(i.url.endswith("-post397020.html") for i in tn)
     bcp = np_.parse_bcp_list((FIX / "list-bcp.html").read_text(encoding="utf-8"), _src("baochinhphu", "bcp_list", "chi-dao-dieu-hanh", 1))
     # Brief ước ~102 link, nhưng fixture list-bcp.html thực đo chỉ có 5 href khớp mẫu -102<15 số>.htm (5 bài, mỗi bài lặp href 2 lần -> unique 5).

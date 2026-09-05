@@ -184,6 +184,8 @@ def parse_cafef_cbtt(html_text: str, src: Source) -> list[Item]:
         if cu in out:
             continue
         code = m.group(1)
+        # url = canonical (không phải href thô): href thật kèm ?utm_source=du-lieu — giữ canonical để article_source.url
+        # không mang tham số rác (mọi tham chiếu CBTT của cùng bài đổ về đúng MỘT giá trị url, không lệch theo utm).
         out[cu] = Item("cafef", "cbtt", cu, cu, "", None, None, "unknown", src.group_from_feed, None if code in EXCHANGES else code, "cafef_cbtt")
     if not out:
         raise ParseError("cafef_cbtt: 0 link /du-lieu/")

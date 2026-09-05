@@ -342,13 +342,13 @@ uv run python -m etl news --backfill-sitemap --from 2026-08 [--to 2026-08] [--ma
 
 **Dedupe:** URL thô đã thấy ⇒ bỏ (`seen`); canonical trùng ⇒ `merged_url`, thêm `article_source`; tiêu đề chuẩn hoá (bỏ dấu, đ→d, bỏ tiền tố `(Chinhphu.vn) -`/`(ĐTCK)`/`BNEWS`) trùng trong **48 giờ** ⇒ `merged_title`, thêm `article_source`; còn lại tải bài, bóc, ghi `article` + `article_revision` v1 + `article_source` + `article_ticker`.
 
-**Gắn mã** — lát 8 chạy hai tầng đầu, dừng ở tầng đầu tiên khớp: tầng `url` (CafeF CBTT, loại `HNX`/`HOSE`/`UPCOM`) · tầng `lookup` (regex 3 ký tự in hoa trên tiêu đề + sapo, **bắt buộc** đối chiếu `market.security` `listed`). Tầng 3 (AI + bảng tên thương mại) là lát 9. `ticker_step_ran = true` cho mọi bài nhóm 3, `false` cho nhóm 1–2.
+**Gắn mã** — lát 8 chạy **cả hai** tầng đầu, mỗi tầng một dòng `article_ticker` (`via`) để lát 12 đối chiếu: tầng `url` (CafeF CBTT, loại `HNX`/`HOSE`/`UPCOM`) · tầng `lookup` (regex 3 ký tự in hoa trên tiêu đề + sapo, **bắt buộc** đối chiếu `market.security` `listed`). Tầng 3 (AI + bảng tên thương mại) là lát 9. `ticker_step_ran = true` cho mọi bài nhóm 3, `false` cho nhóm 1–2.
 
 **Bằng chứng:** không lưu HTML bài thành công; `raw_payload` chỉ giữ XML/HTML danh sách khi hash đổi và HTML bài khi bóc bị từ chối (`meta.refused`).
 
 ⚠️ **Chạy `--loop` trong cửa sổ riêng** (giống `ingester`) — tiến trình sống nhiều giờ/ngày liên tục, Ctrl+C dừng sạch, không để dòng `running` treo. Lịch chạy tự động thuộc lát 13 — chưa đăng ký task Scheduler cho `news`. Backfill sitemap ước tính **~1,5 giờ/tháng**.
 
-Test sau lát 8 (2026-09-06): **782 passed, 2 skipped** (+53 so với lát 7b). Hồ sơ: [`docs/90-records/plans/2026-09-05-news-collect/`](../docs/90-records/plans/2026-09-05-news-collect/) (spec · plan · ledger · `measure-news-2026-09-05.txt`).
+Test sau lát 8 (2026-09-06): **791 passed, 2 skipped** (+53 so với lát 7b). Hồ sơ: [`docs/90-records/plans/2026-09-05-news-collect/`](../docs/90-records/plans/2026-09-05-news-collect/) (spec · plan · ledger · `measure-news-2026-09-05.txt`).
 
 ## Lịch chạy (Windows Task Scheduler)
 

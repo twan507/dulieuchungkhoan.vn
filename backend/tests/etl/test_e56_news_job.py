@@ -10,6 +10,7 @@ import sqlalchemy as sa
 
 from etl import news_extract as ne
 from etl import news_job as nj
+from etl import news_parse as np_
 from etl import news_registry as nr
 
 FIX = pathlib.Path(__file__).parent / "fixtures" / "news"
@@ -20,6 +21,31 @@ NAMES = nr.SOURCES
 # phải nằm trong market.security 'listed' để tầng URL (§8 tầng 1) có security_id mà gắn (article_ticker.security_id NOT NULL FK).
 CBTT_TICKERS = ("CIG", "CTD", "DLG", "DRH", "GSP", "HAP", "HBC", "LLM", "NAF", "PDV", "PLP",
                 "SDT", "SGI", "SGP", "SJS", "TCR", "TDH", "VEC", "VPG", "VPH", "YBM")
+
+
+def _it(url, group, pub=None, psrc="unknown"):
+    cu = np_.canonical_url(url)
+    return np_.Item("tinnhanhck", "x", url, cu, "T", None, pub, psrc, group, None, "tinnhanhck")
+
+
+def test_merge_items_ungrouped_never_beats_grouped_regardless_of_order():
+    # C1 (spec §4.6-III), hàm thuần — sitemap (group None) chỉ vá lỗ, không được thắng bản có nhóm, bất kể thứ tự đưa vào.
+    grouped = _it("https://t.vn/a-post1.html", 3)
+    ungrouped = _it("https://t.vn/a-post1.html", None, pub=NOW, psrc="feed")
+    out1 = nj.merge_items([grouped, ungrouped])       # nhóm trước
+    out2 = nj.merge_items([ungrouped, grouped])       # nhóm sau — vẫn phải thắng
+    assert out1["https://t.vn/a-post1.html"].group_from_feed == 3
+    assert out2["https://t.vn/a-post1.html"].group_from_feed == 3
+    # nhóm thắng nhưng thiếu published_at ⇒ mượn published_at/psrc của bản thua (không mất ngày)
+    assert out2["https://t.vn/a-post1.html"].published_at == NOW
+    assert out2["https://t.vn/a-post1.html"].published_at_src == "feed"
+
+
+def test_merge_items_keeps_url_absent_from_the_other_feed():
+    only_grouped = _it("https://t.vn/b-post2.html", 1)
+    only_ungrouped = _it("https://t.vn/c-post3.html", None)
+    out = nj.merge_items([only_grouped, only_ungrouped])
+    assert set(out) == {"https://t.vn/b-post2.html", "https://t.vn/c-post3.html"}
 
 
 def _tag(sel):
@@ -118,7 +144,15 @@ def test_full_cycle_writes_articles_sources_tickers_and_domain_state(clean):
     assert _n(clean, "SELECT count(*) FROM news.article_ticker WHERE via='lookup'") > 0                      # 'HPG' trong bài tổng hợp nhóm 3
     assert _n(clean, "SELECT count(*) FROM news.article WHERE group_from_feed = 3 AND NOT ticker_step_ran") == 0
     assert _n(clean, "SELECT count(*) FROM news.article WHERE group_from_feed IN (1,2) AND ticker_step_ran") == 0
-    assert _n(clean, "SELECT count(*) FROM news.article WHERE feed='sitemap'") > 0                          # cycle 0 có sitemap
+    # C1 (spec §4.6-III): sitemap chỉ vá lỗ — mọi URL sitemap CŨNG có mặt ở trang chuyên mục phải thắng bởi bản chuyên
+    # mục (có nhóm), không phải sitemap. feed='sitemap' chỉ còn lại cho URL sitemap KHÔNG có trong trang chuyên mục —
+    # đếm độc lập bằng cách parse hai fixture ngay trong test (không tái dùng PARSERS của job).
+    cat_html = (FIX / "list-tnck-chung-khoan.html").read_text(encoding="utf-8")           # fixture dùng chung cho cả 3 chuyên mục
+    sm_xml = (FIX / "sitemap-2026-9.xml").read_text(encoding="utf-8")
+    cat_urls = set(re.findall(r"https://www\.tinnhanhchungkhoan\.vn/[^\"'<> ]*-post\d+\.html", cat_html))
+    sm_urls = set(re.findall(r"<loc>(https://www\.tinnhanhchungkhoan\.vn/[^<]*-post\d+\.html)</loc>", sm_xml))
+    only_in_sitemap = sm_urls - cat_urls
+    assert _n(clean, "SELECT count(*) FROM news.article WHERE feed='sitemap' AND group_from_feed IS NULL") == len(only_in_sitemap)
     # đo thật: 53 danh sách khác nhau (source,url), raw_payload trống trước lượt ⇒ CẢ 53 đều "đổi hash" lần đầu —
     # không chỉ 3 báo cbtt/bnews/tinnhanhck (12 dòng) như phác thảo ban đầu; sửa vế truy vấn khớp toàn bộ 8 báo.
     assert _n(clean, "SELECT count(*) FROM staging.raw_payload WHERE source = ANY(ARRAY['cafef','vietstock','vneconomy','vietnambiz','bnews','nguoiquansat','baochinhphu','tinnhanhck']) AND NOT coalesce((meta->>'refused')::bool,false)") == stats["lists_stored"] == 53
@@ -133,10 +167,12 @@ def test_full_cycle_writes_articles_sources_tickers_and_domain_state(clean):
 
 
 def test_title_merge_across_sources_keeps_both_urls(clean):
+    # I3: tiêu đề dùng khoá chuẩn hoá >= TITLE_MIN_CHARS (32 ký tự) — "Cùng một tin lớn" (13 ký tự) không còn dedupe được.
+    TITLE = "VN-Index giảm điểm mạnh phiên chiều nay"
     def get(u, timeout):
         if u.endswith(".rss") or "/rss/" in u:
             n = next(n for n in NAMES if n in u)
-            return 200, (f'<rss><channel><item><title>Cùng một tin lớn</title><link>https://{n}.vn/tin-lon-{n}.htm</link>'
+            return 200, (f'<rss><channel><item><title>{TITLE}</title><link>https://{n}.vn/tin-lon-{n}.htm</link>'
                          f'<pubDate>Sat, 05 Sep 2026 20:00:00 +0700</pubDate></item></channel></rss>'), {}
         return 404, "", {}
     assert nj.run(sources=["cafef", "bnews"], get=get, sleep=lambda s: None, now=NOW) == 0
@@ -147,7 +183,7 @@ def test_title_merge_across_sources_keeps_both_urls(clean):
     def get2(u, timeout):
         st, body, h = get(u, timeout)
         if st == 404 and "tin-lon-cafef" in u:
-            return 200, _page("cafef", "Cùng một tin lớn") * 9, {}
+            return 200, _page("cafef", TITLE) * 9, {}
         return st, body, h
     assert nj.run(sources=["cafef", "bnews"], get=get2, sleep=lambda s: None, now=NOW) == 0
     _, stats, _ = _last(clean)
@@ -174,11 +210,15 @@ def test_refused_extraction_stores_evidence_and_no_article(clean, monkeypatch):
     _, stats, _ = _last(clean)
     assert stats["refused"] == 1 and _n(clean, "SELECT count(*) FROM news.article") == 0
     assert _n(clean, "SELECT meta->>'reason' FROM staging.raw_payload WHERE source='cafef' AND (meta->>'refused')::bool") == "too_short"
+    # Part C (§4.6-VII): cùng URL, lượt 2 — đã từ chối trong 7 ngày ⇒ KHÔNG tải lại, KHÔNG ghi bằng chứng lại.
     def get_short(u, timeout):
         st, b, h = get(u, timeout)
         return (200, "<html>tiny</html>", h) if st == 200 and not u.endswith(".rss") else (st, b, h)
     assert nj.run(sources=["cafef"], get=get_short, sleep=lambda s: None, now=NOW) == 0
-    assert _last(clean)[1]["refused"] == 1 and _n(clean, "SELECT count(*) FROM staging.raw_payload WHERE meta->>'reason'='soft404'") == 1
+    _, stats2, _ = _last(clean)
+    assert stats2["skipped_refused"] == 1 and stats2["new"] == 0 and stats2.get("refused", 0) == 0
+    assert _n(clean, "SELECT count(*) FROM staging.raw_payload WHERE (meta->>'refused')::bool") == 1
+    assert not any("bóc từ chối" in w for w in stats2["warnings"])
 
 
 def test_dry_run_writes_nothing_and_reports_new(clean):
@@ -202,6 +242,17 @@ def test_loop_runs_cycles_until_minutes_and_sleeps_the_remainder(clean, monkeypa
     with clean.connect() as c:
         cycles = [r[0] for r in c.execute(sa.text("SELECT (stats->>'cycle')::int FROM ops.etl_run WHERE job='news.collect' ORDER BY run_id"))]
     assert cycles == [0, 1, 2]
+
+
+def test_loop_minutes_one_stops_after_a_single_cycle_and_never_sleeps_past_it(clean, monkeypatch):
+    # I5: --minutes là TRẦN tổng thời gian, không phải "một vòng + một nhịp đầy". Với minutes=1 (60 s ngân sách),
+    # cycle 0 đã ăn hết ngân sách (đo clock 70 s > 60 s) ⇒ `remaining <= 0` trả về NGAY, không mở vòng 2, không ngủ.
+    # Dãy clock(): t0 · started(vòng 0) · kiểm phút (remaining<=0 ⇒ return trước khi tính-ngủ).
+    monkeypatch.setattr("etl.http_fetch.Fetcher._throttle", lambda self: None)
+    slept, ticks = [], iter([0.0, 0.0, 70.0])
+    assert nj.run(loop=True, minutes=1, get=_fake_get(), sleep=slept.append, now=NOW, clock=lambda: next(ticks)) == 0
+    assert _n(clean, "SELECT count(*) FROM ops.etl_run WHERE job='news.collect'") == 1
+    assert slept == [] and all(s <= 60 for s in slept)
 
 
 def test_ctrl_c_between_cycles_returns_130_without_a_dangling_run(clean, monkeypatch):

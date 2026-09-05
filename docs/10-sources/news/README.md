@@ -322,7 +322,7 @@ Ba trong bốn lỗi này cùng một dạng: **tin vào phần metadata mà ngu
 
 ### 13.4 Đo lại 05/09/2026
 
-Đo lại 2026-09-05 20:15–20:45 VN (thứ 7), trước khi bật lát 8: **47/47 feed sống, trả `200` có item.** Chạy `etl news --dry-run` cùng ngày: **1.769 item/lượt (53 danh sách)**, **12 bài trùng tiêu đề trong cùng lượt**. Chi tiết đầy đủ (encoding, `pubDate`, sitemap, sáu nguồn crawl) nằm trong hồ sơ lát 8: [`measure-news-2026-09-05.txt`](../../90-records/plans/2026-09-05-news-collect/measure-news-2026-09-05.txt).
+Đo lại 2026-09-05 20:15–20:45 VN (thứ 7), trước khi bật lát 8: **47/47 feed sống, trả `200` có item.** Chạy `etl news --dry-run` 2026-09-06 01:21 VN (đêm thứ 7 rạng chủ nhật, sau khi bật lát 8): **1.769 item/lượt (53 danh sách)**, **12 bài trùng tiêu đề trong cùng lượt**. Chi tiết đầy đủ (encoding, `pubDate`, sitemap, sáu nguồn crawl) nằm trong hồ sơ lát 8: [`measure-news-2026-09-05.txt`](../../90-records/plans/2026-09-05-news-collect/measure-news-2026-09-05.txt).
 
 ---
 
