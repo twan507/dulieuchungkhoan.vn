@@ -271,7 +271,7 @@ chuỗi ngày và toàn lịch sử tháng/quý/năm. Hồ sơ: [`docs/90-record
 `scale`, role, cờ, tần suất); `etl/wichart_registry.py` giữ mã của mình (`vn.cpi`, `gold.sjc_buy`, `fx.usd_vnd.central`…)
 và trường thiết kế (lớp tài sản, tiền tệ, `price_type`). `build()` ghép theo `(key, idx)` và raise `RegistryError` khi
 một bên có series mà bên kia không — thêm/bỏ series là sửa **cả hai** chỗ. Series chết (`xang_dau[0]` RON 95, `ncp[1]`,
-20 key Tier X) **không có dòng registry**; series biến mất khỏi module về sau chỉ bị lật `active=false`, không xoá.
+20 key Tier X) **không có dòng registry**; dòng ánh xạ của series biến mất khỏi module bị **xoá đầu lượt** (dòng `indicator`/`asset` giữ nguyên nên observation không mất chủ) — xoá chứ không tắt vì tắt vẫn vỡ `UNIQUE (indicator_id, source)` khi một mã đổi vị trí series (review 2026-09-05). Cột `active` để dành lát 12.
 
 **Chuẩn hoá tại cổng** (`etl/wichart_normalize.py`): epoch parse bằng `Asia/Ho_Chi_Minh` (nửa đêm giờ VN) · neo **đầu kỳ**
 (quý của nguồn neo tháng cuối ⇒ đổi về tháng đầu; năm ⇒ 01-01) · `value = raw × scale` (`Decimal`) · tên series phải khớp
@@ -287,7 +287,7 @@ cho `vn.gdp.real` (`2026-01-01`, hệ số 1,6005 — đổi năm gốc) đượ
 `macro.observation_spliced`, bảng lưu số như nguồn công bố.
 
 **Guard trước giao dịch ghi** (`etl/wichart_guard.py`, `MIN_SAMPLE 20`): key hỏng > 20 % · series sai hình dạng > 5 % ·
-series ngoài dải > 5 % ⇒ `failed`, bằng chứng mọi body vào `raw_payload` với `meta.refused`, exit 1. Tần suất lệch chỉ ghi
+series ngoài dải > 5 % ⇒ `failed`, bằng chứng = body của **các key fetch được** vào `raw_payload` với `meta.refused` (key hỏng không có body để lưu), exit 1. Tần suất lệch chỉ ghi
 `stats.tally.series_freq`. Một series lẻ `band`/`shape` **không** chặn lượt nhưng **không được ghi** — đọc `stats.errors`
 rồi soi rồi chạy `--keys` sau khi hiểu vì sao. **Mốc nước** = ngày VN của lượt, hai dòng `data_domain_state`
 (`macro.indicator`/`wichart` và `asset`/`wichart`), chỉ tiến ở lượt đầy đủ.
