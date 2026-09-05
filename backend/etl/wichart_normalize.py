@@ -11,7 +11,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
-from etl.wichart_registry import BANDS, Series
+from etl.wichart_registry import BANDS, LEVEL_FLOOR, Series
 
 VN = ZoneInfo("Asia/Ho_Chi_Minh")
 QUARTER_END_TO_START = {3: 1, 6: 4, 9: 7, 12: 10}
@@ -90,8 +90,15 @@ def series_points(s: Series, api_series: list[dict]) -> list[Point]:
         pts.append(Point(s.domain, s.code, anchor(day, s.freq), Decimal(str(v)) * s.scale, s.price_type))
     band = BANDS.get(s.unit)
     latest = pts[-1]
-    if band and latest.value != 0 and not (Decimal(str(band[0])) <= abs(latest.value) <= Decimal(str(band[1]))):
-        raise SeriesError("band", f"{s.key}[{s.idx}] giá trị mới nhất {latest.value} ngoài dải {band} ({s.unit})")
+    if band and latest.value != 0:
+        lo, hi = Decimal(str(band[0])), Decimal(str(band[1]))
+        # dải cắt qua 0 (lo < 0, vd "USD", "%") so CÓ DẤU; dải không âm so theo TRỊ TUYỆT ĐỐI như cũ
+        magnitude = latest.value if lo < 0 else abs(latest.value)
+        if not (lo <= magnitude <= hi):
+            raise SeriesError("band", f"{s.key}[{s.idx}] giá trị mới nhất {latest.value} ngoài dải {band} ({s.unit})")
+    floor = LEVEL_FLOOR.get(s.code)
+    if floor is not None and abs(latest.value) < floor:
+        raise SeriesError("band", f"{s.key}[{s.idx}] giá trị mới nhất {latest.value} dưới sàn độ lớn {floor} ({s.unit})")
     if s.domain == "asset" and s.calendar == "trading_days":
         pts = drop_weekend_carry(pts)
     dedup: dict[date, Point] = {}

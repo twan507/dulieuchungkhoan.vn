@@ -30,9 +30,8 @@ def _synthetic(key: str) -> str:
         else:
             lo, hi = wr.BANDS.get(s.unit, (1, 1))
             lo_d, hi_d = Decimal(str(lo)), Decimal(str(hi))
-            # so sánh theo TRỊ TUYỆT ĐỐI: band có thể có lo âm (vd "%": -200..400) — thiếu abs() ở đây
-            # từng chọn nhầm -2000 cho "%" (10 × -200), ngoài dải theo |value| dù điều kiện gốc thấy true
-            v = lo_d * 10 if abs(lo_d * 10) <= hi_d else lo_d
+            # dải cắt qua 0 (USD, %) nay so CÓ DẤU (I2) — chọn điểm giữa dương, xa cả hai biên và mọi LEVEL_FLOOR
+            v = hi_d / 2 if lo_d < 0 else (lo_d * 10 if lo_d * 10 <= hi_d else lo_d)
             raw = float(v / s.scale)
         series.append({"name": name, "unit": unit_doc, "data": [[EPOCH[meta.get("freq", "d")], raw]]})
     return json.dumps({"title": key, "timeArray": [meta.get("freq", "d")], "chart": {"series": series}})

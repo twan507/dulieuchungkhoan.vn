@@ -101,6 +101,22 @@ def test_name_mismatch_freq_mismatch_band_and_bad_anchor_raise_with_reason():
     assert e.value.reason == "shape"
 
 
+def test_band_lower_bound_is_signed_for_usd_and_percent_and_level_floor_catches_lost_scale():
+    # cctm: dải "USD" cắt qua 0 nên |v| luôn đúng chặn dưới — LEVEL_FLOOR bắt việc nguồn làm mất hệ số triệu
+    api_series = [{"name": "Xuất khẩu", "data": [[1785517200000, 53.09548]]},
+                  {"name": "Nhập khẩu", "data": [[1785517200000, 40.0]]},
+                  {"name": "Cán cân thương mại", "data": [[1785517200000, 13.0]]}]
+    with pytest.raises(wn.SeriesError) as e:
+        wn.series_points(REG[("cctm", 0)], api_series)
+    assert e.value.reason == "band"
+    # cpi: dải "%" (-200, 400) — cận dưới có dấu, không phải |v|
+    with pytest.raises(wn.SeriesError) as e:
+        wn.series_points(REG[("cpi", 0)], [{"name": "CPI", "data": [[1785517200000, -250]]}])
+    assert e.value.reason == "band"
+    ok = wn.series_points(REG[("cpi", 0)], [{"name": "CPI", "data": [[1785517200000, -150]]}])
+    assert ok[-1].value == Decimal("-150")
+
+
 def test_real_freq_and_anchor_helpers():
     assert wn.real_freq([0, 86_400_000, 2 * 86_400_000]) == "d"
     assert wn.real_freq([1785517200000, 1782838800000, 1780246800000]) == "m"

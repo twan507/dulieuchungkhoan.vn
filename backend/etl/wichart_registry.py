@@ -169,6 +169,13 @@ BANDS: dict[str, tuple[float, float]] = {
     "JPY/kg": (10, 5e3),
 }
 
+# Sàn độ lớn theo mã (đơn vị gốc) cho series MỨC có dải đơn vị cắt qua 0 — chốt (iii) bắt cả lỗi làm giá trị NHỎ đi.
+LEVEL_FLOOR: dict[str, Decimal] = {
+    "vn.export": Decimal("1e9"), "vn.import": Decimal("1e9"),          # ~5e10 USD/tháng
+    "vn.fdi.registered": Decimal("1e8"), "vn.fdi.realized": Decimal("1e8"),   # ~1e9–1e10 USD
+    "vn.fx_reserves": Decimal("1e10"),                                  # ~8e10 USD
+}
+
 
 def load_doc(md_path: Path = WICHART_MD) -> tuple[dict, list[str]]:
     """Trả (WICHART, TIER_X) từ khối Python cuối cùng của tài liệu nguồn."""
