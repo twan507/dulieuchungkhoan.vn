@@ -42,7 +42,7 @@ def test_keep_of_snapshot_leaves_out_every_field_computed_from_price():
 
 def test_keep_of_valuation_takes_the_forecast_block_and_drops_the_sector_list():
     got = sn.keep("valuation", _item("A32-valuation.json"))
-    assert got["riskFreeRate"] == 0.04337
+    assert "riskFreeRate" not in got                         # jitter theo lãi suất TPCP — đo AC5 2026-09-05
     assert got["recommendMethod"] == "PE"
     assert got["rtd7"] == 33937.05626397
     assert got["rtq180"] == -25807827544.0
@@ -97,3 +97,14 @@ def test_hash_is_stable_across_key_order():
     item = _item("A32-dividend.json")
     reordered = {k: item[k] for k in reversed(list(item))}
     assert sn.keep_hash("dividend", reordered) == sn.keep_hash("dividend", item)
+
+
+def test_valuation_hash_ignores_risk_free_rate_which_moves_with_the_bond_market():
+    """AC5 lát 4 (2026-09-05): 4/4 mã đổi `riskFreeRate` 0.04337 → 0.04569 trong khi giá cổ phiếu chưa đổi
+    ⇒ jitter theo thị trường, cùng họ `rtd35`/`vnIndexEquityRisk` đã loại. Spec §4.3: bỏ khỏi KEEP, không nới ngưỡng."""
+    item = _item("A32-valuation.json")
+    before = sn.keep_hash("valuation", item)
+    item["valuationStock"]["riskFreeRate"] = 0.04569
+    assert sn.keep_hash("valuation", item) == before
+    item["valuationStock"]["rtd7"] = 33937.05626397 + 1        # trường dự phóng thật đổi thì hash PHẢI đổi
+    assert sn.keep_hash("valuation", item) != before

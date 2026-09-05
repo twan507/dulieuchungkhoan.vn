@@ -23,7 +23,9 @@ KEEP_PERIOD = ("year", "quarter", "rtq44", "rtq137", "rqq41")
 KEEP = {
     "dividend": ("cashDividendPayouts", "cashDividendPlans", "dps", "dividendPayoutRatio", "eps"),
     "valuation": ("estimatedEPS", "forecastEPS", "estimatedBookValue", "forcastBookValue",
-                  "riskFreeRate", "recommendMethod", "rtd7", "rtq180", "outstandingShare"),
+                  "recommendMethod", "rtd7", "rtq180", "outstandingShare"),
+    # `riskFreeRate` bỏ khỏi hash 2026-09-05 (AC5 lát 4): 4/4 mã đổi 0.04337 → 0.04569 trong khi giá chưa đổi —
+    # lãi suất TPCP đổi theo thị trường, cùng họ rtd35/vnIndexEquityRisk. Payload vẫn lưu TRỌN khi có đổi thật.
     "ownership": ("majorShareHolders", "boardOfDirectors", "overviewChartData",
                   "majorOwnershipsChartData"),
 }
