@@ -159,7 +159,10 @@ def test_parse_sitemap_bnews_drops_home_photo_video_by_regex():
 
 def test_parse_sitemap_nguoiquansat_day_file_with_image_extension():
     # Fixture cắt từ sitemap-article-2026-09-05.xml (đo 2026-09-06): không có phần tử trang chủ, có <image:image>, giảm dần.
-    items = np_.parse_sitemap((FIX / "sitemap-nguoiquansat-2026-09-05.xml").read_text(encoding="utf-8"), _src("nguoiquansat", "sitemap", "sitemap", None))
+    items = np_.parse_sitemap(
+        (FIX / "sitemap-nguoiquansat-2026-09-05.xml").read_text(encoding="utf-8"),
+        _src("nguoiquansat", "sitemap", "sitemap", None),
+    )
     assert len(items) == 5
     assert items[0].url.endswith("-du-kien-hoat-dong-nam-2027-314422.html") and items[0].published_at == datetime(2026, 9, 5, 23, 48, 1, tzinfo=VN)
     assert items[4].url.endswith("-cho-khach-hang-mua-nha-314417.html") and items[4].published_at == datetime(2026, 9, 5, 23, 4, 1, tzinfo=VN)
