@@ -22,7 +22,7 @@ Bảng job sau lát:
 
 | Job | Lượt trọn/ngày | Lượt `--intraday` | Lời gọi/lượt intraday |
 |---|---|---|---|
-| `etl yahoo` | cửa sổ 400 ngày, 54 mã | cửa sổ **5 ngày**, 54 mã, nhịp **30 phút**, 24/7 | 54 (~3 phút với giãn cách trung bình 3 s) |
+| `etl yahoo` | cửa sổ 400 ngày, 54 mã | cửa sổ **5 ngày**, 54 mã, nhịp **10 phút**, 24/7 *(chủ dự án nâng từ 30 → 10 phút tối 05/09 sau khi đo A2: 216 lời gọi/16 phút sạch, tương đương một lượt mỗi 4 phút)* | 54 (~3 phút với giãn cách trung bình 3 s) |
 | `etl binance` | 40 nến, 11 mã | **`limit=3`**, 11 mã, nhịp **5 phút**, 24/7 | 11 (~35 s) |
 | `etl wichart` | 68 key | **47 key tần suất ngày** (43 `hang_hoa` + `dhtg`, `lsdh`, `lslnh`, `lshd`), nhịp **5 phút**, 24/7 | 47 (~2,4 phút) |
 | `etl fred` | trọn chuỗi, 14 series | — (2 lượt/ngày, D3) | — |
@@ -52,8 +52,8 @@ Không đăng ký task, lịch thuộc lát 13 (D6). Lát này chỉ làm cho jo
 
 | # | Giả định | Cách đo | Nếu sai |
 |---|---|---|---|
-| A2 | Yahoo chịu **54 lời gọi mỗi 30 phút, giãn cách 1–5 s** | 4 lượt × 54 **nối đuôi** (216 lời gọi/~11 phút — nặng hơn nhịp kế hoạch, sạch thì nhịp 30 phút an toàn a fortiori; chủ dự án chọn đo nén thay vì chờ 2 giờ), 0 lỗi HTTP ⇒ "mức này an toàn" (§4.3 CLAUDE.md), không dò ngưỡng | hạ nhịp 60 phút, ghi vào bảng nhịp cho lát 13 |
-| A4 | WiChart chịu **47 key × 12 lượt/giờ** (~13.500 lời gọi/ngày; đã đo 90 lời gọi liên tiếp sạch 05/09 sáng) | 6 lượt × 47 nối đuôi (282 lời gọi/~14 phút — gấp đôi nhịp 5 phút) | hạ nhịp 15 phút |
+| A2 | ~~Yahoo chịu 54 lời gọi mỗi 30 phút~~ ✅ **đo 2026-09-05 17:20–17:36**: 4 lượt × 54 nối đuôi = **216 lời gọi/16 phút, 216/216 `200`, 0 lỗi, không header rate-limit, TB 81 ms** ([`measure-yahoo-load`](measure-yahoo-load-2026-09-05.jsonl)) — tương đương một lượt mỗi 4 phút, nặng hơn nhịp 10 phút đã chốt. **Chưa đo tổng ngày** (10 phút × 24 giờ ≈ 7.800 lời gọi/ngày): giới hạn theo ngày nếu có chỉ lộ khi lát 13 chạy thật, `ops.etl_run` sẽ thấy `429`/`failed` | hạ về 30 phút — đổi một số trong bảng lịch lát 13 |
+| A4 | ~~WiChart chịu 47 key × 12 lượt/giờ~~ ✅ **đo 2026-09-05 17:20–17:39**: 6 lượt (94 + 61 + 47 × 3 lời gọi) = **296 lời gọi/19 phút, 296/296 `200`, 0 lỗi, TB 75 ms, `hit-cached` 43 %** ([`measure-wichart-load`](measure-wichart-load-2026-09-05.jsonl)) — gấp đôi nhịp 5 phút. Tổng ngày (~13.500) chưa đo, cùng lưu ý như A2 | hạ nhịp 15 phút |
 | A5 | Nến Yahoo đang chạy trong cửa sổ 5 ngày **đổi `close` giữa hai lời gọi trong phiên** và ngày sàn không đổi | **không đo được thứ 7** (mọi sàn trong danh sách đóng). **Chủ dự án chốt tối 05/09: coi là đúng** (nến live FX và `regularMarketPrice` các mã khác đều tươi trong cùng phép đo); xác nhận bằng AC3 đầu tuần — trợ lý không ghi "đã đo" | không có nến live cho chỉ số ⇒ chỉ FX/Binance có trong ngày; D1 vẫn đúng |
 | A7 | FX Yahoo cuối tuần: nến "thứ 7" hẹp (`CAD=X` 09-05) là dòng hợp lệ trong `ohlc_daily` (giá thật, nguồn tự ghi) | quan sát sau lượt thật thứ 7/chủ nhật | nếu tầng đọc thấy nhiễu: lọc theo `calendar` ở tầng đọc, không xoá ở ETL |
 
@@ -142,7 +142,7 @@ Thời gian một lượt với trung bình 3 s: Yahoo 54 ≈ 2,7 phút · Binan
 | `yahoo_fetch.fetch_all` | `INTRADAY_WINDOW_DAYS = 5`: `period1 = now − 5·86400` khi `intraday`; 400 ngày khi thường; `BACKFILL_PERIOD1` khi backfill |
 | `binance_fetch._fetch_with` | `INTRADAY_LIMIT = 3` khi `intraday`, `DAILY_LIMIT = 40` khi thường |
 | `fred_fetch`/`fx_fetch`/`lbma_fetch.fetch_all` | nhận `intraday` và bỏ qua (`supports_intraday=False` chặn từ `run`) |
-| `wichart_job.run(keys, dry_run, intraday=False, get, sleep, rng=None)` | `intraday` ⇒ `series = [s for s in registry if s.freq == 'd']` (47 key); `keys` và `intraday` cùng lúc ⇒ `RuntimeError` trước fetch; guard **có** (không phải `subset`); `stats["intraday"] = True`; **không** `upsert_domain_state`, **không** `stats["watermark"]`; `store_payload_if_changed` vẫn chạy (payload WiChart nhỏ, luật lát 6) |
+| `wichart_job.run(keys, dry_run, intraday=False, get, sleep, rng=None)` | `intraday` ⇒ `series = [s for s in registry if s.freq == 'd']` (47 key); `keys` và `intraday` cùng lúc ⇒ `RuntimeError` trước fetch; guard **có** (không phải `subset`); `stats["intraday"] = True`; **không** `upsert_domain_state`, **không** `stats["watermark"]`; `store_payload_if_changed` **không** chạy ở lượt intraday (47 key × 288 lượt/ngày × ~30 KB là đúng cái lát 7 đã bỏ — ruling khi viết plan, 05/09 tối; lượt trọn hằng ngày vẫn lưu) |
 
 ### 5.4 Nến đang chạy vào kho — hai luật bỏ, một luật giữ
 
@@ -170,7 +170,7 @@ Y lát 7: `raw_payload` chỉ khi từ chối; `ops.etl_run` mỗi lượt intra
 |---|---|---|
 | `binance --intraday` | 5 phút, 24/7 | `binance` trọn 07:15 (nến UTC đóng 07:00) |
 | `wichart --intraday` | 5 phút, 24/7 | `wichart` trọn 1 lượt/ngày, khung cố định **08:30** (giả định nạp trước 08:00 của lát 6 — chưa đo, chỉ ảnh hưởng vĩ mô) |
-| `yahoo --intraday` | 30 phút, 24/7 | `yahoo` trọn 1 lượt/ngày 11:00 (cửa sổ 400 ngày vá lỗ) — ràng buộc "sau 11:00 vì DXY" hết hiệu lực nhưng giờ này vẫn tiện |
+| `yahoo --intraday` | **10 phút**, 24/7 (chủ dự án chốt tối 05/09; không chia tuần/cuối tuần) | `yahoo` trọn 1 lượt/ngày 11:00 (cửa sổ 400 ngày vá lỗ) — ràng buộc "sau 11:00 vì DXY" hết hiệu lực nhưng giờ này vẫn tiện |
 | `fred` | 05:00 và 20:00 | chuỗi ngày sau 16:15 New York; báo cáo tháng 08:30 New York = 19:30 VN |
 | `fx` (ECB) · `lbma` | 22:30 | fixing 14:15 CET · 15:00/12:00 London |
 
