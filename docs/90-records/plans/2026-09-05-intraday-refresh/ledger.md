@@ -63,3 +63,21 @@ Mọi lượt dưới `ETL_DATABASE_URL` (role `dlck_etl`), kho production, 2026
 - **Trục Spec ❌** chỉ vì C1 (lỗ của spec §2.1: chỉ đo trạng thái trong ngày) và I4 (đã sửa). Mọi mục khác khớp, không scope-creep.
 
 **Ruling (C1, chủ dự án 2026-09-05 tối): phương án 1 — chấp nhận, ghi bẫy ở yahoo.md/fx.md/market-data-store.md/spec §2.1·§5.4·§9; không đổi code. Nếu sai: tầng đọc dùng nhầm close lịch sử của .market cho biểu đồ FX — chi phí là một luật đọc, không mất dữ liệu.**
+
+## 4. Trạng thái bàn giao
+
+- Nhánh `feat/intraday-refresh` gộp vào `main` bằng `--no-ff` (**`4f18e6d`**, 2026-09-05 ~20:10); **729 passed, 2 skipped**; migration head `0017` (không migration mới).
+- Kho production: `asset.asset_external_id` yahoo 54 · ecb 7 · fred 3 (+11 indicator); `ohlc_daily` có nến ngày 09-05 đang chạy cho 11 coin, 17 FX `.market` với 400 ngày lịch sử (close lịch sử = giá đầu ngày, Bẫy 4); `fx.usd_cny` thuần ECB 6.819 dòng từ 2000-01-13.
+- **Nợ đầu tuần 07/09:** AC3 nửa Yahoo chỉ số (`etl yahoo --intraday --keys ^N225` hai lần 07:00–13:00 VN) và WiChart giờ làm việc; AC4 đủ ba nguồn; **kiểm dự đoán Bẫy 4** (`fx.usd_eur.market` 09-04 lùi 0,8605 → 0,85997 sau lượt intraday đầu khi London mở).
+- Lịch chạy vẫn thuộc lát 13 (D6); bảng nhịp ở spec §5.7 (Yahoo 10 phút · Binance 5 · WiChart 5, 24/7).
+- Backfill giá (`dlck-price-backfill`): ngắt 18:22 vì 10 mã liên tiếp timeout phía FiinTrade, khởi động lại 20:00:47 từ con trỏ `CTR` (còn 1.257 mã), tự dừng trước 08:45 thứ 2.
+
+## 5. Rulings (toàn bộ, theo thứ tự)
+
+1. Rà tiền kiểm: A4 đã xong lúc viết ledger, số vào spec trước Task 1.
+2. Task 4: close PAXG 09-05 = 4433.56 (fixture) thay 4433.13 (lỗi chép plan) — nếu sai: một literal test.
+3. Task 5: sửa docstring `fred_job`/`fx_job`/`yahoo_job` cùng vòng (rác cùng loại) — nếu sai: ba dòng chú thích.
+4. Khi viết plan: lượt WiChart `--intraday` không lưu body (`store_payload_if_changed`) — nếu sai: lát 12 thiếu body intraday làm bằng chứng; đảo ngược = lưu mẫu 1/12 lượt.
+5. Task 7: không backfill FX Yahoo về 2003 (ngoài AC) — chủ dự án chạy `etl yahoo --backfill` khi cần (~3 phút).
+6. Review toàn nhánh: Minor để lại — `_rng.seen` ở e50 · `noqa F401` rộng · `clock` chết · `--keys`+`--intraday` ở `wichart_job` ném sau `open_run` · e37 assert dải · `INTRADAY_KEYS` cùng predicate — nếu sai: chi phí dọn dẹp nhỏ, không ảnh hưởng dữ liệu.
+7. **C1 (chủ dự án chốt):** phương án 1 — chấp nhận close lịch sử `.market` = giá đầu ngày, ghi thành Bẫy 4, lịch sử FX dùng ECB; không đổi code — nếu sai: tầng đọc phải nhớ một luật đọc; đảo ngược = phương án 2 khi lát 10 cần.
