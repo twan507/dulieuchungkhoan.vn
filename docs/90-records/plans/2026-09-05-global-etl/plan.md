@@ -1317,7 +1317,7 @@ def run(keys=None, dry_run=False, backfill=False, get=None, sleep=time.sleep, no
     return series_job.run(SPEC, keys=keys, dry_run=dry_run, backfill=backfill, get=get, sleep=sleep, now=now)
 ```
 
-- [ ] **Bước 7: chạy xanh** — e44 11/11. Kiểm nhanh `uv run python -m etl fred --help` in được. **Không commit** (controller commit).
+- [x] **Bước 7: chạy xanh** — e44 10/10. Kiểm nhanh `uv run python -m etl fred --help` in được. **Không commit** (controller commit).
 
 ---
 
@@ -2122,7 +2122,7 @@ def bars(s, doc, now) -> list[Bar]:
 
 - [ ] **Bước 6: `yahoo_job.py`** — y `fred_job.py` với `job="global.yahoo"`, `source=yahoo_registry.SOURCE`, `domains=("asset",)`, `guard_mode="ratio"`, `log_name="yahoo"`, `normalize=yahoo_normalize.bars`, **`supports_backfill=True`**.
 
-- [ ] **Bước 7: chạy xanh** — e47 12/12.
+- [x] **Bước 7: chạy xanh** — e47 11/11.
 
 ---
 
@@ -2189,7 +2189,10 @@ def test_seam4_step5_epoch_is_utc_not_vietnam():
 
 
 def test_first_btc_candle_literal_and_shape_stale():
-    assert bn.bars(REG["BTCUSDT"], BTC3, datetime(2017, 8, 21, tzinfo=timezone.utc))[0].open == Decimal("4261.48")
+    # Dải `band` là chốt cho GIÁ TRỊ HIỆN TẠI (bắt lỗi đơn vị); fixture 3 nến 2017 (~4.140) nằm ngoài dải hôm nay
+    # (7.900–800.000) theo đúng thiết kế — nới dải riêng trong test để kiểm phép parse nến đầu, không sửa registry.
+    btc_2017 = dataclasses.replace(REG["BTCUSDT"], band=(Decimal("1000"), Decimal("800000")))
+    assert bn.bars(btc_2017, BTC3, datetime(2017, 8, 21, tzinfo=timezone.utc))[0].open == Decimal("4261.48")
     with pytest.raises(SeriesError) as e:
         bn.bars(REG["PAXGUSDT"], [PAXG[0][:11]], NOW)
     assert e.value.reason == "shape"

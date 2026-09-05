@@ -113,7 +113,7 @@ FRED (15), ECB (6), LBMA (2), **Binance (11)**: một series `failed`/`shape`/`b
 Lát 6 lưu body khi hash đổi vì 68 key × ≤ 730 điểm là rẻ. Ở đây body **trọn chuỗi** FRED (12 MB/lượt, `DFF` đổi mỗi ngày), LBMA (1,8 MB, đổi mỗi ngày), Yahoo 400 nến × 37 — ≈ **15 MB/ngày ≈ 5 GB/năm** trong `staging.raw_payload`, không hợp VPS 60 GB. Thay bằng:
 
 - `raw_payload` **chỉ khi guard từ chối** (`meta.refused`, đủ mọi body của lượt) — y lát 1–5.
-- `stats.changed` + **`stats.changes_sample`**: tối đa 50 dòng `(code, obs_date, giá cũ, giá mới)` — chính là lịch sử vá hồi tố ở dạng gọn (giả định §2.2.3 và bằng chứng `PAYEMS`). `apply` đọc giá cũ bằng CTE trước UPSERT.
+- `stats.changed` + **`stats.changes_sample`**: tối đa 50 dòng `(code, obs_date, giá cũ, giá mới)` — chính là lịch sử vá hồi tố ở dạng gọn (giả định §2.2.3 và bằng chứng `PAYEMS`). `apply` đọc giá cũ bằng một SELECT trong cùng giao dịch ngay trước UPSERT (ruling 2026-09-05: không có ghi đồng thời nên không cần CTE; SELECT bị bỏ qua khi mẫu đã đủ 50 dòng).
 
 **Đảo ngược khi:** cần vintage đầy đủ để backtest ⇒ bảng vintage của bước 4 (đã hoãn có chủ đích), không phải bật lại lưu body.
 
@@ -149,7 +149,7 @@ Cùng khuôn `wichart_fetch.Fetcher` (timeout 30 s, retry 3, backoff 2/4/8, exce
 | FRED | `series/observations?series_id=X&api_key=…&file_type=json` | `200` + JSON có `observations` list. `400` ⇒ **`bad_shape`** (lỗi tham số/khoá, thử lại vô ích — FRED trả lỗi rõ). 🔴 URL/exception **che `api_key`** trước khi vào log hay `stats` (Bẫy 7) | 0,5 s |
 | ECB | `https://api.frankfurter.dev/v1/1999-01-04..?from=USD&to=EUR,JPY,GBP,CAD,SEK,CHF` (host mới, đo hôm nay) | `200` + `rates` dict; `base == 'USD'` | — |
 | LBMA | `json/gold_pm.json` · `json/silver.json` | `200` + list, phần tử có `d` và `v` list | 1 s |
-| Yahoo | `https://query1.finance.yahoo.com/v8/finance/chart/{sym}?period1&period2&interval=1d`, header `User-Agent` của dự án | `200` + `chart.result[0]` có `meta` và `timestamp`; `404` ⇒ `retry` một lần bằng cùng tham số rồi `bad_shape` (Luật 3 yahoo.md) | 1,1 s |
+| Yahoo | `https://query1.finance.yahoo.com/v8/finance/chart/{sym}?period1&period2&interval=1d`, header `User-Agent` của dự án | `200` + `chart.result[0]` có `meta` và `timestamp`; `404` ⇒ **`bad_shape`** ngay — lời gọi đã dùng `period1/period2` (Luật 3) nên `404` là mã chết, đếm vào `shape` (ruling review toàn nhánh 2026-09-05; bản đầu ghi "retry một lần" khiến mã chết rơi vào `failed` với trần 20 %) | 1,1 s |
 | Binance | `api/v3/klines?symbol&interval=1d&limit&timeZone=0[&startTime]` | `200` + list of list 12 phần tử. Đọc `x-mbx-used-weight-1m` sau mỗi lời gọi: ≥ 3.000 ⇒ ngủ 60 s; `429` ⇒ ngủ theo `Retry-After` rồi retry; **`418` ⇒ dừng cả lượt** | 0,3 s |
 
 ### 5.3 `<src>_normalize` — thuần; năm luật thời gian, năm cổng
@@ -158,10 +158,10 @@ Chung: `Point(domain, code, obs_date, value: Decimal, price_type)` cho `observat
 
 | Nguồn | `obs_date` | Giá trị | Cổng độ tươi (`stale`) | Cổng khác |
 |---|---|---|---|---|
-| FRED | `date` ISO (chuỗi tháng đã neo ngày 1 = luật kho) | `value` chuỗi; `"."` ⇒ **bỏ điểm**, không dòng; `Decimal(str) × scale` | `max(obs_date) ≥ hôm nay(UTC) − max_lag_days` theo series (d: 6; dầu `DCOILWTICO` trễ 4 ngày: 10; H.10 `DTWEXBGS`/`DEXCHUS`: 12; **m: 75; `PCEPILFE`: 100** — đo lại 2026-09-05 lúc AC2: `CPIAUCSL` neo 07-01 tới 05/09 là 66 ngày mà CPI tháng 8 ra ~10/09, tức "trễ 45 ngày" của fred.md là ảnh chụp ngày 15/08, trước kỳ công bố kế tiếp độ trễ chạm ~72 ngày; PCE 87 — khớp Phụ lục A) | `count` ≥ số điểm đã có trong kho − 0 (chuỗi không co lại) — chỉ báo, không từ chối |
+| FRED | `date` ISO (chuỗi tháng đã neo ngày 1 = luật kho) | `value` chuỗi; `"."` ⇒ **bỏ điểm**, không dòng; `Decimal(str) × scale` | `max(obs_date) ≥ hôm nay(UTC) − max_lag_days` theo series (d: 6; dầu `DCOILWTICO` trễ 4 ngày: 10; H.10 `DTWEXBGS`/`DEXCHUS`: 12; **m: 75; `PCEPILFE`: 100** — đo lại 2026-09-05 lúc AC2: `CPIAUCSL` neo 07-01 tới 05/09 là 66 ngày mà CPI tháng 8 ra ~10/09, tức "trễ 45 ngày" của fred.md là ảnh chụp ngày 15/08, trước kỳ công bố kế tiếp độ trễ chạm ~72 ngày; PCE 87 — khớp Phụ lục A) | ~~`count` ≥ số điểm đã có~~ — bỏ (review toàn nhánh 2026-09-05: chỉ báo chưa có người đọc, YAGNI) |
 | ECB | khoá ngày của `rates` | `rates[day][ccy]` số ⇒ `Decimal(str)` | ngày cuối ≥ hôm nay − 6 (TARGET nghỉ dài nhất 4 ngày + cuối tuần) | đủ 6 tiền tệ ở ngày cuối; `start_date` đọc từ response, không giả định |
 | LBMA | `d` | `v[idx]` với `idx` = `external_sub` (0 = USD); `null` ⇒ bỏ điểm | `d` cuối ≥ hôm nay − 6 | mảng `v` đúng 3 phần tử; ngày tăng dần |
-| Yahoo | `timestamp[i]` → múi giờ **`meta.exchangeTimezoneName`** → date (13:30 UTC `^GSPC` = 09:30 New York = 09-04) | `open/high/low/close/volume` theo vị trí, `adjclose` → `close_adj`; nến có `close` null ⇒ bỏ | `regularMarketTime ≥ hôm nay − max_lag_days` (mặc định 14, phủ Tết Trung Quốc; `^BCOM` 2020 chết) **và** ≥ 1 nến trong cửa sổ | (a) `dataGranularity == '1d'`; (b) **`instrumentType != 'ALTSYMBOL'`** (đo hôm nay: `quoteType` không còn); (c) `meta.currency` nếu không rỗng phải bằng registry; (d) **bỏ nến cuối chưa đóng**: nến cuối cùng ngày với `regularMarketTime` **và** `regularMarketTime < currentTradingPeriod.regular.end` |
+| Yahoo | `timestamp[i]` → múi giờ **`meta.exchangeTimezoneName`** → date (13:30 UTC `^GSPC` = 09:30 New York = 09-04) | `open/high/low/close/volume` theo vị trí, `adjclose` → `close_adj`; nến có `close` null ⇒ bỏ | `regularMarketTime ≥ hôm nay − max_lag_days` (mặc định 14, phủ Tết Trung Quốc; `^BCOM` 2020 chết) **và** ≥ 1 nến trong cửa sổ | (a) `dataGranularity == '1d'`; (b) **`instrumentType != 'ALTSYMBOL'`** (đo hôm nay: `quoteType` không còn); (c) `meta.currency` nếu không rỗng phải bằng registry; (d) **bỏ nến cuối chưa đóng**: `now < currentTradingPeriod.regular.end` **và** nến cuối nằm trong kỳ đó (`ts[-1] ≥ regular.start`) — so với đồng hồ tường, KHÔNG so `regularMarketTime` (ruling 2026-09-05: `DX-Y.NYB` có `regular.end` 03:59 UTC ngày kế còn `regularMarketTime` đứng ở 16:59 ET, so theo cách cũ sẽ bỏ nến thứ 6 mãi) |
 | Binance | `k[0]` epoch ms mở nến → **date UTC** (`1786752000000` = 2026-08-15, seam 4 bước 5) | `k[1..5]` chuỗi ⇒ `Decimal`, không float | nến đã đóng cuối ≥ hôm nay(UTC) − 2 | 12 phần tử/nến; **bỏ nến có `k[6]` (closeTime) > now** (đo: `limit=40` trả cả nến hôm nay) |
 
 `band` theo series trên **điểm mới nhất** (Phụ lục), so có dấu như lát 6 (`T10Y2Y` âm được). Ngày trong mọi cổng lấy từ đồng hồ tường bơm được (`now=`), không hardcode.
@@ -180,7 +180,7 @@ Chung: `Point(domain, code, obs_date, value: Decimal, price_type)` cho `observat
 
 ### 5.6 Lịch và vận hành
 
-Không đăng ký task. Chạy tay `uv run python -m etl <src>`. Vị trí gợi ý cho bảng lịch lát 13 (giờ VN, chưa đo giờ nạp): `binance` 07:15 (nến UTC đóng 07:00) · `yahoo` 08:00 (phiên Mỹ đóng 03:00–04:00) · `fred` 08:00 (FRED cập nhật ~16:00 St. Louis = 04:00–05:00 VN) · `lbma` 08:00 · `fx` 22:30 (ECB ~16:00 CET = 21:00–22:00 VN). Hằng ngày kể cả cuối tuần cho `binance`; nguồn khác chạy cuối tuần vô hại (`changed = 0`).
+Không đăng ký task. Chạy tay `uv run python -m etl <src>`. Vị trí gợi ý cho bảng lịch lát 13 (giờ VN, chưa đo giờ nạp): `binance` 07:15 (nến UTC đóng 07:00) · `yahoo` **sau 11:00** (phiên Mỹ đóng 03:00–04:00 VN, nhưng `DX-Y.NYB` có `regular.end` 03:59 UTC = 10:59 VN — chạy 08:00 thì nến DXY hôm trước luôn bị coi là đang chạy và vào kho trễ một ngày; review toàn nhánh 2026-09-05) · `fred` 08:00 (FRED cập nhật ~16:00 St. Louis = 04:00–05:00 VN) · `lbma` 08:00 · `fx` 22:30 (ECB ~16:00 CET = 21:00–22:00 VN). Hằng ngày kể cả cuối tuần cho `binance`; nguồn khác chạy cuối tuần vô hại (`changed = 0`).
 
 ## 6. Seam test *(chốt cùng plan — §4.5.2)*
 
