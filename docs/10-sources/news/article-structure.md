@@ -1,6 +1,6 @@
 # Cấu trúc trang bài và luật bỏ boilerplate — 8 nguồn tin
 
-**Loại tài liệu:** tra cứu (reference) · **Ngày đo: 2026-08-15 · mẫu: 4 bài / nguồn** (riêng CafeF thêm 1 trang CBTT) · **Trạng thái** đã kiểm chứng trên mẫu, chưa cài đặt
+**Loại tài liệu:** tra cứu (reference) · **Ngày đo: 2026-08-15 · mẫu: 4 bài / nguồn** (riêng CafeF thêm 1 trang CBTT) · **Trạng thái** đã kiểm chứng trên mẫu · **đã cài đặt lát 8 (2026-09-06)**
 
 Tài liệu này trả lời việc **từng** để ngỏ ở [thiết kế pipeline tin tức](../../20-design/news-pipeline.md) mục 12 và mục 6.5 tầng 2 của [danh mục nguồn tin](README.md) — nguyên văn khi đó: *"luật bỏ boilerplate phải viết riêng cho từng nguồn — chưa khảo sát cấu trúc trang bài"*. Cả hai chỗ nay đã đánh dấu ✅ và trỏ ngược về tài liệu này. Đặc tính feed, encoding và khối lượng cũng nằm ở [danh mục nguồn tin](README.md).
 
@@ -77,8 +77,8 @@ Trong dòng *Đã kiểm*, phần trăm là tỷ lệ ký tự mà tầng 2 lo�
 | **Sapo** | `p.sapo[itemprop=description]` — **nằm ngoài** container chính |
 | **Thời gian** | `span.pdate` — dạng `15-08-2026 - 01:01 AM` |
 | **Tác giả** | `span.author` |
-| **Bẫy riêng** | ① `div.w640.fr.clear` là **tổ tiên** của container chính, không phải anh em: sapo (`p.sapo`) và khối *"Theo Nhịp sống thị trường · Copy link · Link bài gốc"* nằm cùng trong `w640` nhưng ngoài `div.detail-content`. Kiểm trên 4/4 mẫu. Hệ quả: chọn `w640` làm container là dính cả sapo lẫn chân bài; chọn `div.detail-content` thì sạch. ② Ô `div.chisochungkhoan` chèn chuỗi *"VIC: Giá hiện tại Thay đổi Xem hồ sơ doanh nghiệp"* ngay đầu thân bài — chỉ xuất hiện ở bài có gắn mã (1/4 mẫu) |
-| **Đã kiểm** | 4/4 bài — bỏ 1,3% / 3,9% / 4,6% / 6,0%; sạch 1.768–3.535 ký tự; đầu và cuối text đều là câu thật |
+| **Bẫy riêng** | ① `div.w640.fr.clear` là **tổ tiên** của container chính, không phải anh em: sapo (`p.sapo`) và khối *"Theo Nhịp sống thị trường · Copy link · Link bài gốc"* nằm cùng trong `w640` nhưng ngoài `div.detail-content`. Kiểm trên 4/4 mẫu. Hệ quả: chọn `w640` làm container là dính cả sapo lẫn chân bài; chọn `div.detail-content` thì sạch. ② Ô `div.chisochungkhoan` chèn chuỗi *"VIC: Giá hiện tại Thay đổi Xem hồ sơ doanh nghiệp"* ngay đầu thân bài — chỉ xuất hiện ở bài có gắn mã (1/4 mẫu). ③ **Bẫy đo 2026-09-05:** `span.pdate` trả `05-09-2026 - 17:09 PM` — giờ đã ở dạng 24h nhưng vẫn dán nhãn `AM`/`PM`; parse phải dùng `%H` và bỏ qua `%p`, dùng `%I` sẽ vỡ |
+| **Đã kiểm** | 4/4 bài — bỏ 1,3% / 3,9% / 4,6% / 6,0%; sạch 1.768–3.535 ký tự; đầu và cuối text đều là câu thật. Kiểm lại 05/09/2026: container + tiêu đề còn đúng, text sạch 2.975 ký tự |
 
 ### 2.2 CafeF — trang công bố thông tin (CBTT)
 
@@ -92,7 +92,7 @@ Trong dòng *Đã kiểm*, phần trăm là tỷ lệ ký tự mà tầng 2 lo�
 | **Tiêu đề** | `td.text_noibat_cacbaikhac span.cms_blue` |
 | **Sapo / tác giả** | không có |
 | **Bẫy riêng** | ① `<h1>` trên trang này là **tên doanh nghiệp**, không phải tiêu đề tin — lấy `h1` sẽ ra *"Công ty cổ phần Đầu tư Y Tế - Dược phẩm Việt Nam (HOSE)"*. ② Toàn trang bọc trong `<form id="form1">` (ASP.NET WebForms) — bộ bóc nào xoá thẻ `form` sẽ mất sạch nội dung. ③ Nội dung thật nằm trong file PDF; text còn lại chỉ 155 ký tự |
-| **Đã kiểm** | 1/1 trang — 209 → 155 ký tự (bỏ 25,8%), text sạch: *"…thông báo Giấy chứng nhận đăng ký doanh nghiệp thay đổi lần thứ 25 như sau: Các tập tin đính kèm Theo HOSE"* |
+| **Đã kiểm** | 1/1 trang — 209 → 155 ký tự (bỏ 25,8%), text sạch: *"…thông báo Giấy chứng nhận đăng ký doanh nghiệp thay đổi lần thứ 25 như sau: Các tập tin đính kèm Theo HOSE"*. Kiểm lại 05/09/2026: container + tiêu đề còn đúng, text sạch 680 ký tự |
 
 > Xác nhận đúng dự đoán ở [thiết kế](../../20-design/news-pipeline.md) mục 7.1b: CBTT bóc ra **gần rỗng là hợp lệ**, không phải lỗi bộ bóc. Phải đặt `classified_from: "title_only"` cho nhánh này chứ đừng báo động.
 
@@ -105,10 +105,10 @@ Trong dòng *Đã kiểm*, phần trăm là tỷ lệ ký tự mà tầng 2 lo�
 | **Bỏ — phòng thủ** | `div.article-sharing` — 0 node trong container, nhưng **tồn tại ngoài container** (2/trang × 4, nút chia sẻ, rỗng text) |
 | **Tiêu đề** | `h1.article-title` |
 | **Sapo** | `p.pHead` — nằm **trong** thân bài, phải bỏ khỏi `content` |
-| **Thời gian** | `div.meta span.date` — `14/08/2026 19:27` |
+| **Thời gian** | `p.pPublishTimeSource` (`- 19:30 05/09/2026`) — `div.meta span.date` chỉ có giờ tương đối `2 giờ trước` và nằm ngoài container *(đo 2026-09-05; bản 15/08 ghi `span.date`)* |
 | **Tác giả** | `p.pAuthor` |
 | **Bẫy riêng** | ① **Cuộn vô hạn — bẫy chọn container, không phải bẫy bỏ boilerplate.** Mỗi trang có đúng **1 khối** `div.row.scroll-content-sub` chứa **10 link bài khác** cùng chuyên mục, dài 2.354–2.670 ký tự (4/4 mẫu). Khối này **nằm ngoài** `div#vst_detail` — chọn đúng container là nó không bao giờ lọt vào, nên selector này **không có mặt trong danh sách bỏ**. Nhưng chọn container rộng hơn (`div.article-content`, `section#page-content`) là mỗi bản ghi phình thêm ~2,5 K ký tự của bài khác. ② Trang nặng nhất bộ (376–527 KB) do nhúng nhiều iframe biểu đồ. ③ Có modal *"chính sách bảo mật thông tin"* (`div.information-security-policy__modal-text`) chứa ~1.250 ký tự `<p>` — heuristic *"lấy thẻ có nhiều `<p>` nhất"* sẽ chọn nhầm chính cái modal này |
-| **Đã kiểm** | 4/4 bài — bỏ 10,8% / 13,1% / 26,9% / **40,1%**; sạch 672–4.540 ký tự. Tỷ lệ 40,1% ở bài ngắn là do tiêu đề + sapo + chữ ký chiếm phần lớn |
+| **Đã kiểm** | 4/4 bài — bỏ 10,8% / 13,1% / 26,9% / **40,1%**; sạch 672–4.540 ký tự. Tỷ lệ 40,1% ở bài ngắn là do tiêu đề + sapo + chữ ký chiếm phần lớn. Kiểm lại 05/09/2026: container + tiêu đề còn đúng, text sạch 1.275 ký tự |
 
 ### 2.4 VnEconomy
 
@@ -122,7 +122,7 @@ Trong dòng *Đã kiểm*, phần trăm là tỷ lệ ký tự mà tầng 2 lo�
 | **Thời gian** | `time.article-meta__time` — `18:53, 14/08/2026` |
 | **Tác giả** | `div.article-meta__author` — **chuỗi gộp, phải tách; có bài không có tên.** Xem bẫy ① |
 | **Bẫy riêng** | ① `div.article-meta__author` **không phải trường tên tác giả** mà là chuỗi gộp: chữ cái avatar + tên + giờ đăng — `"K Kim Phong 15:21, 14/08/2026"`, `"T Thu Linh 15:00, 14/08/2026"`. Tệ hơn: **1/4 mẫu (`vneconomy_01`) chỉ chứa `"18:53, 14/08/2026"`, không có tên nào.** Luật tách tên phải chịu được ca rỗng và tuyệt đối không lấy giờ làm tên. ② `<p>` chứa **xuống dòng cứng giữa câu** (`"giai đoạn này\nchưa"`) — bắt buộc chuẩn hoá `\s+` → một dấu cách. ③ URL bài **phần lớn không có ID số**, chỉ slug + `.htm`; chỉ một phần có đuôi `-1299966.htm`. Đừng viết luật nhận diện bài dựa vào ID số. ④ Chuỗi "Blog chứng khoán" kết bài bằng đoạn miễn trừ trách nhiệm cố định (*"…mang tính chất cá nhân và không đại diện cho ý kiến của VnEconomy…"*) nằm trong `p.text-justify` **không có class riêng** — chỉ bỏ được bằng luật theo văn bản, không bỏ được bằng selector |
-| **Đã kiểm** | 4/4 bài — bỏ 2,5% / 5,7% / 8,3% / 8,5%; sạch 3.124–5.659 ký tự. Đoạn miễn trừ ở bài blog **vẫn còn** trong text sạch — ghi nhận là hạn chế đã biết |
+| **Đã kiểm** | 4/4 bài — bỏ 2,5% / 5,7% / 8,3% / 8,5%; sạch 3.124–5.659 ký tự. Đoạn miễn trừ ở bài blog **vẫn còn** trong text sạch — ghi nhận là hạn chế đã biết. Kiểm lại 05/09/2026: container + tiêu đề còn đúng, text sạch ≈4.400 ký tự |
 
 ### 2.5 VietnamBiz
 
@@ -136,7 +136,7 @@ Trong dòng *Đã kiểm*, phần trăm là tỷ lệ ký tự mà tầng 2 lo�
 | **Thời gian** | `span.vnbcba-time.time-detail` — `18:27 \| 14/08/2026`, có ký tự `\|` ở giữa |
 | **Tác giả** | `p.author` — có bài kèm nguồn dịch: *"Khải Nguyên (Theo Bloomberg)"* |
 | **Bẫy riêng** | ① Bốn tiền tố class rất giống nhau và **dễ nhầm**: `vnbcb-` (khung bài) · `vnbcbc-` (nội dung bài) · `vnbcba-` (meta) · `vnbcbcbs-` (tag). Sai một chữ là chọn nhầm khối — bản đầu của chính tài liệu này ghi `div.vnbcbc-relate` trong khi class thật là **`div.vnbcbc-relate-box`** (3 node/trang ở 3/4 mẫu), và nó **nằm ngoài** `div.vnbcbc-body` nên không cần bỏ. Tag thật là `div.vnbcbcbs-tags` / `div.box-tag-detail`, cũng ngoài container. ② `div.vnbcb-author` chứa giờ + nút "Chia sẻ" chứ **không** chứa tên tác giả — tên nằm ở `p.author` |
-| **Đã kiểm** | 4/4 bài — bỏ 0,0% / 0,6% / 2,3% / 3,5%; sạch 2.024–3.999 ký tự. **Nguồn sạch nhất bộ**: thân bài gần như chỉ có `<p>` |
+| **Đã kiểm** | 4/4 bài — bỏ 0,0% / 0,6% / 2,3% / 3,5%; sạch 2.024–3.999 ký tự. **Nguồn sạch nhất bộ**: thân bài gần như chỉ có `<p>`. Kiểm lại 05/09/2026: container + tiêu đề còn đúng, text sạch ≈3.445 ký tự |
 
 ### 2.6 BNews
 
@@ -149,8 +149,8 @@ Trong dòng *Đã kiểm*, phần trăm là tỷ lệ ký tự mà tầng 2 lo�
 | **Sapo** | `div.lr-summary-post` — bỏ luôn nhãn `BNEWS` ở đầu |
 | **Thời gian** | **không có trong thân trang** ở cả 4 mẫu — `time#currentDate` là *ngày hôm nay của server*, không phải giờ đăng. Lấy giờ đăng từ `pubDate` của RSS |
 | **Tác giả** | `div.lr-author` — dạng `Văn Giáp/Bnews/vnanet.vn` |
-| **Bẫy riêng** | ① **Bẫy nặng nhất bộ: BNews chạy hai template song song trong cùng một chuyên mục.** Ở template A, đoạn văn nằm trong `<p>` bình thường. Ở template B, **đoạn văn là text node trần còn `<p>` rỗng chỉ làm dấu ngắt**. Đo trên 4 mẫu (sau khi bỏ boilerplate) — xem bảng ngay dưới. Hệ quả: bộ bóc gom `find_all('p')` trả **0 ký tự** cho 2/4 bài và chỉ 24% cho bài thứ ba, **không báo lỗi lần nào**. Phải duyệt text node, không duyệt `<p>` — và đừng dựa vào một bài mẫu để kết luận nguồn này "ổn". ② Có **HTML comment `<!--lr-ct-->`** ngay đầu container — xem mục 3.1 để biết cách bóc nào rò và cách nào không. ③ **Trang bài là UTF-8, khác feed.** Feed RSS của BNews đúng là UTF-16LE (100 null byte/200 byte đầu, [README](README.md) mục 6.1) nhưng cả 4 trang bài đều trả `charset=utf-8` và **không có null byte nào**. Đừng đem luật `iconv` của feed áp cho trang bài — làm thế là hỏng toàn văn |
-| **Đã kiểm** | 4/4 bài — bỏ 7,2% / 8,7% / 13,0% / 15,7%; sạch 1.572–3.712 ký tự; đầu text sạch chuỗi `lr-ct`, cuối text sạch chữ ký `.../Bnews/vnanet.vn` |
+| **Bẫy riêng** | ① **Bẫy nặng nhất bộ: BNews chạy hai template song song trong cùng một chuyên mục.** Ở template A, đoạn văn nằm trong `<p>` bình thường. Ở template B, **đoạn văn là text node trần còn `<p>` rỗng chỉ làm dấu ngắt**. Đo trên 4 mẫu (sau khi bỏ boilerplate) — xem bảng ngay dưới. Hệ quả: bộ bóc gom `find_all('p')` trả **0 ký tự** cho 2/4 bài và chỉ 24% cho bài thứ ba, **không báo lỗi lần nào**. Phải duyệt text node, không duyệt `<p>` — và đừng dựa vào một bài mẫu để kết luận nguồn này "ổn". ② Có **HTML comment `<!--lr-ct-->`** ngay đầu container — xem mục 3.1 để biết cách bóc nào rò và cách nào không. ③ **Trang bài là UTF-8, khác feed.** Feed RSS của BNews đúng là UTF-16LE (100 null byte/200 byte đầu, [README](README.md) mục 6.1) nhưng cả 4 trang bài đều trả `charset=utf-8` và **không có null byte nào**. Đừng đem luật `iconv` của feed áp cho trang bài — làm thế là hỏng toàn văn. ④ **Đo 2026-09-05:** tiêu đề trang bài ở dạng tổ hợp rời (NFD, không phải NFC) — chuẩn hoá NFC trước khi dùng làm khoá dedupe |
+| **Đã kiểm** | 4/4 bài — bỏ 7,2% / 8,7% / 13,0% / 15,7%; sạch 1.572–3.712 ký tự; đầu text sạch chuỗi `lr-ct`, cuối text sạch chữ ký `.../Bnews/vnanet.vn`. Kiểm lại 05/09/2026: container + tiêu đề còn đúng, text sạch 2.958 ký tự |
 
 **Hai template BNews — đo trên container đã bỏ boilerplate:**
 
@@ -175,7 +175,7 @@ Ba hành vi khác nhau trên 4 bài của **cùng một feed, cùng một ngày*
 | **Thời gian** | `span.sc-longform-header-date` — `14/08/2026 - 21:20`, có bài dùng `14/08/2026 19:26` (không có gạch nối) |
 | **Tác giả** | `span.sc-longform-header-author` |
 | **Bẫy riêng** | ① `div.sc-hightlight-box` là **văn xuôi hợp lệ** nhưng là nền tiểu sử doanh nghiệp lặp lại giữa nhiều bài — để lại thì vừa tốn token vừa làm hỏng dedupe theo nội dung. ② Toàn bộ metadata nằm **trong** `article.entry`; quên bỏ `sc-longform-header` là mỗi bài dính thêm ~250–435 ký tự trùng sapo. ③ Có `div.c-author-page` ở cuối trang ghi *"Theo Kiến thức Đầu tư"* — nguồn gốc bài, ngoài container chính |
-| **Đã kiểm** | 4/4 bài — bỏ 9,2% / 13,8% / 17,1% / **24,9%**; sạch 2.540–5.658 ký tự. Tỷ lệ bỏ cao nhất nhì bộ |
+| **Đã kiểm** | 4/4 bài — bỏ 9,2% / 13,8% / 17,1% / **24,9%**; sạch 2.540–5.658 ký tự. Tỷ lệ bỏ cao nhất nhì bộ. Kiểm lại 05/09/2026: container + tiêu đề còn đúng, text sạch ≈2.975 ký tự |
 
 ### 2.8 BaoChinhPhu
 
@@ -189,7 +189,7 @@ Ba hành vi khác nhau trên 4 bài của **cùng một feed, cùng một ngày*
 | **Thời gian** | `div.detail-time` — `15/08/2026 06:54` |
 | **Tác giả** | **không có selector riêng.** Tên đứng ở `<p>` cuối cùng của thân bài (*"Đỗ Hương (thực hiện)"*, *"Anh Minh"*, *"Lê Anh"*) — chỉ bỏ được bằng luật theo văn bản |
 | **Bẫy riêng** | ① **HTML comment rò rỉ:** trong container có `<!--bonewsrelation-->`, `<!--eonewsrelation-->`, các mốc `<!--react-text: 118-->` và **ba dấu thời gian đầy đủ** dạng `Sat Aug 15 2026 06:54:00 GMT+0700 (Indochina Time) -- …`. Hàm nào duyệt mọi `NavigableString` sẽ nhét cả đống này vào cuối `content`, vì `Comment` của BeautifulSoup **là** lớp con của `NavigableString`. Regex `<[^>]+>` thì tình cờ thoát trên mẫu này — xem mục 3.1 để biết vì sao đó không phải chỗ dựa. ② Chuỗi timezone đổi ngôn ngữ giữa các bài: `(Indochina Time)` và `(Giờ Đông Dương)`. ③ Trang nặng 337–342 KB dù thân bài chỉ 3,6–6,7 K ký tự |
-| **Đã kiểm** | 4/4 bài — bỏ 8,8% / 9,3% / 9,3% / 19,1%; sạch 3.644–6.671 ký tự. Sau khi loại comment, cuối text chỉ còn dòng tên tác giả |
+| **Đã kiểm** | 4/4 bài — bỏ 8,8% / 9,3% / 9,3% / 19,1%; sạch 3.644–6.671 ký tự. Sau khi loại comment, cuối text chỉ còn dòng tên tác giả. Kiểm lại 05/09/2026: container + tiêu đề còn đúng, text sạch 1.578 ký tự |
 
 ### 2.9 TinnhanhCK
 
@@ -202,8 +202,8 @@ Ba hành vi khác nhau trên 4 bài của **cùng một feed, cùng một ngày*
 | **Sapo** | `div.article__sapo.cms-desc` — có tiền tố `(ĐTCK) ` |
 | **Thời gian** | `time.time` — `14/08/2026 18:51`; bản máy đọc ở `meta.cms-date[itemprop=datePublished]` |
 | **Tác giả** | `a.cms-author` (*"Thạch Bắc tổng hợp"*); `p.author` là bản có tiền tố *"Tác giả "* |
-| **Bẫy riêng** | ① Bài dạng tổng hợp *"Thị trường tài chính 24h"* kết mỗi mục bằng `..>>` + `<a class="cms-relate">Chi tiết</a>`. Bỏ thẻ `a` rồi thì **chuỗi `..>>` vẫn còn** vì nó là text node đứng trước — cần thêm luật văn bản dọn `\.\.>>\s*`. ② Đây là dạng bài *nhiều tin trong một*, nội dung trộn vàng, ngoại tệ, dầu, bitcoin, chứng khoán Mỹ/Á — cắt trần 3–4 K ký tự sẽ cắt mất phần chứng khoán Việt nằm cuối. ③ Nguồn nhẹ nhất bộ (94–101 KB/trang) và **sạch nhất về nội dung**: 3/4 bài không bị bỏ một ký tự nào — các selector có khớp node nhưng đều là khối quảng cáo rỗng text |
-| **Đã kiểm** | 4/4 bài — bỏ 0,0% / 0,0% / 0,0% / 0,5%; sạch 2.452–6.359 ký tự |
+| **Bẫy riêng** | ① Bài dạng tổng hợp *"Thị trường tài chính 24h"* kết mỗi mục bằng `..>>` + `<a class="cms-relate">Chi tiết</a>`. Bỏ thẻ `a` rồi thì **chuỗi `..>>` vẫn còn** vì nó là text node đứng trước — cần thêm luật văn bản dọn `\.\.>>\s*`. ② Đây là dạng bài *nhiều tin trong một*, nội dung trộn vàng, ngoại tệ, dầu, bitcoin, chứng khoán Mỹ/Á — cắt trần 3–4 K ký tự sẽ cắt mất phần chứng khoán Việt nằm cuối. ③ Nguồn nhẹ nhất bộ (94–101 KB/trang) và **sạch nhất về nội dung**: 3/4 bài không bị bỏ một ký tự nào — các selector có khớp node nhưng đều là khối quảng cáo rỗng text. ④ **Đo 2026-09-05, sitemap:** `meta.cms-date[itemprop=datePublished]` trên trang là giờ đăng thật; `lastmod` của sitemap tháng ([README §5.2](README.md)) là giờ **SỬA** bài, không phải giờ đăng — ETL lấy giờ trang, `lastmod` chỉ để dự phòng |
+| **Đã kiểm** | 4/4 bài — bỏ 0,0% / 0,0% / 0,0% / 0,5%; sạch 2.452–6.359 ký tự. Kiểm lại 05/09/2026: container + tiêu đề còn đúng, text sạch 4.371 ký tự |
 
 ---
 
@@ -338,6 +338,8 @@ Cấu trúc trang sẽ đổi. Ba tín hiệu phát hiện sớm, thêm vào b�
 | **Selector container chết** | Đếm tỷ lệ bài `classified_from = "title_only"` theo nguồn. Với CafeF CBTT đó là mức nền bình thường; với 7 nguồn còn lại, vọt lên là container đổi tên class |
 | **Selector bỏ boilerplate chết** | Theo dõi `content_chars` trung bình theo nguồn theo tuần. Tăng đột ngột nghĩa là một khối rác quay lại. Mốc nền đo 15/08/2026 ở mục 2 |
 | **Bóc dính bài khác** (Vietstock cuộn vô hạn) | Cảnh báo khi `content_chars` vượt 2 lần trung vị của chính nguồn đó |
+
+**Lát 8 (2026-09-06):** ETL đếm số bài `refused` theo lý do (`no_container` / `no_title` / `too_short` / `soft404`) mỗi lượt, cảnh báo khi tỷ lệ từ chối > 5%. HTML bài chỉ lưu vào `raw_payload` khi bị từ chối — bài bóc thành công không giữ HTML thô (news-pipeline §9.2).
 
 ---
 

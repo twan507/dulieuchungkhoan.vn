@@ -10,7 +10,7 @@
 
 **Đang có:** [`agent/skills/`](agent/skills/) — hai skill sản phẩm `vn-stock-advisor` · `vn-stock-knowledge` (3.046 dòng, đã test 6 vòng). ⚠️ **Trước khi sửa bất cứ gì trong đó, bắt buộc đọc [`docs/30-skills/maintenance.md`](../docs/30-skills/maintenance.md).** `agent/` sau này chứa luôn system prompt và glue function-calling.
 
-**Trạng thái phần code** *(2026-09-05 — năm job REST `screener` · `events` · `price` · `snapshot` · `fundamentals` từ 2026-09-04, thêm job `etl wichart` (vĩ mô · tiền tệ · hàng hoá WiChart → `macro.observation` + `asset.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-05-wichart-macro-etl/)), và **năm job quốc tế** `etl fred` · `fx` · `lbma` · `yahoo` · `binance` từ 2026-09-05 chiều ([hồ sơ lát 7](../docs/90-records/plans/2026-09-05-global-etl/)), mỗi job một mục dưới)*: `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)) · job `etl screener` (52 trang `GetScreenerItems` → `market.screener_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-screener-daily-etl/)) · job `etl events` (sáu họ `Calendar/GetCorporate*` → `market.corporate_event`, [hồ sơ](../docs/90-records/plans/2026-09-03-events-daily-etl/)) · job `etl price` (`getPriceData` trang 1 mọi cổ phiếu niêm yết + backfill có con trỏ → `market.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-price-daily-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
+**Trạng thái phần code** *(2026-09-06 — năm job REST `screener` · `events` · `price` · `snapshot` · `fundamentals` từ 2026-09-04, job `etl wichart` (vĩ mô · tiền tệ · hàng hoá WiChart → `macro.observation` + `asset.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-05-wichart-macro-etl/)), **năm job quốc tế** `etl fred` · `fx` · `lbma` · `yahoo` · `binance` từ 2026-09-05 chiều ([hồ sơ lát 7](../docs/90-records/plans/2026-09-05-global-etl/)), và job **`etl news`** (47 feed RSS + 6 nguồn crawl HTML → `news.*`, không AI, dedupe URL + tiêu đề 48 giờ, gắn mã tầng 1–2, `--loop`, `--backfill-sitemap` TinnhanhCK) từ 2026-09-06 ([hồ sơ lát 8](../docs/90-records/plans/2026-09-05-news-collect/)), mỗi job một mục dưới)*: `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)) · job `etl screener` (52 trang `GetScreenerItems` → `market.screener_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-screener-daily-etl/)) · job `etl events` (sáu họ `Calendar/GetCorporate*` → `market.corporate_event`, [hồ sơ](../docs/90-records/plans/2026-09-03-events-daily-etl/)) · job `etl price` (`getPriceData` trang 1 mọi cổ phiếu niêm yết + backfill có con trỏ → `market.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-price-daily-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
 
 ---
 
@@ -324,6 +324,31 @@ uv run python -m etl wichart --intraday          # 47 key tần suất ngày (fr
 **Năm luật thời gian, năm cổng — không dùng chung:** FRED `"."` = thiếu ⇒ không dòng, `max_lag` theo series (ngày 6 · dầu 10 · H.10 12 · tháng **75** · PCE 100 — chuỗi tháng trước kỳ công bố kế trễ tới ~72 ngày, đo 05/09) · ECB ngày cuối phải đủ 7 tiền tệ · LBMA `v[0]` = USD, `null` bỏ, ngày phải tăng · Yahoo `dataGranularity == '1d'`, **`instrumentType != 'ALTSYMBOL'`** (`quoteType` đã biến mất 2026-09-05), `regularMarketTime` ≥ now − 14 ngày, `currency` khớp registry (rỗng thì bỏ qua — `^MERV`), ngày nến theo **múi giờ sàn** *(luật cũ "bỏ nến cuối khi `now < currentTradingPeriod.regular.end`" gỡ hẳn từ lát 7b, 2026-09-05 — nến đang chạy vào kho, dedupe theo ngày sàn)* · Binance nến theo **UTC** của giờ mở, giá chuỗi ⇒ `Decimal` *(luật cũ "bỏ nến có `closeTime > now`" cũng gỡ hẳn từ lát 7b)*, `x-mbx-used-weight-1m ≥ 3000` ⇒ nghỉ 60 s, `418` dừng cả lượt.
 
 🔴 **Khoá FRED nằm trong URL** — `http_fetch.Fetcher` chỉ giữ **tên lớp** exception (không `str(e)`), `fred_fetch.redact` che khoá trước khi log, `httpx` bị hạ xuống WARNING; test `test_transport_error_message_never_contains_the_api_key` pin điều này, AC8 lát 7 grep log/stats/evidence ra 0.
+
+## Chạy job news (tin tức)
+
+```bash
+uv run python -m etl news                                  # một lượt: 47 feed RSS + 6 nguồn crawl HTML → news.*, dedupe URL + tiêu đề 48h, gắn mã tầng 1–2
+uv run python -m etl news --dry-run                         # fetch + chuẩn hoá + dedupe, KHÔNG ghi gì; in stats
+uv run python -m etl news --sources cafef,vietstock         # lượt con theo nguồn (danh sách phân tách bằng dấu phẩy)
+uv run python -m etl news --loop [--minutes N]              # vòng lặp chạy tay, mặc định 5 phút/vòng, sitemap TinnhanhCK mỗi 3 vòng;
+                                                             # mỗi vòng một etl_run news.collect; Ctrl+C dừng sạch (đóng sổ "dừng tay")
+uv run python -m etl news --backfill-sitemap --from 2026-08 [--to 2026-08] [--max-minutes N] [--stop-before-open]
+                                                             # job news.backfill_sitemap: sitemap TinnhanhCK, tháng đi lùi, con trỏ tháng,
+                                                             # mỗi bài một giao dịch, cầu chì 10 bài liên tiếp hỏng, hạn giờ kiểm sau MỌI URL
+```
+
+**Đọc `stats`:** lượt thường `items / new / seen / merged_url / merged_title / refused / articles_failed / warnings / stale_feeds`; backfill sitemap `cursor / months_done / budget_hit`.
+
+**Dedupe:** URL thô đã thấy ⇒ bỏ (`seen`); canonical trùng ⇒ `merged_url`, thêm `article_source`; tiêu đề chuẩn hoá (bỏ dấu, đ→d, bỏ tiền tố `(Chinhphu.vn) -`/`(ĐTCK)`/`BNEWS`) trùng trong **48 giờ** ⇒ `merged_title`, thêm `article_source`; còn lại tải bài, bóc, ghi `article` + `article_revision` v1 + `article_source` + `article_ticker`.
+
+**Gắn mã** — lát 8 chạy hai tầng đầu, dừng ở tầng đầu tiên khớp: tầng `url` (CafeF CBTT, loại `HNX`/`HOSE`/`UPCOM`) · tầng `lookup` (regex 3 ký tự in hoa trên tiêu đề + sapo, **bắt buộc** đối chiếu `market.security` `listed`). Tầng 3 (AI + bảng tên thương mại) là lát 9. `ticker_step_ran = true` cho mọi bài nhóm 3, `false` cho nhóm 1–2.
+
+**Bằng chứng:** không lưu HTML bài thành công; `raw_payload` chỉ giữ XML/HTML danh sách khi hash đổi và HTML bài khi bóc bị từ chối (`meta.refused`).
+
+⚠️ **Chạy `--loop` trong cửa sổ riêng** (giống `ingester`) — tiến trình sống nhiều giờ/ngày liên tục, Ctrl+C dừng sạch, không để dòng `running` treo. Lịch chạy tự động thuộc lát 13 — chưa đăng ký task Scheduler cho `news`. Backfill sitemap ước tính **~1,5 giờ/tháng**.
+
+Test sau lát 8 (2026-09-06): **782 passed, 2 skipped** (+53 so với lát 7b). Hồ sơ: [`docs/90-records/plans/2026-09-05-news-collect/`](../docs/90-records/plans/2026-09-05-news-collect/) (spec · plan · ledger · `measure-news-2026-09-05.txt`).
 
 ## Lịch chạy (Windows Task Scheduler)
 

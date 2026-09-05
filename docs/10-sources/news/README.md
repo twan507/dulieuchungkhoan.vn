@@ -1,6 +1,6 @@
 # Nguồn tin chứng khoán — danh mục và đặc tính kỹ thuật
 
-**Loại tài liệu:** tra cứu (reference) · **Đo ngày** 13/08/2026 · **cấu trúc trang bài** 15/08/2026 · **Trạng thái** đã kiểm chứng, chưa cài đặt
+**Loại tài liệu:** tra cứu (reference) · **Đo ngày** 13/08/2026 · **cấu trúc trang bài** 15/08/2026 · **Trạng thái** đã kiểm chứng · **đã cài đặt lát 8 (2026-09-06)**
 
 Mọi con số ở đây đo bằng `curl` trên 307 URL ứng viên và 1.408 tiêu đề đã đọc thật. Không có số nào là ước lượng.
 
@@ -117,6 +117,7 @@ Lưu ý:
 - Loại `HNX`, `HOSE`, `UPCOM` — đó là sở giao dịch tự công bố số liệu, không phải cổ phiếu
 - Dedupe thêm theo (mã + tiêu đề): có tin trùng nội dung nhưng khác ID, ví dụ `HNX-2951892` và `HNX-2951895` cùng tiêu đề
 - Tiêu đề lấy từ HTML nên dính rác (ký tự xuống dòng, chữ thừa) — phải làm sạch
+- Link kèm `?utm_source=du-lieu` — bỏ tham số này khi chuẩn hoá URL *(đo 2026-09-05)*
 
 ### 5.2 TinnhanhCK — sitemap tháng
 
@@ -138,6 +139,11 @@ Bù lại sitemap tốt hơn RSS:
 - File xếp theo thứ tự thời gian, bài mới nằm cuối → chỉ cần đọc phần đuôi mới thêm
 - Phải dùng `curl --compressed` (sitemap gzip)
 
+**Ba phát hiện đo lại 2026-09-05** (lùi tới **2015-06**, 1.414 URL; 2020-09 có 2.167, 2024-01 có 1.750, 2026-09 có 245 tính tới 05/09):
+- **Phần tử đầu tiên của mỗi file tháng là URL trang chủ**, `lastmod` của nó là giờ sinh file (đọc chương trình phải bỏ)
+- 🔴 **`lastmod` là giờ SỬA bài, không phải giờ đăng.** Bài `…-post397051.html` có `lastmod 2026-09-05T20:39:34+07:00` nhưng `meta.cms-date` trên trang = `2026-09-05T09:18:48+0700` — ETL lấy giờ trang làm `published_at`, `lastmod` chỉ để dự phòng
+- File tháng lẫn vài bài đầu tháng kế; phần còn lại (sau phần tử trang chủ) xếp tăng dần theo `lastmod`
+
 Sitemap cho URL + giờ đăng nhưng **không cho chuyên mục**. Ghép với 3 trang chuyên mục dưới đây theo post ID trong URL:
 
 | Trang | Nhóm mặc định |
@@ -156,6 +162,8 @@ https://baochinhphu.vn/chi-dao-dieu-hanh.htm
 
 Nhóm mặc định 1, sub `1b`. Phải crawl HTML vì **RSS của mục này chết từ tháng 6/2014** — trang HTML vẫn có bài 2026 bình thường.
 
+*(đo 2026-09-05)* Trang trả **5 link bài/lần tải** — URL dạng `-102YYMMDDHHMMSS…htm`. Số "102 link bài" ghi ở lượt đo chiều 05/09 là do regex lỏng tính cả link chuyên mục; con số đúng khi lọc đúng link bài là 5.
+
 ---
 
 ## 6. Quy tắc chuẩn hoá
@@ -172,16 +180,22 @@ Nhóm mặc định 1, sub `1b`. Phải crawl HTML vì **RSS của mục này ch
 >
 > **Cách kiểm đúng:** đếm null byte trong ~100 byte đầu. Trên 10 thì là UTF-16, bằng 0 thì là UTF-8. Và khi convert phải dùng `UTF-16LE` chứ không phải `UTF-16` — cái sau đoán big-endian và trả ra ký tự rác.
 
+*(đo 2026-09-05)* **BNews trang bài** trả tiêu đề ở dạng tổ hợp rời (NFD, không phải NFC) — ETL phải chuẩn hoá NFC trước khi dùng làm khoá dedupe.
+
 ### 6.2 Thời gian đăng
 
 | Nguồn | Định dạng | Xử lý |
 |---|---|---|
-| **VietnamBiz** | **`<pubDate>` RỖNG hoàn toàn** — cả 30 thẻ đều trống, không có thẻ thời gian nào khác | Bắt buộc lấy từ URL: `202681312363179` = `YYYY` + `M` + `DD` + `HHMMSS` + serial |
+| **VietnamBiz** | **`<pubDate>` RỖNG hoàn toàn** *(đo 13/08/2026)* — cả 30 thẻ đều trống, không có thẻ thời gian nào khác | Bắt buộc lấy từ URL: `202681312363179` = `YYYY` + `M` + `DD` + `HHMMSS` + serial |
 | BaoChinhPhu | `M/D/YYYY h:mm:ss AM/PM` | **Không có timezone** → giả định +07. URL cũng nhúng giờ: `102` + `YYMMDD` + `HHMMSS` + serial |
 | TinnhanhCK | ISO 8601 `+07:00` trong sitemap | dùng trực tiếp |
 | Còn lại | RFC 822 | dùng trực tiếp |
 
 > **Bẫy chết người:** `pubDate` rỗng đưa qua hàm parse ngày thường trả về **thời điểm hiện tại** thay vì lỗi. Nghĩa là VietnamBiz sẽ luôn trông như vừa cập nhật, kể cả khi feed đã chết. Phải coi giá trị rỗng là *không xác định*, không phải *bây giờ*. Xem thêm mục 10.
+
+*(đo 2026-09-05)* **VietnamBiz nay CÓ `pubDate`**, dạng phi chuẩn `Fri, 04 Sep 2026 18:48:27 GMT+7` (`GMT+7` thay vì offset số) — bản đo 13/08 còn ghi rỗng. Luật lấy giờ từ URL vẫn giữ làm dự phòng cho những feed/bài chưa có `pubDate`. Tiêu đề feed VietnamBiz cũng mang entity HTML (`&#224;`…) — phải unescape trước khi dùng làm khoá dedupe.
+
+*(đo 2026-09-05)* Luật giám sát "`pubDate` bài đầu > 7 ngày" ([thiết kế §10](../../20-design/news-pipeline.md)) bắt được đúng ca thật: feed `vietstock/741/chung-khoan/niem-yet` im **18 ngày** (bài đầu 2026-08-18); `vietstock/742/hang-hoa/kim-loai` im 5 ngày.
 
 **Không bao giờ lấy giờ crawl làm giờ đăng.** WiData mắc đúng lỗi này: trường `time` của họ là giờ ingest chứ không phải giờ đăng, lại còn gắn hậu tố `Z` trong khi giá trị là giờ Việt Nam. Hệ quả là bài từ tháng 6 bị hiển thị "1 giờ trước".
 
@@ -305,6 +319,10 @@ Lý do: RSS chỉ giữ 20–50 bài mới nhất. Feed nào ra tin nhiều thì
 | CafeF CBTT ghi ~200 tin/ngày — suy sai từ một cụm dồn buổi sáng. Thực tế ~75 | 5.1, 9.2 |
 
 Ba trong bốn lỗi này cùng một dạng: **tin vào phần metadata mà nguồn tự khai** thay vì kiểm bằng dữ liệu. Giống hệt bẫy `lastBuildDate` và bẫy slug đã gặp trước đó.
+
+### 13.4 Đo lại 05/09/2026
+
+Đo lại 2026-09-05 20:15–20:45 VN (thứ 7), trước khi bật lát 8: **47/47 feed sống, trả `200` có item.** Chạy `etl news --dry-run` cùng ngày: **1.769 item/lượt (53 danh sách)**, **12 bài trùng tiêu đề trong cùng lượt**. Chi tiết đầy đủ (encoding, `pubDate`, sitemap, sáu nguồn crawl) nằm trong hồ sơ lát 8: [`measure-news-2026-09-05.txt`](../../90-records/plans/2026-09-05-news-collect/measure-news-2026-09-05.txt).
 
 ---
 

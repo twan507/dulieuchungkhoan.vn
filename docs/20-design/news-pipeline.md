@@ -1,6 +1,6 @@
 # Thiết kế pipeline gom và phân loại tin chứng khoán
 
-**Loại tài liệu:** thiết kế (explanation) · **Phiên bản** v3 · **Chốt ngày** 13/08/2026 · **Trạng thái** đã duyệt, chưa cài đặt
+**Loại tài liệu:** thiết kế (explanation) · **Phiên bản** v3 · **Chốt ngày** 13/08/2026 · **Trạng thái** đã duyệt · **đã cài đặt lát 8 (2026-09-06, phần không AI)**
 
 Tài liệu này ghi **lựa chọn của dulieuchungkhoan.vn**: kiến trúc xử lý, taxonomy 20 sub, quy tắc phân loại, cách gắn mã cổ phiếu, lược đồ kho. Phần *nguồn tin có gì và cư xử thế nào* — 47 feed, 6 crawler, encoding, khối lượng đo được — nằm ở [danh mục nguồn tin](../10-sources/news/README.md).
 
@@ -211,6 +211,8 @@ Postgres tự nén cột `text` lớn qua TOAST nên con số thực tế còn t
 
 ### 9.3 Bản ghi
 
+*Bản ghi thật = migration `0007` (5 bảng); các trường AI (`summary_ai`, `group`, `sub`, `confidence`, `classified_from`, `content_chars`) để NULL tới lát 9. Tiêu đề lưu ở `article_revision.title` là tiêu đề feed (khoá dedupe), riêng CafeF CBTT là tiêu đề trang.*
+
 ```jsonc
 {
   "id"               : "uuid",
@@ -252,6 +254,8 @@ Postgres tự nén cột `text` lớn qua TOAST nên con số thực tế còn t
 **Không ghi đè.** Báo có sửa bài sau khi đăng. Nếu bóc lại thấy nội dung khác, thêm bản ghi mới với `version` tăng thay vì đè bản cũ. Ghi đè khiến kho lịch sử phản ánh hiện tại chứ không phản ánh quá khứ — mất luôn mục đích tồn tại của nó.
 
 **Ghi `content_fetched_at`** để biết bản text ứng với thời điểm nào.
+
+Lát 8 thực thi dedupe không-AI: URL canonical + tiêu đề chuẩn hoá trong 48 giờ; tải lại bài để bắt bản sửa chưa làm (xét ở lát 12).
 
 ### 9.5 Tìm kiếm trên Postgres
 
@@ -306,6 +310,8 @@ Vì mục đích là tra cứu quá khứ, đừng đợi kho tự tích luỹ. 
 
 Đây là cách duy nhất có dữ liệu trước ngày bật hệ thống, và nó chỉ khả dụng chừng nào họ còn giữ sitemap.
 
+*(đo 2026-09-05)* Sitemap TinnhanhCK lùi tới **2015-06**; phần tử đầu tiên là URL trang chủ, `lastmod` chỉ là giờ sinh file; **`lastmod` là giờ SỬA bài, không phải giờ đăng** — giờ đăng lấy ở `meta.cms-date` trên trang, `lastmod` chỉ để dự phòng.
+
 ### 9.7 Bản quyền
 
 Lưu tiêu đề + link để tham chiếu là một chuyện, lưu toàn văn là chuyện khác. Với kho tra cứu nội bộ dùng riêng thì rủi ro thấp. Nhưng trước khi chia sẻ hay phát hành lại nội dung thì phải xem lại — và nên kiểm tra `robots.txt` của 9 nguồn xem có tuyên bố `Content-Signal` như Stockbiz (`ai-train=no, use=reference`) hay không.
@@ -347,7 +353,7 @@ Lưu tiêu đề + link để tham chiếu là một chuyện, lưu toàn văn l
 
 | Việc | Ghi chú |
 |---|---|
-| **Đo tỷ lệ dedupe thật** | Khối lượng thô đã đo (~570/ngày, mục 13). Còn lại là tỷ lệ trùng giữa 8 nguồn — ước tính ~3,5 lần nhưng chưa kiểm chứng. Đây là số quyết định ngân sách phân loại |
+| **Đo tỷ lệ dedupe thật** | Khối lượng thô đã đo (~570/ngày, mục 13). Còn lại là tỷ lệ trùng giữa 8 nguồn — ước tính ~3,5 lần nhưng chưa kiểm chứng. Đây là số quyết định ngân sách phân loại. 🟡 lát 8 đã có khung đo (`stats` mỗi vòng: `items/new/merged_url/merged_title`); số sau 1–2 ngày `--loop` ghi ở ledger lát 8 |
 | **Danh sách mã niêm yết** | Cần nguồn cập nhật ~1.600 mã HOSE/HNX/UPCoM cho tầng 2 |
 | **Bảng tên thương mại → mã** | Cho tầng 3. Dùng `pg_trgm` để khớp gần đúng |
 | **Ngưỡng `confidence`** | Dưới bao nhiêu thì đưa vào hàng chờ rà tay |
@@ -391,9 +397,9 @@ Theo thứ tự phụ thuộc:
 1. ✅ **Đã khảo sát cấu trúc trang bài của cả 8 nguồn** (2026-08-15) — luật bỏ boilerplate từng nguồn (mục 6.5 tầng 2) nằm ở [cấu trúc trang bài](../10-sources/news/article-structure.md). Còn ngỏ: dạng bài longform/video/bài cũ chưa phủ.
 2. **Chốt nguồn danh sách mã niêm yết** và bảng tên thương mại → mã.
 3. **Chốt mô hình embedding** trước khi bắt đầu nạp dữ liệu.
-4. **Dựng khung thu thập + chuẩn hoá**, chạy không có AI trong 1 tuần để đo tỷ lệ dedupe thật.
+4. **Dựng khung thu thập + chuẩn hoá**, chạy không có AI trong 1 tuần để đo tỷ lệ dedupe thật. ✅ *(lát 8, 2026-09-06 — không AI, `--loop`)*
 5. Có số dedupe rồi mới chốt ngân sách và bật lưới phân loại.
-6. **Backfill lịch sử** từ sitemap TinnhanhCK / BNews / NguoiQuanSat — làm càng sớm càng tốt, dữ liệu đó chỉ còn chừng nào họ còn giữ sitemap.
+6. **Backfill lịch sử** từ sitemap TinnhanhCK / BNews / NguoiQuanSat — làm càng sớm càng tốt, dữ liệu đó chỉ còn chừng nào họ còn giữ sitemap. ✅ *(TinnhanhCK; BNews/NguoiQuanSat: lát 8b)*
 
 ### Cảnh báo cho người triển khai
 
