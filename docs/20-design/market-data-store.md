@@ -755,6 +755,8 @@ Mười ba bẫy đầy đủ: [00-conventions.md](../10-sources/market/00-conve
 
 > Giai đoạn 2 nên chạy sớm nhất có thể. Mọi dữ liệu khác crawl lại lúc nào cũng được, riêng nến intraday **không tồn tại ở bất kỳ nguồn nào** — mỗi ngày chưa thu là một ngày mất vĩnh viễn.
 
+> **2026-09-05 — miền `macro`/`asset` có job đầu tiên:** `python -m etl wichart` nạp 68 key WiChart (53 series vĩ mô/tiền tệ → `macro.observation`, 52 series giá → `asset.price_daily`), registry hai chủ (khối §9 của tài liệu nguồn + bảng mã trong `backend/etl/wichart_registry.py`, lệch là job chết trước khi fetch), UPSERT chỉ-khi-đổi, bằng chứng thô khi hash đổi, một dòng `macro.series_break` cho GDP giá so sánh (`2026-01-01`, hệ số 1,6005). Thiết kế và số đo: [hồ sơ lát 6](../90-records/plans/2026-09-05-wichart-macro-etl/). Bộ giám sát hợp đồng §7.1 nay là **lát 12** của [roadmap](../00-overview/roadmap.md), sau khi đủ mọi nguồn.
+
 ---
 
 ## 9. Định hướng nghiên cứu — thích ứng nguồn và khả năng thay thế

@@ -10,7 +10,7 @@
 
 **Đang có:** [`agent/skills/`](agent/skills/) — hai skill sản phẩm `vn-stock-advisor` · `vn-stock-knowledge` (3.046 dòng, đã test 6 vòng). ⚠️ **Trước khi sửa bất cứ gì trong đó, bắt buộc đọc [`docs/30-skills/maintenance.md`](../docs/30-skills/maintenance.md).** `agent/` sau này chứa luôn system prompt và glue function-calling.
 
-**Trạng thái phần code** *(2026-09-04 tối — thêm năm job REST `screener` · `events` · `price` · `snapshot` · `fundamentals`, mỗi job một mục dưới)*: `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)) · job `etl screener` (52 trang `GetScreenerItems` → `market.screener_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-screener-daily-etl/)) · job `etl events` (sáu họ `Calendar/GetCorporate*` → `market.corporate_event`, [hồ sơ](../docs/90-records/plans/2026-09-03-events-daily-etl/)) · job `etl price` (`getPriceData` trang 1 mọi cổ phiếu niêm yết + backfill có con trỏ → `market.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-price-daily-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
+**Trạng thái phần code** *(2026-09-05 — năm job REST `screener` · `events` · `price` · `snapshot` · `fundamentals` từ 2026-09-04, thêm job `etl wichart` (vĩ mô · tiền tệ · hàng hoá WiChart → `macro.observation` + `asset.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-05-wichart-macro-etl/)), mỗi job một mục dưới)*: `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)) · job `etl screener` (52 trang `GetScreenerItems` → `market.screener_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-screener-daily-etl/)) · job `etl events` (sáu họ `Calendar/GetCorporate*` → `market.corporate_event`, [hồ sơ](../docs/90-records/plans/2026-09-03-events-daily-etl/)) · job `etl price` (`getPriceData` trang 1 mọi cổ phiếu niêm yết + backfill có con trỏ → `market.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-price-daily-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
 
 ---
 
@@ -254,6 +254,45 @@ rơi vào mã vừa có kỳ mới mà lịch sự kiện sót. Đọc `stats.ta
 **không** nới ngưỡng.
 
 ⚠️ **Chưa đăng ký task Scheduler** — lát 13 (scheduler trong `etl`). Vị trí trong ngày: **sau `events` 18:10 và sau `snapshot`**.
+
+## Chạy job wichart (vĩ mô · tiền tệ · giá hàng hoá WiChart)
+
+```bash
+uv run python -m etl wichart                     # 68 key, 105 series → macro.observation (53) + asset.price_daily (52); registry nạp lại mỗi lượt
+uv run python -m etl wichart --dry-run           # fetch + chuẩn hoá + guard, KHÔNG ghi gì (kể cả registry/raw_payload); in stats
+uv run python -m etl wichart --keys cpi,vang     # lượt con: tập ép, không guard, không đụng data_domain_state; registry vẫn nạp trọn
+```
+
+Một lượt ≈ 68 lời gọi, ~15 giây (đo 2026-09-05: 0 retry). Không có `--backfill`: lượt đầu đã nạp trọn cửa sổ 2 năm của
+chuỗi ngày và toàn lịch sử tháng/quý/năm. Hồ sơ: [`docs/90-records/plans/2026-09-05-wichart-macro-etl/`](../docs/90-records/plans/2026-09-05-wichart-macro-etl/).
+
+**Hai chủ sở hữu của registry, lệch là chết trước khi fetch:** khối Python §9 của
+[`docs/10-sources/macro/wichart.md`](../docs/10-sources/macro/wichart.md) giữ sự thật đo về nguồn (tên series, đơn vị gốc,
+`scale`, role, cờ, tần suất); `etl/wichart_registry.py` giữ mã của mình (`vn.cpi`, `gold.sjc_buy`, `fx.usd_vnd.central`…)
+và trường thiết kế (lớp tài sản, tiền tệ, `price_type`). `build()` ghép theo `(key, idx)` và raise `RegistryError` khi
+một bên có series mà bên kia không — thêm/bỏ series là sửa **cả hai** chỗ. Series chết (`xang_dau[0]` RON 95, `ncp[1]`,
+20 key Tier X) **không có dòng registry**; dòng ánh xạ của series biến mất khỏi module bị **xoá đầu lượt** (dòng `indicator`/`asset` giữ nguyên nên observation không mất chủ) — xoá chứ không tắt vì tắt vẫn vỡ `UNIQUE (indicator_id, source)` khi một mã đổi vị trí series (review 2026-09-05). Cột `active` để dành lát 12.
+
+**Chuẩn hoá tại cổng** (`etl/wichart_normalize.py`): epoch parse bằng `Asia/Ho_Chi_Minh` (nửa đêm giờ VN) · neo **đầu kỳ**
+(quý của nguồn neo tháng cuối ⇒ đổi về tháng đầu; năm ⇒ 01-01) · `value = raw × scale` (`Decimal`) · tên series phải khớp
+§9 (trừ cờ `NAMEWRONG` — `td` nguồn ghi "Tổng tiền gửi" nhưng là tín dụng) · tần suất thật (trung vị khoảng cách) phải
+khớp khai · giá trị mới nhất phải nằm trong dải đơn vị (`BANDS`). **Điểm cuối tuần của asset chỉ bỏ khi là chép lại** của
+điểm liền trước (đo 2026-09-05: vàng thế giới có 123 điểm T7/CN thật vì phiên Mỹ đóng rạng sáng T7 giờ VN, còn `lua`/`gao`
+thì 172/174 điểm cuối tuần là chép lại); macro giữ mọi điểm.
+
+**Ghi:** UPSERT trọn mọi điểm, nhưng `… DO UPDATE … WHERE value IS DISTINCT FROM excluded.value` — dòng không đổi **không
+bị chạm** (`ingested_at` = lúc giá trị hiện tại về); `stats.inserted`/`stats.changed` đếm qua `RETURNING (xmax = 0)`.
+`staging.raw_payload` (`wichart:<key>`) chỉ ghi khi hash response đổi so với dòng gần nhất. Một dòng `macro.series_break`
+cho `vn.gdp.real` (`2026-01-01`, hệ số 1,6005 — đổi năm gốc) được seed mỗi lượt; chuỗi đã nối là view
+`macro.observation_spliced`, bảng lưu số như nguồn công bố.
+
+**Guard trước giao dịch ghi** (`etl/wichart_guard.py`, `MIN_SAMPLE 20`): key hỏng > 20 % · series sai hình dạng > 5 % ·
+series ngoài dải > 5 % ⇒ `failed`, bằng chứng = body của **các key fetch được** vào `raw_payload` với `meta.refused` (key hỏng không có body để lưu), exit 1. Tần suất lệch chỉ ghi
+`stats.tally.series_freq`. Một series lẻ `band`/`shape` **không** chặn lượt nhưng **không được ghi** — đọc `stats.errors`
+rồi soi rồi chạy `--keys` sau khi hiểu vì sao. **Mốc nước** = ngày VN của lượt, hai dòng `data_domain_state`
+(`macro.indicator`/`wichart` và `asset`/`wichart`), chỉ tiến ở lượt đầy đủ.
+
+⚠️ **Chưa đăng ký task Scheduler** — lát 13. Giờ nạp của nguồn chưa đo (giả định trước 08:00 giờ VN); nên xếp **08:15**, chạy cả cuối tuần.
 
 ## Lịch chạy (Windows Task Scheduler)
 

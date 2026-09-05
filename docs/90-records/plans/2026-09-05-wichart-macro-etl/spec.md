@@ -75,7 +75,7 @@ kèm nạp hai registry (`macro.indicator`/`indicator_source`, `asset.asset`/`as
 | **A · upsert `macro.indicator` + `indicator_source` + `asset.asset` + `asset_external_id` ở đầu mỗi lượt từ registry trong repo** ✅ | — chọn: cùng khuôn `load_dictionary` lát 5; sửa hệ số/thêm series = sửa file; idempotent |
 | B · migration seed như ngành `0013` | mỗi lần hiệu chỉnh `scale` hay thêm series là một migration; ngành là quyết định của người, còn registry này là số đo nguồn + mapping kỹ thuật |
 
-Upsert theo khoá tự nhiên: `indicator.code` / `asset.code` (UNIQUE) và `(source, external_key, external_sub)`. **Không xoá** dòng vắng mặt trong file (bảo toàn `indicator_id`/`asset_id` đã có observation trỏ tới); dòng biến mất khỏi registry ⇒ `active=false`. **Đảo ngược khi:** registry cần người duyệt từng dòng như ngành ⇒ chuyển B.
+Upsert theo khoá tự nhiên: `indicator.code` / `asset.code` (UNIQUE) và `(source, external_key, external_sub)`. **Không xoá** dòng `indicator`/`asset` (bảo toàn `indicator_id`/`asset_id` đã có observation trỏ tới). *(Sửa 2026-09-05 sau review toàn nhánh, finding I1:)* dòng **ánh xạ** (`indicator_source`/`asset_external_id`, `source='wichart'`) vắng mặt trong registry hiện tại bị **xoá đầu lượt, trước INSERT** — không lật `active=false` như bản đầu, vì lật vẫn để lại dòng cũ cùng `indicator_id` và một mã đổi vị trí series giữa hai lượt sẽ vỡ `UNIQUE (indicator_id, source)` (reviewer tái hiện thật). Cột `active` để dành lát 12. `stats.registry.removed` đếm số dòng ánh xạ bị xoá. **Đảo ngược khi:** registry cần người duyệt từng dòng như ngành ⇒ chuyển B.
 
 ### 4.2 Mã của mình ở module backend; `scale`/cờ vẫn ở tài liệu nguồn *(câu 2 → a)*
 
@@ -130,7 +130,7 @@ Không `--backfill`, không `--max-minutes`: lượt đầu đã nạp trọn c�
 
 - URL theo `g`: `?name={key}` (vi_mo) / `?key=hang_hoa&name={key}`. Header `Accept-Encoding: gzip`, `User-Agent` mặc định của httpx; không cần `Origin`.
 - Timeout 30 s, retry 3, backoff 2/4/8, exception vận chuyển đi cùng đường với response xấu (bài học `e7f80f6`). Không giãn cách bắt buộc (đo 90 lời gọi liên tiếp sạch) nhưng giữ `MIN_INTERVAL = 0.2` s cho lịch sự.
-- `classify(key, http, text) → ('ok', doc) | ('retry', None) | ('bad_shape', None)`: `ok` khi HTTP 200, JSON hợp lệ, có `chart.series` là list; `retry` khi HTTP ≠ 200 / JSON hỏng / exception; `bad_shape` khi thiếu `chart.series`.
+- `classify(http, text) → ('ok', doc) | ('retry', None) | ('bad_shape', None)` *(code bỏ tham số `key` — không cần cho phân loại)*: `ok` khi HTTP 200, JSON hợp lệ, có `chart.series` là list; `retry` khi HTTP ≠ 200 / JSON hỏng / exception; `bad_shape` khi thiếu `chart.series`.
 - Hết lượt thử ⇒ key đó `failed`, không ghi gì cho key đó, đếm.
 
 ### 5.3 `wichart_normalize` — thuần
@@ -168,9 +168,9 @@ Một series `band` lẻ (ví dụ vàng đột biến) không từ chối cả 
 
 ### 5.5 `wichart_store`
 
-- `load_registry(conn)`: đọc khối §9 + module, upsert 4 bảng, trả `dict[(key, idx)] -> (domain, id, price_type, calendar)`; `active=false` cho dòng có trong DB mà vắng registry.
+- `load_registry(conn, series)`: nhận registry đã `build()`, xoá dòng ánh xạ `wichart` vắng mặt (§4.1 sửa), upsert 4 bảng, trả `(dict[code] -> Resolved(domain, row_id, price_type), stats {macro, asset, removed})` *(chữ ký theo code; bản đầu ghi khoá `(key, idx)` và `active=false`)*.
 - `apply(conn, points)`: `INSERT … ON CONFLICT (pk) DO UPDATE SET value = EXCLUDED.value, ingested_at = clock_timestamp() WHERE t.value IS DISTINCT FROM EXCLUDED.value` — dòng không đổi **không được chạm** (`ingested_at` = lúc giá trị hiện tại về, đúng nghĩa bước 4); `changed` = rowcount của câu lệnh trừ số dòng chèn mới (`inserted` đếm qua `RETURNING (xmax = 0)`). Test pin: chạy lại ⇒ rowcount 0.
-- `series_break` seed: upsert một dòng `(vn.gdp.real, 2026-03-01, 1.6005, 'Đổi năm gốc giá so sánh; trung bình hai ước lượng độc lập 1.6032 / 1.5978 (wichart.md Bẫy 6)', verified_by NULL, verified_at 2026-09-05)` — §9.4.
+- `series_break` seed: upsert một dòng `(vn.gdp.real, **2026-01-01**, 1.6005, 'Đổi năm gốc giá so sánh; trung bình hai ước lượng độc lập 1.6032 / 1.5978 (wichart.md Bẫy 6)', verified_by NULL, verified_at 2026-09-05)` — §9.4. *(Sửa 2026-09-05 khi viết plan: bản đầu chép `2026-03-01` là neo tháng cuối quý **của nguồn**; kho neo đầu kỳ nên Q1/2026 = `01-01`, và view nhân hệ số cho `obs_date < break_date` — xem ruling pre-flight trong [ledger](ledger.md).)*
 - Bằng chứng: `raw_payload` khi hash đổi (§4.4); khi guard từ chối: mọi body của lượt vào `raw_payload` với `meta.refused = reasons` trong giao dịch riêng (y lát 1–5).
 - Mốc nước `data_domain_state.watermark` = ngày VN của lượt (`max(obs_date)` không có nghĩa khi tần suất trộn).
 

@@ -68,7 +68,14 @@ def main(argv: list[str] | None = None) -> int:
         parsed = parser.parse_args(args[1:])
         return etl.fundamentals_job.run(codes=parsed.codes, kinds=parsed.kinds, max_minutes=parsed.max_minutes,
                                         backfill=parsed.backfill, stop_before_open=parsed.stop_before_open)
-    print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener, events, price, snapshot, fundamentals)",
+    if args[0] == "wichart":
+        import etl.wichart_job
+        parser = argparse.ArgumentParser(prog="etl wichart")
+        parser.add_argument("--keys", type=lambda s: [k.strip() for k in s.split(",") if k.strip()])
+        parser.add_argument("--dry-run", action="store_true", dest="dry_run")
+        parsed = parser.parse_args(args[1:])
+        return etl.wichart_job.run(keys=parsed.keys, dry_run=parsed.dry_run)
+    print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener, events, price, snapshot, fundamentals, wichart)",
           file=sys.stderr)
     return 2
 
