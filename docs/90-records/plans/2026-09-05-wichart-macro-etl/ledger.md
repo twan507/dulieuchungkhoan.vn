@@ -53,3 +53,21 @@ Không Critical. 7 Important + 11 Minor; report ở scratchpad, những gì thà
 - Minor hoãn có lý do: phép kiểm tên bất đối xứng (thiết kế, xét khi lát 12 có số); `calendar` vô nghĩa cho macro; `series_points` 7 việc; `open_run` ngoài try/finally (cả họ job); `upsert_domain_state` thiếu test dưới role (e41 phủ hành vi); README "mọi body" — sửa câu chữ ở Task 7; spec §5.2/§5.5 chữ ký lệch code — sửa spec ở Task 7; UA riêng thay vì mặc định httpx — lệch tốt hơn, ghi ở Task 7.
 - Triage minor cũ của reviewer: giữ nguyên các ruling Task 1 (cờ cấp key), Task 4, Task 5 (`ANY(:present)`), Task 6 (`open_run`).
 - Fix wave (Sonnet, commits e9190c4..8d8ccce, 7 commit theo đúng thứ tự I3 → I2 → I1 → I5 → I4 → I6 → M): 639 test xanh (635 + 4), dry-run production `series_ok 105 · band 0 · failed 0`. Implementer báo: I4 không cần sửa code sản xuất (bằng chứng từ chối vốn đúng, chỉ chưa từng chạy); I2 làm lộ cùng lỗi `abs` trong helper `_synthetic` của e41 (đã sửa cùng commit); I6 kiểm chéo `asset.asset code='wti'` = 0 sau khi chạy riêng e41. Chờ re-review có phạm vi.
+- Re-review đợt sửa (Sonnet, e9190c4..8d8ccce): I1–I6 và M đều **ADDRESSED**, không breakage mới; reviewer tự chạy e37, e38 (11), e40+e41 (14), e41+s06 (12) và kiểm bốn rủi ro nêu tên (DELETE lọc `source`, `abs` chỉ cho dải không âm, `_cleanup` lọc theo mã registry, `_synthetic` vẫn đi qua band/floor thật).
+
+## 3. Nghiệm thu trên kho production (credential `ETL_DATABASE_URL`, role `dlck_etl`, 2026-09-05 08:10)
+
+- **AC2** `--dry-run` (07:25, trước đợt sửa; lặp lại sau đợt sửa bởi implementer): `keys 68 · failed 0 · series_ok 105 · shape/freq/band 0 · points 37.625–37.629 · retries 0`.
+- **Bước rẻ trước lượt trọn** (gợi ý reviewer): `--keys cpi` thật ⇒ `registry {macro 53, asset 52, removed 0}`, `inserted 284`, 1 `raw_payload`, `data_domain_state` **0 dòng** (lượt con không đẩy) — registry trọn kiểm dưới `dlck_etl` mà chỉ ghi một series.
+- **AC3** lượt trọn 08:10:51 → 08:11:06 (**15 giây**, 68 lời gọi, 0 retry): `points 37.629 · inserted 37.345 · changed 0 · payloads_stored 67` (67 + 1 của lượt cpi = 68). Kho: `macro.observation` **10.505 dòng / 53 series**, `asset.price_daily` **27.124 dòng / 52 series**; `vn.cpi` 2026-08-01 = **4.45** (= `titleIndex`); `gold.sjc_buy` 2026-09-04 = **145.600.000**; `cotton_us` 2026-09-04 = 0,8242 (nguồn vừa cập nhật 82,42 cent); `vn.gdp.real` mới nhất neo **2026-04-01** = 2.854.515,46 tỷ; `wti` chỉ có `futures`; `data_domain_state` hai dòng `= 2026-09-05`.
+- **AC4** lượt hai 08:11:06 → 08:11:20: `inserted 0 · changed 0 · payloads_stored 0`, `raw_payload` vẫn 68. ✅
+- **AC5** `paddy_vn`: 0 dòng T7/CN trùng giá dòng liền trước (còn 2 dòng cuối tuần có giá khác — giữ đúng); `gold.intl`: 19 dòng thứ 7 có giá khác thứ 6. ✅
+- **AC6** đóng bằng test e41 `test_partial_source_failure…` (20/68 key 503 ⇒ `failed`, 48 dòng bằng chứng `refused=true`) — không ép hỏng trên kho production.
+- **AC7** `observation_spliced` `vn.gdp.real`: 2025-07-01 và 2025-10-01 × 1,6005 (1.694.327,58 → 2.711.771,29 tỷ), **2026-01-01 và 2026-04-01 giữ nguyên**. ✅
+- **AC1** `uv run pytest tests -q` ⇒ **639 passed, 2 skipped, 1 warning** (warning fastapi/httpx deprecation có từ trước). ✅ **AC8**: mọi lượt trên chạy dưới credential production, exit 0.
+
+## 4. Kết luận
+
+AC1–AC8 đóng; review toàn nhánh + 1 đợt sửa có re-review; checklist tài liệu §8 xong (roadmap Lát 6 ✅ + Điểm vào lát 7 + đính chính điểm vào cũ; market-data-store; database/README 639; backend/README mục wichart; 90-records/README; spec §4.1/§5.2/§5.5 theo code; wichart.md ca_tra Tier A + mức tải + cotton). Merge `main`.
+
+**Rulings đã ra trong lát này** (đủ để chủ dự án lật lại): (1) `break_date` GDP = `2026-01-01` (neo đầu kỳ); (2) giãn cách một lần mỗi `fetch_one`; (3) literal năm 2025 trong test tổng hợp; (4) `o.ingested_at` do `0010`; (5) helper `_synthetic` theo `abs`; (6) I1: xoá dòng ánh xạ vắng mặt thay vì tắt, `deactivated` → `removed`; (7) I2: dải cắt qua 0 so có dấu + `LEVEL_FLOOR` 5 mã; (8) I5: trùng ngày khác giá ⇒ `shape`; (9) sáu điểm §9 của spec coi là duyệt theo đề xuất (qua `/goal`), gồm `ca_tra` Tier A, `vai_cotton_my` USD/lb scale 0,01, mọi asset `trading_days`, `verified_by NULL`, bảng mã Phụ lục A/B, `--keys` không guard.
