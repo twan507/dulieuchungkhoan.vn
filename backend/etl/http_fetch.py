@@ -1,17 +1,21 @@
-"""Fetcher chung cho 5 nguồn quốc tế: `get` bơm được (trả (status, text, headers)), `classify` theo nguồn,
+"""Fetcher chung cho mọi nguồn HTTP: `get` bơm được (trả (status, text, headers)), `classify` theo nguồn,
 retry + backoff, exception vận chuyển đi cùng đường với response xấu (bài học lát 3, e7f80f6).
+Từ lát 7b: giãn cách NGẪU NHIÊN đều [1, 5] s trước mỗi lời gọi có lời gọi trước đó trong cùng Fetcher — kể cả
+lần thử lại và trang backfill (D5, spec 7b §4.6-III); `rng` bơm được để test cố định.
 
 ⚠️ Khi exception, `text` là TÊN LỚP exception, không có `str(e)` — `str(e)` của httpx chứa URL, mà URL FRED chứa
 khoá (fred.md Bẫy 7). `label` do nguồn đặt, không được chứa khoá."""
 from __future__ import annotations
 
 import contextlib
+import random
 import time
 
 import httpx
 
 DEFAULT_HEADERS = {"Accept-Encoding": "gzip",
                    "User-Agent": "dulieuchungkhoan.vn/etl (dulieuchungkhoan.official@gmail.com)"}
+GAP = (1.0, 5.0)            # giây, phân bố đều — mô phỏng request thường, tránh dồn cục (brief D5)
 
 
 class FetchError(Exception):
@@ -23,28 +27,26 @@ class BadShape(Exception):
 
 
 class Fetcher:
-    def __init__(self, get, classify, sleep=time.sleep, clock=time.monotonic, min_interval=0.0,
-                 retries=3, backoff=(2, 4, 8), timeout=30.0):
-        self._get, self._classify, self._sleep, self._clock = get, classify, sleep, clock
-        self.min_interval, self.retries, self.backoff, self.timeout = min_interval, retries, backoff, timeout
+    def __init__(self, get, classify, sleep=time.sleep, rng=None, gap=GAP, retries=3, backoff=(2, 4, 8), timeout=30.0):
+        self._get, self._classify, self._sleep = get, classify, sleep
+        self._rng = rng if rng is not None else random.Random()
+        self.gap, self.retries, self.backoff, self.timeout = gap, retries, backoff, timeout
         self.calls = 0
         self.retries_done = 0
         self.last_headers: dict = {}
-        self._last: float | None = None
+        self.gaps: list[float] = []
 
     def _throttle(self) -> None:
-        # Giãn cách MỘT lần mỗi fetch_one — retry đã có backoff lo giãn cách (khuôn wichart_fetch)
-        now = self._clock()
-        if self._last is not None:
-            wait = self.min_interval - (now - self._last)
-            if wait > 0:
-                self._sleep(wait)
-        self._last = self._clock()
+        # Không ngủ trước lời gọi ĐẦU TIÊN của lượt; mọi lời gọi sau (kể cả thử lại) cách lời gọi trước một khoảng ngẫu nhiên
+        if self.calls:
+            g = self._rng.uniform(*self.gap)
+            self.gaps.append(g)
+            self._sleep(g)
 
     def fetch_one(self, url: str, label: str):
-        self._throttle()
         http, text = 0, ""
         for attempt in range(self.retries + 1):
+            self._throttle()
             try:
                 self.calls += 1
                 http, text, self.last_headers = self._get(url, self.timeout)
@@ -63,12 +65,12 @@ class Fetcher:
 
 
 @contextlib.contextmanager
-def open_fetcher(classify, get=None, sleep=time.sleep, clock=time.monotonic, headers=None, **kw):
+def open_fetcher(classify, get=None, sleep=time.sleep, headers=None, rng=None, **kw):
     if get is not None:                            # test tiêm get giả, không mở kết nối
-        yield Fetcher(get, classify, sleep, clock, **kw)
+        yield Fetcher(get, classify, sleep, rng, **kw)
         return
     with httpx.Client(headers={**DEFAULT_HEADERS, **(headers or {})}, follow_redirects=True) as client:  # MỘT client cho trọn lượt
         def get_one(u: str, timeout: float):
             r = client.get(u, timeout=timeout)
             return r.status_code, r.text, dict(r.headers)
-        yield Fetcher(get_one, classify, sleep, clock, **kw)
+        yield Fetcher(get_one, classify, sleep, rng, **kw)

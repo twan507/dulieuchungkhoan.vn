@@ -15,7 +15,6 @@ log = logging.getLogger("etl.binance")
 BASE = "https://api.binance.com/api/v3/klines"
 DAILY_LIMIT = 40
 PAGE = 1000
-MIN_INTERVAL = 0.3
 WEIGHT_PAUSE = 3000
 
 
@@ -60,7 +59,7 @@ def _pause(f, sleep):
 
 def _fetch_with(series, get, sleep, backfill):
     docs, texts, failed = {}, {}, []
-    with open_fetcher(classify, get=get, sleep=sleep, min_interval=MIN_INTERVAL) as f:
+    with open_fetcher(classify, get=get, sleep=sleep) as f:
         for s in series:
             sym = s.external_key
             try:

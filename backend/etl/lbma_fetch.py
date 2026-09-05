@@ -8,7 +8,6 @@ from etl.http_fetch import BadShape, FetchError, open_fetcher
 
 log = logging.getLogger("etl.lbma")
 BASE = "https://prices.lbma.org.uk/json"
-MIN_INTERVAL = 1.0
 
 
 def url(name: str) -> str:
@@ -29,7 +28,7 @@ def classify(http: int, text: str):
 
 def fetch_all(series, get, sleep, backfill):
     docs, texts, failed = {}, {}, []
-    with open_fetcher(classify, get=get, sleep=sleep, min_interval=MIN_INTERVAL, timeout=60.0) as f:
+    with open_fetcher(classify, get=get, sleep=sleep, timeout=60.0) as f:
         for s in series:
             try:
                 docs[s.external_key], texts[s.external_key] = f.fetch_one(url(s.external_key), s.external_key)
