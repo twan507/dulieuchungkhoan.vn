@@ -18,6 +18,8 @@ FIX = pathlib.Path(__file__).parent / "fixtures" / "wichart"
 EPOCH = {"d": 1788454800000, "m": 1785517200000, "q": 1780246800000, "y": 1764522000000}   # 04/09/2026 · 08/2026 · 06/2026 (Q2) · 12/2025, giờ VN
 DOC, _ = wr.load_doc()
 OURS = {(s.key, s.idx): s for s in wr.build()}
+MACRO_CODES = [s.code for s in OURS.values() if s.domain == "macro"]
+ASSET_CODES = [s.code for s in OURS.values() if s.domain == "asset"]
 
 
 def _synthetic(key: str) -> str:
@@ -88,6 +90,12 @@ def _cleanup(engine):
         c.execute(sa.text("DELETE FROM staging.raw_payload WHERE source = 'wichart'"))
         c.execute(sa.text("DELETE FROM ops.etl_run WHERE job = :j"), {"j": ws.JOB})
         c.execute(sa.text("DELETE FROM ops.data_domain_state WHERE source = 'wichart'"))
+        # Registry: dòng ánh xạ trước, rồi indicator_id/asset_id chủ — không thì test khác (vd test_s06_asset
+        # ghi thẳng code='wti') vỡ UNIQUE(code) vì mã của wichart còn sót lại giữa các file test (I6).
+        c.execute(sa.text("DELETE FROM asset.asset_external_id WHERE source = 'wichart'"))
+        c.execute(sa.text("DELETE FROM macro.indicator_source WHERE source = 'wichart'"))
+        c.execute(sa.text("DELETE FROM asset.asset WHERE code = ANY(:codes)"), {"codes": ASSET_CODES})
+        c.execute(sa.text("DELETE FROM macro.indicator WHERE code = ANY(:codes)"), {"codes": MACRO_CODES})
 
 
 def _last_run(engine):
@@ -191,10 +199,11 @@ def test_dry_run_writes_nothing_but_records_the_run(clean, monkeypatch):
     assert status == "success" and stats["dry_run"] is True and stats["tally"]["series_ok"] == 105
     assert _scalar(clean, "SELECT count(*) FROM macro.observation") == 0
     assert _scalar(clean, "SELECT count(*) FROM staging.raw_payload WHERE source='wichart'") == 0
-    # registry không bị _cleanup dập (id ổn định giữa các test) — dry-run không được THÊM dòng nào
-    n_before = _scalar(clean, "SELECT count(*) FROM macro.indicator_source WHERE source='wichart'")
+    # dry-run không gọi load_registry — kho vừa được _cleanup dọn nên phải là 0, không phải "ổn định"
+    assert _scalar(clean, "SELECT count(*) FROM macro.indicator_source WHERE source='wichart'") == 0
+    assert _scalar(clean, "SELECT count(*) FROM asset.asset_external_id WHERE source='wichart'") == 0
     assert wj.run(dry_run=True, get=_fake_get(), sleep=lambda s: None) == 0
-    assert _scalar(clean, "SELECT count(*) FROM macro.indicator_source WHERE source='wichart'") == n_before
+    assert _scalar(clean, "SELECT count(*) FROM macro.indicator_source WHERE source='wichart'") == 0
 
 
 def test_unknown_key_is_an_error_before_any_call(clean, monkeypatch):
