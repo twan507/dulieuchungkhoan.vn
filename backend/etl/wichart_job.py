@@ -127,6 +127,11 @@ def run(keys=None, dry_run=False, get=None, sleep=time.sleep) -> int:
             wichart_store.upsert_domain_state(engine, run_date.isoformat())
         log.info("wichart xong: %s", stats)
         return 0
+    except KeyboardInterrupt:
+        # Ctrl+C là cách dừng chính thức của cửa sổ task — sổ phải ghi lý do, không treo 'running' (khuôn price_job)
+        omo_store.close_run(engine, run_id, "failed", error="dừng tay (Ctrl+C)")
+        log.warning("wichart dừng tay (Ctrl+C)")
+        return 130
     except Exception as e:                    # noqa: BLE001 — job biên ngoài: mọi lỗi vào etl_run
         omo_store.close_run(engine, run_id, "failed", error=f"{type(e).__name__}: {e}")
         log.exception("wichart thất bại")

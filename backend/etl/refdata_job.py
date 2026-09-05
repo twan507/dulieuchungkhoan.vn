@@ -67,6 +67,11 @@ def run(accept_drop: bool = False) -> int:
         refdata_store.upsert_domain_state(engine, date.today().isoformat())
         log.info("refdata xong: %s", stats)
         return 0
+    except KeyboardInterrupt:
+        # Ctrl+C là cách dừng chính thức của cửa sổ task — sổ phải ghi lý do, không treo 'running' (khuôn price_job)
+        omo_store.close_run(engine, run_id, "failed", error="dừng tay (Ctrl+C)")
+        log.warning("refdata dừng tay (Ctrl+C)")
+        return 130
     except Exception as e:  # noqa: BLE001 — job biên ngoài: mọi lỗi đều phải vào etl_run
         omo_store.close_run(engine, run_id, "failed", error=f"{type(e).__name__}: {e}")
         log.exception("refdata thất bại")

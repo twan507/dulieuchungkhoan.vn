@@ -35,6 +35,11 @@ def run() -> int:
         omo_store.upsert_domain_state(engine, watermark=result.session_date.isoformat())
         log.info("omo xong: %s", stats)
         return 0
+    except KeyboardInterrupt:
+        # Ctrl+C là cách dừng chính thức của cửa sổ task — sổ phải ghi lý do, không treo 'running' (khuôn price_job)
+        omo_store.close_run(engine, run_id, "failed", error="dừng tay (Ctrl+C)")
+        log.warning("omo dừng tay (Ctrl+C)")
+        return 130
     except Exception as e:  # noqa: BLE001 — job biên ngoài: mọi lỗi đều phải vào etl_run
         omo_store.close_run(engine, run_id, "failed", error=f"{type(e).__name__}: {e}")
         log.exception("omo thất bại")

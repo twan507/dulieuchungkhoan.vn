@@ -194,6 +194,11 @@ def run(codes=None, kinds=None, max_minutes=None, get=None, sleep=time.sleep) ->
 
         log.info("snapshot xong: %s", stats)
         return 0
+    except KeyboardInterrupt:
+        # Ctrl+C là cách dừng chính thức của cửa sổ task — sổ phải ghi lý do, không treo 'running' (khuôn price_job)
+        omo_store.close_run(engine, run_id, "failed", error="dừng tay (Ctrl+C)")
+        log.warning("snapshot dừng tay (Ctrl+C)")
+        return 130
     except Exception as e:                    # noqa: BLE001 — job biên ngoài: mọi lỗi vào etl_run
         omo_store.close_run(engine, run_id, "failed", error=f"{type(e).__name__}: {e}")
         log.exception("snapshot thất bại")
