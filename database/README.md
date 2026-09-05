@@ -81,7 +81,7 @@ Test schema (tự tạo lại `dulieu_test` từ đầu qua `conftest.py`, khôn
 cd backend && uv run pytest tests/schema -v
 ```
 
-Cả bộ trong một lệnh — 596 test, 2 skipped *(đo 2026-09-05 sáng, sau lát 5, fix mốc nước lát 4 và hai fix `status 0`/ngày VN)*, gồm cả `tests/clickhouse` và `tests/ingester` *(hai bộ này tự dựng container ClickHouse riêng ở cổng riêng, không đụng CH production)*:
+Cả bộ trong một lệnh — 639 test, 2 skipped *(đo 2026-09-05 sau lát 6 `etl wichart`: 596 sáng cùng ngày + 43 test wichart; không migration mới, head vẫn `0017`)*, gồm cả `tests/clickhouse` và `tests/ingester` *(hai bộ này tự dựng container ClickHouse riêng ở cổng riêng, không đụng CH production)*:
 
 ```bash
 cd backend && uv run pytest tests -q
