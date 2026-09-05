@@ -124,7 +124,11 @@ lát 6   vĩ mô WiChart            ✅ XONG 2026-09-05 — 68 key (67 §9 + ca_
 lát 7   quốc tế                  ✅ XONG 2026-09-05 — 5 job etl fred|fx|lbma|yahoo|binance (15 + 6 + 2 + 37 + 11 series, 66 lời gọi/ngày)
                                    → macro.observation + asset.price_daily + asset.ohlc_daily (lần đầu); registry mỗi nguồn một module,
                                    phần ghi trích chung từ lát 6; guard tất-cả-hoặc-không cho nguồn ≤ 20 series; wti spot (FRED) cùng
-                                   asset với futures (WiChart); bằng chứng thô chỉ khi từ chối + mẫu dòng đổi; backfill S&P 500 từ 1927. TIẾP: lát 8
+                                   asset với futures (WiChart); bằng chứng thô chỉ khi từ chối + mẫu dòng đổi; backfill S&P 500 từ 1927
+lát 7b  cập nhật trong phiên      chèn 2026-09-05 tối (chủ dự án gọi tên): nến đang chạy vào ohlc_daily, lượt --intraday cửa sổ ngắn,
+                                   giãn cách ngẫu nhiên 1–5 s giữa lời gọi cùng nguồn, Yahoo bao FX trong ngày (ECB giữ làm mốc chuẩn),
+                                   WiChart asset 5 phút / vĩ mô 1 lượt, FRED tối ưu 2 lượt/ngày, đo tải ở đúng nhịp — brief:
+                                   90-records/plans/2026-09-05-intraday-refresh/brief.md. TIẾP: lát 8
 lát 8   tin tức — thu thập       khung thu thập + chuẩn hoá + lưu toàn văn (news-pipeline §9.1), chạy KHÔNG có AI 1 tuần
 lát 9   tin tức — lưới AI        đo tỷ lệ dedupe thật → chốt ngân sách token → bật lưới phân loại 20 sub + gắn mã
 lát 10  tầng ngữ nghĩa           nối kho ↔ hai skill chứng khoán, function calling (chatbot-semantic-layer.md)
@@ -224,6 +228,14 @@ Năm job `python -m etl fred|fx|lbma|yahoo|binance` (spec [`2026-09-05-global-et
 3. **Chốt "dải giá trị" chỉ có nghĩa cho giá trị hiện tại.** Test dùng fixture 3 nến BTC năm 2017 (~4.140) đỏ vì dải hôm nay (7.900–800.000) — không phải bug, mà là test dựng tình huống backfill giả (backfill thật luôn kết thúc ở nến hiện tại). Test nới dải riêng, code giữ nguyên; ledger ghi ruling.
 
 **Nợ để lại (nhỏ, có lý do):** AC7 nửa Yahoo (thứ 2 07/09) · `wichart_fetch` chưa chuyển sang `http_fetch` chung (lát 12 khi giám sát cần cùng `Fetcher`) · `binance_fetch` dựng client thật lặp logic `open_fetcher` (hệ quả bọc 418, cân khi lát 12 trích chung) · `_pause` Binance không đọc weight khi lời gọi ném lỗi · `fx_normalize` xét độ tươi theo ngày cuối của cả dict (chốt `shape` đã đòi đủ 6 tiền tệ nên không lọt) · plan đếm sai số test ở ba task (10/11, 11/12, 707/704) — không ảnh hưởng code · giờ nạp thật của 5 nguồn chưa đo (lát 13).
+
+### Điểm vào cho lát 7b — cập nhật trong phiên (interval · nến đang chạy · FX qua Yahoo), đọc trước khi bắt đầu
+
+**Vì sao chèn:** lát 7 thiết kế `asset.ohlc_daily` là nến đã chốt nên chỉ số quốc tế và crypto luôn trễ một phiên; chủ dự án chốt 2026-09-05 tối rằng mọi dữ liệu có biểu đồ ngoài giá chứng khoán VN (đã realtime) và ngoài dữ liệu chu kỳ dài phải cập nhật liên tục trong phiên. Đây là việc cắt ngang do chủ dự án gọi tên, đứng **trước lát 8**.
+
+**Trạng thái bàn giao 2026-09-05 tối:** `main` = lát 7 (`7405184`) · 709 test xanh, 2 skipped · head `0017` · 10/11 task `Disabled` · AC7 nửa Yahoo của lát 7 còn chờ thứ 2 07/09 — lát 7b sẽ **thay** nó bằng AC3 mới (nến đang chạy phải vào kho và đổi), không cần chạy nữa.
+
+**Toàn bộ hồ sơ nằm ở một file:** [`90-records/plans/2026-09-05-intraday-refresh/brief.md`](../90-records/plans/2026-09-05-intraday-refresh/brief.md) — §2 sáu quyết định chủ dự án đã chốt (không mở lại), §3 bảng nhịp mục tiêu, §4 dữ kiện đã đo và **sáu giả định phải đo trước khi viết spec** (chiều mã FX Yahoo, tải Yahoo ở 30 phút, WiChart có cập nhật trong ngày không…), §5 sáu điểm brainstorm còn mở (danh sách FX, hai series FRED trùng vai, giờ chạy Yahoo, mốc nước lượt interval, guard lượt con, ngữ nghĩa tầng đọc), §6 phạm vi sửa từng file và test, §7 AC dự kiến, §8 tài liệu, §9 thứ tự task, §10 điều kiện đảo ngược. Đi đủ quy trình §4.1: đo → brainstorm → spec (duyệt) → plan → subagent Sonnet → review hai trục → verify → commit theo mốc, ledger cùng thư mục.
 
 ### Điểm vào cho lát 8 — tin tức: thu thập + chuẩn hoá + lưu toàn văn, chạy KHÔNG có AI 1 tuần, đọc trước khi bắt đầu
 
