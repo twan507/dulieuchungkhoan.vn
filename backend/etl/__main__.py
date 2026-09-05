@@ -83,8 +83,12 @@ def main(argv: list[str] | None = None) -> int:
         parser.add_argument("--dry-run", action="store_true", dest="dry_run")
         if args[0] in ("yahoo", "binance"):
             parser.add_argument("--backfill", action="store_true")
+            parser.add_argument("--intraday", action="store_true")        # cửa sổ ngắn, chạy trong phiên (lát 7b)
         parsed = parser.parse_args(args[1:])
-        return mod.run(keys=parsed.keys, dry_run=parsed.dry_run, backfill=getattr(parsed, "backfill", False))
+        if getattr(parsed, "intraday", False) and getattr(parsed, "backfill", False):
+            parser.error("--intraday và --backfill loại trừ nhau")
+        extra = {"intraday": parsed.intraday} if args[0] in ("yahoo", "binance") else {}
+        return mod.run(keys=parsed.keys, dry_run=parsed.dry_run, backfill=getattr(parsed, "backfill", False), **extra)
     print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener, events, price, snapshot, fundamentals,"
           " wichart, fred, fx, lbma, yahoo, binance)", file=sys.stderr)
     return 2

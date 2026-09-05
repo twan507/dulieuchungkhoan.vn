@@ -152,7 +152,7 @@ def zz(migrated_engine):
     _cleanup_zz(migrated_engine)
 
 
-def _fake_fetch_all(series, get, sleep, backfill):
+def _fake_fetch_all(series, get, sleep, backfill, intraday=False):
     docs = {s.external_key: {"k": s.external_key} for s in series}
     return docs, {k: '{"k": "%s"}' % k for k in docs}, [], len(docs), 0
 
@@ -232,6 +232,33 @@ def test_backfill_per_code_transaction_keeps_the_code_already_committed_when_a_l
         n_macro = c.execute(sa.text("SELECT count(*) FROM macro.observation o JOIN macro.indicator i USING (indicator_id)"
                                     " WHERE i.code='zz.yield.10y'")).scalar()
     assert n_bar == 1 and n_macro == 0           # mã 'zz.idx.sp500' (< 'zz.yield.10y') đã commit riêng trước khi vỡ
+
+
+def test_runner_intraday_passes_the_flag_to_fetch_all_and_still_pushes_the_watermark(zz, monkeypatch):
+    _wire(monkeypatch)
+    seen = []
+
+    def fa(series, get, sleep, backfill, intraday):
+        seen.append((backfill, intraday))
+        return _fake_fetch_all(series, get, sleep, backfill, intraday)
+    spec = _spec()
+    spec.fetch_all, spec.supports_intraday = fa, True
+    now = datetime(2026, 9, 5, 12, 0, tzinfo=timezone.utc)
+    assert sj.run(spec, intraday=True, get=lambda u, t: (200, "{}", {}), sleep=lambda s: None, now=now) == 0
+    status, stats, _ = _last_run(zz)
+    assert seen == [(False, True)] and status == "success" and stats["intraday"] is True and stats["watermark"] == "2026-09-05"
+    with zz.connect() as c:
+        assert c.execute(sa.text("SELECT count(*) FROM ops.data_domain_state WHERE source='zz'")).scalar() == 2   # lượt trọn registry ⇒ đẩy mốc (spec §4.6-I)
+
+
+def test_runner_rejects_intraday_when_unsupported_or_combined_with_backfill_before_open_run(zz, monkeypatch):
+    _wire(monkeypatch)
+    assert sj.run(_spec(), intraday=True, get=lambda u, t: (200, "{}", {}), sleep=lambda s: None) == 2
+    spec = _spec(supports_backfill=True)
+    spec.supports_intraday = True
+    assert sj.run(spec, intraday=True, backfill=True, get=lambda u, t: (200, "{}", {}), sleep=lambda s: None) == 2
+    with zz.connect() as c:
+        assert c.execute(sa.text("SELECT count(*) FROM ops.etl_run WHERE job='global.zz'")).scalar() == 0
 
 
 def test_runner_refuses_whole_run_on_one_stale_series_and_keeps_evidence(zz, monkeypatch):

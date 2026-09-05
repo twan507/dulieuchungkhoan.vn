@@ -36,7 +36,7 @@ def classify(http: int, text: str):
     return "ok", d
 
 
-def fetch_all(series, get, sleep, backfill):
+def fetch_all(series, get, sleep, backfill, intraday=False):
     key = os.environ.get("FRED_API")
     if not key:
         raise RuntimeError("thiếu FRED_API")

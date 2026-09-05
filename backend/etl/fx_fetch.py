@@ -23,7 +23,7 @@ def classify(http: int, text: str):
     return "ok", d
 
 
-def fetch_all(series, get, sleep, backfill):
+def fetch_all(series, get, sleep, backfill, intraday=False):
     keys = [s.external_key for s in series]
     with open_fetcher(classify, get=get, sleep=sleep, timeout=60.0) as f:
         try:

@@ -186,7 +186,7 @@ def test_backfill_flag_is_rejected_for_fred(clean):
 
 
 def test_generic_exception_redacts_the_api_key_from_the_run_error(clean, monkeypatch):
-    def boom(series, get, sleep, backfill):
+    def boom(series, get, sleep, backfill, intraday=False):
         raise RuntimeError(f"boom {KEY}")
     monkeypatch.setattr(fj.SPEC, "fetch_all", boom)
     assert fj.run(get=_fake_get(), sleep=lambda s: None, now=NOW) == 2

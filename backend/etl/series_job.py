@@ -2,7 +2,9 @@
 
 Hợp đồng: `open_run` ngay trước `try`; `--keys` (theo `external_key`) = lượt con không guard, không đụng domain state,
 registry vẫn nạp trọn; `dry_run` không ghi gì; guard từ chối ⇒ bằng chứng ở giao dịch riêng + `failed` + exit 1;
-`KeyboardInterrupt` ⇒ `failed: dừng tay (Ctrl+C)`, exit 130; exception khác ⇒ exit 2."""
+`KeyboardInterrupt` ⇒ `failed: dừng tay (Ctrl+C)`, exit 130; exception khác ⇒ exit 2.
+`--intraday` = lượt trọn registry với cửa sổ ngắn (Yahoo 5 ngày, Binance 3 nến): guard và mốc nước như lượt thường,
+chỉ khác cửa sổ (spec 7b §4.6-I)."""
 from __future__ import annotations
 
 import logging
@@ -32,9 +34,10 @@ class SourceSpec:
     guard_mode: str
     log_name: str
     build: Callable[[], list]
-    fetch_all: Callable[..., tuple[dict, dict, list, int, int]]   # (series, get, sleep, backfill) -> docs, texts, failed, calls, retries
+    fetch_all: Callable[..., tuple[dict, dict, list, int, int]]   # (series, get, sleep, backfill, intraday) -> docs, texts, failed, calls, retries
     normalize: Callable[..., list]                                # (series, doc, now) -> list[Point] | list[Bar]; raise SeriesError
     supports_backfill: bool = False
+    supports_intraday: bool = False                               # lát 7b: cửa sổ ngắn, chạy trong phiên — KHÔNG phải dữ liệu intraday
     redact: Callable[[str], str] = staticmethod(lambda s: s)      # che khoá trong lỗi/log (FRED — khoá đi trong URL)
 
 
@@ -89,7 +92,7 @@ def _apply_backfill_per_code(engine, points, bars, resolved) -> series_store.Wri
     return w
 
 
-def run(spec: SourceSpec, keys=None, dry_run=False, backfill=False, get=None, sleep=time.sleep, now=None) -> int:
+def run(spec: SourceSpec, keys=None, dry_run=False, backfill=False, intraday=False, get=None, sleep=time.sleep, now=None) -> int:
     logging.basicConfig(level=logging.INFO, stream=sys.stderr,
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)      # URL FRED có khoá: không để httpx in request
@@ -99,6 +102,12 @@ def run(spec: SourceSpec, keys=None, dry_run=False, backfill=False, get=None, sl
     subset = keys is not None
     if backfill and not spec.supports_backfill:
         log.error("%s không có --backfill", spec.log_name)
+        return 2
+    if intraday and not spec.supports_intraday:
+        log.error("%s không có --intraday", spec.log_name)
+        return 2
+    if intraday and backfill:
+        log.error("%s: --intraday và --backfill loại trừ nhau", spec.log_name)
         return 2
     try:
         engine = _engine()
@@ -115,13 +124,13 @@ def run(spec: SourceSpec, keys=None, dry_run=False, backfill=False, get=None, sl
             if unknown:
                 raise RuntimeError(f"key không có trong registry: {unknown}")
             series = [s for s in registry if s.external_key in set(keys)]
-        docs, texts, failed, calls, retries = spec.fetch_all(series, get, sleep, backfill)
+        docs, texts, failed, calls, retries = spec.fetch_all(series, get, sleep, backfill, intraday)
         points, bars, tally = _normalize_all(spec, series, docs, failed, now)
         verdict = series_guard.check(tally, spec.guard_mode) if not subset else series_guard.Verdict(ok=True)
         run_date = now.astimezone(VN).date()
         stats: dict = {"tally": vars(tally), "calls": calls, "retries": retries, "points": len(points), "bars": len(bars),
                        "run_date": run_date.isoformat()}
-        for flag, on in (("subset", subset), ("dry_run", dry_run), ("backfill", backfill)):
+        for flag, on in (("subset", subset), ("dry_run", dry_run), ("backfill", backfill), ("intraday", intraday)):
             if on:
                 stats[flag] = True
         if dry_run:

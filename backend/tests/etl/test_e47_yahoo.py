@@ -38,6 +38,18 @@ def test_url_uses_period_not_range_and_backfill_period1_is_negative():
     assert yf.BACKFILL_PERIOD1 == -2208988800 and yf.DAILY_WINDOW_DAYS == 400
 
 
+def test_intraday_window_is_five_days_daily_is_400_and_backfill_is_1900():
+    def window(**kw):
+        calls = []
+        yf.fetch_all([REG["^GSPC"]], lambda u, t: (calls.append(u), (200, json.dumps(_doc("GSPC-10d")), {}))[1], lambda s: None, **kw)
+        q = urllib.parse.parse_qs(urllib.parse.urlparse(calls[0]).query)
+        return int(q["period2"][0]) - int(q["period1"][0])
+    assert yf.INTRADAY_WINDOW_DAYS == 5
+    assert window(backfill=False, intraday=True) == 5 * 86400
+    assert window(backfill=False, intraday=False) == 400 * 86400
+    assert window(backfill=True, intraday=False) > 100 * 365 * 86400          # period1 = 1900-01-01
+
+
 def test_classify():
     assert yf.classify(200, json.dumps(_doc("GSPC-10d")))[0] == "ok"
     assert yf.classify(200, '{"chart":{"result":null,"error":{"code":"Not Found"}}}') == ("bad_shape", None)

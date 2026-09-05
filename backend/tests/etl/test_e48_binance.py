@@ -74,6 +74,17 @@ def test_weight_header_pauses_and_418_aborts():
         bf.fetch_all([REG["PAXGUSDT"]], lambda u, t: (418, "banned", {}), lambda s: None, False)
 
 
+def test_intraday_uses_limit_3_and_the_job_reports_the_flag(clean):
+    calls = []
+    docs, *_ = bf.fetch_all([REG["PAXGUSDT"]], lambda u, t: (calls.append(u), (200, json.dumps(PAXG), {}))[1], lambda s: None, False, True)
+    assert bf.INTRADAY_LIMIT == 3 and calls and "limit=3" in calls[0] and "limit=40" not in calls[0]
+    calls.clear()
+    assert bj.run(intraday=True, get=_fake_get(calls), sleep=lambda s: None, now=NOW) == 0
+    assert len(calls) == 11 and all("limit=3" in u for u in calls)
+    status, stats = _last(clean)
+    assert status == "success" and stats["intraday"] is True and "watermark" in stats
+
+
 CODES = [s.code for s in br.build()]
 
 

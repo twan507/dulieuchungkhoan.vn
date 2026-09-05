@@ -14,6 +14,7 @@ from etl.http_fetch import BadShape, DEFAULT_HEADERS, FetchError, open_fetcher
 log = logging.getLogger("etl.binance")
 BASE = "https://api.binance.com/api/v3/klines"
 DAILY_LIMIT = 40
+INTRADAY_LIMIT = 3               # hôm nay đang chạy + 2 ngày bù (measure-binance-limit3)
 PAGE = 1000
 WEIGHT_PAUSE = 3000
 
@@ -57,7 +58,7 @@ def _pause(f, sleep):
         sleep(60)
 
 
-def _fetch_with(series, get, sleep, backfill):
+def _fetch_with(series, get, sleep, backfill, intraday):
     docs, texts, failed = {}, {}, []
     with open_fetcher(classify, get=get, sleep=sleep) as f:
         for s in series:
@@ -74,7 +75,7 @@ def _fetch_with(series, get, sleep, backfill):
                         start = doc[-1][0] + 1
                     docs[sym], texts[sym] = rows, text
                 else:
-                    docs[sym], texts[sym] = f.fetch_one(url(sym, DAILY_LIMIT), sym)
+                    docs[sym], texts[sym] = f.fetch_one(url(sym, INTRADAY_LIMIT if intraday else DAILY_LIMIT), sym)
                     _pause(f, sleep)
             except (BadShape, FetchError) as e:
                 failed.append(sym)
@@ -82,11 +83,11 @@ def _fetch_with(series, get, sleep, backfill):
         return docs, texts, failed, f.calls, f.retries_done
 
 
-def fetch_all(series, get, sleep, backfill):
+def fetch_all(series, get, sleep, backfill, intraday=False):
     if get is not None:                            # test tiêm get giả
-        return _fetch_with(series, _guard_418(get), sleep, backfill)
+        return _fetch_with(series, _guard_418(get), sleep, backfill, intraday)
     with httpx.Client(headers=DEFAULT_HEADERS, follow_redirects=True) as client:   # MỘT client cho trọn lượt
         def real_get(u: str, timeout: float):
             r = client.get(u, timeout=timeout)
             return r.status_code, r.text, dict(r.headers)
-        return _fetch_with(series, _guard_418(real_get), sleep, backfill)
+        return _fetch_with(series, _guard_418(real_get), sleep, backfill, intraday)
