@@ -17,3 +17,15 @@ def test_minutes_requires_loop():
     with pytest.raises(SystemExit) as e:
         m.main(["news", "--minutes", "5"])
     assert e.value.code == 2
+
+
+def test_backfill_flags_and_exclusions(monkeypatch):
+    import etl.news_job
+    seen = {}
+    monkeypatch.setattr(etl.news_job, "run_backfill", lambda **kw: seen.update(kw) or 0)
+    assert m.main(["news", "--backfill-sitemap", "--from", "2026-08", "--to", "2026-09", "--max-minutes", "30", "--stop-before-open"]) == 0
+    assert seen == {"from_month": "2026-08", "to_month": "2026-09", "max_minutes": 30.0, "stop_before_open": True}
+    for bad in (["news", "--backfill-sitemap"], ["news", "--backfill-sitemap", "--from", "2026-8"], ["news", "--backfill-sitemap", "--from", "2026-08", "--loop"]):
+        with pytest.raises(SystemExit) as e:
+            m.main(bad)
+        assert e.value.code == 2
