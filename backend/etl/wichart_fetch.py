@@ -1,7 +1,10 @@
-"""Tải một key WiChart (spec §5.2). I/O thuần; `get` bơm được để test không mở kết nối.
+"""Tải một key WiChart (spec lát 6 §5.2). Từ lát 7b ruột là `http_fetch.Fetcher` (giãn cách ngẫu nhiên 1–5 s,
+retry 3, backoff 2/4/8 — đóng nợ "wichart_fetch chưa chuyển sang http_fetch" của lát 7); file này giữ MẶT NGOÀI
+của lát 6 — `url`, `classify`, `Fetcher(get, sleep, clock)`, `fetch_one(key, group)`, `calls`/`retries`,
+`FetchError`/`BadShape` — để `wichart_job` và test lát 6 không đổi.
 
-Đo 2026-09-05: 90 lời gọi liên tiếp không giãn cách sạch — MIN_INTERVAL chỉ để lịch sự.
-"""
+`get` của WiChart trả 2-tuple `(status, text)` (test e37/e41 tiêm vậy) — bọc thành 3-tuple cho fetcher chung.
+Đo 2026-09-05: 90 lời gọi liên tiếp không giãn cách sạch; 282 lời gọi/14 phút với giãn cách 1–5 s sạch (A4)."""
 from __future__ import annotations
 
 import contextlib
@@ -10,13 +13,11 @@ import time
 
 import httpx
 
+from etl.http_fetch import DEFAULT_HEADERS, BadShape, FetchError  # noqa: F401 — re-export cho wichart_job/test lát 6
+from etl.http_fetch import Fetcher as _SharedFetcher
+
 BASE = "https://api.wichart.vn/vietnambiz/vi-mo"
 TIMEOUT = 30.0
-RETRIES = 3
-BACKOFF = (2, 4, 8)
-MIN_INTERVAL = 0.2
-HEADERS = {"Accept-Encoding": "gzip",
-           "User-Agent": "dulieuchungkhoan.vn/etl (dulieuchungkhoan.official@gmail.com)"}
 
 
 def url(key: str, group: str) -> str:
@@ -38,61 +39,45 @@ def classify(http: int, text: str) -> tuple[str, dict | None]:
     return "ok", d
 
 
-class FetchError(Exception):
-    """Một key hỏng sau mọi lần thử — key đó CHƯA nạp, không ghi gì."""
-
-
-class BadShape(Exception):
-    """Response hợp lệ nhưng không có chart.series — nguồn đổi hình dạng, thử lại vô ích."""
+def _three(get):
+    """(status, text) của WiChart → (status, text, headers) cho fetcher chung."""
+    def get3(u: str, timeout: float):
+        http, text = get(u, timeout)
+        return http, text, {}
+    return get3
 
 
 class Fetcher:
-    def __init__(self, get, sleep=time.sleep, clock=time.monotonic):
-        self._get, self._sleep, self._clock = get, sleep, clock
-        self.calls = 0
-        self.retries = 0
-        self._last: float | None = None
+    def __init__(self, get, sleep=time.sleep, clock=None, rng=None):
+        # `clock` giữ cho chữ ký lát 6 (test e37 truyền vào), không còn dùng — giãn cách nay ngẫu nhiên, không theo đồng hồ
+        self._inner = _SharedFetcher(_three(get), classify, sleep=sleep, rng=rng, timeout=TIMEOUT)
 
-    def _throttle(self) -> None:
-        # Chỉ giãn cách MỘT lần mỗi fetch_one (không phải mỗi lần thử lại) —
-        # retry đã có BACKOFF lo giãn cách rồi, giãn thêm ở đây là thừa.
-        now = self._clock()
-        if self._last is not None:
-            wait = MIN_INTERVAL - (now - self._last)
-            if wait > 0:
-                self._sleep(wait)
-        self._last = self._clock()
+    @property
+    def calls(self) -> int:
+        return self._inner.calls
+
+    @property
+    def retries(self) -> int:
+        return self._inner.retries_done
+
+    @property
+    def gaps(self) -> list[float]:
+        return self._inner.gaps
 
     def fetch_one(self, key: str, group: str) -> tuple[dict, str]:
-        u = url(key, group)
-        self._throttle()
-        http, text = 0, ""
-        for attempt in range(RETRIES + 1):
-            try:
-                self.calls += 1
-                http, text = self._get(u, TIMEOUT)
-            except httpx.HTTPError as e:
-                # Timeout/đứt kết nối đi CÙNG đường với response xấu (bài học lát 3, e7f80f6)
-                http, text = 0, f"{type(e).__name__}: {e}"
-            verdict, doc = classify(http, text)
-            if verdict == "ok":
-                return doc, text
-            if verdict == "bad_shape":
-                raise BadShape(f"{key}: response không có chart.series")
-            if attempt == RETRIES:
-                break
-            self._sleep(BACKOFF[attempt])
-            self.retries += 1
-        raise FetchError(f"{key} hỏng sau {RETRIES + 1} lần (HTTP {http}): {text[:200]}")
+        try:
+            return self._inner.fetch_one(url(key, group), key)
+        except BadShape as e:
+            raise BadShape(f"{key}: response không có chart.series") from e
 
 
 @contextlib.contextmanager
-def open_fetcher(get=None, sleep=time.sleep, clock=time.monotonic):
+def open_fetcher(get=None, sleep=time.sleep, clock=None, rng=None):
     if get is not None:                            # test tiêm get giả, không mở kết nối
-        yield Fetcher(get, sleep, clock)
+        yield Fetcher(get, sleep, clock, rng)
         return
-    with httpx.Client(headers=HEADERS) as client:  # MỘT client cho trọn lượt
+    with httpx.Client(headers=DEFAULT_HEADERS) as client:  # MỘT client cho trọn lượt
         def get_one(u: str, timeout: float) -> tuple[int, str]:
             r = client.get(u, timeout=timeout)
             return r.status_code, r.text
-        yield Fetcher(get_one, sleep, clock)
+        yield Fetcher(get_one, sleep, clock, rng)
