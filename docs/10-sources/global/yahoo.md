@@ -24,7 +24,9 @@ Quy ước chung của bộ tài liệu nguồn *(đánh dấu bẫy, đơn vị
 | `v7/quote` | Ảnh chụp nhiều mã **theo lô** | 1 request / **180 mã** |
 | `v1/test/getcrumb` | Lấy `crumb` cho luồng xác thực | — |
 
-⚠️ Báo cáo khảo sát ghi lại **đường dẫn**, không ghi lại **host** cụ thể của từng lời gọi. Host chính xác: **chưa ghi trong sổ đo 2026-08-15** — phải xác nhận lại khi dựng ETL.
+**Host** *(đo 2026-09-05, khi dựng ETL lát 7)*: `https://query1.finance.yahoo.com` và `https://query2.finance.yahoo.com` đều trả `200` cho `v8/finance/chart`, cùng body; ETL dùng `query1`. Không có ETag. *(Sổ đo 2026-08-15 chỉ ghi đường dẫn, không ghi host.)*
+
+🔴 **Hợp đồng đổi so với 2026-08-15** *(đo 2026-09-05, 39 mã)*: `meta` **không còn `quoteType`**; cờ chết nay ở **`meta.instrumentType`** (`TIO=F` → `ALTSYMBOL`, chỉ số → `INDEX`). Cổng 3 ở [mục 8](#8-bộ-giám-sát-hợp-đồng--ba-cổng-bắt-buộc) kiểm cả hai khoá. Cùng đợt đo: **cửa sổ `period1 = now − 40 ngày` trả đúng 1 nến** (nến hiện tại) ở `^SET.BK` và `PSEI.PS`, trong khi 400 ngày trả 272/286 nến và 3.000 ngày trả 1.999/2.144 — cùng họ Bẫy 3, ETL dùng cửa sổ **400 ngày**; `^MERV` trả **`currency: ""`**.
 
 🔴 **Đây là API nội bộ của Yahoo: không tài liệu, không cam kết, không phiên bản.** Khác hẳn Frankfurter *(mã nguồn mở, tự dựng lại được)*. Mọi thiết kế phải giả định endpoint có thể đổi hình mà không báo trước — xem bộ giám sát ở [mục 8](#8-bộ-giám-sát-hợp-đồng--ba-cổng-bắt-buộc).
 
@@ -41,7 +43,7 @@ Quy ước chung của bộ tài liệu nguồn *(đánh dấu bẫy, đơn vị
 | Trường | Vai trò |
 |---|---|
 | `meta.dataGranularity` | 🔴 **Cổng kiểm bắt buộc.** Phải khớp `interval` đã xin; lệch là **lỗi cứng**, không phải cảnh báo |
-| `meta.quoteType` | 🔴 **Cờ chết im lặng.** `ALTSYMBOL` ⇒ mã đã ngừng — xem [mục 3](#3--chết-im-lặng--mã-đã-ngừng-vẫn-trả-200-kèm-giá-hợp-lệ) |
+| `meta.instrumentType` *(2026-08-15 là `meta.quoteType`; đổi tên đo 2026-09-05)* | 🔴 **Cờ chết im lặng.** `ALTSYMBOL` ⇒ mã đã ngừng — xem [mục 3](#3--chết-im-lặng--mã-đã-ngừng-vẫn-trả-200-kèm-giá-hợp-lệ) |
 | `meta.regularMarketTime` | 🔴 Cổng kiểm độ tươi. So với **lịch phiên của sàn đó, theo múi giờ sàn đó** |
 | `meta.firstTradeDate` | Độ sâu lịch sử. **Nói thật — nghiệm 6/6** *(đo 2026-08-15, xem §4.3)* |
 | `meta.currency` | ⚠️ Có mã trả `USX` = **cent Mỹ**, không phải USD — xem §5.7 |
@@ -130,11 +132,11 @@ Yahoo có **đúng kiểu hỏng của akshare**: mã ngừng cập nhật từ 
 | `RU=F` | **Rúp Nga** *(không phải cao su)* | 2020-08-21 | ~2.184 ngày | `ALTSYMBOL` |
 | `LBS=F` | Lumber *(hợp đồng cũ)* | 2023-04-10 | ~1.222 ngày | `ALTSYMBOL` |
 
-*(đo 2026-08-15 — số ngày chết tính tới ngày đo)*
+*(đo 2026-08-15 — số ngày chết tính tới ngày đo; cột `quoteType` nay là `instrumentType`, đo lại 2026-09-05: `TIO=F` vẫn `ALTSYMBOL`, `^BCOM` vẫn `INDEX` với `regularMarketTime` 2020-05-28 và 0 nến trong cửa sổ 40 ngày)*
 
 ### Hai quy tắc nhận biết — nghiệm đúng 5/5
 
-1. **`quoteType == "ALTSYMBOL"` ⇒ mã đã ngừng.** Chặn cứng.
+1. **`instrumentType == "ALTSYMBOL"` ⇒ mã đã ngừng.** Chặn cứng. *(Trước 2026-09-05 khoá tên `quoteType`; ETL kiểm cả hai.)*
 2. **Luôn so `regularMarketTime` với lịch phiên** của sàn đó, theo múi giờ sàn đó.
 
 ⚠️ **Quy tắc 2 là quy tắc không thể bỏ.** `^BCOM` khai `quoteType: "INDEX"` — "sạch" về kiểu, quy tắc 1 không bắt được. **Chỉ mốc thời gian tố cáo nó.**
@@ -425,7 +427,9 @@ Yahoo là API nội bộ không cam kết, và hỏng theo kiểu **im lặng**.
 |---|---|---|---|
 | **1** | **Độ tươi** — so `regularMarketTime` với lịch phiên **của sàn đó, theo múi giờ sàn đó** | Mốc cuối cũ hơn phiên gần nhất | Chết im lặng *(bắt được cả `^BCOM`)* |
 | **2** | **Lược đồ** — `meta.dataGranularity` phải khớp `interval` đã xin | Lệch ⇒ **lỗi cứng, dừng ghi kho** | Bẫy 2 |
-| **3** | **Lược đồ** — `meta.quoteType != "ALTSYMBOL"` | `ALTSYMBOL` ⇒ mã đã ngừng | Chết im lặng |
+| **3** | **Lược đồ** — `meta.instrumentType != "ALTSYMBOL"` *(và `quoteType` nếu còn — khoá đổi tên 2026-09-05)* | `ALTSYMBOL` ⇒ mã đã ngừng | Chết im lặng |
+
+Cổng 1 trong code (`etl/yahoo_normalize.py`, 2026-09-05): `regularMarketTime ≥ now − 14 ngày` (phủ Tết Trung Quốc) **và** ≥ 1 nến trong cửa sổ; kèm luật **bỏ nến cuối chưa đóng** khi `now < currentTradingPeriod.regular.end` — lưu ý `DX-Y.NYB` có `regular.end` = 03:59 UTC ngày kế (ICE gần 24 giờ), nên so với `now`, không so với `regularMarketTime`.
 
 Kèm ba luật gọi ở [mục 2](#2--ba-bẫy-cấu-trúc--đều-làm-hỏng-dữ-liệu-mà-không-báo-lỗi): `period1` âm · không dùng `range=` · `404` phải thử lại bằng `period1`/`period2`.
 
@@ -437,11 +441,11 @@ Và **gọi thẳng REST, không dùng thư viện** *(§6.5)* — nếu không,
 
 | Mục | Vì sao còn treo |
 |---|---|
-| **Host chính xác** của `v8/finance/chart` và `v7/quote` | Sổ đo 2026-08-15 chỉ ghi đường dẫn |
+| ~~**Host chính xác** của `v8/finance/chart`~~ | ✅ đo 2026-09-05: `query1`/`query2.finance.yahoo.com` (§1.1). `v7/quote` vẫn chưa kiểm host |
 | **`v7/quote` theo lô có cần xác thực không** | Chỉ gặp `401` ở lời gọi hỏi NAV `VOF.L`; lô 180 mã chưa thử riêng |
 | **Độ đúng `HG=F` / `HRC=F` / `ALI=F`** | Mới chứng minh **tươi**, chưa chứng minh **đúng** — `fred.stlouisfed.org` timeout 4/4 khi đối chiếu |
 | **`VOF.L` có NAV không** | `v7/finance/quote` trả `401` — phải dựng luồng cookie `A3` → `getcrumb` |
 | **`yfinance` 1.6.0** | Máy đo cài 0.2.54; số ở §6.5 là của 0.2.54. Số liệu endpoint thì độc lập với thư viện |
-| **ETag / `If-None-Match`** | Có thì giảm băng thông ETL đáng kể |
+| ~~**ETag / `If-None-Match`**~~ | ✅ đo 2026-09-05: `v8/finance/chart` **không trả ETag** — ETL lấy cửa sổ 400 ngày mỗi lượt (~50 KB/mã) |
 | **Điều khoản dữ liệu Yahoo** | Không đọc được trong đợt khảo sát 2026-08-15 |
 | Quyền chọn · tin tức · bộ sàng lọc · dữ liệu giữ cổ phần | Không gọi — loại khỏi phạm vi từ đầu |

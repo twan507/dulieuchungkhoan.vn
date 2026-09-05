@@ -50,7 +50,24 @@ GET https://prices.lbma.org.uk/json/silver.json       # bạc
 
 ### 2.3 Lược đồ response
 
-⚠️ **Chưa kiểm.** Đợt khảo sát chỉ đếm số điểm, xác định khoảng lịch sử, dung lượng và giá trị điểm cuối. **Cấu trúc trường JSON, danh sách đơn vị tiền tệ trả kèm, và quy ước ngày nghỉ: chưa kiểm.** Phải mở một response thật trước khi viết parser.
+✅ **Đã kiểm 2026-09-05** (mở response thật, cả hai file):
+
+```json
+[{"is_cms_locked": 0, "d": "1968-04-01", "v": [37.7, 15.68, null]},
+ …,
+ {"is_cms_locked": 0, "d": "2026-09-04", "v": [4415.4, 3269.16, 3803.43]}]
+```
+
+| Trường | Ý nghĩa đo được |
+|---|---|
+| gốc | **mảng** các dòng, **tăng dần theo ngày**, không phân trang |
+| `d` | ngày fixing `YYYY-MM-DD` |
+| `v` | mảng **đúng 3 phần tử theo vị trí**: `[USD, GBP, EUR]` /oz; `null` = tiền tệ chưa có (EUR trước 1999) — vàng 7.737 / 14.676 dòng có null, bạc 7.847 / 14.839 |
+| `is_cms_locked` | cờ CMS nội bộ, luôn `0` trong mẫu — không mang nghĩa dữ liệu |
+
+Ngày nghỉ **bỏ hẳn dòng** (không chèn điểm rỗng): 14.676 điểm / 58 năm ≈ 253 điểm/năm. Điểm cuối 2026-09-04: vàng **4.415,40** · bạc **66,835** USD/oz; `silver.json` **897 KB**, 14.839 điểm. ETL lát 7 lấy `v[0]` (USD) theo vị trí `external_sub='0'`.
+
+*(Đợt 2026-08-15 chỉ đếm số điểm, khoảng lịch sử, dung lượng và giá trị điểm cuối — phần "chưa kiểm" cũ đã đóng ở đây.)*
 
 ### 2.4 Hiệu năng *(đo 2026-08-15, n=2)*
 
@@ -59,7 +76,7 @@ GET https://prices.lbma.org.uk/json/silver.json       # bạc
 | Trung vị | ~1.170 ms |
 | Chậm nhất | 1.331 ms |
 | Header hạn mức | **Không có** `X-RateLimit-*`, không có `Retry-After` |
-| ETag / `If-None-Match` | **Chưa kiểm** |
+| ETag / `If-None-Match` | **Có ETag nhưng KHÔNG sinh `304`** *(đo 2026-09-05: gửi `If-None-Match` đúng ETag vẫn nhận `200` trọn 914 KB; `cache-control: no-cache, no-store`; `last-modified` 05:20 GMT thứ 7)* |
 
 ⚠️ Không host nào trong nhóm nguồn quốc tế trả header hạn mức — **ETL phải tự giữ nhịp**, không trông chờ server báo.
 
@@ -125,7 +142,7 @@ Hệ quả bắt buộc nhớ:
 
 Không có tham số lọc ngày. Mỗi lần gọi là **~913 KB cho vàng**. ETL hằng ngày mà gọi lại toàn bộ thì tốn băng thông vô ích cho 14.661 điểm không đổi.
 
-→ Cách chặn: dùng `If-None-Match`/`ETag` nếu có — **nhưng chưa kiểm LBMA có hỗ trợ không**. Chưa xác nhận thì phải tự so điểm cuối và chỉ UPSERT phần mới.
+→ ~~Cách chặn: dùng `If-None-Match`/`ETag` nếu có~~ — **đo 2026-09-05: ETag có nhưng không sinh `304`**, nên ETL lát 7 tải trọn 2 file mỗi ngày (~1,8 MB) và UPSERT chỉ-khi-đổi; không lưu body thô (chỉ khi guard từ chối).
 
 ### ⚠️ Bẫy 3 — Lịch fixing không phải lịch phiên của thị trường khác
 
@@ -137,12 +154,12 @@ LBMA nghỉ theo **ngày nghỉ ngân hàng Anh**. Ngày nghỉ đó COMEX và c
 
 | Mục | Vì sao cần |
 |---|---|
-| **Lược đồ JSON đầy đủ** | Không viết được parser nếu chưa biết tên trường và cấu trúc mảng giá trị |
-| **ETag / `If-None-Match`** | Quyết định ETL hằng ngày tốn 913 KB hay 0 byte |
-| **Ngưỡng rate limit thật** | Chủ đích không dò trong đợt đo |
+| ~~**Lược đồ JSON đầy đủ**~~ | ✅ đo 2026-09-05 — §2.3 |
+| ~~**ETag / `If-None-Match`**~~ | ✅ đo 2026-09-05 — có ETag, không `304` (§2.4) |
+| **Ngưỡng rate limit thật** | Chủ đích không dò trong đợt đo; 2 lời gọi/ngày (lát 7) chạy sạch |
 | **Điều khoản sử dụng** | Việc của chủ dự án, tài liệu này chỉ ghi là chưa đọc |
-| **Dung lượng và giá trị điểm cuối của `silver.json`** | Đợt đo chỉ ghi số điểm và ngày đầu |
-| **Cách LBMA xử lý ngày nghỉ trong chuỗi** | Có chèn điểm rỗng hay bỏ hẳn ngày — ảnh hưởng cách dò gap |
+| ~~**Dung lượng và giá trị điểm cuối của `silver.json`**~~ | ✅ đo 2026-09-05 — 897 KB, 14.839 điểm, 66,835 USD/oz ngày 2026-09-04 |
+| ~~**Cách LBMA xử lý ngày nghỉ trong chuỗi**~~ | ✅ đo 2026-09-05 — bỏ hẳn dòng, không chèn điểm rỗng (§2.3) |
 
 ---
 

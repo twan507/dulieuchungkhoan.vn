@@ -17,11 +17,11 @@ Chín nguồn độc lập:
 | BVSC + FiinTrade | [`market/`](market/) — file `00`–`11`, phụ lục A/B | Cổ phiếu, chỉ số, **phái sinh, ETF/quỹ**, BCTC, dòng tiền, realtime | 2026-08-10, mẫu 51 mã · phái sinh và ETF **2026-08-15** |
 | WiChart (WiGroup) | [`macro/wichart.md`](macro/wichart.md) | Vĩ mô, tiền tệ, giá hàng hoá | 2026-08-12, toàn bộ 87 key |
 | **SBV** *(mới)* | [`macro/sbv-omo.md`](macro/sbv-omo.md) | Kết quả đấu thầu nghiệp vụ thị trường mở — crawl HTML, không có API | 2026-08-15, tải và parse thật 1 phiên |
-| **FRED** *(mới)* | [`global/fred.md`](global/fred.md) | Vĩ mô Mỹ — lãi suất, lạm phát, chỉ số đô, dầu giao ngay | 2026-08-15, 53 lời gọi, 15 series |
-| **Frankfurter (ECB)** *(mới)* | [`global/fx.md`](global/fx.md) | Tỷ giá quốc tế, chỉ số đô Mỹ dựng lại | 2026-08-15, nghiệm thu DXY trên 248 phiên |
-| **Yahoo Finance** *(mới)* | [`global/yahoo.md`](global/yahoo.md) | Chỉ số quốc tế, lợi suất TPCP Mỹ, họ biến động, ETF quốc gia | 2026-08-15, 58 lời gọi, `200` trên 44/44 |
-| **LBMA** *(mới)* | [`global/commodities.md`](global/commodities.md) | Fixing vàng và bạc chính thức, lịch sử từ 1968 | 2026-08-15, 2 endpoint |
-| **Binance** *(mới)* | [`global/crypto.md`](global/crypto.md) | Vàng token hoá 24/7 (PAXG) + 10 đồng crypto | 2026-08-15, 46/60 lời gọi |
+| **FRED** *(mới)* | [`global/fred.md`](global/fred.md) | Vĩ mô Mỹ — lãi suất, lạm phát, chỉ số đô, dầu giao ngay | 2026-08-15, 53 lời gọi, 15 series · đo lại 2026-09-05 (lát 7: vá hồi tố lần hai, độ trễ tháng ~72 ngày) |
+| **Frankfurter (ECB)** *(mới)* | [`global/fx.md`](global/fx.md) | Tỷ giá quốc tế, chỉ số đô Mỹ dựng lại | 2026-08-15, nghiệm thu DXY trên 248 phiên · đo lại 2026-09-05 (host đổi sang `api.frankfurter.dev/v1`) |
+| **Yahoo Finance** *(mới)* | [`global/yahoo.md`](global/yahoo.md) | Chỉ số quốc tế, lợi suất TPCP Mỹ, họ biến động, ETF quốc gia | 2026-08-15, 58 lời gọi, `200` trên 44/44 · đo lại 2026-09-05 (`quoteType` → `instrumentType`, cửa sổ ngắn trả 1 nến) |
+| **LBMA** *(mới)* | [`global/commodities.md`](global/commodities.md) | Fixing vàng và bạc chính thức, lịch sử từ 1968 | 2026-08-15, 2 endpoint · đo lại 2026-09-05 (lược đồ JSON `{d, v:[USD,GBP,EUR]}`) |
+| **Binance** *(mới)* | [`global/crypto.md`](global/crypto.md) | Vàng token hoá 24/7 (PAXG) + 10 đồng crypto | 2026-08-15, 46/60 lời gọi · đo lại 2026-09-05 (nến cuối đang chạy) |
 | 8 báo điện tử | [`news/README.md`](news/README.md) + [`news/article-structure.md`](news/article-structure.md) | 47 feed RSS + 6 crawler HTML, encoding, khối lượng, cấu trúc trang bài | 2026-08-13, 307 URL · 1.408 tiêu đề · cấu trúc trang bài 2026-08-15, 33 bài |
 
 Mọi thông tin đều được **kiểm chứng bằng lời gọi thật**. Không có nội dung nào suy đoán từ tên endpoint. Riêng WiChart còn kèm **bộ tự kiểm chứng chạy được** ([`verify_wichart.py`](macro/verify_wichart.py)) đối chiếu từng khẳng định với API sống.

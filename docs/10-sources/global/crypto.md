@@ -48,7 +48,7 @@ Lấy Binance vì **đúng hai thứ**, không phải vì "API tốt":
 
 ⚠️ **Ngưỡng chặn thật: chưa kiểm** — chủ đích không dò.
 
-⚠️ **Lệch đồng hồ:** máy trạm **chậm hơn server 646 ms** *(đo 2026-08-15)*. Phải hiệu chỉnh trước khi tính độ trễ, nếu không mọi phép đo độ tươi đều sai theo một chiều.
+⚠️ **Lệch đồng hồ:** máy trạm **chậm hơn server 646 ms** *(đo 2026-08-15)*, **991 ms** *(đo 2026-09-05)*. Phải hiệu chỉnh trước khi tính độ trễ, nếu không mọi phép đo độ tươi đều sai theo một chiều.
 
 ### 2.3 `/api/v3/klines` — lược đồ
 
@@ -187,6 +187,8 @@ Không có tên trường. Đọc nhầm vị trí thì không có lỗi nào b�
 ### 🔴 Bẫy 3 — Nến định danh bằng thời điểm MỞ, epoch ms UTC
 
 Phần tử `0` là **thời điểm mở nến**, không phải thời điểm đóng. Tham số `timeZone` mặc định UTC — **phải đặt rõ**. Không đặt rồi ghép với chuỗi giờ Việt Nam sẽ lệch nhãn ngày, đúng loại lỗi đã thật sự xảy ra với WiChart trong đợt đo 2026-08-15 *(xem [`../market/00-conventions.md`](../market/00-conventions.md))*.
+
+⚠️ **Nến cuối là nến ĐANG CHẠY** *(đo 2026-09-05)*: `limit=40` trả cả nến hôm nay với `closeTime` (phần tử `6`) = 23:59:59 UTC hôm nay, tức chưa đóng. ETL bỏ mọi nến có `closeTime > now`; backfill từ `startTime=0`, `limit=1000`: BTC 4 trang, PAXG 3 trang (39 lời gọi cho 11 mã, 30.951 nến).
 
 ### ⚠️ Bẫy 4 — Nhịp tin PAXG mỏng
 
