@@ -50,9 +50,9 @@ Không đăng ký task, lịch thuộc lát 13 (D6). Lát này chỉ làm cho jo
 
 | # | Giả định | Cách đo | Nếu sai |
 |---|---|---|---|
-| A2 | Yahoo chịu **54 lời gọi mỗi 30 phút, giãn cách 1–5 s** | 4 lượt cách 30 phút (~2 giờ), 0 lỗi HTTP ⇒ "mức này an toàn" (§4.3 CLAUDE.md), không dò ngưỡng | hạ nhịp 60 phút, ghi vào bảng nhịp cho lát 13 |
-| A4 | WiChart chịu **47 key × 12 lượt/giờ** (~13.500 lời gọi/ngày; đã đo 90 lời gọi liên tiếp sạch 05/09 sáng) | 12 lượt cách 5 phút (1 giờ) | hạ nhịp 15 phút |
-| A5 | Nến Yahoo đang chạy trong cửa sổ 5 ngày **đổi `close` giữa hai lời gọi trong phiên** và ngày sàn không đổi | cần phiên thật: TA-125 chủ nhật 13:00–21:25 VN hoặc Nikkei thứ 2 07:00–13:00 VN — chính là AC3 | không có nến live cho chỉ số ⇒ chỉ FX/Binance có trong ngày; D1 vẫn đúng |
+| A2 | Yahoo chịu **54 lời gọi mỗi 30 phút, giãn cách 1–5 s** | 4 lượt × 54 **nối đuôi** (216 lời gọi/~11 phút — nặng hơn nhịp kế hoạch, sạch thì nhịp 30 phút an toàn a fortiori; chủ dự án chọn đo nén thay vì chờ 2 giờ), 0 lỗi HTTP ⇒ "mức này an toàn" (§4.3 CLAUDE.md), không dò ngưỡng | hạ nhịp 60 phút, ghi vào bảng nhịp cho lát 13 |
+| A4 | WiChart chịu **47 key × 12 lượt/giờ** (~13.500 lời gọi/ngày; đã đo 90 lời gọi liên tiếp sạch 05/09 sáng) | 6 lượt × 47 nối đuôi (282 lời gọi/~14 phút — gấp đôi nhịp 5 phút) | hạ nhịp 15 phút |
+| A5 | Nến Yahoo đang chạy trong cửa sổ 5 ngày **đổi `close` giữa hai lời gọi trong phiên** và ngày sàn không đổi | **không đo được thứ 7** (mọi sàn trong danh sách đóng); đo bằng chính AC3 ở bước nghiệm thu — TA-125 chủ nhật 13:00–21:25 VN hoặc Nikkei thứ 2 07:00–13:00 VN. Không chặn viết code: luật ngày sàn + dedupe đã pin bằng fixture thứ 7 | không có nến live cho chỉ số ⇒ chỉ FX/Binance có trong ngày; D1 vẫn đúng |
 | A7 | FX Yahoo cuối tuần: nến "thứ 7" hẹp (`CAD=X` 09-05) là dòng hợp lệ trong `ohlc_daily` (giá thật, nguồn tự ghi) | quan sát sau lượt thật thứ 7/chủ nhật | nếu tầng đọc thấy nhiễu: lọc theo `calendar` ở tầng đọc, không xoá ở ETL |
 
 ## 3. Phạm vi
@@ -93,7 +93,9 @@ Không đăng ký task, lịch thuộc lát 13 (D6). Lát này chỉ làm cho jo
 
 ### 4.2 Bỏ `DEXCHUS`, thêm CNY vào ECB, giữ `DTWEXBGS` *(câu 2 → (a))*
 
-Hệ quả bắt buộc của 4.1 và luật khoá: ECB ghi `('fx.usd_cny', ngày, 'fixing')` đúng khoá `DEXCHUS` đang ghi ⇒ hai nguồn giành một dòng. Loại (b) bỏ cả `DTWEXBGS`: mất chuỗi broad của Fed mà không có gì thay. Loại (c) đổi FRED CNY thành asset riêng `fx.usd_cny.ny`: đúng luật "khác mốc chốt = asset khác" nhưng thêm asset chưa ai cần. Bỏ = xoá dòng registry ⇒ `load_registry` xoá dòng ánh xạ `(fred, DEXCHUS)` đầu lượt (luật I1), **dòng `asset` và dữ liệu `price_daily` giữ nguyên**; `test_e49` không còn cần ngoại lệ cho `fx.usd_cny`. **Đảo ngược khi:** cần chuỗi noon-NY riêng ⇒ thêm lại dòng với mã `fx.usd_cny.ny`.
+Hệ quả bắt buộc của 4.1 và luật khoá: ECB ghi `('fx.usd_cny', ngày, 'fixing')` đúng khoá `DEXCHUS` đang ghi ⇒ hai nguồn giành một dòng. Chủ dự án chốt thêm (tối 05/09): **tỷ giá lấy một nguồn — nguồn đang là chính (ECB, fx.md §7), FRED chỉ góp đúng một cặp nên bỏ.** Loại (b) bỏ cả `DTWEXBGS`: mất chuỗi broad của Fed mà không có gì thay. Loại (c) đổi FRED CNY thành asset riêng `fx.usd_cny.ny`: đúng luật "khác mốc chốt = asset khác" nhưng thêm asset chưa ai cần.
+
+**Chuỗi `fx.usd_cny` phải thuần ECB, không trộn mốc:** lượt ECB là trọn chuỗi (ECB có CNY từ **2000-01-13**, đo 05/09) nên UPSERT sẽ ghi đè dòng FRED 2000–2026 bằng giá ECB, còn 1981–1999 vẫn là FRED — bậc gãy thật nằm ở năm 2000, không phải 28/08. Đo 63 ngày trùng 06–08/2026: lệch ECB/FRED trung bình tuyệt đối **0,021 %** (max +0,149 %), nhỏ hơn 4 lần biến động ngày-qua-ngày của chính chuỗi (0,083 %) — không nhìn thấy trên biểu đồ, nhưng vi phạm luật bước 5. Vì thế: **xoá toàn bộ 11.397 dòng FRED của `fx.usd_cny` (từ 1981-01-02) trước lượt ECB đầu tiên** — một `DELETE` có đếm trong plan, dưới role `dlck_etl`, cùng giao dịch với lượt đầu; đoạn 1981–1999 (CNY neo cứng) lấy lại được từ FRED bất kỳ lúc nào dưới mã riêng. Bỏ series = xoá dòng registry ⇒ `load_registry` xoá dòng ánh xạ `(fred, DEXCHUS)` đầu lượt FRED (luật I1); `test_e49` không còn cần ngoại lệ cho `fx.usd_cny`. **Đảo ngược khi:** cần chuỗi noon-NY riêng ⇒ thêm lại dòng FRED với mã `fx.usd_cny.ny`.
 
 ### 4.3 Tên mã FX Yahoo: hậu tố `.market` cho cả 17 *(câu 3 → (a))*
 
@@ -152,7 +154,7 @@ Hệ quả cho lát 13 (ghi §5.7): ruling "xếp `yahoo` sau 11:00 VN vì DXY" 
 ### 5.5 Registry
 
 - **Yahoo +17** (Phụ lục F): `asset_class='fx'`, `quote_currency=<ccy>`, `unit='<CCY>/1 USD'`, `region` theo nước, `calendar='trading_days'`, `price_type=None`, `shape='ohlc'`, **`max_lag_days=6`** (cùng ECB; FX cập nhật mỗi ngày làm việc, khác chỉ số 14 ngày phủ Tết), `band` = (đo ÷ 10, × 10) làm tròn trên `close` 04/09 — bắt lỗi 100×, không bắt biến động. Yahoo thành 54 series.
-- **ECB +CNY**: `("CNY", "fx.usd_cny", "Tỷ giá CNY/USD (fixing ECB)", "3", "15")` — mã **giữ `fx.usd_cny`** (asset đã có từ FRED, cùng `asset_id`, dòng ánh xạ mới `(ecb, CNY)`), `name_vi` đổi theo nguồn mới. URL `to=EUR,JPY,GBP,CAD,SEK,CHF,CNY`; cổng "đủ tiền tệ ở ngày cuối" thành 7.
+- **ECB +CNY**: `("CNY", "fx.usd_cny", "Tỷ giá CNY/USD (fixing ECB)", "3", "15")` — mã **giữ `fx.usd_cny`** (asset đã có từ FRED, cùng `asset_id`, dòng ánh xạ mới `(ecb, CNY)`), `name_vi` đổi theo nguồn mới; **dòng FRED cũ của asset này xoá trước lượt ECB đầu (§4.2)**. URL `to=EUR,JPY,GBP,CAD,SEK,CHF,CNY`; cổng "đủ tiền tệ ở ngày cuối" thành 7.
 - **FRED −`DEXCHUS`**: 14 series (11 macro + 3 asset). Phụ lục A spec lát 7 sửa kèm ghi "bỏ ở lát 7b".
 - `test_e49`: 5 registry + WiChart không trùng mã — `fx.usd_cny` nay chỉ ECB; `fx.usd_vnd.market` không trùng 5 mã `fx.usd_vnd.*` của WiChart.
 
@@ -187,7 +189,7 @@ Expected từ mẫu thật chụp 2026-09-05 (`samples/yahoo-EURX-5d.json` — b
 | `yahoo_registry.build` | 54 series; 17 `asset_class='fx'` có `unit == f"{ccy}/1 USD"`, `max_lag_days == 6`; `fx.usd_eur.market` band chứa 0.8605, không chứa 86.05; `VND=X` → `fx.usd_vnd.market` |
 | `fx_registry`/`fx_normalize` | 7 series; `CNY: 6.7109` ngày 2026-09-04 ⇒ `Point('fx.usd_cny', 2026-09-04, 6.7109, 'fixing')`; ngày thiếu 1/7 tiền tệ ⇒ `shape` |
 | `fred_registry` | 14 series, không có `DEXCHUS`; `test_e44` số đếm 15 → 14, registry `asset` 4 → 3 |
-| `registry.load_registry` | chạy `load_registry(…, 'fred')` với 14 series khi kho có dòng `(fred, DEXCHUS)` ⇒ `removed == 1`, asset `fx.usd_cny` **còn**, dữ liệu `price_daily` của nó còn; rồi `load_registry(…, 'ecb')` 7 series ⇒ `fx.usd_cny` **cùng `asset_id`** (không tạo asset mới), thêm dòng `(ecb, CNY)` |
+| `registry.load_registry` | chạy `load_registry(…, 'fred')` với 14 series khi kho có dòng `(fred, DEXCHUS)` ⇒ `removed == 1`, asset `fx.usd_cny` **còn** (xoá dữ liệu là bước riêng trong plan, không phải việc của `load_registry`); rồi `load_registry(…, 'ecb')` 7 series ⇒ `fx.usd_cny` **cùng `asset_id`** (không tạo asset mới), thêm dòng `(ecb, CNY)` |
 | `test_e49` | 5 registry + WiChart: 0 mã trùng (không còn ngoại lệ cho `fx.usd_cny`) |
 | `wichart_job.run(intraday=True)` | `get` giả: gọi đúng **47 key** (không có `cpi`), `stats.intraday == True`, không có `stats.watermark`, `data_domain_state` **không** đổi; guard chạy (ép 3/47 bad shape = 6,4 % ⇒ `failed`); `keys=[…]` cùng `intraday=True` ⇒ exit 2 |
 | quyền | `test_e43` role: thêm `SET LOCAL ROLE dlck_etl` qua `apply_ohlc` với dòng đã có (UPDATE — đường ghi đè nến đang chạy, lần đầu có trong production) |
@@ -201,7 +203,7 @@ Expected từ mẫu thật chụp 2026-09-05 (`samples/yahoo-EURX-5d.json` — b
 | AC2 | `--intraday --dry-run` trên nguồn sống: `yahoo` 54/54 ok (trừ `stale` ở sàn nghỉ nếu có), mỗi mã ≤ 6 nến; `binance` 11/11, 3 nến/mã; `wichart` 47/47 key | `stats` ba job (`calls`, `bars`/`points`, `intraday: true`) |
 | AC3 | **Nến đang chạy vào kho và đổi** — thay AC7 nửa Yahoo của lát 7: `binance --intraday --keys BTCUSDT` hai lần cách 5 phút (bất kỳ lúc nào) ⇒ dòng ngày UTC hôm nay tồn tại, `close` **khác nhau**, `ingested_at` tiến; `yahoo --intraday --keys ^TA125.TA` (chủ nhật 13:00–21:25 VN) hoặc `^N225` (thứ 2 07:00–13:00 VN) hai lần cách 15 phút ⇒ dòng ngày hôm đó, `close` khác nhau; `wichart --intraday --keys vang_the_gioi,dhtg` hai lần trong giờ làm việc ⇒ điểm ngày hôm đó đổi (WiChart: chờ ngày làm việc — thứ 2) | 6 truy vấn kèm giờ chạy |
 | AC4 | Lượt thường (không `--intraday`) ngay sau AC3: `changed` **chỉ** ở nến/điểm ngày hiện tại, `inserted = 0`, không đụng nến đã chốt (`max(ingested_at)` của dòng < hôm nay không tiến) | `stats.changed` + truy vấn |
-| AC5 | FX Yahoo: 17 cặp có dòng ngày gần nhất trong `ohlc_daily`; 7 cặp có ECB (6 + CNY) lệch fixing cùng ngày **< 1 %**, đúng chiều quote trên 1 USD; `fx.usd_cny` có dòng ECB `fixing` ngày mới nhất và dòng `(fred, DEXCHUS)` **không còn** trong `asset_external_id` | bảng đối chiếu + 2 truy vấn |
+| AC5 | FX Yahoo: 17 cặp có dòng ngày gần nhất trong `ohlc_daily`; 7 cặp có ECB (6 + CNY) lệch fixing cùng ngày **< 1 %**, đúng chiều quote trên 1 USD; `fx.usd_cny` có dòng ECB `fixing` ngày mới nhất, `min(obs_date)` = **2000-01-13** (không còn dòng FRED 1981), và dòng `(fred, DEXCHUS)` **không còn** trong `asset_external_id` | bảng đối chiếu + 3 truy vấn, kèm số dòng DELETE |
 | AC6 | Giãn cách: từ log có timestamp của một lượt `fred` thật (15 lời gọi), 14 khoảng đều ∈ [1, 5] s (cộng thời gian phản hồi), không hai khoảng nào bằng nhau tới 0,01 s | log + bảng khoảng |
 | AC7 | Tải ở đúng nhịp: A2 Yahoo 4 lượt × 54 cách 30 phút; A4 WiChart 12 lượt × 47 cách 5 phút — **0 lỗi HTTP, 0 tín hiệu chặn** ⇒ ghi "mức này an toàn" vào yahoo.md §7 / wichart.md §2.5 kèm ngày đo | log đếm + số ms |
 | AC8 | Mọi lượt trên chạy dưới credential production (`ETL_DATABASE_URL`, role `dlck_etl`); khoá FRED 0 lần trong log/`stats`/`raw_payload` | dòng lệnh + exit code + grep |
@@ -223,7 +225,7 @@ Expected từ mẫu thật chụp 2026-09-05 (`samples/yahoo-EURX-5d.json` — b
 ## 9. Điểm cần chủ dự án duyệt tường minh
 
 1. **Hậu tố `.market`** cho 17 mã FX Yahoo (câu 3) — mặt API, đổi sau tốn migration.
-2. **Bỏ `DEXCHUS`**, giữ `DTWEXBGS`, ECB +CNY dùng **cùng mã `fx.usd_cny`** (câu 2) — dữ liệu FRED cũ của `fx.usd_cny` giữ nguyên trong `price_daily` (cùng `price_type='fixing'`, khác mốc chốt: noon NY tới 08/28 rồi ECB 14:15 CET từ nay — **một bậc nhỏ tại điểm đổi nguồn**, cùng loại cảnh báo CLAUDE.md §2.3; chấp nhận vì H.10 là tuần và đã dừng 08/28, hay muốn xoá 10 năm dòng FRED của `fx.usd_cny`?).
+2. **Bỏ `DEXCHUS`**, giữ `DTWEXBGS`, ECB +CNY dùng **cùng mã `fx.usd_cny`** và **xoá 11.397 dòng FRED cũ** của asset này trước lượt ECB đầu (câu 2, chốt tối 05/09: tỷ giá một nguồn = ECB) — chuỗi thuần ECB từ 2000, mất đoạn 1981–1999 (lấy lại được từ FRED dưới mã riêng).
 3. **`INTRADAY` WiChart theo `freq == 'd'`** = 47 key (câu 4–5), 13.500 lời gọi/ngày.
 4. Bốn điểm tự chốt §4.6 (mốc nước, guard, giãn cách kể cả retry, cờ loại trừ).
 5. `max_lag_days = 6` cho FX Yahoo (chỉ số giữ 14).
