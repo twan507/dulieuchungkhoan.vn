@@ -1,6 +1,6 @@
 # Spec — lát 8b: backfill sitemap BNews + NguoiQuanSat (một job `--backfill-sitemap --source`, con trỏ riêng từng nguồn)
 
-**Ngày:** 2026-09-06 sáng · **Nhánh:** `feat/news-backfill-sitemaps` · **Trạng thái:** chủ dự án duyệt thiết kế 10 điểm trong chat 2026-09-06 sáng (phạm vi BNews: lấy hết, độ sâu chọn lúc chạy); spec này là bản ghi đầy đủ, chờ duyệt spec
+**Ngày:** 2026-09-06 sáng · **Nhánh:** `feat/news-backfill-sitemaps` · **Trạng thái:** chủ dự án duyệt thiết kế 10 điểm rồi duyệt spec 2026-09-06 sáng ("độ sâu chốt luôn lấy tạm 1 tháng… còn lại ok")
 **Tiền đề:** [roadmap — Điểm vào cho lát 8b](../../../00-overview/roadmap.md) · [spec lát 8](../2026-09-05-news-collect/spec.md) (§4.6-VIII, IX: khuôn backfill; §5.7) · [news-pipeline §9.6](../../../20-design/news-pipeline.md) · [news/README §5.2](../../../10-sources/news/README.md) · [article-structure §2.6, §2.7](../../../10-sources/news/article-structure.md)
 **Số đo trước spec:** [`measure-sitemap-bnews-nqs-2026-09-06.md`](measure-sitemap-bnews-nqs-2026-09-06.md) (≈50 lời gọi, hai host).
 
@@ -75,8 +75,8 @@ Không migration. Không AI. Không đăng ký task.
 
 ## 4. Quyết định *(§4.8 — chủ dự án chốt trong chat 2026-09-06 sáng)*
 
-### 4.1 Phạm vi BNews: lấy hết, `--from` chọn lúc chạy *(câu 1 → (a))*
-Loại (b) lọc theo `article:section` sau tải: vẫn tốn lời gọi, chỉ tiết kiệm dung lượng, phải chốt danh sách chuyên mục. Loại (c) mốc cứng: quyết định vận hành không nên nằm trong code. **Đảo ngược:** kho `news.*` vượt dung lượng VPS ⇒ lọc ở lát 9 bằng nhóm đã gán.
+### 4.1 Phạm vi BNews: lấy hết, không lọc chuyên mục; **độ sâu tạm 1 tháng (2026-08) cho cả hai nguồn** *(câu 1 → (a); chủ dự án chốt thêm độ sâu khi duyệt spec 2026-09-06 sáng: "lấy tạm 1 tháng thôi, không lấy quá nhiều")*
+Loại (b) lọc theo `article:section` sau tải: vẫn tốn lời gọi, chỉ tiết kiệm dung lượng, phải chốt danh sách chuyên mục. Loại (c) mốc cứng trong code: quyết định vận hành không nên nằm trong code — độ sâu là tham số `--from` lúc chạy; lát này chạy đúng **một tháng 2026-08** mỗi nguồn (không lùi thêm) và không đăng ký lượt nào tự lùi tiếp. **Đảo ngược:** chủ dự án muốn lùi sâu hơn ⇒ chạy lại với `--from` xa hơn, con trỏ nối tiếp; kho `news.*` vượt dung lượng VPS ⇒ lọc ở lát 9 bằng nhóm đã gán.
 
 ### 4.2 Điểm trợ lý tự chốt khi viết spec (ghi §9 để rà)
 
@@ -88,7 +88,7 @@ Loại (b) lọc theo `article:section` sau tải: vẫn tốn lời gọi, ch�
 | IV | `published_at` bài backfill BNews/NQS = `lastmod`, `src='feed'`; `published_for` không đổi | đo `lastmod` = giờ đăng ở cả hai (23/23 BNews, 3/3 NQS); NQS có giờ trang nhưng bằng nhau | phát hiện `lastmod` bị cập nhật khi sửa bài ⇒ đưa NQS vào nhánh "giờ trang trước" như TinnhanhCK |
 | V | 403 NQS: không đổi UA, dùng retry sẵn có; kỳ hỏng sau retry → `periods_failed`, không đẩy con trỏ qua kỳ đó, chạy lại lượt sau tự vá | đo §2.1; kỳ hỏng không đếm vào cầu chì (I2 lát 8) | A1 sai ⇒ backoff riêng cho NQS |
 | VI | Lọc entry bằng regex URL bài theo nguồn thay luật "bỏ phần tử đầu" | BNews có 3 phần tử đầu, NQS có 0, TNCK có 1 — regex phủ cả ba mà không đếm vị trí | — |
-| VII | Ước tải: BNews ~4.000 URL/tháng × ~3,2 s ≈ **3,5 giờ/tháng**, 2015-08 → 2026-08 ≈ 480 giờ; NQS ~5.000 URL/tháng ≈ **4,5 giờ/tháng**, 2021-07 → 2026-08 ≈ 250 giờ. Lát này nghiệm thu **30 phút mỗi nguồn** trên 2026-08 + 10 phút NQS 2024-01 | §4.3 CLAUDE.md | — |
+| VII | Ước tải: BNews ~4.000 URL/tháng × ~3,2 s ≈ **3,5 giờ/tháng**, 2015-08 → 2026-08 ≈ 480 giờ; NQS ~5.000 URL/tháng ≈ **4,5 giờ/tháng**, 2021-07 → 2026-08 ≈ 250 giờ. Lát này chạy **trọn tháng 2026-08 mỗi nguồn** (BNews ≈ 4.085 URL ≈ 3,5 giờ; NQS ≈ 5.000 URL ≈ 4,5 giờ, chia nhiều lượt `--max-minutes`, con trỏ nối) + 10 phút NQS 2024-01 để chứng template cũ; **không lùi quá 2026-08** (§4.1) | §4.3 CLAUDE.md; chủ dự án chốt độ sâu | — |
 | VIII | Chạy song song với `--loop`: được; mỗi nguồn tối đa một tiến trình backfill (không có khoá trong code — `ON CONFLICT` lát 8 C2 đã bảo vệ dữ liệu, chỉ là quy ước vận hành) | tải thêm ≈ 1 lời gọi/3 s mỗi host | A4 sai |
 
 ## 5. Thiết kế
@@ -148,7 +148,7 @@ Giữ nguyên lát 8 (I2, §4.6-VII, cầu chì 10 bài, Ctrl+C ⇒ 130, excepti
 |---|---|---|
 | AC1 | Toàn bộ test xanh | trước **791 passed, 2 skipped** / sau |
 | AC2 | `etl news --dry-run` sau đổi registry: `lists_ok` 52–53, không có nguồn `backfill_only` trong lượt | `stats` |
-| AC3 | `etl news --backfill-sitemap --source bnews --from 2026-08 --to 2026-08 --max-minutes 30` và `--source nguoiquansat …` (tách tiến trình, `--loop` đang chạy): bài vào kho `feed='sitemap'`, `primary_source` đúng; **3 bài mỗi nguồn đối chiếu tay** (tiêu đề, 60 ký tự đầu, `published_at` = `lastmod` = giờ trên trang/ld+json); `stats.source`, `period_unit`, `periods_failed`, `articles_failed` ghi; NQS: tỷ lệ HTTP ≠ 200 sau retry ≤ 5 % (A1) | `stats` + truy vấn + bảng đối chiếu |
+| AC3 | `etl news --backfill-sitemap --source bnews --from 2026-08 --to 2026-08 --max-minutes N` và `--source nguoiquansat …` chạy nhiều lượt tới khi `cursor == "2026-08"` / `"2026-08-01"` (tách tiến trình, `--loop` đang chạy): bài vào kho `feed='sitemap'`, `primary_source` đúng; **3 bài mỗi nguồn đối chiếu tay** (tiêu đề, 60 ký tự đầu, `published_at` = `lastmod` = giờ trên trang/ld+json); `stats.source`, `period_unit`, `periods_failed`, `articles_failed` ghi; NQS: tỷ lệ HTTP ≠ 200 sau retry ≤ 5 % (A1) | `stats` + truy vấn + bảng đối chiếu |
 | AC4 | `--source nguoiquansat --from 2024-01 --to 2024-01 --max-minutes 10`: bài template cũ vào kho, `refused` theo `reason` ≈ 0, `published_at` khớp `span.c-detail-head__time` 3 bài | `stats` + truy vấn |
 | AC5 | Lượt hai cùng tham số mỗi nguồn ⇒ `articles_ok 0`, `skipped_seen` = số đã có; con trỏ nguồn này không đổi con trỏ nguồn kia; `--source tinnhanhck` đọc được con trỏ cũ `2026-08`… của lát 8 (`load_cursor` fallback) | `ops.etl_run` |
 | AC6 | Kho: `article_source` mỗi bài backfill một dòng đúng `source_name`; 0 bài `primary_source` sai nguồn | truy vấn |
@@ -171,4 +171,4 @@ Giữ nguyên lát 8 (I2, §4.6-VII, cầu chì 10 bài, Ctrl+C ⇒ 130, excepti
 3. `--from/--to` vẫn `YYYY-MM` cho nguồn ngày; con trỏ ghi tới ngày (§4.2-III).
 4. `published_at` = `lastmod`, `src='feed'` cho BNews/NQS (§4.2-IV).
 5. Không đổi UA cho NQS; chấp nhận kỳ hỏng chạy lại lượt sau (§4.2-V).
-6. Nghiệm thu 30 phút mỗi nguồn + 10 phút NQS 2024-01; `--from` thật do chủ dự án chọn khi chạy (§4.2-VII).
+6. Độ sâu tạm **1 tháng (2026-08)** mỗi nguồn, không lùi thêm; 10 phút NQS 2024-01 chỉ để chứng template cũ (§4.1, §4.2-VII). ✅ chủ dự án chốt 2026-09-06 sáng.
