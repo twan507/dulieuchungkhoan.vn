@@ -145,6 +145,32 @@ def test_parse_sitemap_drops_homepage_entry_and_keeps_lastmod():
     assert items[0].published_at_src == "feed" and items[0].group_from_feed is None and items[0].feed_slug == "sitemap" and items[0].rule == "tinnhanhck"
 
 
+def test_parse_sitemap_bnews_drops_home_photo_video_by_regex():
+    # Fixture cắt từ https://bnews.vn/sitemap/news-2026-9.xml (đo 2026-09-06): 3 phần tử đầu không phải bài + 5 bài, giảm dần.
+    items = np_.parse_sitemap((FIX / "sitemap-bnews-2026-9.xml").read_text(encoding="utf-8"), _src("bnews", "sitemap", "sitemap", None))
+    assert len(items) == 5
+    assert items[0].url == "https://bnews.vn/lich-thi-dau-va-truc-tiep-ngoai-hang-anh-arsenal-vs-chelsea-luc-22h30-ngay-6-9/435626.html"
+    assert items[0].published_at == datetime(2026, 9, 6, 5, 30, 0, tzinfo=VN) and items[0].published_at_src == "feed"
+    assert items[-1].url == "https://bnews.vn/le-hoi-den-long-viet-nam-thu-hut-5-000-nguoi-tai-australia/435662.html"
+    assert items[-1].published_at == datetime(2026, 9, 5, 22, 5, 14, tzinfo=VN)
+    assert all(it.source == "bnews" and it.rule == "bnews" and it.feed_slug == "sitemap" and it.group_from_feed is None for it in items)
+    assert not any("/photo/" in it.url or "/video/" in it.url or it.url == "https://bnews.vn" for it in items)
+
+
+def test_parse_sitemap_nguoiquansat_day_file_with_image_extension():
+    # Fixture cắt từ sitemap-article-2026-09-05.xml (đo 2026-09-06): không có phần tử trang chủ, có <image:image>, giảm dần.
+    items = np_.parse_sitemap((FIX / "sitemap-nguoiquansat-2026-09-05.xml").read_text(encoding="utf-8"), _src("nguoiquansat", "sitemap", "sitemap", None))
+    assert len(items) == 5
+    assert items[0].url.endswith("-du-kien-hoat-dong-nam-2027-314422.html") and items[0].published_at == datetime(2026, 9, 5, 23, 48, 1, tzinfo=VN)
+    assert items[4].url.endswith("-cho-khach-hang-mua-nha-314417.html") and items[4].published_at == datetime(2026, 9, 5, 23, 4, 1, tzinfo=VN)
+    assert items[0].source == "nguoiquansat" and items[0].rule == "nguoiquansat" and items[0].canonical_url == items[0].url
+
+
+def test_parse_sitemap_unknown_source_is_a_registry_bug_not_silent():
+    with pytest.raises(KeyError):
+        np_.parse_sitemap("<urlset></urlset>", _src("cafef", "sitemap", "sitemap", None))
+
+
 def test_parse_cafef_cbtt_extracts_ticker_and_drops_exchanges():
     # M2: số chính xác, đếm độc lập với code — grep -oE '/du-lieu/[A-Z0-9]{2,6}-[0-9]+/[^"'"'"' ]*\.chn'
     #   tests/etl/fixtures/news/list-cafef-cbtt.html | sort -u | wc -l  ⇒ 21
