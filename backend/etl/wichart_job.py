@@ -2,6 +2,8 @@
 
 Khác lát 4–5: guard đánh giá TRƯỚC khi mở giao dịch ghi (chưa ghi gì nên không cần rollback);
 bằng chứng từ chối ở giao dịch riêng. `--keys` = lượt con: không guard, không đụng domain state.
+`--intraday` = lượt trên tập tần suất ngày: guard như lượt trọn, KHÔNG đẩy mốc nước (lượt trọn hằng ngày giữ),
+không lưu body.
 """
 from __future__ import annotations
 
@@ -21,6 +23,12 @@ from etl.wichart_normalize import VN, SeriesError
 log = logging.getLogger("etl.wichart")
 JOB = wichart_store.JOB
 MAX_ERRORS_IN_STATS = 50
+
+
+def intraday_series(registry):
+    """Lượt --intraday = mọi series tần suất NGÀY (47 key: 43 hang_hoa + dhtg, lsdh, lslnh, lshd) — spec 7b §4.4:
+    tiêu chí là `freq`, không phải danh sách tay; nhóm tháng/quý/năm chỉ chạy ở lượt trọn hằng ngày."""
+    return [s for s in registry if s.freq == "d"]
 
 
 def _engine():
@@ -68,7 +76,7 @@ def _normalize_all(series, docs, failed, bad):
     return points, t, errors
 
 
-def run(keys=None, dry_run=False, get=None, sleep=time.sleep) -> int:
+def run(keys=None, dry_run=False, intraday=False, get=None, sleep=time.sleep) -> int:
     logging.basicConfig(level=logging.INFO, stream=sys.stderr,
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
     load_dotenv()
@@ -81,6 +89,8 @@ def run(keys=None, dry_run=False, get=None, sleep=time.sleep) -> int:
     run_id = omo_store.open_run(engine, JOB)
     try:
         registry = wichart_registry.build()                     # hợp đồng khởi động: lệch là chết trước fetch
+        if subset and intraday:
+            raise RuntimeError("--keys và --intraday loại trừ nhau")
         series = registry
         if subset:
             known = {s.key for s in registry}
@@ -88,6 +98,8 @@ def run(keys=None, dry_run=False, get=None, sleep=time.sleep) -> int:
             if unknown:
                 raise RuntimeError(f"key không có trong registry: {unknown}")
             series = [s for s in registry if s.key in set(keys)]
+        elif intraday:
+            series = intraday_series(registry)
         groups = wichart_registry.key_groups(series)
 
         docs, texts, failed, bad, calls, retries = _fetch_all(groups, get, sleep)
@@ -100,6 +112,8 @@ def run(keys=None, dry_run=False, get=None, sleep=time.sleep) -> int:
                  "failed_keys": failed, "bad_shape_keys": bad}
         if subset:
             stats["subset"] = True
+        if intraday:
+            stats["intraday"] = True
         if dry_run:
             stats["dry_run"] = True
             stats["refused"] = verdict.reasons
@@ -114,16 +128,17 @@ def run(keys=None, dry_run=False, get=None, sleep=time.sleep) -> int:
             return 1
 
         with engine.begin() as conn:
-            resolved, reg_stats = wichart_store.load_registry(conn, registry)   # registry TRỌN, kể cả lượt con
+            resolved, reg_stats = wichart_store.load_registry(conn, registry)   # registry TRỌN, kể cả lượt con/intraday
             written = wichart_store.apply(conn, points, resolved)
             wichart_store.seed_series_break(conn)
-            stored = sum(1 for key, text in texts.items() if wichart_store.store_payload_if_changed(conn, key, text, run_id))
+            # Lượt intraday KHÔNG lưu body khi hash đổi: 47 key × 288 lượt/ngày × ~30 KB — đúng lý do lát 7 bỏ lưu body (ruling 7b)
+            stored = 0 if intraday else sum(1 for key, text in texts.items() if wichart_store.store_payload_if_changed(conn, key, text, run_id))
         stats.update({"registry": reg_stats, "inserted": written.inserted, "changed": written.changed,
                       "payloads_stored": stored})
-        if not subset:
+        if not subset and not intraday:
             stats["watermark"] = run_date.isoformat()
         omo_store.close_run(engine, run_id, "success", stats)      # close_run TRƯỚC, domain state SAU
-        if not subset:
+        if not subset and not intraday:
             wichart_store.upsert_domain_state(engine, run_date.isoformat())
         log.info("wichart xong: %s", stats)
         return 0

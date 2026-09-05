@@ -23,3 +23,11 @@ def test_intraday_and_backfill_are_mutually_exclusive_and_fred_has_no_intraday()
     with pytest.raises(SystemExit) as e:
         m.main(["fred", "--intraday"])
     assert e.value.code == 2
+
+
+def test_wichart_intraday_flag_reaches_the_job(monkeypatch):
+    import etl.wichart_job
+    seen = {}
+    monkeypatch.setattr(etl.wichart_job, "run", lambda **kw: seen.update(kw) or 0)
+    assert m.main(["wichart", "--intraday"]) == 0
+    assert seen == {"keys": None, "dry_run": False, "intraday": True}

@@ -211,3 +211,43 @@ def test_unknown_key_is_an_error_before_any_call(clean, monkeypatch):
     calls = []
     assert wj.run(keys=["cpi", "khong_co"], get=_fake_get(calls), sleep=lambda s: None) == 2
     assert calls == []
+
+
+INTRADAY_KEYS = sorted({s.key for s in wr.build() if s.freq == "d"})
+
+
+def test_intraday_run_hits_only_the_47_daily_keys_guards_and_leaves_domain_state_alone(clean, monkeypatch):
+    _wire(monkeypatch)
+    calls = []
+    assert wj.run(intraday=True, get=_fake_get(calls), sleep=lambda s: None) == 0
+    assert sorted(set(calls)) == INTRADAY_KEYS and len(INTRADAY_KEYS) == 47 and "cpi" not in calls and "dhtg" in calls and "lslnh" in calls
+    status, stats, _ = _last_run(clean)
+    assert status == "success" and stats["intraday"] is True and "watermark" not in stats and "subset" not in stats
+    assert stats["tally"]["keys_total"] == 47 and stats["tally"]["series_ok"] == 61 and stats["payloads_stored"] == 0
+    assert _scalar(clean, "SELECT count(*) FROM ops.data_domain_state WHERE source='wichart'") == 0
+    assert _scalar(clean, "SELECT count(*) FROM staging.raw_payload WHERE source='wichart'") == 0
+    assert _scalar(clean, "SELECT value FROM asset.price_daily p JOIN asset.asset a USING (asset_id)"
+                          " WHERE a.code='gold.sjc_buy' AND obs_date='2026-09-04'") == Decimal("145600000")
+    assert _scalar(clean, "SELECT count(*) FROM macro.observation o JOIN macro.indicator i USING (indicator_id) WHERE i.code='vn.cpi'") == 0
+
+
+def test_intraday_run_is_guarded_like_a_full_run(clean, monkeypatch):
+    _wire(monkeypatch)
+    bad = {"dau_wti", "bac", "dong", "kem"}                                             # 4 series đơn / 61 = 6,6 % > 5 %
+
+    def get(u, timeout):
+        key = u.rsplit("name=", 1)[1]
+        if key in bad:
+            return 200, json.dumps({"title": key, "chart": {}})                       # không có chart.series ⇒ bad_shape
+        return _fake_get()(u, timeout)
+    assert wj.run(intraday=True, get=get, sleep=lambda s: None) == 1
+    status, stats, err = _last_run(clean)
+    assert status == "failed" and "sai hình dạng" in err and stats["tally"]["keys_bad_shape"] == 4
+    assert _scalar(clean, "SELECT count(*) FROM asset.price_daily") == 0
+
+
+def test_intraday_with_keys_is_an_error_before_any_call(clean, monkeypatch):
+    _wire(monkeypatch)
+    calls = []
+    assert wj.run(keys=["vang"], intraday=True, get=_fake_get(calls), sleep=lambda s: None) == 2
+    assert calls == [] and _last_run(clean)[0] == "failed"

@@ -73,8 +73,11 @@ def main(argv: list[str] | None = None) -> int:
         parser = argparse.ArgumentParser(prog="etl wichart")
         parser.add_argument("--keys", type=lambda s: [k.strip() for k in s.split(",") if k.strip()])
         parser.add_argument("--dry-run", action="store_true", dest="dry_run")
+        parser.add_argument("--intraday", action="store_true")
         parsed = parser.parse_args(args[1:])
-        return etl.wichart_job.run(keys=parsed.keys, dry_run=parsed.dry_run)
+        if parsed.keys is not None and parsed.intraday:
+            parser.error("--keys và --intraday loại trừ nhau")
+        return etl.wichart_job.run(keys=parsed.keys, dry_run=parsed.dry_run, intraday=parsed.intraday)
     if args[0] in ("fred", "fx", "lbma", "yahoo", "binance"):
         import importlib
         mod = importlib.import_module(f"etl.{args[0]}_job")
