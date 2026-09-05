@@ -61,7 +61,7 @@ Minor để lại (ruling): M1 `Seen.load` quét toàn bảng mỗi vòng (13 ms
 
 ## 4. Trạng thái bàn giao
 
-- Nhánh `feat/news-collect` gộp `main` bằng `--no-ff` (commit ghi ở dòng dưới sau merge); **791 passed, 2 skipped**; không migration (`0017` head).
+- Nhánh `feat/news-collect` gộp `main` bằng `--no-ff` (**`8be6494`**, 2026-09-06 ~04:08); **791 passed, 2 skipped**; không migration (`0017` head).
 - Kho production 04:05 VN: `news.article` ≈ 1.736 + backfill tháng 8 đang chạy (988 bài sitemap tới 04:03); `article_ticker` 447; `data_domain_state ('news', <báo>)` 8 dòng mốc 2026-09-06; `raw_payload` 117 danh sách + 42 từ chối (từ đợt sửa: một dòng/URL/7 ngày).
 - **Nợ:** AC7 (tổng hợp `stats` sau ≥ 24 giờ `--loop`, có ngày làm việc — thứ 2 07/09); tải lại bài để bắt bản sửa (lát 12); sitemap BNews/NguoiQuanSat (lát 8b); `Seen.load` tối ưu khi ~100k dòng (M1); VnEconomy dạng tạp chí/interactive và CafeF video/infographic bị từ chối có chủ đích (article-structure §4).
 
