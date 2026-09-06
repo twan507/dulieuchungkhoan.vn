@@ -193,7 +193,8 @@ def test_store_works_under_etl_role(db):
         assert isinstance(seen, ns.Seen)
         listed2 = ns.load_listed(c)
         assert "ZZA" in listed2
+        # cùng câu với news_job.load_cursor — đổi ở đó thì đổi ở đây
         cursor = c.execute(sa.text(
-            "SELECT stats->>'cursor' FROM ops.etl_run WHERE job = :j AND stats->>'cursor' IS NOT NULL"
-            " ORDER BY run_id DESC LIMIT 1"), {"j": "news.backfill_sitemap:tinnhanhck"}).scalar()
+            "SELECT stats->>'cursor' FROM ops.etl_run WHERE job = ANY(:j) AND stats->>'cursor' IS NOT NULL"
+            " ORDER BY run_id DESC LIMIT 1"), {"j": ["news.backfill_sitemap:tinnhanhck", "news.backfill_sitemap"]}).scalar()
         assert cursor is None or isinstance(cursor, str)

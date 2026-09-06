@@ -302,8 +302,10 @@ def backfill_sitemap(engine, source, periods, *, run_id, max_minutes, stop_befor
     try:
         with engine.connect() as c:
             seen = news_store.Seen.load(c, now)
-        src = news_registry.Source(source, "sitemap", news_registry.SITEMAPS[source].url, None, "sitemap", True)
+        src = news_registry.Source(source, "sitemap", news_registry.SITEMAPS[source].url, None, "sitemap")
         streak = 0
+        frozen = False   # spec 8b §4.2-V: kỳ hỏng ⇒ đóng băng con trỏ TRƯỚC kỳ đó — không tổ hợp --from/--to nào bỏ qua
+                          # được kỳ hỏng nếu con trỏ lỡ vượt qua nó (WAF NguoiQuanSat 403 chập chờn, 31 kỳ/tháng).
 
         def _over_budget() -> bool:
             return (deadline_s is not None and clock() - t0 >= deadline_s) or (stop_at is not None and datetime.now(VN) >= stop_at)
@@ -319,6 +321,7 @@ def backfill_sitemap(engine, source, periods, *, run_id, max_minutes, stop_befor
                     # sau; KHÔNG đếm vào streak cầu chì (đó là cho lỗi BÀI liên tiếp, không phải lỗi TRANG SITEMAP kỳ).
                     st["periods_failed"].append(key)
                     log.warning("%s", e)
+                    frozen = True
                     continue
                 st["urls_in_sitemap"] += len(items)
                 for it in items:
@@ -356,7 +359,8 @@ def backfill_sitemap(engine, source, periods, *, run_id, max_minutes, stop_befor
                 if st["budget_hit"]:
                     break
                 st["periods_done"].append(key)
-                st["cursor"] = key
+                if not frozen:
+                    st["cursor"] = key
             st["calls"], st["retries"] = f.calls, f.retries_done
         return st
     except Exception as e:                    # noqa: BLE001 — I2: mọi exception thoát khỏi hàm này mang theo st đã tích luỹ
@@ -377,8 +381,13 @@ def run_backfill(from_month, to_month=None, max_minutes=None, stop_before_open=F
         engine = _engine()
         periods = periods_desc(source, from_month, to_month, today=now.astimezone(VN).date())
         cursor = load_cursor(engine, source)
-        if cursor and periods and cursor < periods[0]:            # nối sau kỳ đã xong (lùi dần); cursor == kỳ đầu ⇒ chạy lại đúng kỳ đó
-            periods = [p for p in periods if p < cursor]
+        if cursor and periods and cursor <= periods[0]:           # nối sau kỳ đã xong (lùi dần)
+            filtered = [p for p in periods if p < cursor]
+            # cursor == kỳ đầu VÀ periods chỉ có đúng kỳ đó (không có kỳ nào cũ hơn để lọc ra) ⇒ chạy lại đúng kỳ đó
+            # (khoảng --from/--to chỉ xin đúng một kỳ đã xong); nếu còn kỳ cũ hơn (spec 8b §4.2-V: con trỏ đóng băng
+            # TRƯỚC kỳ hỏng, có thể trùng periods[0]) thì lọc bình thường — bỏ đúng kỳ đã xong, giữ các kỳ cũ hơn.
+            if filtered or len(periods) > 1:
+                periods = filtered
         if not periods:
             log.info("%s: con trỏ %s đã qua --from %s — không còn gì để làm", source, cursor, from_month)
             return 0

@@ -55,6 +55,7 @@ def test_periods_desc_month_and_day():
     d = nj.periods_desc("nguoiquansat", "2026-08", "2026-08", today=date(2026, 9, 6))
     assert len(d) == 31 and d[0] == "2026-08-31" and d[-1] == "2026-08-01" and d == sorted(d, reverse=True)
     assert len(nj.periods_desc("nguoiquansat", "2026-02", "2026-03", today=date(2026, 9, 6))) == 59      # 2026 không nhuận
+    assert len(nj.periods_desc("nguoiquansat", "2024-02", "2024-02", today=date(2026, 9, 6))) == 29      # 2024 nhuận
     # tháng hiện tại: không sinh ngày tương lai
     assert nj.periods_desc("nguoiquansat", "2026-09", "2026-09", today=date(2026, 9, 6))[0] == "2026-09-06"
     assert nj.periods_desc("nguoiquansat", "2026-10", "2026-10", today=date(2026, 9, 6)) == []
@@ -85,6 +86,7 @@ def test_backfill_one_month_skips_homepage_and_seen_urls_and_sets_cursor(clean):
 def test_month_fetch_failure_is_recorded_and_backfill_continues_to_next_month(clean):
     # I2: tháng đầu (2026-09, to_month mặc định = tháng hiện tại theo NOW) hỏng (503) không được làm mất
     # stats/cursor của tháng sau — ghi nhận vào periods_failed rồi ĐI TIẾP, không đếm vào streak cầu chì bài.
+    # §4.2-V: kỳ hỏng là kỳ ĐẦU ⇒ con trỏ đóng băng ở None (chưa có kỳ trọn nào trước đó) dù 2026-08 xong sau đó.
     def get(u, timeout):
         if "/sitemaps/news-2026-9.xml" in u:
             return 503, "", {}
@@ -94,7 +96,7 @@ def test_month_fetch_failure_is_recorded_and_backfill_continues_to_next_month(cl
     assert nj.run_backfill("2026-08", get=get, sleep=lambda s: None, now=NOW) == 0
     status, stats, _ = _last(clean)
     assert status == "success" and stats["periods_failed"] == ["2026-09"]
-    assert stats["periods_done"] == ["2026-08"] and stats["cursor"] == "2026-08"
+    assert stats["periods_done"] == ["2026-08"] and stats["cursor"] is None
     assert stats["articles_ok"] == 3                              # SM (tháng 08) có 3 URL bài thật, kho trống ⇒ cả 3 mới
     assert _n(clean, "SELECT count(*) FROM news.article") == stats["articles_ok"]
 
@@ -161,7 +163,7 @@ NQ = ('<?xml version="1.0" encoding="utf-8"?><urlset xmlns:image="http://www.goo
       '<url><loc>https://nguoiquansat.vn/y-{d}02.html</loc><lastmod>2026-08-{d}T08:00:01+07:00</lastmod></url></urlset>')
 
 
-def _get_src(seen=None, fail=()):
+def _get_src(seen=None):
     """Fake get cho ba nguồn: sitemap theo URL mẫu, trang bài dựng theo RULES của nguồn (×9 để qua sàn 5 KB)."""
     def get(u, timeout):
         if "bnews.vn/sitemap/news-" in u:
@@ -177,8 +179,6 @@ def _get_src(seen=None, fail=()):
             if seen is not None:
                 seen.append(u.rsplit("news-", 1)[1].replace(".xml", ""))
             return 200, SM, {}
-        if any(f in u for f in fail):
-            return 403, "<html>Access Denied..</html>", {}
         rule = "bnews" if "bnews.vn" in u else "nguoiquansat" if "nguoiquansat.vn" in u else "tinnhanhck"
         return 200, _page(rule, "Bài " + u.rsplit("/", 1)[1]) * 9, {}
     return get
@@ -209,7 +209,6 @@ def test_backfill_bnews_month_skips_non_articles_and_seen_and_sets_own_cursor(cl
 
 
 def test_backfill_nguoiquansat_walks_days_desc_and_cursor_is_a_day(clean):
-    from datetime import date
     days = []
     assert nj.run_backfill("2026-08", "2026-08", source="nguoiquansat", get=_get_src(days), sleep=lambda s: None, now=NOW) == 0
     assert days[0] == "2026-08-31" and days[-1] == "2026-08-01" and len(days) == 31
@@ -235,15 +234,53 @@ def test_day_budget_resumes_from_day_before_cursor(clean):
     assert days[0] < cur and days[-1] == "2026-08-01" and cur not in days    # nối sau con trỏ, không lặp ngày đã xong
 
 
-def test_day_sitemap_403_after_retries_is_periods_failed_not_cursor(clean):
+def test_day_sitemap_403_after_retries_freezes_cursor_before_failed_period(clean):
+    # §4.2-V: kỳ hỏng → periods_failed, con trỏ KHÔNG vượt qua kỳ đó — lượt sau tự đi lại từ kỳ hỏng, Seen lo bài đã có.
+    calls = {"n": 0}
+
     def get(u, timeout):
         if "sitemap-article-2026-08-30" in u:
-            return 403, "<html>Access Denied..</html>", {}
+            calls["n"] += 1
+            if calls["n"] <= 4:                                                 # lượt 1: 4 lần (1 + 3 retry) đều 403
+                return 403, "<html>Access Denied..</html>", {}
         return _get_src()(u, timeout)
     assert nj.run_backfill("2026-08", "2026-08", source="nguoiquansat", get=get, sleep=lambda s: None, now=NOW) == 0
     status, stats = _last_of(clean, "nguoiquansat")
     assert status == "success" and stats["periods_failed"] == ["2026-08-30"] and "2026-08-30" not in stats["periods_done"]
-    assert stats["cursor"] == "2026-08-01" and stats["articles_ok"] == 60
+    assert len(stats["periods_done"]) == 30 and stats["articles_ok"] == 60
+    assert stats["cursor"] == "2026-08-31"                                        # đóng băng TRƯỚC kỳ hỏng, dù 29 kỳ sau đã xong
+    # lượt hai: WAF hết chặn ⇒ đi lại từ 30/08, các ngày đã xong chỉ tốn một lời gọi sitemap + skipped_seen
+    days = []
+
+    def get2(u, timeout):
+        if "sitemap-article-" in u:
+            days.append(u.rsplit("-", 3)[1:4])
+        return _get_src()(u, timeout)
+    assert nj.run_backfill("2026-08", "2026-08", source="nguoiquansat", get=get2, sleep=lambda s: None, now=NOW) == 0
+    status2, stats2 = _last_of(clean, "nguoiquansat")
+    assert "-".join(days[0]).replace(".xml", "") == "2026-08-30" and len(days) == 30
+    assert stats2["periods_failed"] == [] and stats2["articles_ok"] == 2 and stats2["skipped_seen"] == 58 and stats2["cursor"] == "2026-08-01"
+
+
+def test_month_sitemap_403_on_first_period_freezes_cursor_at_none(clean):
+    # kỳ hỏng ngay từ kỳ ĐẦU (2026-09) ⇒ chưa có kỳ trọn nào trước đó để đóng băng ⇒ cursor is None.
+    calls = {"n": 0}
+
+    def get(u, timeout):
+        if "bnews.vn/sitemap/news-2026-9.xml" in u:
+            calls["n"] += 1
+            if calls["n"] <= 4:
+                return 403, "<html>Access Denied..</html>", {}
+        return _get_src()(u, timeout)
+    assert nj.run_backfill("2026-08", "2026-09", source="bnews", get=get, sleep=lambda s: None, now=NOW) == 0
+    status, stats = _last_of(clean, "bnews")
+    assert status == "success" and stats["periods_failed"] == ["2026-09"] and stats["periods_done"] == ["2026-08"]
+    assert stats["cursor"] is None
+    # lượt hai: WAF hết chặn ⇒ đi lại cả hai tháng (cursor None ⇒ không cắt periods)
+    seen = []
+    assert nj.run_backfill("2026-08", "2026-09", source="bnews", get=_get_src(seen), sleep=lambda s: None, now=NOW) == 0
+    status2, stats2 = _last_of(clean, "bnews")
+    assert seen == ["2026-9", "2026-8"] and stats2["cursor"] == "2026-08"
 
 
 def test_tinnhanhck_cursor_falls_back_to_legacy_job_name(clean):
