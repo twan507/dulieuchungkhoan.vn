@@ -286,3 +286,48 @@ def test_cli_parses_backfill_codes_and_max_minutes(monkeypatch):
     assert seen == {"backfill": True, "codes": ["BID", "DMX"], "max_minutes": 5.0, "stop_before_open": True}
     assert cli.main(["price"]) == 0
     assert seen == {"backfill": False, "codes": None, "max_minutes": None, "stop_before_open": False}
+
+
+def _flaky_get(fail_calls: int):
+    """Nguồn nghẽn từng quãng (sự cố 05/09 tối thứ 7): `fail_calls` lời gọi đầu trả 500, sau đó bình thường."""
+    n = {"calls": 0}
+
+    def get(url):
+        n["calls"] += 1
+        if n["calls"] <= fail_calls:
+            return 500, "gateway timeout"
+        return _get()(url)
+    return get
+
+
+def _wire_flaky(monkeypatch, fail_calls):
+    _wire(monkeypatch)
+
+    @contextlib.contextmanager
+    def fake_open_fetcher():
+        yield price_fetch.Fetcher(_flaky_get(fail_calls), sleep=lambda s: None)
+    monkeypatch.setattr("etl.price_fetch.open_fetcher", fake_open_fetcher)
+    monkeypatch.setattr(price_fetch, "MAX_CONSECUTIVE_FAILURES", 2)      # 3 mã ZZ* — cầu chì 2 mã là đủ để trip
+    slept = []
+    monkeypatch.setattr(price_job, "_sleep", lambda s: slept.append(s))
+    return slept
+
+
+def test_backfill_pauses_ten_minutes_after_a_source_outage_and_resumes_instead_of_ending_the_run(price_db, monkeypatch):
+    """Sự cố 05/09: FiinTrade nghẽn từng quãng tối thứ 7 ⇒ cầu chì "10 mã liên tiếp" trip ⇒ lượt kết thúc, task chờ tới
+    thứ 7 sau — mất trọn cuối tuần vì một quãng nghẽn 15 phút. Nay: trip ⇒ nghỉ 10 phút, reset cầu chì, thử lại đúng mã đó."""
+    slept = _wire_flaky(monkeypatch, fail_calls=8)                       # ZZA: 4 lần hỏng (FetchError), ZZB: 4 lần hỏng ⇒ SourceDown
+    assert price_job.run(backfill=True) == 0
+    status, s, err = _last(price_db, "market.price_backfill")
+    assert status == "success" and err is None
+    assert slept == [600.0] and s["source_down_pauses"] == 1
+    assert s["failed_tickers"] == ["ZZA"] and s["codes_done"] == 3 and s["cursor"] == "ZZC" and s["pass_complete"] is True
+
+
+def test_backfill_gives_up_after_three_consecutive_pauses_when_the_source_stays_down(price_db, monkeypatch):
+    slept = _wire_flaky(monkeypatch, fail_calls=10_000)
+    assert price_job.run(backfill=True) == 2
+    status, s, err = _last(price_db, "market.price_backfill")
+    assert status == "failed" and err.startswith("SourceDown")
+    assert slept == [600.0, 600.0, 600.0] and s["source_down_pauses"] == 3
+    assert s["cursor"] == "ZZA"                                            # con trỏ giữ mã đã đi qua, lượt sau nối tiếp
