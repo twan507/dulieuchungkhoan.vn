@@ -158,3 +158,23 @@ Chủ dự án chốt: sửa ở prompt, không hậu kỳ; **tổng quát hoá,
 Nhầm nhóm nhiều nhất (adaptive): gold `x` → model `1` (9 bài: hướng dẫn dân sinh, thiên tai, PR bị coi là tin trong nước) · `1` → `3` (3) · `x` → `3` (3). Nhầm sub cùng nhóm: `1b`→`1a` (8 — đúng chỗ vừa làm sắc phép thử quy phạm↔quyết định), `3d`→`3a` (4), `3f`→`3e` (4), `2f`→`2c` (3).
 
 **Đọc kết quả:** (1) thinking adaptive hơn disabled ≈ 3 điểm ở cả nhóm lẫn sub, chênh lớn nhất ở dải `confidence` 0,8–0,9 (79 % so 59 %) ⇒ **giữ adaptive**. (2) Model **bắt đủ nhưng gắn thừa**: recall mã 98 %, ngành 90 %; precision thấp vì prompt lúc chấm chưa có luật "mã chỉ khi tiêu đề/sapo nêu tên" và gold gán ngành chặt (chỉ ngành chịu tác động) — lượt chấm lại với prompt mới đang chạy (`pred-adaptive-v2`). (3) **Ngưỡng `confidence` đề xuất 0,8**: dưới 0,8 có 37/400 bài (9 %) đúng 65 %; từ 0,8 trở lên 363 bài đúng 86,5 % — đưa 9 % bài vào hàng rà tay là chi phí chấp nhận được. (4) `x` bị bỏ sót 26 % — model ngại loại tin; đáng xem lại câu định nghĩa `x` sau lượt chấm lại.
+
+### 8.1 Chấm lại sau bốn câu làm sắc prompt (19:36–21:05, 400/400 bài, adaptive)
+
+`pred-adaptive-v2-2026-09-06.jsonl`. Prompt mới = bốn câu chốt sau khi phân xử gold: nhóm 3 gồm DN Việt chưa niêm yết · `1b` phủ Đảng/địa phương (phép thử quy phạm↔quyết định cụ thể) · mã chỉ khi tiêu đề/sapo nêu tên · tin tiền tệ luôn `NGANHANG`; `2a` gồm tiền mã hoá, vàng/dầu là `2c`.
+
+| Chỉ số (400 bài) | Prompt cũ | **Prompt mới** |
+|---|---|---|
+| Đúng nhóm | 94,0 % | 93,8 % |
+| Đúng nhóm + sub | 84,5 % | **84,8 %** |
+| Mã (127 bài nhóm 3): precision / recall | 56 % / 98 % | **65 %** / 93 % |
+| Ngành: precision / recall | 46 % / 90 % | 43 % / **93 %** |
+| `x` (54 bài): precision / recall | 91 % / 74 % | 92 % / **81 %** |
+
+⇒ **Chốt dùng prompt mới:** mã gắn thừa giảm mạnh (fp 92 → 61), `x` bắt thêm 7 điểm, nhóm+sub nhích nhẹ. Đổi lại recall mã giảm 5 điểm (fn 3 → 9) — chấp nhận: gắn sót rẻ hơn gắn sai.
+
+**Hai việc cho lát sau, đã đo, chưa làm** (chủ dự án chốt sổ 2026-09-06 tối):
+1. **Ngành gắn thừa** — precision 43 %, khớp tập 51 %: model gắn 2–3 ngành gần như mọi bài, gold nhiều bài 1 ngành hoặc rỗng. Sửa bằng một câu: "mặc định 1 ngành; chỉ thêm ngành thứ 2–3 khi bài nói trực tiếp tới ngành đó".
+2. **`1d` → `1b` nhầm 8 lần** (mới xuất hiện sau khi làm sắc `1b`): tin đầu tư công/hạ tầng bị kéo về "điều hành". Cần thêm vế cho phép thử: dự án, vốn đầu tư công, hạ tầng ⇒ `1d` dù văn bản là quyết định điều hành. `1a`→`1b` vẫn 8 lần.
+
+**Chốt vận hành cho lát 9b tiếp theo:** thinking **adaptive**; ngưỡng `confidence` **0,8** (dưới ngưỡng 31/400 = 8 % bài, đúng 61 %; từ 0,8 trở lên 369 bài, đúng 87 %) ⇒ bài dưới 0,8 vào hàng rà tay; trần cắt giữ 3.000 ký tự (chưa có bằng chứng cần 4.000). **Chưa bật chạy tự động**, chưa phân loại lại 230 bài đã chạy bằng prompt cũ.
