@@ -1,17 +1,17 @@
 # Nguồn tin chứng khoán — danh mục và đặc tính kỹ thuật
 
-**Loại tài liệu:** tra cứu (reference) · **Đo ngày** 13/08/2026 · **cấu trúc trang bài** 15/08/2026 · **Trạng thái** đã kiểm chứng · **đã cài đặt lát 8 (2026-09-06)**
+**Loại tài liệu:** tra cứu (reference) · **Đo ngày** 13/08/2026 · **cấu trúc trang bài** 15/08/2026 · **Trạng thái** đã kiểm chứng · **đã cài đặt lát 8 (2026-09-06)** · **lát 8b: sitemap BNews/NguoiQuanSat đo 2026-09-06**
 
 Mọi con số ở đây đo bằng `curl` trên 307 URL ứng viên và 1.408 tiêu đề đã đọc thật. Không có số nào là ước lượng.
 
-Tài liệu này mô tả **nguồn tin có gì và cư xử thế nào** — 47 feed RSS, 6 nguồn crawl HTML, encoding, định dạng thời gian, khối lượng đo được, và những nguồn đã loại. Phần *dulieuchungkhoan.vn quyết định xử lý ra sao* nằm ở [thiết kế pipeline tin tức](../../20-design/news-pipeline.md).
+Tài liệu này mô tả **nguồn tin có gì và cư xử thế nào** — 47 feed RSS, 8 nguồn crawl HTML (6 trong lượt thường + 2 sitemap chỉ để backfill), encoding, định dạng thời gian, khối lượng đo được, và những nguồn đã loại. Phần *dulieuchungkhoan.vn quyết định xử lý ra sao* nằm ở [thiết kế pipeline tin tức](../../20-design/news-pipeline.md).
 
 > **Đánh số mục kế thừa tài liệu gốc `THIET_KE_PIPELINE.md` v3** và cố ý không đánh lại, vì hàng chục tham chiếu chéo dạng *"xem mục 6.5"* nằm rải trong cả hai file. Mục nào ở file nào:
 >
 > | Mục | File |
 > |---|---|
 > | 1 Tổng quan · 2 Kiến trúc · 3 Taxonomy | [thiết kế](../../20-design/news-pipeline.md) |
-> | **4 Danh sách 47 feed · 5 Sáu nguồn crawl · 6 Quy tắc chuẩn hoá** | **file này** |
+> | **4 Danh sách 47 feed · 5 Tám nguồn crawl · 6 Quy tắc chuẩn hoá** | **file này** |
 > | 7 Quy tắc phân loại · 8 Gắn mã cổ phiếu · 9 Kho lưu trữ · 10 Giám sát | [thiết kế](../../20-design/news-pipeline.md) |
 > | **11.1–11.3 Nguồn và feed đã loại** | **file này** |
 > | 11.4 Ý tưởng thiết kế bị loại · 12 Còn để ngỏ · 14 Trạng thái | [thiết kế](../../20-design/news-pipeline.md) |
@@ -88,9 +88,9 @@ Tài liệu này mô tả **nguồn tin có gì và cư xử thế nào** — 47
 
 ---
 
-## 5. Sáu nguồn crawl HTML
+## 5. Tám nguồn crawl HTML
 
-Những nguồn này không có RSS dùng được, phải lấy bằng cách khác.
+Sáu nguồn đầu (5.1–5.3) không có RSS dùng được, phải lấy bằng cách khác; hai sitemap 5.4–5.5 *(lát 8b)* chỉ dùng cho **backfill lịch sử**, không poll trong lượt thường.
 
 ### 5.1 CafeF — công bố thông tin
 
@@ -165,6 +165,39 @@ Nhóm mặc định 1, sub `1b`. Phải crawl HTML vì **RSS của mục này ch
 *(đo 2026-09-05)* Trang trả **5 link bài/lần tải** — URL dạng `-102YYMMDDHHMMSS…htm`. Số "102 link bài" ghi ở lượt đo chiều 05/09 là do regex lỏng tính cả link chuyên mục; con số đúng khi lọc đúng link bài là 5.
 
 ---
+
+### 5.4 BNews — sitemap tháng *(đo 2026-09-06, chỉ dùng cho backfill — lát 8b)*
+
+```
+https://bnews.vn/sitemap.xml                 ← index, liệt kê 141 file tháng 2015-1 → 2026-9
+https://bnews.vn/sitemap/news-{YYYY}-{M}.xml ← tháng KHÔNG đệm 0
+```
+
+BNews có 8 feed RSS nên lượt thu thập thường **không** poll sitemap; sitemap chỉ để backfill lịch sử (`feeds.json` `chi_backfill: true`). Số đo *(2026-09-06, 13 lời gọi, 0 lỗi 403)*:
+
+- **Tháng đầu có bài: 2015-08** (644 bài); các file 2015-1, 2015-6, 2015-7 chỉ có 3 phần tử đầu (rỗng). Khối lượng: 2015-12 có 1.784 · 2020-09 có 3.036 · **2026-08 có 4.085** · 2026-09 có 602 tính tới 05/09 23h — lùi hết ≈ 480k URL.
+- **3 phần tử đầu mỗi file không phải bài:** `https://bnews.vn`, `/photo/trang-1.html`, `/video/trang-1.html`, `lastmod` = giờ sinh file (UTC, hậu tố `Z`). Bài có dạng `/<slug>/<id>.html` — bộ đọc lọc bằng regex `/\d+\.html$`, không dựa vị trí.
+- **`lastmod` = giờ đăng thật `+07:00`** — khớp `pubDate` feed 20/20 bài (đến giây), khớp ld+json `datePublished` 3/3 trang (2015, 2020, 2026-08), `dateModified` = `datePublished`. Khác TinnhanhCK (§5.2: `lastmod` là giờ sửa).
+- **Giảm dần** theo `lastmod` ở mọi file đo, kể cả tháng hiện tại; file tháng không lẫn tháng kế.
+- Trang bài cũ (2015, 2020) trả `200`, luật bóc §2.6 article-structure vẫn đúng (1.195 · 1.844 ký tự); trang có ld+json `datePublished` (không dùng — `lastmod` đã là giờ đăng).
+- Gzip (`Content-Encoding: gzip`), `text/xml; charset=utf-8`.
+
+### 5.5 NguoiQuanSat — sitemap ngày *(đo 2026-09-06, chỉ dùng cho backfill — lát 8b)*
+
+```
+https://nguoiquansat.vn/sitemap.xml                          ← index (200 với UA ETL)
+https://nguoiquansat.vn/sitemap-article-{YYYY}-{MM}-{DD}.xml ← theo NGÀY, 1.879 file 2021-07-16 → 2026-09-06, không thiếu ngày
+```
+
+`robots.txt` còn khai `sitemap-news.xml`; cả nó và `sitemap-category.xml` trả **403 với mọi UA thử** — không cần, file ngày đủ. Số đo *(2026-09-06)*:
+
+- File ngày: urlset có phần mở rộng `image:image`; bài `/<slug>-<id>.html` (regex `-\d+\.html$`); **không có phần tử trang chủ**; `lastmod +07:00` **giảm dần**, đúng một ngày mỗi file.
+- **`lastmod` = giờ đăng** (giây luôn `:01` từ 2022): khớp giờ trang `13:12:00` vs `13:12:01`, khớp ld+json 3/3 trang.
+- Khối lượng: 25 bài/ngày (2021-07) → 96 (2022-01) → 180 (2024-01) → 206 (2026-09-04, thứ 6), 120 (thứ 7) — lùi hết ≈ 250k URL.
+- 🔴 **WAF chặn chập chờn, KHÔNG theo User-Agent.** 12 file ngày chưa cache, UA ETL, giãn 3–5 s: 7 đạt / 5 bị `403 Access Denied.. blocked by our security system`; thử lại sau 15 s: 4/5 đạt. Giả thuyết "chặn theo UA" đã bị bác (UA ETL có lúc `200` MISS, UA Chrome kèm định danh có lúc `403`). Trang bài: UA ETL 5/6 lần `200`, lần `403` thử lại `200`. ⇒ Giữ UA tự định danh; để `Fetcher` retry (3 lần, backoff 2/4/8 s) hấp thụ; kỳ hỏng sau retry ghi `periods_failed`, lượt sau tự vá.
+- 🔴 **Bài trước ~2025 dùng template cũ** (`c-detail-head__*`) — xem [article-structure §2.7](article-structure.md).
+
+Hồ sơ đo: [`measure-sitemap-bnews-nqs-2026-09-06.md`](../../90-records/plans/2026-09-06-news-backfill-bnews-nqs/measure-sitemap-bnews-nqs-2026-09-06.md).
 
 ## 6. Quy tắc chuẩn hoá
 
