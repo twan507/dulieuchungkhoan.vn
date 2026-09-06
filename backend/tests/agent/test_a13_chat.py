@@ -88,12 +88,56 @@ def test_thinking_signature_duoc_echo_nguyen_van(model_gia, tool_dem):
     assert any(b.get("signature") == "SIG-1" for b in assistant["content"])
 
 
-def test_lich_su_song_qua_hai_luot(model_gia, tool_dem):
+def test_lich_su_dung_hinh_dang_sau_mot_luot(model_gia, tool_dem):
     llm, ghi = model_gia
     _, lich_su = run_turn(llm, None, None, [], "Giá HPG?")
     assert lich_su[0]["role"] == "user" and lich_su[0]["content"] == "Giá HPG?"
     assert lich_su[-1]["role"] == "assistant"
     assert len(lich_su) == 4          # user · assistant(tool_use) · user(tool_result) · assistant
+
+
+def test_luot_thu_hai_that_su_gui_lai_lich_su_luot_dau(tool_dem):
+    """Bẫy G5: runner của SDK cạn iterator sau một lượt, gọi lại KHÔNG ném lỗi và KHÔNG gửi
+    request — nó lặng lẽ trả message cũ. Chỉ gọi run_turn một lần thì không ai canh chỗ đó.
+    Test này gọi HAI lượt và soi request thứ hai có mang câu hỏi lượt đầu hay không."""
+    ghi = {"requests": [], "n": 0}
+
+    def handler(request):
+        ghi["n"] += 1
+        ghi["requests"].append(json.loads(request.content))
+        if ghi["n"] == 1:
+            return httpx2.Response(200, json=_msg(
+                [{"type": "text", "text": "Đáp lượt một."}], "end_turn"))
+        return httpx2.Response(200, json=_msg(
+            [{"type": "text", "text": "Đáp lượt hai."}], "end_turn"))
+
+    llm = _llm_gia(handler)
+    try:
+        tra1, ls1 = run_turn(llm, None, None, [], "Câu một?")
+        tra2, ls2 = run_turn(llm, None, None, ls1, "Câu hai?")
+    finally:
+        llm.close()
+
+    assert tra1 == "Đáp lượt một." and tra2 == "Đáp lượt hai."
+    assert ghi["n"] == 2, "lượt hai phải gửi request THẬT, không được trả lại message cũ"
+    noi_dung = [m["content"] for m in ghi["requests"][1]["messages"]]
+    assert "Câu một?" in noi_dung and "Câu hai?" in noi_dung
+    assert len(ls2) == 4              # hai cặp user/assistant
+
+
+def test_ket_thuc_sach_nhung_khong_co_chu_van_khong_tra_rong(tool_dem):
+    """Lưới của lỗi `max_tokens` đo được 2026-09-07: không bao giờ in ra `Trợ lý: ` trống."""
+    def handler(request):
+        return httpx2.Response(200, json=_msg([], "end_turn"))
+
+    llm = _llm_gia(handler)
+    try:
+        tra_loi, lich_su = run_turn(llm, None, None, [], "Giá HPG?")
+    finally:
+        llm.close()
+    assert tra_loi.strip()
+    assert "không sinh câu trả lời" in tra_loi
+    assert len(lich_su) == 2
 
 
 def test_system_du_ba_block_va_scope_guard_dung_truoc(model_gia, tool_dem):

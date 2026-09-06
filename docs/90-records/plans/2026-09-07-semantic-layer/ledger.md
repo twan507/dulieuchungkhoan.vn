@@ -59,13 +59,13 @@ Giao subagent **Sonnet** theo nhóm; test chạm DB phải chạy **tuần tự*
 
 Cộng thêm hai ràng buộc lược đồ gặp thật: `asset.asset.calendar ∈ {trading_days, 24x7}`; `asset.price_daily.price_type ∈ {spot, futures, fixing, close}` — và ADR §2.3 cấm trộn loại giá, nên `get_macro_series` chọn đúng một loại rồi khai báo `loai_gia`.
 
-**Test:** `main` **877 passed, 2 skipped** → nhánh **951 passed, 2 skipped** (+74, không skip mới).
+**Test:** `main` **877 passed, 2 skipped** → nhánh **953 passed, 2 skipped** (+76, không skip mới).
 
 ## Task 14 — chạy thật và bộ hồi quy vòng 7 ✅ XONG (2026-09-07)
 
 Hồ sơ đầy đủ: [`round7-results-2026-09-07.md`](round7-results-2026-09-07.md) · [transcript](round7-transcript-2026-09-07.md) · [bảng chấm](round7-grading-2026-09-07.md).
 
-**Tóm tắt:** số **15/15 đúng**; hình dạng L1 **12/15** (ngưỡng AC7 là 14) ⇒ **AC7 không đạt, báo nguyên trạng**. Cả 9 function đều được model gọi đúng chỗ. Chi phí thật **≈ $0,016/câu**, độ trễ p50 6,9 s · p90 34,5 s. Quota cửa sổ 5 giờ tụt còn 69% sau 22 câu.
+**Tóm tắt:** số **15/15 đúng**; hình dạng L1 **13/15** sau khi sửa rubric theo quyết định chủ dự án (ngưỡng AC7 là 14) ⇒ **AC7 không đạt, báo nguyên trạng**. Cả 9 function đều được model gọi đúng chỗ. Chi phí thật **≈ $0,016/câu**, độ trễ p50 6,9 s · p90 34,5 s. Quota cửa sổ 5 giờ tụt còn 69% sau 22 câu.
 
 **Ba lỗi code do lượt chạy thật lộ ra, đã sửa (`d23913c`):** `max_tokens=4000` cắt câu trả lời thành rỗng im lặng (3/40 request, một request tiêu 3.999 token chỉ cho thinking); model từ chối tra dữ liệu vì tưởng tháng 8/2026 nằm ngoài tri thức của nó (đã thêm block system neo ngày + bắt tra trước khi phủ định); sổ `ops.llm_call` ghi mọi lượt gọi công cụ thành `failed`.
 

@@ -67,15 +67,17 @@ Chi phí thật **$0,016/câu** thấp hơn ước lượng $0,022–0,048 của
 |---|---|
 | **AC1** `tool_runner` chạy với MiniMax | ✅ — spike Task 0 và mọi lượt chat |
 | **AC2** không test nào xanh thành đỏ | ✅ — `main` **877 passed, 2 skipped**; nhánh **953 passed, 2 skipped** (+76, không skip mới) |
-| **AC3** đường đọc dưới `dlck_api`, không ghi được | ✅ — `current_user=agent_reader`, thuộc `dlck_api`, `INSERT` bị chặn (`ProgrammingError`); `assert_read_only()` chạy ở khởi động |
+| **AC3** đường đọc dưới `dlck_api`, không ghi được | ✅ — chạy tay dưới đúng credential production, output nguyên văn ở §7 |
 | **AC4** cả 9 function trả đúng dữ liệu thật | ✅ — bảng §2 |
-| **AC5** câu ngoài lĩnh vực bị từ chối gọn | ✅ — 4/4 (ẩm thực, lập trình, và hai câu trong lượt nghiệm thu) |
+| **AC5** câu ngoài lĩnh vực bị từ chối gọn | ⚠️ **2/4 có transcript** — ẩm thực và lập trình lưu ở [acceptance-transcript](acceptance-transcript-2026-09-07.md); hai câu còn lại (sức khoẻ, pháp lý) chạy nhưng **không lưu transcript**, nên chỉ tính hai câu có bằng chứng |
 | **AC6** VN-Index: nói thẳng kho chưa có | ⚠️ **đạt sau khi sửa**. Lượt đầu model **không gọi function nào**, tự đoán là không tra được rồi đẩy sang trang ngoài — đúng kết quả nhưng sai đường. Sau khi mô tả function nói rõ "luôn gọi trước khi nói về giá hay điểm của bất kỳ mã nào, kể cả VN-Index", model gọi `get_price_series`, nhận "kho chưa có dữ liệu giá cho chỉ số VNINDEX" và nói đúng điều đó |
 | **AC7** bộ hồi quy | ❌ **không đạt** — số 15/15, hình dạng **13/15** sau khi sửa rubric (ngưỡng 14). Hai câu trượt là lỗi thật: một ca bịa số dẫn xuất, một ca tra cứu không diễn giải |
 | **AC8** đo chi phí | ✅ — §3 |
-| **AC9** không rò kết nối | ✅ — `idle in transaction` của `agent_reader` = **0**, tổng kết nối đang mở = 0 |
+| **AC9** không rò kết nối | ✅ — output nguyên văn ở §7 |
 
-## 5. Ba lỗi code mà lượt chạy thật lộ ra (đã sửa, có test canh)
+## 5. Ba lỗi code mà lượt chạy thật lộ ra
+
+🔴 **Đính chính 2026-09-07 (review trục Spec bắt được):** mục này ban đầu viết *"đã sửa, **có test canh**"*. Sai — `git show --stat d23913c` cho thấy **chỉ 1/3 lỗi có test** lúc đó (lỗi 2). Viết một khẳng định chưa kiểm chính là loại lỗi tự đầu độc mà CLAUDE.md §3.2 cấm: nó chặn mất phép kiểm sẽ tìm ra chỗ hở. Hai test còn thiếu đã bổ sung sau lượt review (`test_ket_thuc_sach_nhung_khong_co_chu_van_khong_tra_rong` cho lỗi 1, `test_luot_tool_use_ghi_so_la_ok` cho lỗi 3).
 
 | # | Lỗi | Bằng chứng | Sửa |
 |---|---|---|---|
@@ -83,7 +85,7 @@ Chi phí thật **$0,016/câu** thấp hơn ước lượng $0,022–0,048 của
 | 2 | **Model từ chối tra dữ liệu vì tưởng mốc thời gian nằm ngoài tri thức của nó** | hỏi CPI tháng 8/2026, model trả *"mốc cập nhật gần nhất của tôi là tháng 1/2026"* và **không gọi function** — trong khi kho có đúng số 4,45% | thêm block system thứ ba: neo ngày hôm nay + bắt gọi công cụ trước khi nói "không có" |
 | 3 | **Sổ `ops.llm_call` ghi mọi lượt gọi công cụ thành `failed`** | ánh xạ `status='ok'` chỉ cho `end_turn` | `tool_use` cũng là `ok` — nó là bước bình thường giữa chừng |
 
-Lỗi 1 và 2 đều thuộc loại **hỏng im lặng**: không exception, không cờ lỗi, chỉ có câu trả lời rỗng hoặc câu trả lời sai một cách tự tin. Đúng họ với bẫy mà CLAUDE.md §3.4 đã ghi.
+Cả ba nay đều có test canh. Lỗi 1 và 2 thuộc loại **hỏng im lặng**: không exception, không cờ lỗi, chỉ có câu trả lời rỗng hoặc câu trả lời sai một cách tự tin. Đúng họ với bẫy mà CLAUDE.md §3.4 đã ghi.
 
 ## 6. Kết luận về hợp đồng
 
@@ -96,3 +98,33 @@ Lỗi 1 và 2 đều thuộc loại **hỏng im lặng**: không exception, khô
 **Đây là kết quả của lát, không phải lỗi cần giấu.** Hai việc kế tiếp, xếp theo giá trị: (1) buộc mọi số **dẫn xuất** phải kèm phép tính — đã đưa vào rubric thành cổng loại trực tiếp, còn cần đưa thành luật ở tầng prompt để chặn từ đầu chứ không chỉ bắt lúc chấm; (2) đo xem `REMINDER` có tác dụng thật không, bằng cách chạy một lượt **không** nhắc để đối chứng.
 
 *(Việc "sửa L1 cho câu tính toán viết văn xuôi" đã bị **loại** — chủ dự án chốt 2026-09-07: bài tính phải hiện phép tính bằng số. Không đụng vào L1.)*
+
+
+## 7. Output nguyên văn của AC3 và AC9
+
+**AC3 — chạy tay `agent.db.read_engine()` dưới đúng credential production** *(2026-09-07)*:
+
+```
+doc duoc market.security: 2017
+current_user: agent_reader
+thuoc dlck_api: True
+co quyen INSERT: False
+ghi bi chan dung: ProgrammingError
+assert_read_only da chay va qua
+ops engine doc duoc ops.llm_call: 230
+```
+
+**AC9 — sau khi thoát vòng chat** *(2026-09-07)*:
+
+```
+AC9 — ket noi ro ri cua agent_reader:
+   idle in transaction: 0
+   tong ket noi agent_reader dang mo: 0
+```
+
+**AC2 — hai lượt chạy đối chứng:**
+
+```
+main:                877 passed, 2 skipped in 79.77s
+feat/semantic-layer: 953 passed, 2 skipped in 85.57s
+```
