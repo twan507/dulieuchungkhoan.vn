@@ -54,7 +54,7 @@ Phần giả định **không nặng hơn** dữ kiện ⇒ đủ điều kiện
 ### A — `backend/core/llm/` mỏng trên SDK `anthropic`, trỏ giao diện Anthropic của MiniMax *(trục: tốc độ + đúng khuyến nghị nguồn)*
 
 - `LLMSettings.from_env()` (khoá `LLM_API`, `LLM_BASE_URL` mặc định `https://api.minimax.io/anthropic`, `LLM_MODEL` mặc định `MiniMax-M3`, timeout, số luồng), `repr` che khoá.
-- `LLMClient` bọc `anthropic.Anthropic(...)`: `structured(schema: type[BaseModel], system, user, *, thinking="disabled", max_tokens, temperature) -> Structured[T]` (ép công cụ tên `schema.__name__`, kiểm Pydantic, đường sửa theo F3), `messages(...)`/`stream(...)` mỏng cho agent, `token_plan_remains()`, và `raw` (client SDK) cho `tool_runner`.
+- `LLMClient` bọc `anthropic.Anthropic(...)`: `structured(schema: type[BaseModel], system, user, *, thinking="adaptive", max_tokens, temperature) -> Structured[T]` (ép công cụ tên `schema.__name__`, kiểm Pydantic, đường sửa theo F3), `messages(...)`/`stream(...)` mỏng cho agent, `token_plan_remains()`, và `raw` (client SDK) cho `tool_runner`.
 - `Usage` cộng dồn `input/cache_read/output/thinking/calls/retries`, quy tiền theo bảng giá pay-go trong `minimax.md` (để so sánh, không phải hoá đơn).
 - **Rủi ro tự khai:** (i) SDK đổi phiên bản có thể thêm tham số MiniMax không hỗ trợ (bị bỏ qua lặng lẽ — F3) ⇒ cần kiểm hợp đồng sống định kỳ (lát 12), (ii) `httpx2` thêm một dependency HTTP thứ hai, (iii) beta `tool_runner` là beta của SDK.
 
@@ -114,7 +114,7 @@ class Structured(Generic[T]):
 
 class LLMClient:
     def __init__(self, settings: LLMSettings, *, http_client=None): ...   # http_client bơm transport giả khi test
-    def structured(self, schema: type[T], *, system: str, user: str | list, thinking: str = "disabled",   # đo: tắt = đủ hình dạng, 3 s
+    def structured(self, schema: type[T], *, system: str, user: str | list, thinking: str = "adaptive",   # tắt được bằng tham số; xem §4.2
                    max_tokens: int = 2000, temperature: float | None = None) -> Structured[T]: ...
     def messages(self, *, system, messages, tools=(), tool_choice=None, thinking="adaptive", max_tokens=4000): ...  # trả Message của SDK
     def stream(self, **kw): ...                                             # bọc client.messages.stream
@@ -124,7 +124,7 @@ class LLMClient:
 
 Luật trong `structured()` (từ F3): ép `tool_choice={"type":"tool","name":schema.__name__}`; **schema phải có enum** cho mọi trường phân loại (đo: enum là thứ làm 0 lỗi); bỏ block text (kể cả `"<tool_call>\n"`); nếu không có `tool_use` mà có text JSON ⇒ parse (`repaired=True`); Pydantic lỗi ⇒ gọi lại **một** lần kèm thông báo lỗi; vẫn lỗi ⇒ `LLMError(retryable=False, reason="schema")` để job đếm `failed`, không tạo dòng rỗng (khuôn §4.6-VII lát 8). Hai luật rút từ F4b nằm ở **consumer**, không ở `core/llm`: (i) độ dài `summary_ai` là ràng buộc mềm — cắt/ghi cờ, không fail; (ii) `tickers` phải lọc qua `market.security` (`VFM` bịa) trước khi ghi `article_ticker via='ai'`.
 
-**Thinking cho phân loại — đề xuất mặc định `disabled`** (đo F3/F4/F4b: hợp lệ 100% ở cả hai, nhất quán như nhau, tắt nhanh gấp 1,8× và ra ít token gấp 2×); `adaptive` giữ cho chatbot (F6, MiniMax khuyến nghị cho tool loop). Đảo ngược nếu bộ đánh giá gán tay cho thấy bật thinking **đúng** hơn có ý nghĩa — độ chính xác chưa đo, chỉ mới đo nhất quán.
+**Thinking cho phân loại — đề xuất mặc định `adaptive` (bật)**, chốt lại chiều 2026-09-06 sau khi cân chi phí biên: hình dạng và nhất quán ngang nhau ở cả hai chế độ (F3/F4b), nhưng bật chỉ tốn thêm **≈ 8% token mỗi bài** (vào ≈ 2,9k là phần lớn; ra 500 so với 250) và **+2 s/bài** — với job lô không ai chờ, 350 bài/ngày là 29 phút so với 17 phút. Đổi lại, giá trị của bộ phân loại nằm ở ca khó (news-pipeline §7.1: nhảy nhóm 1↔3; 6/29 bài bất đồng hôm nay đều là ca ranh giới), là chỗ thinking có cơ hội đúng hơn — ca vàng SJC/NHNN: tắt cho `3e`, bật cho `1c` (đúng hơn). Tiết kiệm 8% không đáng đổi lấy rủi ro sai nhãn đi vào kho vĩnh viễn. Tắt chỉ hợp lý khi có người chờ, mà chatbot lát 10 lại cần thinking cho vòng công cụ. **Không** làm kiểu lai (tắt trước, bật lại khi `confidence` thấp): `confidence` của M3 chưa hiệu chuẩn, thêm nhánh code cho 8% là thừa. Đảo ngược nếu bộ đánh giá gán tay (×3 lượt, cả hai chế độ) cho thấy độ đúng bằng nhau kể cả trên tập bài khó ⇒ tắt cho gọn.
 
 ### 4.3 Cấu hình và bí mật
 
@@ -170,7 +170,7 @@ Kiểm hợp đồng **sống** (không CI): script `docs/10-sources/llm/verify_
 ## 5. Điều kiện đảo ngược và việc chủ dự án cần chốt ở phiên sau
 
 1. **Duyệt vị trí `backend/core/llm/` và phương án A** (hay muốn tách tiến trình `llm` riêng — không đề xuất, vì F9 và YAGNI).
-2. **Thinking cho phân loại: đề xuất TẮT** (đo 232 lời gọi: hợp lệ 100% cả hai chế độ, nhất quán ngang nhau, tắt = 3 s và ≈ 250 token ra) — chốt cuối cùng sau bộ đánh giá gán tay (độ đúng chưa đo).
+2. **Thinking cho phân loại: đề xuất BẬT** (hình dạng và nhất quán ngang nhau ở cả hai chế độ; bật tốn thêm ≈ 8% token và +2 s/bài — không đáng kể với job lô; lợi ích tiềm năng ở ca khó) — chốt cuối cùng sau bộ đánh giá gán tay chạy cả hai chế độ ×3 lượt; tắt nếu độ đúng bằng nhau kể cả trên bài khó.
 3. **Tách lát 9 thành 9a/9b** (4.7) và hướng embedding.
 4. **Bộ đánh giá gán tay 100–150 bài**: ai gán (chủ dự án / trợ lý gán rồi chủ dự án rà 20%), khi nào.
 5. **Ngưỡng quota** dừng lô (4.4) và cách chạy nhịp thường (trong `--loop` hay job lô).
