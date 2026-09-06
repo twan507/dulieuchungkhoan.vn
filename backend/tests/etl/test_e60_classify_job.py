@@ -247,3 +247,21 @@ def test_max_minutes_budget_hit(seeded):
     assert nc.run(limit=4, client=fake, max_minutes=5, clock=lambda: next(ticks)) == 0
     status, st, _ = _run_row(engine)
     assert st["budget_hit"] is True and st["classified"] < 4 and fake.calls == st["classified"]
+
+
+def test_run_disposes_engine_when_industry_count_is_wrong(seeded, monkeypatch):
+    engine, ids = seeded
+    spy_engine = sa.create_engine(os.environ["TEST_DATABASE_URL"])
+    dispose_calls = []
+    orig_dispose = spy_engine.dispose
+
+    def fake_dispose():
+        dispose_calls.append(1)
+        orig_dispose()
+
+    monkeypatch.setattr(spy_engine, "dispose", fake_dispose)
+    monkeypatch.setattr(nc, "_engine", lambda: spy_engine)
+    monkeypatch.setattr(nc.news_store, "load_listed", lambda c: (_ for _ in ()).throw(RuntimeError("zz")))
+    assert nc.run(limit=1, client=FakeClient([R1])) == 2
+    assert dispose_calls == [1]
+    assert _n(engine, "SELECT count(*) FROM ops.etl_run WHERE job = 'news.classify'") == 0

@@ -295,6 +295,7 @@ def run(limit: int | None = None, per_group: int | None = None, thinking: str = 
     logging.getLogger("httpx2").setLevel(logging.WARNING)
     logging.getLogger("anthropic").setLevel(logging.WARNING)
     load_dotenv()
+    engine = None
     try:
         engine = _engine()
         if client is None:
@@ -307,6 +308,8 @@ def run(limit: int | None = None, per_group: int | None = None, thinking: str = 
             rows = select_articles(c, limit=limit, per_group=per_group)
     except (RuntimeError, ValueError, LLMConfigError) as e:
         log.error("%s", e)
+        if engine is not None:                     # lỗi sau khi đã mở engine — đừng rò pool (news_job.run_backfill cùng khuôn)
+            engine.dispose()
         return 2
     schema = build_schema([r.code for r in inds])
     system = system_prompt([(r.code, r.name_vi) for r in inds])
