@@ -18,8 +18,9 @@ def test_run_happy_path(migrated_engine, monkeypatch):
             "SELECT status FROM ops.etl_run WHERE job='macro.omo_crawl'"
             " ORDER BY run_id DESC LIMIT 1")).scalar_one()
         assert run_row == "success"
+        # 0018: ops.llm_call tham chiếu etl_run — phải truncate cùng
         c.execute(sa.text("TRUNCATE macro.omo_flow, macro.omo_auction, macro.omo_session,"
-                          " staging.raw_payload, ops.etl_run, ops.data_domain_state"))
+                          " staging.raw_payload, ops.llm_call, ops.etl_run, ops.data_domain_state"))
         c.commit()
 
 
@@ -32,4 +33,4 @@ def test_run_waf_blocked_records_failed(migrated_engine, monkeypatch):
         assert c.execute(sa.text(
             "SELECT status FROM ops.etl_run ORDER BY run_id DESC LIMIT 1")).scalar_one() == "failed"
         assert c.execute(sa.text("SELECT count(*) FROM staging.raw_payload")).scalar_one() == 0
-        c.execute(sa.text("TRUNCATE ops.etl_run")); c.commit()
+        c.execute(sa.text("TRUNCATE ops.llm_call, ops.etl_run")); c.commit()
