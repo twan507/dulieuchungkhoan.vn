@@ -80,12 +80,15 @@ def main(argv: list[str] | None = None) -> int:
         return etl.wichart_job.run(keys=parsed.keys, dry_run=parsed.dry_run, intraday=parsed.intraday)
     if args[0] == "news":
         import etl.news_job
+        import etl.news_registry
         parser = argparse.ArgumentParser(prog="etl news")
         parser.add_argument("--dry-run", action="store_true", dest="dry_run")
         parser.add_argument("--sources", type=lambda s: [k.strip() for k in s.split(",") if k.strip()])
         parser.add_argument("--loop", action="store_true")
         parser.add_argument("--minutes", type=float)
         parser.add_argument("--backfill-sitemap", action="store_true", dest="backfill_sitemap")
+        parser.add_argument("--source", choices=sorted(etl.news_registry.SITEMAPS), default=None,
+                            help="nguồn sitemap cho --backfill-sitemap (mặc định tinnhanhck)")
         parser.add_argument("--from", dest="from_month")
         parser.add_argument("--to", dest="to_month")
         parser.add_argument("--max-minutes", type=float, dest="max_minutes")
@@ -97,9 +100,11 @@ def main(argv: list[str] | None = None) -> int:
             if parsed.loop or parsed.dry_run or parsed.sources is not None or parsed.minutes is not None:
                 parser.error("--backfill-sitemap không đi cùng --loop/--dry-run/--sources/--minutes")
             return etl.news_job.run_backfill(from_month=parsed.from_month, to_month=parsed.to_month,
-                                             max_minutes=parsed.max_minutes, stop_before_open=parsed.stop_before_open)
-        if parsed.to_month is not None or parsed.max_minutes is not None or parsed.stop_before_open:
-            parser.error("--to/--max-minutes/--stop-before-open chỉ đi cùng --backfill-sitemap")
+                                             max_minutes=parsed.max_minutes, stop_before_open=parsed.stop_before_open,
+                                             source=parsed.source or "tinnhanhck")
+        if (parsed.to_month is not None or parsed.max_minutes is not None or parsed.stop_before_open
+                or parsed.source is not None):
+            parser.error("--to/--max-minutes/--stop-before-open/--source chỉ đi cùng --backfill-sitemap")
         if parsed.minutes is not None and not parsed.loop:
             parser.error("--minutes chỉ đi với --loop")
         return etl.news_job.run(sources=parsed.sources, dry_run=parsed.dry_run, loop=parsed.loop, minutes=parsed.minutes)
