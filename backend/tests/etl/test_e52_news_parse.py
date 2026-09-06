@@ -51,6 +51,10 @@ def test_sitemap_url_month_not_zero_padded_and_day_padded():
         nr.sitemap_url("nguoiquansat", "2026-08")          # nguồn ngày cần khoá ngày
     with pytest.raises(ValueError):
         nr.sitemap_url("bnews", "2026-08-05")               # nguồn tháng không nhận khoá ngày
+    with pytest.raises(ValueError):
+        nr.sitemap_url("bnews", "2026-13")                  # tháng 13 — khoá phải hợp lệ như news_job.MONTH
+    with pytest.raises(ValueError):
+        nr.sitemap_url("nguoiquansat", "2026-08-32")        # ngày 32
 
 
 def test_sitemap_article_url_regex_per_source():
@@ -169,6 +173,14 @@ def test_parse_sitemap_nguoiquansat_day_file_with_image_extension():
     assert items[0].source == "nguoiquansat" and items[0].rule == "nguoiquansat" and items[0].canonical_url == items[0].url
 
 
+def test_parse_sitemap_naive_lastmod_is_read_as_vn_time():
+    # lastmod không múi giờ (chưa nguồn nào phát, nhưng fromisoformat().astimezone() sẽ coi là giờ HỆ THỐNG) ⇒ phải coi là giờ VN.
+    xml = ('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+           '<url><loc>https://bnews.vn/a/1.html</loc><lastmod>2026-08-01T05:30:00</lastmod></url></urlset>')
+    it = np_.parse_sitemap(xml, _src("bnews", "sitemap", "sitemap", None))[0]
+    assert it.published_at == datetime(2026, 8, 1, 5, 30, tzinfo=VN) and it.published_at_src == "feed"
+
+
 def test_parse_sitemap_unknown_source_is_a_registry_bug_not_silent():
     with pytest.raises(KeyError):
         np_.parse_sitemap("<urlset></urlset>", _src("cafef", "sitemap", "sitemap", None))
@@ -188,9 +200,11 @@ def test_parse_cafef_cbtt_extracts_ticker_and_drops_exchanges():
 
 def test_parse_tnck_category_and_bcp_list_unique_article_links():
     # M2: số chính xác, đếm độc lập với code — grep -oE 'https://www\.tinnhanhchungkhoan\.vn[^"'"'"' >]*-post[0-9]+\.html'
-    #   tests/etl/fixtures/news/list-tnck-chung-khoan.html | sort -u | wc -l  ⇒ 98
+    #   tests/etl/fixtures/news/list-tnck-chung-khoan.html | sort -u | wc -l  ⇒ 98, trong đó 2 trang tĩnh footer
+    #   (lien-he-post83928, thong-tin-toa-soan-post83927 — cms-date 2013, đã lọt vào kho 2026-09-06) phải bị bỏ ⇒ 96.
     tn = np_.parse_tnck_category((FIX / "list-tnck-chung-khoan.html").read_text(encoding="utf-8"), _src("tinnhanhck", "tnck_category", "chung-khoan", 3))
-    assert len(tn) == 98 and len({i.canonical_url for i in tn}) == len(tn) and all(i.group_from_feed == 3 and i.rule == "tinnhanhck" for i in tn)
+    assert len(tn) == 96 and not any("lien-he-post" in i.url or "thong-tin-toa-soan-post" in i.url for i in tn)
+    assert len({i.canonical_url for i in tn}) == len(tn) and all(i.group_from_feed == 3 and i.rule == "tinnhanhck" for i in tn)
     assert any(i.url.endswith("-post397020.html") for i in tn)
     bcp = np_.parse_bcp_list((FIX / "list-bcp.html").read_text(encoding="utf-8"), _src("baochinhphu", "bcp_list", "chi-dao-dieu-hanh", 1))
     # Brief ước ~102 link, nhưng fixture list-bcp.html thực đo chỉ có 5 href khớp mẫu -102<15 số>.htm (5 bài, mỗi bài lặp href 2 lần -> unique 5).

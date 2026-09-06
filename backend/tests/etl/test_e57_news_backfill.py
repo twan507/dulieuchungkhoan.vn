@@ -59,6 +59,9 @@ def test_periods_desc_month_and_day():
     # tháng hiện tại: không sinh ngày tương lai
     assert nj.periods_desc("nguoiquansat", "2026-09", "2026-09", today=date(2026, 9, 6))[0] == "2026-09-06"
     assert nj.periods_desc("nguoiquansat", "2026-10", "2026-10", today=date(2026, 9, 6)) == []
+    # nguồn THÁNG cũng không sinh kỳ tương lai (trước đây chỉ nguồn ngày mới cắt today)
+    assert nj.periods_desc("bnews", "2026-08", "2026-12", today=date(2026, 9, 6)) == ["2026-09", "2026-08"]
+    assert nj.periods_desc("tinnhanhck", "2026-10", "2026-11", today=date(2026, 9, 6)) == []
     with pytest.raises(ValueError):
         nj.periods_desc("bnews", "2026-9", "2026-09")
 
@@ -299,3 +302,31 @@ def test_tinnhanhck_cursor_falls_back_to_legacy_job_name(clean):
 def test_unknown_source_returns_2_without_a_run(clean):
     assert nj.run_backfill("2026-08", "2026-08", source="cafef", get=_get_src(), sleep=lambda s: None, now=NOW) == 2
     assert _n(clean, "SELECT count(*) FROM ops.etl_run WHERE job LIKE 'news.backfill_sitemap%'") == 0
+
+
+def test_run_backfill_disposes_engine_on_early_returns(clean, monkeypatch):
+    # Lỗ có sẵn từ lát 8: return 0 ("không còn gì để làm") và return 2 (nguồn lạ/tham số sai) nằm ngoài finally dispose.
+    class Wrap:
+        def __init__(self, real):
+            self.real, self.disposed = real, False
+
+        def connect(self):
+            return self.real.connect()
+
+        def begin(self):
+            return self.real.begin()
+
+        def dispose(self):
+            self.disposed = True
+    wraps = []
+
+    def fake_engine():
+        w = Wrap(clean)
+        wraps.append(w)
+        return w
+    monkeypatch.setattr(nj, "_engine", fake_engine)
+    with clean.begin() as c:
+        c.execute(sa.text("INSERT INTO ops.etl_run (job, started_at, finished_at, status, stats) VALUES ('news.backfill_sitemap:nguoiquansat', now(), now(), 'success', '{\"cursor\": \"2026-08-01\"}'::jsonb)"))
+    assert nj.run_backfill("2026-08", "2026-08", source="nguoiquansat", get=_get_src(), sleep=lambda s: None, now=NOW) == 0   # hết kỳ
+    assert nj.run_backfill("2026-9", "2026-09", source="bnews", get=_get_src(), sleep=lambda s: None, now=NOW) == 2          # --from sai dạng
+    assert len(wraps) == 2 and all(w.disposed for w in wraps)

@@ -92,7 +92,11 @@ def collect(engine, registry, *, run_id, now, dry_run, subset, cycle, get, sleep
                 continue
             if s.kind == "sitemap" and cycle % SITEMAP_EVERY != 0:
                 continue
-            url = news_registry.sitemap_url(s.name, now_vn.strftime("%Y-%m")) if s.kind == "sitemap" else s.url
+            if s.kind == "sitemap":                             # khoá kỳ theo đơn vị của nguồn (tháng/ngày), không giả định tháng
+                key_fmt = "%Y-%m" if news_registry.SITEMAPS[s.name].period == "month" else "%Y-%m-%d"
+                url = news_registry.sitemap_url(s.name, now_vn.strftime(key_fmt))
+            else:
+                url = s.url
             try:
                 text = f.fetch_one(url, f"{s.name}/{s.feed_slug}")[1]
                 parsed = PARSERS[s.kind](text, s)
@@ -271,9 +275,10 @@ def periods_desc(source: str, from_month: str, to_month: str, today: date | None
         m -= 1
         if m == 0:
             y, m = y - 1, 12
+    today = today or datetime.now(VN).date()
+    months = [ym for ym in months if ym <= today.strftime("%Y-%m")]       # không sinh kỳ tương lai (cả nguồn tháng lẫn ngày)
     if news_registry.SITEMAPS[source].period == "month":
         return months
-    today = today or datetime.now(VN).date()
     out = []
     for ym in months:
         yy, mm = int(ym[:4]), int(ym[5:])
@@ -375,6 +380,7 @@ def run_backfill(from_month, to_month=None, max_minutes=None, stop_before_open=F
     load_dotenv()
     now = now or datetime.now(timezone.utc)
     to_month = to_month or now.astimezone(VN).strftime("%Y-%m")
+    engine = None
     try:
         if source not in news_registry.SITEMAPS:
             raise ValueError(f"--source phải là một trong {sorted(news_registry.SITEMAPS)}, nhận {source!r}")
@@ -390,9 +396,12 @@ def run_backfill(from_month, to_month=None, max_minutes=None, stop_before_open=F
                 periods = filtered
         if not periods:
             log.info("%s: con trỏ %s đã qua --from %s — không còn gì để làm", source, cursor, from_month)
+            engine.dispose()
             return 0
     except (RuntimeError, ValueError) as e:
         log.error("%s", e)
+        if engine is not None:                     # lỗi sau khi đã mở engine (tham số sai) — đừng rò pool
+            engine.dispose()
         return 2
     run_id = omo_store.open_run(engine, job_name(source))
     try:

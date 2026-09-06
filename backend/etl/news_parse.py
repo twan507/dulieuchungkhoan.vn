@@ -161,7 +161,7 @@ def parse_sitemap(text: str, src: Source) -> list[Item]:
             continue
         mod = (u.findtext(tag("lastmod"), namespaces=ns) or "").strip()
         try:
-            pub = datetime.fromisoformat(mod).astimezone(VN)
+            pub = _vn(datetime.fromisoformat(mod))          # lastmod naive (chưa gặp) ⇒ coi là giờ VN, không phải giờ hệ thống
             psrc = "feed"
         except ValueError:
             pub, psrc = None, "unknown"
@@ -195,8 +195,12 @@ def parse_cafef_cbtt(html_text: str, src: Source) -> list[Item]:
     return list(out.values())
 
 
+TNCK_STATIC = ("/lien-he-post", "/thong-tin-toa-soan-post")   # trang tĩnh footer mang dạng -post{id}.html, cms-date 2013 (lọt kho 2026-09-06)
+
+
 def parse_tnck_category(html_text: str, src: Source) -> list[Item]:
-    links = [u for u in _links(html_text, "https://www.tinnhanhchungkhoan.vn/") if POST_URL.search(u) and "tinnhanhchungkhoan.vn" in u]
+    links = [u for u in _links(html_text, "https://www.tinnhanhchungkhoan.vn/")
+             if POST_URL.search(u) and "tinnhanhchungkhoan.vn" in u and not any(s in u for s in TNCK_STATIC)]
     if not links:
         raise ParseError(f"tnck/{src.feed_slug}: 0 link -post")
     out: dict[str, Item] = {}
