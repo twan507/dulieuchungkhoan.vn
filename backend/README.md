@@ -138,7 +138,7 @@ Hồ sơ và ba quyết định thiết kế (tuần tự thay vì 8 luồng · 
 | Chế độ | Sổ `ops.etl_run.job` | Giao dịch | Guard |
 |---|---|---|---|
 | hằng ngày | `market.price_daily` | một giao dịch cho cả lượt, guard **trước** commit | (0) không mã nào có dữ liệu · (i) mã sai + mã hỏng > 2 % · (ii) số mã có dữ liệu sụt > 2 % so lượt success toàn tập gần nhất · (iii) ngày mới nhất ở tương lai · (iv) ngày mới nhất lùi so mốc |
-| `--backfill` | `market.price_backfill` | mỗi mã một giao dịch; `stats.cursor` ghi sau từng mã (mã hỏng/sai **vẫn đẩy con trỏ đi** — làm lại ở vòng sau, dấu vết ở `failed_tickers`/`invalid_tickers`) | không guard tổng — chỉ ngắt khẩn khi **10 mã liên tiếp** hỏng; vẫn đếm `dup_dates` và `raw_close_mismatch` từng mã |
+| `--backfill` | `market.price_backfill` | mỗi mã một giao dịch; `stats.cursor` ghi sau từng mã (mã hỏng/sai **vẫn đẩy con trỏ đi** — làm lại ở vòng sau, dấu vết ở `failed_tickers`/`invalid_tickers`) | không guard tổng — cầu chì **10 mã liên tiếp** hỏng ⇒ **nghỉ 10 phút rồi thử lại đúng mã đó** (`stats.source_down_pauses`; sau khi nghỉ, một mã hỏng nữa là trip ngay); 3 lần nghỉ liên tiếp không mã nào qua ⇒ lượt `failed: SourceDown` như trước *(sửa 2026-09-06 sau sự cố 05/09: FiinTrade nghẽn từng quãng tối thứ 7, ba lượt cuối tuần chết và task chờ tới thứ 7 sau)*; vẫn đếm `dup_dates` và `raw_close_mismatch` từng mã |
 
 Bốn bộ đếm "không có dữ liệu" của lượt hằng ngày, đều nêu tên ≤ 20 mã: `invalid` (nguồn trả `Code not valid`) ·
 `failed` (hỏng sau 3 retry, kể cả timeout/đứt kết nối) · `empty` (trả `Success` nhưng 0 phiên) · `no_organ_code_count`

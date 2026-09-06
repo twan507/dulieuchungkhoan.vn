@@ -127,6 +127,11 @@ class Fetcher:
             texts.append(text)
         return texts
 
+    def resume(self) -> None:
+        """Sau khi job nghỉ vì SourceDown (price_job, sự cố 05/09): mở cầu chì lại nhưng ở mức 'một mã hỏng nữa là trip' —
+        nguồn còn nghẽn thì biết ngay sau 1 mã (≤ 4 lần thử), không đốt thêm 10 mã × 4 lần timeout."""
+        self._streak = MAX_CONSECUTIVE_FAILURES - 1
+
     def pages(self, code: str, max_pages: int | None = 1) -> list[str]:
         """Text các trang 1..n của một mã. Dừng ở trang < 60 bản ghi, ở max_pages, hoặc ở trần totalCount."""
         try:

@@ -24,6 +24,9 @@ from etl import omo_store, price_fetch, price_guard, price_normalize, price_stor
 log = logging.getLogger("etl.price")
 VN = ZoneInfo("Asia/Ho_Chi_Minh")
 _wall_clock = time.time      # seam cho test: patch toàn cục time.time thì SQLAlchemy pool cũng ăn tick
+_sleep = time.sleep          # seam cho test: nghỉ khi nguồn nghẽn (backfill)
+SOURCE_DOWN_PAUSE_S = 600    # sự cố 05/09: FiinTrade nghẽn từng quãng ~15 phút tối thứ 7 — nghỉ 10 phút rồi nối tiếp
+SOURCE_DOWN_MAX_PAUSES = 3   # 3 lần nghỉ liên tiếp không có mã nào qua (30 phút) ⇒ coi nguồn chết thật, lượt failed như cũ
 
 
 class GuardRefused(Exception):
@@ -190,7 +193,7 @@ def _backfill(engine, tickers: list[str] | None, max_minutes: float | None,
                    "codes_done": 0, "pages": 0, "rows_sent": 0, "rows_changed": 0,
                    "dup_dates": 0, "raw_close_mismatch": 0, "raw_close_mismatch_sample": [],
                    "invalid_tickers": [], "failed_tickers": [], "retries": 0,
-                   "budget_hit": False, "pass_complete": False, "elapsed_s": 0}
+                   "budget_hit": False, "pass_complete": False, "elapsed_s": 0, "source_down_pauses": 0}
     # Mở sổ là việc CUỐI trước `try`: hỏng ở phần tính hạn giờ phía trên thì không có dòng 'running' treo
     run_id = omo_store.open_run(engine, price_store.JOB_BACKFILL)
     try:
@@ -211,17 +214,33 @@ def _backfill(engine, tickers: list[str] | None, max_minutes: float | None,
         banner(f"bắt đầu {datetime.now(VN):%H:%M} · con trỏ {(cursor or 'đầu danh sách') if tickers is None else '(--codes)'}"
                f" · còn {len(todo)} mã · hạn {_short(stop_at)}")
         with price_fetch.open_fetcher() as f:
+            pauses = 0                  # số lần nghỉ LIÊN TIẾP chưa có mã nào qua; về 0 khi một mã tải được
             for i, c in enumerate(todo, 1):
                 texts: list[str] = []
-                try:
-                    texts = f.pages(c.organ_code, max_pages=None)
-                except price_fetch.CodeInvalid:
-                    stats["invalid_tickers"].append(c.ticker)
-                except price_fetch.SourceDown:
-                    raise
-                except price_fetch.FetchError as e:
-                    stats["failed_tickers"].append(c.ticker)
-                    log.warning("%s hỏng: %s", c.ticker, e)
+                while True:
+                    try:
+                        texts = f.pages(c.organ_code, max_pages=None)
+                        pauses = 0
+                    except price_fetch.CodeInvalid:
+                        stats["invalid_tickers"].append(c.ticker)
+                    except price_fetch.SourceDown as e:
+                        # Cầu chì trip = nguồn nghẽn (sự cố 05/09: 3 lượt cuối tuần chết vì một quãng nghẽn, task chờ tới
+                        # thứ 7 sau). Nghỉ rồi thử lại ĐÚNG mã này; chỉ bỏ cuộc khi nghỉ 3 lần liên tiếp mà không mã nào qua.
+                        pauses += 1
+                        if pauses > SOURCE_DOWN_MAX_PAUSES:
+                            raise
+                        if deadline is not None and _wall_clock() + SOURCE_DOWN_PAUSE_S >= deadline:
+                            raise                                   # nghỉ xong là quá hạn — không lấn giờ giao dịch
+                        stats["source_down_pauses"] += 1            # đếm lần NGHỈ thật, không đếm lần trip bỏ cuộc
+                        log.warning("%s — nghỉ %d phút rồi thử lại (lần %d/%d)", e, SOURCE_DOWN_PAUSE_S // 60, pauses, SOURCE_DOWN_MAX_PAUSES)
+                        price_store.save_progress(engine, run_id, stats)
+                        _sleep(SOURCE_DOWN_PAUSE_S)
+                        f.resume()
+                        continue
+                    except price_fetch.FetchError as e:
+                        stats["failed_tickers"].append(c.ticker)
+                        log.warning("%s hỏng: %s", c.ticker, e)
+                    break
                 if texts:
                     rows, d = price_normalize.normalize_code(c.organ_code, texts)
                     stats["dup_dates"] += d
