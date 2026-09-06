@@ -34,11 +34,11 @@ class Extracted:
 @dataclass(frozen=True)
 class Rule:
     container: str
-    title: str
+    title: str                              # selector CSS, cho phép danh sách "a, b" — select_one lấy phần tử đầu theo thứ tự tài liệu
     drop: tuple[str, ...] = ()
     sapo: str | None = None
     sapo_prefix: str | None = None          # regex bỏ ở đầu sapo
-    time: str | None = None                 # selector
+    time: str | None = None                 # selector, cho phép danh sách "a, b" — select_one lấy phần tử đầu theo thứ tự tài liệu
     time_fmt: tuple[str, ...] = ()          # strptime; 'iso' = fromisoformat; giá trị lấy từ attr 'content' nếu là <meta>
     text_drop: tuple[str, ...] = ()         # regex áp lên text sạch
     min_chars: int = MIN_CHARS
@@ -61,9 +61,10 @@ RULES: dict[str, Rule] = {
     "bnews": Rule("div.lr-ct", "h1.font-42",
                   ("div.lr-summary-post", "div.insertImage", "div.editor_inpage", "#divAdmicro_inpage", "div.lr-author", "figure", "figcaption", "table"),
                   sapo="div.lr-summary-post", sapo_prefix=r"^BNEWS\s*"),
-    "nguoiquansat": Rule("article.entry", "h1.sc-longform-header-title",
+    "nguoiquansat": Rule("article.entry", "h1.sc-longform-header-title, h1.c-detail-head__title",     # 8b: template cũ (<= 2024)
                          ("div.sc-longform-header", "div.sc-hightlight-box", "div.c-box", "figure", "figcaption", "div.sc-empty-layer", "table"),
-                         sapo="p.sc-longform-header-sapo", time="span.sc-longform-header-date", time_fmt=("%d/%m/%Y - %H:%M", "%d/%m/%Y %H:%M")),
+                         sapo="p.sc-longform-header-sapo", time="span.sc-longform-header-date, span.c-detail-head__time",
+                         time_fmt=("%d/%m/%Y - %H:%M", "%d/%m/%Y %H:%M", "%d-%m-%Y %H:%M")),
     "baochinhphu": Rule("div.detail-content.afcbc-body", "h1.detail-title",
                         ("div.VCSortableInPreviewMode", "figure", "figcaption", "div.detail-relate", "div.c-banner", "div.admzone", "table"),
                         sapo="h2.detail-sapo", sapo_prefix=r"^\(Chinhphu\.vn\)\s*-\s*", time="div.detail-time", time_fmt=("%d/%m/%Y %H:%M",)),

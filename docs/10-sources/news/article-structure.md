@@ -1,6 +1,6 @@
 # Cấu trúc trang bài và luật bỏ boilerplate — 8 nguồn tin
 
-**Loại tài liệu:** tra cứu (reference) · **Ngày đo: 2026-08-15 · mẫu: 4 bài / nguồn** (riêng CafeF thêm 1 trang CBTT) · **Trạng thái** đã kiểm chứng trên mẫu · **đã cài đặt lát 8 (2026-09-06)**
+**Loại tài liệu:** tra cứu (reference) · **Ngày đo: 2026-08-15 · mẫu: 4 bài / nguồn** (riêng CafeF thêm 1 trang CBTT) · **Trạng thái** đã kiểm chứng trên mẫu · **đã cài đặt lát 8 (2026-09-06)** · **lát 8b (2026-09-06): NguoiQuanSat thêm template cũ, BNews kiểm lại trên bài 2015/2020**
 
 Tài liệu này trả lời việc **từng** để ngỏ ở [thiết kế pipeline tin tức](../../20-design/news-pipeline.md) mục 12 và mục 6.5 tầng 2 của [danh mục nguồn tin](README.md) — nguyên văn khi đó: *"luật bỏ boilerplate phải viết riêng cho từng nguồn — chưa khảo sát cấu trúc trang bài"*. Cả hai chỗ nay đã đánh dấu ✅ và trỏ ngược về tài liệu này. Đặc tính feed, encoding và khối lượng cũng nằm ở [danh mục nguồn tin](README.md).
 
@@ -150,7 +150,7 @@ Trong dòng *Đã kiểm*, phần trăm là tỷ lệ ký tự mà tầng 2 lo�
 | **Thời gian** | **không có trong thân trang** ở cả 4 mẫu — `time#currentDate` là *ngày hôm nay của server*, không phải giờ đăng. Lấy giờ đăng từ `pubDate` của RSS |
 | **Tác giả** | `div.lr-author` — dạng `Văn Giáp/Bnews/vnanet.vn` |
 | **Bẫy riêng** | ① **Bẫy nặng nhất bộ: BNews chạy hai template song song trong cùng một chuyên mục.** Ở template A, đoạn văn nằm trong `<p>` bình thường. Ở template B, **đoạn văn là text node trần còn `<p>` rỗng chỉ làm dấu ngắt**. Đo trên 4 mẫu (sau khi bỏ boilerplate) — xem bảng ngay dưới. Hệ quả: bộ bóc gom `find_all('p')` trả **0 ký tự** cho 2/4 bài và chỉ 24% cho bài thứ ba, **không báo lỗi lần nào**. Phải duyệt text node, không duyệt `<p>` — và đừng dựa vào một bài mẫu để kết luận nguồn này "ổn". ② Có **HTML comment `<!--lr-ct-->`** ngay đầu container — xem mục 3.1 để biết cách bóc nào rò và cách nào không. ③ **Trang bài là UTF-8, khác feed.** Feed RSS của BNews đúng là UTF-16LE (100 null byte/200 byte đầu, [README](README.md) mục 6.1) nhưng cả 4 trang bài đều trả `charset=utf-8` và **không có null byte nào**. Đừng đem luật `iconv` của feed áp cho trang bài — làm thế là hỏng toàn văn. ④ **Đo 2026-09-05:** tiêu đề trang bài ở dạng tổ hợp rời (NFD, không phải NFC) — chuẩn hoá NFC trước khi dùng làm khoá dedupe |
-| **Đã kiểm** | 4/4 bài — bỏ 7,2% / 8,7% / 13,0% / 15,7%; sạch 1.572–3.712 ký tự; đầu text sạch chuỗi `lr-ct`, cuối text sạch chữ ký `.../Bnews/vnanet.vn`. Kiểm lại 05/09/2026: container + tiêu đề còn đúng, text sạch 2.958 ký tự |
+| **Đã kiểm** | 4/4 bài — bỏ 7,2% / 8,7% / 13,0% / 15,7%; sạch 1.572–3.712 ký tự; đầu text sạch chuỗi `lr-ct`, cuối text sạch chữ ký `.../Bnews/vnanet.vn`. Kiểm lại 05/09/2026: container + tiêu đề còn đúng, text sạch 2.958 ký tự. **Kiểm 06/09/2026 trên bài cũ** (backfill lát 8b): bài 2015-08 (`/495.html`) 1.195 ký tự, bài 2020-09 (`/169672.html`) 1.844 ký tự — cùng luật, không đổi; trang có ld+json `datePublished` = `lastmod` sitemap |
 
 **Hai template BNews — đo trên container đã bỏ boilerplate:**
 
@@ -176,6 +176,8 @@ Ba hành vi khác nhau trên 4 bài của **cùng một feed, cùng một ngày*
 | **Tác giả** | `span.sc-longform-header-author` |
 | **Bẫy riêng** | ① `div.sc-hightlight-box` là **văn xuôi hợp lệ** nhưng là nền tiểu sử doanh nghiệp lặp lại giữa nhiều bài — để lại thì vừa tốn token vừa làm hỏng dedupe theo nội dung. ② Toàn bộ metadata nằm **trong** `article.entry`; quên bỏ `sc-longform-header` là mỗi bài dính thêm ~250–435 ký tự trùng sapo. ③ Có `div.c-author-page` ở cuối trang ghi *"Theo Kiến thức Đầu tư"* — nguồn gốc bài, ngoài container chính |
 | **Đã kiểm** | 4/4 bài — bỏ 9,2% / 13,8% / 17,1% / **24,9%**; sạch 2.540–5.658 ký tự. Tỷ lệ bỏ cao nhất nhì bộ. Kiểm lại 05/09/2026: container + tiêu đề còn đúng, text sạch ≈2.975 ký tự |
+
+**Template cũ — bài trước ~2025** *(đo 2026-09-06 trên 3 bài 2021-07, 2022-01, 2024-01, phục vụ backfill lát 8b)*: **không có** `div.sc-longform-header` và các lớp `sc-longform-*`. Thay vào đó: tiêu đề `h1.c-detail-head__title`, giờ `span.c-detail-head__time` dạng `15-01-2024 13:04` (`%d-%m-%Y %H:%M`), khối đầu bài chỉ có `c-detail-head__cat/row/time/title` — **không có sapo**; container `article.entry` và rác `div.c-box` (`ads_after_sapo_*`) vẫn đúng; credit `div.c-author-page` ("Theo Kiến thức Đầu tư · Link bài gốc …") nằm ngoài container. Luật bóc hiện dùng **danh sách selector** cho tiêu đề và giờ (`h1.sc-longform-header-title, h1.c-detail-head__title` · `span.sc-longform-header-date, span.c-detail-head__time`) — hai template không đồng thời có cả hai nên không nhập nhằng. Bài 2024-01-15 (`…-110172.html`) bóc được 2.387 ký tự, không lẫn credit. Chưa biết mốc đổi template chính xác (giữa 2024-01 và 2026-09); bài từ chối `no_title` khi backfill là dấu hiệu có template thứ ba.
 
 ### 2.8 BaoChinhPhu
 

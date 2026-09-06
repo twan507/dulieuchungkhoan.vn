@@ -306,11 +306,14 @@ Ràng buộc quyết định: VPS đích chỉ **~50 GB đĩa cho toàn bộ h�
 Vì mục đích là tra cứu quá khứ, đừng đợi kho tự tích luỹ. Backfill ngay khi dựng:
 
 - **TinnhanhCK** — `sitemaps/news-{YYYY}-{M}.xml` lùi được nhiều năm, có `lastmod` là giờ đăng thật
-- **BNews**, **NguoiQuanSat** — có sitemap tương tự
+- **BNews** — `sitemap/news-{YYYY}-{M}.xml` theo tháng, lùi tới 2015-08, `lastmod` = giờ đăng *(đo 2026-09-06)*
+- **NguoiQuanSat** — `sitemap-article-{YYYY-MM-DD}.xml` theo **ngày**, lùi tới 2021-07-16, `lastmod` = giờ đăng; WAF 403 chập chờn không theo UA *(đo 2026-09-06)*
 
 Đây là cách duy nhất có dữ liệu trước ngày bật hệ thống, và nó chỉ khả dụng chừng nào họ còn giữ sitemap.
 
 *(đo 2026-09-05)* Sitemap TinnhanhCK lùi tới **2015-06**; phần tử đầu tiên là URL trang chủ, `lastmod` chỉ là giờ sinh file; **`lastmod` là giờ SỬA bài, không phải giờ đăng** — giờ đăng lấy ở `meta.cms-date` trên trang, `lastmod` chỉ để dự phòng.
+
+*(lát 8b, 2026-09-06)* Một job `etl news --backfill-sitemap --source {tinnhanhck|bnews|nguoiquansat}`; registry là chủ mẫu URL + đơn vị kỳ (tháng/ngày) + regex URL bài; con trỏ riêng từng nguồn (`news.backfill_sitemap:<source>`). BNews và NguoiQuanSat: `published_at` = `lastmod` (`src='feed'`) vì đo thấy bằng giờ đăng. Độ sâu chạy thật: chủ dự án chốt **backfill chỉ để nghiệm thu** — mỗi nguồn hai lượt 60 phút trên tháng 2026-08 rồi dừng; lùi thêm (nếu có ngày cần) là chạy lại với `--from` xa hơn, con trỏ nối tiếp. Cùng ngày đo thấy CafeF/VnEconomy/Vietstock cũng có sitemap lịch sử — **loại có chủ đích**, không mở lát ([news/README §5.6](../10-sources/news/README.md)). Chi tiết nguồn: [news/README §5.4–5.5](../10-sources/news/README.md).
 
 ### 9.7 Bản quyền
 
@@ -370,7 +373,7 @@ Lưu tiêu đề + link để tham chiếu là một chuyện, lưu toàn văn l
 
 ### Đã chốt
 
-- 8 nguồn báo · 47 feed RSS · 6 nguồn crawl HTML *(đếm lại theo host thật ngày 15/08/2026; bản 13/08 ghi nhầm 10 — số feed và số crawler không đổi)*
+- 8 nguồn báo · 47 feed RSS · 6 nguồn crawl HTML trong lượt thường *(đếm lại theo host thật ngày 15/08/2026; bản 13/08 ghi nhầm 10 — số feed và số crawler không đổi)* · +2 sitemap chỉ dùng backfill (BNews, NguoiQuanSat — lát 8b, 2026-09-06)
 - Taxonomy 3 nhóm / 20 sub / nhãn `x`
 - Mọi tin qua lưới AI, không có đường tắt
 - Nhóm từ feed là gợi ý, classifier được ghi đè, phải ghi log
@@ -399,7 +402,7 @@ Theo thứ tự phụ thuộc:
 3. **Chốt mô hình embedding** trước khi bắt đầu nạp dữ liệu.
 4. **Dựng khung thu thập + chuẩn hoá**, chạy không có AI trong 1 tuần để đo tỷ lệ dedupe thật. ✅ *(lát 8, 2026-09-06 — không AI, `--loop`)*
 5. Có số dedupe rồi mới chốt ngân sách và bật lưới phân loại.
-6. **Backfill lịch sử** từ sitemap TinnhanhCK / BNews / NguoiQuanSat — làm càng sớm càng tốt, dữ liệu đó chỉ còn chừng nào họ còn giữ sitemap. ✅ *(TinnhanhCK; BNews/NguoiQuanSat: lát 8b)*
+6. **Backfill lịch sử** từ sitemap TinnhanhCK / BNews / NguoiQuanSat — làm càng sớm càng tốt, dữ liệu đó chỉ còn chừng nào họ còn giữ sitemap. ✅ *(TinnhanhCK lát 8; BNews/NguoiQuanSat lát 8b 2026-09-06 — cùng job `--backfill-sitemap --source`; tháng 2026-08 mỗi nguồn đang nghiệm thu, số ghi ở ledger lát 8b)*
 
 ### Cảnh báo cho người triển khai
 

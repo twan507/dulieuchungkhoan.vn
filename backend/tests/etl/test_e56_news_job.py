@@ -135,6 +135,7 @@ def test_full_cycle_writes_articles_sources_tickers_and_domain_state(clean):
     assert nj.run(get=_fake_get(calls), sleep=lambda s: None, now=NOW) == 0
     status, stats, _ = _last(clean)
     assert status == "success" and stats["lists_ok"] == 53 and stats["lists_failed"] == 0 and stats["cycle"] == 0
+    assert stats["sources_total"] == 55                                       # 47 feed RSS + 8 crawl_html (seam spec §6)
     assert stats["items"] > 300 and stats["new"] == stats["items"] and stats["articles_ok"] + stats["articles_failed"] + stats["refused"] == stats["new"]
     assert stats["articles_ok"] > 300 and stats["refused"] == 0 and stats["articles_failed"] == 0
     assert _n(clean, "SELECT count(*) FROM news.article") == stats["articles_ok"]

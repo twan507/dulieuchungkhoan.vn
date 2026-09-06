@@ -20,22 +20,46 @@ def _feed(name):
     return np_.decode((FIX / f"feed-{name}.xml").read_bytes())
 
 
-def test_registry_53_sources_groups_and_slugs():
+def test_registry_55_sources_groups_and_slugs():
     s = nr.build()
-    assert len(s) == 53 and sum(1 for x in s if x.kind == "rss") == 47
+    assert len(s) == 55 and sum(1 for x in s if x.kind == "rss") == 47
     assert [sum(1 for x in s if x.kind == "rss" and x.group_from_feed == g) for g in (1, 2, 3)] == [14, 12, 21]
     assert {x.name for x in s} == set(nr.SOURCES)
     kinds = [x.kind for x in s if x.kind != "rss"]
-    assert sorted(kinds) == ["bcp_list", "cafef_cbtt", "tnck_category", "tnck_category", "tnck_category", "tnck_sitemap"]
+    assert sorted(kinds) == ["bcp_list", "cafef_cbtt", "sitemap", "sitemap", "sitemap", "tnck_category", "tnck_category", "tnck_category"]
     assert REG[("vietstock", "rss", "739/chung-khoan/giao-dich-noi-bo")].url == "https://vietstock.vn/739/chung-khoan/giao-dich-noi-bo.rss"
     assert REG[("cafef", "cafef_cbtt", "cbtt")].group_from_feed == 3 and REG[("baochinhphu", "bcp_list", "chi-dao-dieu-hanh")].group_from_feed == 1
     tn = {x.feed_slug: x.group_from_feed for x in s if x.kind == "tnck_category"}
     assert tn == {"ck-quoc-te": 2, "chung-khoan": 3, "dau-tu": 1}
-    assert nr.sitemap_url(datetime(2026, 9, 5, tzinfo=VN)) == "https://www.tinnhanhchungkhoan.vn/sitemaps/news-2026-9.xml"
-    # C1 (spec §4.6-III): chuyên mục trước, sitemap sau — sitemap chỉ vá lỗ, không được thắng bản có nhóm.
-    assert s[-1].kind == "tnck_sitemap"
-    # M5: url của tnck_sitemap là mẫu {y}-{m} (hằng SITEMAP), không phải literal năm cứng 2026 chép từ feeds.json.
-    assert REG[("tinnhanhck", "tnck_sitemap", "sitemap")].url == nr.SITEMAP
+    # C1 (spec lát 8 §4.6-III): chuyên mục trước, sitemap sau — ba sitemap nằm cuối.
+    assert [x.kind for x in s[-3:]] == ["sitemap", "sitemap", "sitemap"]
+    # 8b: sitemap TinnhanhCK vẫn vá lỗ trong collect; BNews/NguoiQuanSat chỉ backfill (feeds.json chi_backfill).
+    assert REG[("tinnhanhck", "sitemap", "sitemap")].backfill_only is False
+    assert REG[("bnews", "sitemap", "sitemap")].backfill_only is True and REG[("nguoiquansat", "sitemap", "sitemap")].backfill_only is True
+    assert all(x.backfill_only is False for x in s if x.kind != "sitemap")
+    # M5 lát 8: url của sitemap là mẫu (SITEMAPS), không phải literal năm cứng chép từ feeds.json.
+    assert REG[("bnews", "sitemap", "sitemap")].url == nr.SITEMAPS["bnews"].url
+    assert nr.SITEMAPS["tinnhanhck"].period == "month" and nr.SITEMAPS["bnews"].period == "month" and nr.SITEMAPS["nguoiquansat"].period == "day"
+
+
+def test_sitemap_url_month_not_zero_padded_and_day_padded():
+    assert nr.sitemap_url("tinnhanhck", "2026-09") == "https://www.tinnhanhchungkhoan.vn/sitemaps/news-2026-9.xml"
+    assert nr.sitemap_url("bnews", "2026-08") == "https://bnews.vn/sitemap/news-2026-8.xml"
+    assert nr.sitemap_url("bnews", "2015-12") == "https://bnews.vn/sitemap/news-2015-12.xml"
+    assert nr.sitemap_url("nguoiquansat", "2026-08-05") == "https://nguoiquansat.vn/sitemap-article-2026-08-05.xml"
+    with pytest.raises(ValueError):
+        nr.sitemap_url("nguoiquansat", "2026-08")          # nguồn ngày cần khoá ngày
+    with pytest.raises(ValueError):
+        nr.sitemap_url("bnews", "2026-08-05")               # nguồn tháng không nhận khoá ngày
+
+
+def test_sitemap_article_url_regex_per_source():
+    assert nr.SITEMAPS["tinnhanhck"].article_url.search("https://www.tinnhanhchungkhoan.vn/a-post396857.html")
+    assert not nr.SITEMAPS["tinnhanhck"].article_url.search("https://www.tinnhanhchungkhoan.vn")
+    assert nr.SITEMAPS["bnews"].article_url.search("https://bnews.vn/han-quoc-lap-ky-luc/435658.html")
+    assert not nr.SITEMAPS["bnews"].article_url.search("https://bnews.vn/photo/trang-1.html")
+    assert nr.SITEMAPS["nguoiquansat"].article_url.search("https://nguoiquansat.vn/bidv-tung-goi-vay-314417.html")
+    assert not nr.SITEMAPS["nguoiquansat"].article_url.search("https://nguoiquansat.vn/")
 
 
 def test_registry_refuses_when_counts_drift(tmp_path):
@@ -114,11 +138,40 @@ def test_parse_rss_empty_pubdate_falls_back_to_url_then_unknown():
 
 
 def test_parse_sitemap_drops_homepage_entry_and_keeps_lastmod():
-    items = np_.parse_sitemap((FIX / "sitemap-2026-9.xml").read_text(encoding="utf-8"), _src("tinnhanhck", "tnck_sitemap", "sitemap", None))
+    items = np_.parse_sitemap((FIX / "sitemap-2026-9.xml").read_text(encoding="utf-8"), _src("tinnhanhck", "sitemap", "sitemap", None))
     assert len(items) == 244 and all(it.url.endswith(".html") and "-post" in it.url for it in items)
     assert items[0].url.endswith("-post396857.html") and items[0].published_at == datetime(2026, 9, 1, 20, 41, 41, tzinfo=VN)
     assert items[-1].url.endswith("-post397051.html") and items[-1].published_at == datetime(2026, 9, 5, 20, 39, 34, tzinfo=VN)
     assert items[0].published_at_src == "feed" and items[0].group_from_feed is None and items[0].feed_slug == "sitemap" and items[0].rule == "tinnhanhck"
+
+
+def test_parse_sitemap_bnews_drops_home_photo_video_by_regex():
+    # Fixture cắt từ https://bnews.vn/sitemap/news-2026-9.xml (đo 2026-09-06): 3 phần tử đầu không phải bài + 5 bài, giảm dần.
+    items = np_.parse_sitemap((FIX / "sitemap-bnews-2026-9.xml").read_text(encoding="utf-8"), _src("bnews", "sitemap", "sitemap", None))
+    assert len(items) == 5
+    assert items[0].url == "https://bnews.vn/lich-thi-dau-va-truc-tiep-ngoai-hang-anh-arsenal-vs-chelsea-luc-22h30-ngay-6-9/435626.html"
+    assert items[0].published_at == datetime(2026, 9, 6, 5, 30, 0, tzinfo=VN) and items[0].published_at_src == "feed"
+    assert items[-1].url == "https://bnews.vn/le-hoi-den-long-viet-nam-thu-hut-5-000-nguoi-tai-australia/435662.html"
+    assert items[-1].published_at == datetime(2026, 9, 5, 22, 5, 14, tzinfo=VN)
+    assert all(it.source == "bnews" and it.rule == "bnews" and it.feed_slug == "sitemap" and it.group_from_feed is None for it in items)
+    assert not any("/photo/" in it.url or "/video/" in it.url or it.url == "https://bnews.vn" for it in items)
+
+
+def test_parse_sitemap_nguoiquansat_day_file_with_image_extension():
+    # Fixture cắt từ sitemap-article-2026-09-05.xml (đo 2026-09-06): không có phần tử trang chủ, có <image:image>, giảm dần.
+    items = np_.parse_sitemap(
+        (FIX / "sitemap-nguoiquansat-2026-09-05.xml").read_text(encoding="utf-8"),
+        _src("nguoiquansat", "sitemap", "sitemap", None),
+    )
+    assert len(items) == 5
+    assert items[0].url.endswith("-du-kien-hoat-dong-nam-2027-314422.html") and items[0].published_at == datetime(2026, 9, 5, 23, 48, 1, tzinfo=VN)
+    assert items[4].url.endswith("-cho-khach-hang-mua-nha-314417.html") and items[4].published_at == datetime(2026, 9, 5, 23, 4, 1, tzinfo=VN)
+    assert items[0].source == "nguoiquansat" and items[0].rule == "nguoiquansat" and items[0].canonical_url == items[0].url
+
+
+def test_parse_sitemap_unknown_source_is_a_registry_bug_not_silent():
+    with pytest.raises(KeyError):
+        np_.parse_sitemap("<urlset></urlset>", _src("cafef", "sitemap", "sitemap", None))
 
 
 def test_parse_cafef_cbtt_extracts_ticker_and_drops_exchanges():

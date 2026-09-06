@@ -1,10 +1,10 @@
 {
   "_meta": {
     "version": "v3",
-    "cap_nhat": "2026-08-13",
+    "cap_nhat": "2026-09-06",
     "nguon_bao": 8,
     "feed_rss": 47,
-    "crawl_html": 6,
+    "crawl_html": 8,
     "phan_bo_nhom_mac_dinh": {
       "vi_mo_trong_nuoc": 14,
       "tai_chinh_quoc_te": 12,
@@ -17,7 +17,7 @@
       "lastBuildDate cua moi feed luon = gio hien tai, KHONG dung do do tuoi. Doc pubDate item dau tien."
     ],
     "chot_ngay": "2026-08-13",
-    "trang_thai": "da chot thiet ke, da trien khai lat 8 (2026-09-06, khong AI)",
+    "trang_thai": "da chot thiet ke, da trien khai lat 8 (2026-09-06, khong AI); lat 8b: backfill sitemap BNews + NguoiQuanSat (2026-09-06)",
     "khoi_luong_do_that": {
       "tin_moi_ngay_chua_dedupe": 570,
       "do_ngay": "11-13/08/2026",
@@ -318,6 +318,20 @@
       "url": "https://www.tinnhanhchungkhoan.vn/sitemaps/news-2026-{M}.xml",
       "nhom_mac_dinh": null,
       "ghi_chu": "Khong co RSS. lastmod = gio dang that +07:00, giu ca thang nen backfill duoc. Ghep voi trang chuyen muc theo post ID de gan nhom."
+    },
+    {
+      "nguon": "bnews",
+      "url": "https://bnews.vn/sitemap/news-{Y}-{M}.xml",
+      "nhom_mac_dinh": null,
+      "chi_backfill": true,
+      "ghi_chu": "Chi backfill (lat 8b), khong poll trong collect (da co 8 feed RSS). Sitemap thang, M KHONG dem 0, 3 phan tu dau la trang chu/photo/video, giam dan, lastmod = gio dang (do 2026-09-06: khop feed 20/20, ld+json 3/3). Lui toi 2015-08, ~4.000 bai/thang."
+    },
+    {
+      "nguon": "nguoiquansat",
+      "url": "https://nguoiquansat.vn/sitemap-article-{YYYY-MM-DD}.xml",
+      "nhom_mac_dinh": null,
+      "chi_backfill": true,
+      "ghi_chu": "Chi backfill (lat 8b). Sitemap theo NGAY tu 2021-07-16, khong co phan tu trang chu, giam dan, lastmod = gio dang (do 2026-09-06). WAF 403 chap chon khong theo UA (5/12 lan dau, retry qua) - de Fetcher retry. 25-200 bai/ngay."
     },
     {
       "nguon": "tinnhanhck",

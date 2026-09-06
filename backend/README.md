@@ -333,12 +333,13 @@ uv run python -m etl news --dry-run                         # fetch + chuẩn ho
 uv run python -m etl news --sources cafef,vietstock         # lượt con theo nguồn (danh sách phân tách bằng dấu phẩy)
 uv run python -m etl news --loop [--minutes N]              # vòng lặp chạy tay, mặc định 5 phút/vòng, sitemap TinnhanhCK mỗi 3 vòng;
                                                              # mỗi vòng một etl_run news.collect; Ctrl+C dừng sạch (đóng sổ "dừng tay")
-uv run python -m etl news --backfill-sitemap --from 2026-08 [--to 2026-08] [--max-minutes N] [--stop-before-open]
-                                                             # job news.backfill_sitemap: sitemap TinnhanhCK, tháng đi lùi, con trỏ tháng,
-                                                             # mỗi bài một giao dịch, cầu chì 10 bài liên tiếp hỏng, hạn giờ kiểm sau MỌI URL
+uv run python -m etl news --backfill-sitemap [--source tinnhanhck|bnews|nguoiquansat] --from 2026-08 [--to 2026-08] [--max-minutes N] [--stop-before-open]
+                                                             # job news.backfill_sitemap:<source> (mặc định tinnhanhck): kỳ đi lùi — TinnhanhCK/BNews theo THÁNG,
+                                                             # NguoiQuanSat theo NGÀY (--from/--to vẫn YYYY-MM, con trỏ ghi tới ngày); mỗi bài một giao dịch,
+                                                             # cầu chì 10 bài liên tiếp hỏng, hạn giờ kiểm sau MỌI URL; kỳ hỏng sau retry ⇒ periods_failed, lượt sau tự vá
 ```
 
-**Đọc `stats`:** lượt thường `items / new / seen / merged_url / merged_title / refused / articles_failed / warnings / stale_feeds`; backfill sitemap `cursor / months_done / budget_hit`.
+**Đọc `stats`:** lượt thường `items / new / seen / merged_url / merged_title / refused / articles_failed / warnings / stale_feeds`; backfill sitemap `source / period_unit / cursor / periods_done / periods_failed / budget_hit` (lượt sau nối từ kỳ trước `cursor`; TinnhanhCK còn đọc con trỏ tên job cũ `news.backfill_sitemap` của lát 8). **Quy ước vận hành:** mỗi nguồn tối đa **một** tiến trình backfill (không có khoá trong code; `ON CONFLICT` chỉ bảo vệ dữ liệu). Ước tải *(đo 2026-09-06)*: BNews ~4.000 URL/tháng ≈ 3,5 giờ/tháng (lùi được tới 2015-08); NguoiQuanSat ~5.000 URL/tháng ≈ 4,5 giờ/tháng (tới 2021-07); WAF NguoiQuanSat 403 chập chờn không theo UA — để Fetcher retry, đừng đổi UA.
 
 **Dedupe:** URL thô đã thấy ⇒ bỏ (`seen`); canonical trùng ⇒ `merged_url`, thêm `article_source`; tiêu đề chuẩn hoá (bỏ dấu, đ→d, bỏ tiền tố `(Chinhphu.vn) -`/`(ĐTCK)`/`BNEWS`) trùng trong **48 giờ** ⇒ `merged_title`, thêm `article_source`; còn lại tải bài, bóc, ghi `article` + `article_revision` v1 + `article_source` + `article_ticker`.
 

@@ -1,7 +1,7 @@
 """Chuẩn hoá item tin (spec lát 8 §5.3, README §6): decode theo null byte, URL canonical, giờ đăng theo 4 luật,
 tiêu đề chuẩn hoá cho dedupe. Thuần — không I/O. Bẫy đã đo (2026-09-05): VietnamBiz khai utf-16 mà byte UTF-8, pubDate
 `GMT+7` phi chuẩn hoặc rỗng (lấy từ URL), tiêu đề mang entity; BaoChinhPhu `M/D/YYYY h:mm:ss AM/PM` không múi giờ;
-sitemap TinnhanhCK phần tử đầu là trang chủ với lastmod = giờ sinh file."""
+sitemap: phần tử không phải bài (trang chủ TNCK; trang chủ/photo/video BNews) lọc bằng regex theo nguồn — lát 8b."""
 from __future__ import annotations
 
 import html
@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo
 
 from bs4 import BeautifulSoup
 
-from etl.news_registry import Source
+from etl.news_registry import SITEMAPS, Source
 
 VN = ZoneInfo("Asia/Ho_Chi_Minh")
 DROP_QUERY = re.compile(r"^(utm_|gidzl$|fbclid$)")
@@ -144,6 +144,9 @@ def parse_rss(text: str, src: Source) -> list[Item]:
 
 
 def parse_sitemap(text: str, src: Source) -> list[Item]:
+    """8b: lọc <loc> bằng regex URL bài của nguồn (SITEMAPS) — trang chủ (TNCK), trang chủ/photo/video (BNews) rơi hết;
+    NguoiQuanSat không có phần tử thừa. Item mang source = rule = src.name."""
+    spec = SITEMAPS[src.name]                                   # KeyError = registry khai sitemap cho nguồn không có mẫu (bug cấu hình)
     body = re.sub(r"^\s*<\?xml[^>]*\?>", "", text)
     try:
         root = ET.fromstring(body)
@@ -154,7 +157,7 @@ def parse_sitemap(text: str, src: Source) -> list[Item]:
     out = []
     for u in root.findall(tag("url"), ns):
         loc = (u.findtext(tag("loc"), namespaces=ns) or "").strip()
-        if not POST_URL.search(loc):                        # phần tử đầu = trang chủ, lastmod = giờ sinh file (đo 2026-09-05)
+        if not spec.article_url.search(loc):
             continue
         mod = (u.findtext(tag("lastmod"), namespaces=ns) or "").strip()
         try:
@@ -162,7 +165,7 @@ def parse_sitemap(text: str, src: Source) -> list[Item]:
             psrc = "feed"
         except ValueError:
             pub, psrc = None, "unknown"
-        out.append(Item("tinnhanhck", "sitemap", loc, canonical_url(loc), "", None, pub, psrc, None, None, "tinnhanhck"))
+        out.append(Item(src.name, "sitemap", loc, canonical_url(loc), "", None, pub, psrc, None, None, src.name))
     if not out:
         raise ParseError("sitemap: 0 URL bài")
     return out
@@ -215,5 +218,5 @@ def parse_bcp_list(html_text: str, src: Source) -> list[Item]:
     return list(out.values())
 
 
-PARSERS = {"rss": parse_rss, "tnck_sitemap": parse_sitemap, "cafef_cbtt": parse_cafef_cbtt,
+PARSERS = {"rss": parse_rss, "sitemap": parse_sitemap, "cafef_cbtt": parse_cafef_cbtt,
            "tnck_category": parse_tnck_category, "bcp_list": parse_bcp_list}
