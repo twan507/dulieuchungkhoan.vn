@@ -97,8 +97,11 @@ cd backend && uv run pytest tests -q
 - **Mọi SQL qualify đủ `schema.object`**, không dựa `search_path`. Bốn extension (`unaccent`, `pg_trgm`, `vector`, `fuzzystrmatch`) nằm trong schema `extensions`, không phải `public`: hàm bọc phải qualify (`extensions.unaccent(...)`), opclass viết `extensions.gin_trgm_ops`, operator so khớp mờ của `pg_trgm` viết `OPERATOR(extensions.%)` chứ không phải `%` trần — bẫy đã gặp thật khi viết migration `0007` (tìm kiếm tin theo tên mờ).
 - **Role ứng dụng là `NOLOGIN`, tạo trong migration `0009`:** `dlck_etl` ghi 6 schema (`market`/`macro`/`asset`/`news`/`staging`/`ops`), `dlck_api` chỉ đọc 4 schema miền (`market`/`macro`/`asset`/`news`). User login thật tạo **per-môi-trường, ngoài migration**:
   ```sql
-  CREATE USER etl_worker LOGIN PASSWORD '…' IN ROLE dlck_etl;
+  CREATE USER etl_worker   LOGIN PASSWORD '…' IN ROLE dlck_etl;    -- job ETL, biến ETL_DATABASE_URL
+  CREATE USER agent_reader LOGIN PASSWORD '…' IN ROLE dlck_api;    -- tầng ngữ nghĩa lát 10, biến AGENT_DATABASE_URL
   ```
+
+  `agent_reader` tạo 2026-09-07. Tiến trình `python -m agent` gọi `agent.db.assert_read_only()` ngay lúc khởi động: khẳng định `pg_has_role(current_user,'dlck_api','member')` **và** `has_table_privilege('market.security','INSERT') = false`, sai thì chết ngay. Kiểm thật dưới credential production 2026-09-07: `current_user=agent_reader`, thuộc `dlck_api`, `INSERT` bị chặn (`ProgrammingError`).
 - ⚠️ **`alembic downgrade <revision>` = revision ĐÍCH, chạy `downgrade()` của migration NGAY SAU revision đó** — nói tắt "downgrade qua X" dễ khiến người đọc lẫn giữa "tới X" và "của X". Hai ca phá dữ liệu ngành thật, nêu rõ từng vế:
   - `alembic downgrade 0002` (tới revision `0002`) chạy `downgrade()` của `0003` → **`DELETE`** sạch `market.industry_icb_map` (bản đồ ICB→ngành lớp 1). Backup bảng này trước khi chạy lệnh này trên DB có dữ liệu thật.
   - `alembic downgrade 0011` (tới revision `0011`) chạy `downgrade()` của `0012` → **`DROP TABLE`** hẳn `market.issuer_industry_override` (161 dòng gán tay lớp 2) — mất luôn cả bảng, không chỉ mất dữ liệu. Backup bảng này trước khi chạy lệnh này trên DB có dữ liệu thật.
