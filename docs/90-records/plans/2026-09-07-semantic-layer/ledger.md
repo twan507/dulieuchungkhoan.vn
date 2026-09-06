@@ -70,3 +70,23 @@ Hồ sơ đầy đủ: [`round7-results-2026-09-07.md`](round7-results-2026-09-0
 **Ba lỗi code do lượt chạy thật lộ ra, đã sửa (`d23913c`):** `max_tokens=4000` cắt câu trả lời thành rỗng im lặng (3/40 request, một request tiêu 3.999 token chỉ cho thinking); model từ chối tra dữ liệu vì tưởng tháng 8/2026 nằm ngoài tri thức của nó (đã thêm block system neo ngày + bắt tra trước khi phủ định); sổ `ops.llm_call` ghi mọi lượt gọi công cụ thành `failed`.
 
 **Phát hiện về cache, thay cho ghi chép cũ:** cache MiniMax trúng **trong cùng cuộc hội thoại** (lượt 2: vào 409 token, đọc cache 36.886) nhưng **không trúng giữa hai câu hỏi khác nhau** dù tiền tố giống hệt — mọi request đầu câu đều ở mức nền `cache_read = 128`.
+
+### Đính chính: lệnh chạy vòng chat
+
+Spec §4.1 và plan Task 14 viết `uv run --project backend python -m agent` — **sai**, trả `No module named agent`. `pythonpath = ["."]` trong `backend/pyproject.toml` chỉ có hiệu lực khi rootdir là `backend`, nên phải chạy **từ trong thư mục `backend/`**:
+
+```bash
+cd backend && uv run --project . python -m agent
+```
+
+*(Không sửa spec/plan: `90-records/` là bản ghi tại-thời-điểm, sửa nội dung của nó là viết lại quá khứ — CLAUDE.md §1.7. Lệnh đúng được ghi ở `backend/README.md`, nơi sở hữu sự thật này.)*
+
+## Task 15 — đồng bộ tài liệu ✅ XONG (2026-09-07)
+
+Bảy file sửa: `chatbot-semantic-layer.md` (bỏ nhãn "chưa duyệt", 8→9 function với chữ ký thật, xoá `icb_level`, đóng 3/4 "điều chưa biết" bằng số đo vòng 7, thêm mục ba bẫy đã trả giá) · `market-data-store.md` §6.2–§6.3 · `maintenance.md` §6 (bộ vòng 6 không tái lập được; **giữ nguyên con số 260**, chỉ ghi là không kiểm được) · `roadmap.md` (đóng lát 10, gộp lát 11, gỡ dòng embedding, cập nhật trạng thái bàn giao ở điểm vào lát 12) · `90-records/README.md` · `backend/README.md` · `docs/20-design/README.md`.
+
+**Phép kiểm AC10 bắt được hai chỗ tài liệu sống còn nói sai** sau khi tưởng đã xong: `architecture.md` vẫn ghi *"định nghĩa 5 function cho chatbot"*, và index `docs/20-design/README.md` vẫn ghi *"8 function · 🟡 đề xuất, chưa duyệt"*. Cả hai đã sửa. Đây đúng là lý do §1.7 bắt chạy `git grep` trước khi tuyên bố đã đồng bộ — nếu bỏ qua bước này thì index nói một đằng, tài liệu nói một nẻo.
+
+Các hit `icb_level` còn lại **là đúng**: chúng thuộc tầng lưu trữ ICB (`market.icb_industry`, `etl/refdata_*`) — ICB vẫn được nạp và giữ làm tham chiếu, chỉ là **không bao giờ ra tới model**. Hit trong `90-records/` là vùng lịch sử, không sửa.
+
+**Đính chính lệnh chạy đã lan vào README:** agent chép đúng lệnh sai từ plan (`uv run --project backend python -m agent`); đã sửa `backend/README.md` thành `cd backend && uv run --project . python -m agent` kèm giải thích vì sao.
