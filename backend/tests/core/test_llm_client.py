@@ -97,7 +97,17 @@ def test_no_tool_no_json_is_schema_error():
     assert e.value.reason == "schema"
 
 
-@pytest.mark.parametrize("status,reason,retryable", [(429, "rate_limit", True), (500, "server", True), (401, "auth", False), (400, "bad_request", False)])
+@pytest.mark.parametrize(
+    "status,reason,retryable",
+    [
+        (429, "rate_limit", True),
+        (500, "server", True),
+        (401, "auth", False),
+        (400, "bad_request", False),
+        (529, "server", True),
+        (503, "server", True),
+    ],
+)
 def test_http_errors_map_to_llm_error_without_key(status, reason, retryable):
     c, _ = _client([(status, {"type": "error", "error": {"type": "x", "message": f"boom {KEY}"}})])
     with pytest.raises(LLMError) as e:

@@ -20,7 +20,7 @@ def from_sdk(e: anthropic.APIError) -> LLMError:
     detail = f"{type(e).__name__} {status}" if status is not None else type(e).__name__
     if isinstance(e, anthropic.RateLimitError):
         return LLMError("rate_limit", retryable=True, detail=detail)
-    if isinstance(e, anthropic.InternalServerError):
+    if isinstance(e, anthropic.APIStatusError) and status is not None and status >= 500:
         return LLMError("server", retryable=True, detail=detail)
     if isinstance(e, anthropic.APIConnectionError):                       # gồm APITimeoutError
         return LLMError("transport", retryable=True, detail=detail)
