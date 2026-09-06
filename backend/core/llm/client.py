@@ -1,5 +1,6 @@
 """LLMClient — bọc anthropic.Anthropic trỏ MiniMax. `structured()` = ép công cụ + schema có enum + kiểm Pydantic (đo 232 lời gọi:
-0 lỗi schema — minimax.md §5); đường sửa (text JSON → parse; Pydantic lỗi → gọi lại MỘT lần) giữ làm lưới an toàn.
+0 lỗi schema — minimax.md §5); đường sửa (text JSON → parse; Pydantic lỗi → gọi lại MỘT lần, gửi lại NGUYÊN một lượt user kèm
+lỗi — không echo lượt assistant cũ, vì server strict kiểu Anthropic đòi tool_result cho mọi tool_use) giữ làm lưới an toàn.
 `token_plan_remains()` gọi endpoint quota bằng http_client (không qua SDK). Exception chỉ mang tên lớp + status."""
 from __future__ import annotations
 
@@ -87,23 +88,29 @@ class LLMClient:
                     err = "; ".join(f"{'.'.join(str(p) for p in x['loc'])}: {x['msg']}" for x in e.errors())[:500]
             if attempt == 0:
                 repaired = True
-                messages = messages + [
-                    {"role": "assistant", "content": [b.model_dump(mode="json", exclude_none=True) for b in msg.content]},
-                    {"role": "user", "content": f"Kết quả không hợp lệ: {err}. Gọi lại công cụ {tool['name']} cho đúng schema."}]
-        raise LLMError("schema", retryable=False, detail=err)
+                # KHÔNG echo lượt assistant cũ: server strict kiểu Anthropic đòi tool_result cho mọi tool_use trong lịch sử,
+                # mà mình không phát tool_result ⇒ 400. Gửi lại một lượt user DUY NHẤT mang cả câu gốc lẫn lỗi (option b, I2).
+                messages = [{"role": "user", "content": user + f"\n\nLần trước kết quả không hợp lệ: {err}. Gọi lại công cụ {tool['name']} cho đúng schema."}]
+        err_obj = LLMError("schema", retryable=False, detail=err)
+        err_obj.usage = usage                  # M5: giữ token đã tốn dù lỗi schema, để log_call ghi được input/output
+        raise err_obj
 
     def token_plan_remains(self) -> QuotaRemains:
         host = self.settings.base_url
         for suffix in ("/anthropic", "/v1"):
             if host.endswith(suffix):
                 host = host[: -len(suffix)]
+                break                                            # M9: chỉ bóc MỘT hậu tố — tránh bóc chồng '/anthropic/v1'
         try:
             r = self._http.get(host + "/v1/token_plan/remains", headers={"Authorization": f"Bearer {self.settings.api_key}"})
         except Exception as e:                                   # noqa: BLE001 — chỉ giữ tên lớp
             raise LLMError("transport", retryable=True, detail=type(e).__name__) from None
         if r.status_code != 200:
             raise LLMError("transport", retryable=True, detail=f"HTTP {r.status_code}")
-        d = r.json()
+        try:
+            d = r.json()                                         # I1: HTTP 200 không đảm bảo body là JSON (gateway trả HTML)
+        except Exception as e:                                   # noqa: BLE001 — chỉ giữ tên lớp
+            raise LLMError("transport", retryable=True, detail=type(e).__name__) from None
         code = (d.get("base_resp") or {}).get("status_code", 0)
         if code != 0:
             raise LLMError("transport", retryable=True, detail=f"base_resp {code}")

@@ -62,7 +62,7 @@ class _ClassificationBase(BaseModel):
     sub: Literal[tuple(ALL_SUBS)]        # noqa: F821 — Literal nhận tuple như nhiều đối số
     confidence: float = Field(ge=0, le=1)
     summary_ai: str
-    tickers: list[str]
+    tickers: list[str] = Field(default_factory=list)   # AC3: model bỏ hẳn trường khi rỗng (đo thật 1/12 — minimax.md §5)
 
     @model_validator(mode="after")
     def _sub_in_group(self):
@@ -76,7 +76,8 @@ def build_schema(industry_codes: Sequence[str]) -> type[BaseModel]:
     if not codes or len(codes) != len(set(codes)):
         raise ValueError(f"danh sách ngành rỗng hoặc trùng: {codes}")
     return create_model("Classification", __base__=_ClassificationBase, __doc__="Kết quả phân loại một bài",
-                        industries=(list[Literal[codes]], ...))   # type: ignore[valid-type]
+                        # AC3: cùng lý do như tickers — mảng rỗng bị model bỏ hẳn trường (minimax.md §5), default [] thay vì required
+                        industries=(list[Literal[codes]], Field(default_factory=list)))   # type: ignore[valid-type]
 
 
 def system_prompt(industries: Sequence[tuple[str, str]]) -> str:
@@ -161,9 +162,9 @@ def apply(conn, row: Row, value, *, content_chars: int, classified_from: str, li
             conn.execute(sa.text("INSERT INTO news.article_ticker (article_id, security_id, via) VALUES (:a, :s, :v) ON CONFLICT DO NOTHING"),
                          {"a": row.article_id, "s": listed[t], "v": via})
     for code in list(dict.fromkeys(value.industries))[:MAX_INDUSTRIES]:
-        conn.execute(sa.text("INSERT INTO news.article_industry (article_id, industry_id, via, confidence) VALUES (:a, :i, 'ai', :c) ON CONFLICT DO NOTHING"),
-                     {"a": row.article_id, "i": industry_ids[code], "c": value.confidence})
-        st["industries_ai"] += 1
+        r = conn.execute(sa.text("INSERT INTO news.article_industry (article_id, industry_id, via, confidence) VALUES (:a, :i, 'ai', :c) ON CONFLICT DO NOTHING"),
+                         {"a": row.article_id, "i": industry_ids[code], "c": value.confidence})
+        st["industries_ai"] += r.rowcount           # M4: đếm dòng THẬT SỰ chèn, như industries_ticker — lượt idempotent phải ra 0
     st["industries_ticker"] = conn.execute(sa.text(
         "INSERT INTO news.article_industry (article_id, industry_id, via)"
         " SELECT DISTINCT t.article_id, v.industry_id, 'ticker' FROM news.article_ticker t"
@@ -204,7 +205,7 @@ def _empty_stats(thinking: str, cap: int, selected: int) -> dict:
             "groups": {"1": 0, "2": 0, "3": 0, "x": 0}, "overridden": 0, "title_only": 0, "tickers_url": 0, "tickers_lookup": 0,
             "tickers_ai": 0, "tickers_ai_dropped": 0, "industries_ai": 0, "industries_ticker": 0,
             "tokens": {"input": 0, "cache_read": 0, "output": 0, "thinking": 0}, "latency_s": {"p50": None, "p90": None, "max": None, "total": 0.0},
-            "usd_estimate": 0.0, "quota": {}, "quota_stop": False, "budget_hit": False, "warnings": []}
+            "usd_estimate": 0.0, "quota": {}, "quota_stop": False, "budget_hit": False, "model_down": False, "warnings": []}
 
 
 def _quota_ok(client, st: dict, key: str) -> bool:
@@ -212,6 +213,7 @@ def _quota_ok(client, st: dict, key: str) -> bool:
         q = client.token_plan_remains()
     except LLMError as e:                                          # guard hỏng ⇒ cảnh báo, không chặn (spec §4.2-VIII)
         st["warnings"].append(f"quota: {e}")
+        st["quota"][key] = {"error": e.reason}                      # M3: ghi lại lý do — log sau không mù về guard hỏng
         return True
     st["quota"][key] = {"interval_pct": q.interval_pct, "weekly_pct": q.weekly_pct}
     return q.interval_pct >= QUOTA_MIN_INTERVAL_PCT and q.weekly_pct >= QUOTA_MIN_WEEKLY_PCT
@@ -251,13 +253,14 @@ def classify_run(engine, client, rows: list[Row], *, run_id, schema, system: str
                 if not dry_run:
                     with engine.begin() as c:
                         log_call(c, run_id=run_id, article_id=row.article_id, model=client.settings.model, thinking=thinking, status="failed",
-                                 usage=None, latency_s=clock() - t1, error=str(e))
+                                 usage=getattr(e, "usage", None), latency_s=clock() - t1, error=str(e))   # M5: schema error vẫn tốn token
                 log.warning("bài %s: %s", row.article_id, e)
                 if e.reason == "auth":
                     raise
                 if e.retryable:
                     streak += 1
                     if streak >= MAX_CONSECUTIVE_FAILED:
+                        st["model_down"] = True                     # M1: đánh dấu cầu chì đã nổ, để đọc lại từ stats
                         raise ModelDown(f"{streak} lời gọi liên tiếp lỗi thử-lại-được — model/mạng/quota chết, dừng lượt", st) from e
                 continue
             streak = 0
@@ -282,6 +285,9 @@ def classify_run(engine, client, rows: list[Row], *, run_id, schema, system: str
         if not st["quota_stop"]:
             _quota_ok(client, st, "after")
         return st
+    except BaseException as e:                 # M2: gắn stats vào MỌI exception thoát ra (kể cả KeyboardInterrupt) —
+        e.stats = st                           # để run() đóng sổ close_run(stats=...) thay vì mất trắng khi Ctrl+C/lỗi lạ
+        raise
     finally:
         st["tokens"] = {"input": tok.input_tokens, "cache_read": tok.cache_read_tokens, "output": tok.output_tokens, "thinking": tok.thinking_tokens}
         if lat:
@@ -306,7 +312,7 @@ def run(limit: int | None = None, per_group: int | None = None, thinking: str = 
                 raise RuntimeError(f"market.industry level 2 có {len(inds)} mã, mong 24 (industry-tree.md)")
             listed = news_store.load_listed(c)
             rows = select_articles(c, limit=limit, per_group=per_group)
-    except (RuntimeError, ValueError, LLMConfigError) as e:
+    except (RuntimeError, ValueError, LLMConfigError, sa.exc.SQLAlchemyError) as e:   # M15: lỗi kết nối DB lúc khởi động cũng phải đóng gọn, không văng traceback
         log.error("%s", e)
         if engine is not None:                     # lỗi sau khi đã mở engine — đừng rò pool (news_job.run_backfill cùng khuôn)
             engine.dispose()
@@ -345,15 +351,16 @@ def run(limit: int | None = None, per_group: int | None = None, thinking: str = 
         omo_store.close_run(engine, run_id, "failed", e.stats, error=str(e))
         log.error("%s", e)
         return 1
-    except KeyboardInterrupt:
-        omo_store.close_run(engine, run_id, "failed", error="dừng tay (Ctrl+C)")
+    except KeyboardInterrupt as e:
+        # M2: st đã gắn vào e trong classify_run (except BaseException) — đừng mất trắng counts đã ghi trước khi Ctrl+C
+        omo_store.close_run(engine, run_id, "failed", stats=getattr(e, "stats", None), error="dừng tay (Ctrl+C)")
         return 130
     except LLMError as e:                                          # 'auth' — gọi tiếp vô ích
         omo_store.close_run(engine, run_id, "failed", error=str(e))
         log.error("%s", e)
         return 2
     except Exception as e:                                         # noqa: BLE001 — job biên ngoài
-        omo_store.close_run(engine, run_id, "failed", error=f"{type(e).__name__}: {e}")
+        omo_store.close_run(engine, run_id, "failed", stats=getattr(e, "stats", None), error=f"{type(e).__name__}: {e}")
         log.exception("classify thất bại")
         return 2
     finally:

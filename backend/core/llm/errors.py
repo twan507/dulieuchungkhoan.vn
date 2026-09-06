@@ -12,6 +12,7 @@ class LLMConfigError(Exception):
 class LLMError(Exception):
     def __init__(self, reason: str, *, retryable: bool, detail: str = ""):
         self.reason, self.retryable = reason, retryable
+        self.usage = None                      # gắn Usage tích luỹ khi có (M5 — schema error vẫn tốn token, log_call cần biết)
         super().__init__(f"{reason}: {detail}" if detail else reason)
 
 

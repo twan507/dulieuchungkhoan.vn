@@ -14,7 +14,7 @@ from etl import news_classify as nc
 VN = timezone(timedelta(hours=7))
 CODES = ["NGANHANG", "CHUNGKHOAN", "BAOHIEM", "DANDUNG", "KHUCONGNGHIEP", "XAYDUNG", "VATLIEU", "KIMLOAI", "KHOANGSAN", "HOACHAT", "NHUA", "THIETBI",
          "NONGNGHIEP", "THUYSAN", "DETMAY", "CAOSU", "BANLE", "THUCPHAM", "DULICH", "YTE", "TIENICH", "DAUKHI", "VANTAI", "CONGNGHE"]
-LONG = "Nội dung bài thử dài hơn hai trăm ký tự để classified_from là content. " * 5      # 350 ký tự
+LONG = "Nội dung bài thử dài hơn hai trăm ký tự để classified_from là content. " * 5      # 355 ký tự
 # (canonical_url, hint, giờ đăng, ticker_step_ran, tiêu đề) — mới nhất trước; A4/A5 cùng bucket NULL
 ARTICLES = [("https://zz.test/classify-1", 1, "2026-09-06T10:00:00+07", False, "ZZ bài 1 thép tăng giá"),
             ("https://zz.test/classify-2", 2, "2026-09-06T09:00:00+07", False, "ZZ bài 2 Fed giữ lãi suất"),
@@ -26,7 +26,7 @@ ARTICLES = [("https://zz.test/classify-1", 1, "2026-09-06T10:00:00+07", False, "
 def _cleanup(engine):
     with engine.begin() as c:
         for t in ("news.article_industry", "ops.llm_call", "news.article_ticker", "news.article_source", "news.article_revision", "news.article"):
-            c.execute(sa.text(f"DELETE FROM {t} WHERE {'article_id' if t != 'news.article' else 'article_id'} IN"
+            c.execute(sa.text(f"DELETE FROM {t} WHERE article_id IN"
                               " (SELECT article_id FROM news.article WHERE canonical_url LIKE 'https://zz.test/classify-%')"))
         c.execute(sa.text("DELETE FROM ops.etl_run WHERE job = 'news.classify'"))
         c.execute(sa.text("DELETE FROM market.security WHERE exchange = 'ZZ'"))
@@ -104,7 +104,7 @@ def test_apply_group3_with_ai_ticker_filter_and_industries_both_ways(seeded):
         assert ind_f == [("KIMLOAI", "ai", 0.9), ("XAYDUNG", "ai", 0.9), ("KIMLOAI", "ticker", None)]
     with engine.begin() as c:                                                             # idempotent
         st2 = nc.apply(c, row, v, content_chars=350, classified_from="content", listed=listed, industry_ids=industry_ids)
-    assert st2["industries_ticker"] == 0 and _n(engine, "SELECT count(*) FROM news.article_industry WHERE article_id = :a", a=ids[0]) == 3
+    assert st2["industries_ticker"] == 0 and st2["industries_ai"] == 0 and _n(engine, "SELECT count(*) FROM news.article_industry WHERE article_id = :a", a=ids[0]) == 3
     assert _n(engine, "SELECT count(*) FROM news.article_ticker WHERE article_id = :a", a=ids[0]) == 1
 
 
@@ -147,13 +147,17 @@ def test_log_call_writes_tokens_and_failed_without_key(seeded):
 
 
 class FakeClient:
-    """Trả Structured theo kịch bản (dict ⇒ ok, Exception ⇒ raise). quota: (interval_pct, weekly_pct)."""
-    def __init__(self, results, quota=(97, 86)):
+    """Trả Structured theo kịch bản (dict ⇒ ok, Exception ⇒ raise). quota: (interval_pct, weekly_pct).
+    quota_error: khi đặt, token_plan_remains() ném LLMError này thay vì trả QuotaRemains (M3 — guard hỏng)."""
+    def __init__(self, results, quota=(97, 86), quota_error=None):
         self.results, self.quota, self.calls, self.quota_calls = list(results), quota, 0, 0
+        self.quota_error = quota_error
         self.settings = SimpleNamespace(model="MiniMax-M3")
 
     def token_plan_remains(self):
         self.quota_calls += 1
+        if self.quota_error is not None:
+            raise self.quota_error
         return QuotaRemains(self.quota[0], self.quota[1], {})
 
     def structured(self, schema, *, system, user, thinking="adaptive", **kw):
@@ -190,6 +194,7 @@ def test_run_writes_stats_and_llm_calls_and_keeps_failed_article_null(seeded):
     assert st["latency_s"] == {"p50": 2.0, "p90": 2.0, "max": 4.0, "total": 7.0} and st["usd_estimate"] == 0.0038
     assert st["quota"] == {"before": {"interval_pct": 97, "weekly_pct": 86}, "after": {"interval_pct": 97, "weekly_pct": 86}}
     assert st["thinking"] == "adaptive" and st["cap_chars"] == 3000 and st["quota_stop"] is False and st["budget_hit"] is False
+    assert st["model_down"] is False                                                  # M1: cầu chì chưa nổ trong lượt bình thường
     with engine.connect() as c:
         calls = c.execute(sa.text("SELECT article_id, status, input_tokens, error FROM ops.llm_call WHERE purpose = 'news.classify' ORDER BY call_id")).all()
         assert [tuple(r) for r in calls] == [(ids[0], "ok", 2000, None), (ids[1], "ok", 2000, None), (ids[2], "failed", None, "schema: sub: không thuộc nhóm"), (ids[3], "repaired", 2000, None)]
@@ -211,6 +216,18 @@ def test_quota_below_threshold_stops_before_any_call(seeded):
     assert nc.run(limit=1, client=fake2) == 0 and fake2.calls == 0
 
 
+def test_quota_guard_failure_is_warning_not_stop(seeded):
+    # M3: token_plan_remains() ném lỗi (transport hỏng, ví dụ gateway trả HTML) ⇒ guard chỉ CẢNH BÁO, không chặn lượt
+    # (spec §4.2-VIII) — và lỗi phải được ghi lại vào st["quota"] để đọc log sau không mù về nguyên nhân.
+    engine, ids = seeded
+    fake = FakeClient([R1], quota_error=LLMError("transport", retryable=True, detail="HTTP 502"))
+    assert nc.run(limit=1, client=fake) == 0
+    status, st, _ = _run_row(engine)
+    assert st["quota_stop"] is False and st["classified"] == 1
+    assert st["quota"] == {"before": {"error": "transport"}, "after": {"error": "transport"}}
+    assert len(st["warnings"]) == 2
+
+
 def test_five_consecutive_retryable_failures_is_model_down(seeded):
     engine, ids = seeded
     fake = FakeClient([LLMError("rate_limit", retryable=True, detail="RateLimitError 429")] * 5 + [R1])
@@ -218,6 +235,7 @@ def test_five_consecutive_retryable_failures_is_model_down(seeded):
     status, st, err = _run_row(engine)
     assert status == "failed" and "5 lời gọi liên tiếp" in err and st["failed"] == 5 and fake.calls == 5
     assert _n(engine, "SELECT count(*) FROM ops.llm_call WHERE status = 'failed'") == 5
+    assert st["model_down"] is True                                                    # M1: cầu chì nổ ⇒ ghi lại vào stats
 
 
 def test_auth_error_stops_immediately_with_exit_2(seeded):
@@ -242,11 +260,12 @@ def test_dry_run_calls_model_but_writes_nothing(seeded, tmp_path):
 
 def test_max_minutes_budget_hit(seeded):
     engine, ids = seeded
+    # Dãy clock(): t0 · i=0 kiểm ngân sách (0-0<300, tiếp) · t1 bài 0 · i=1 kiểm ngân sách (400-0>=300 ⇒ dừng NGAY, bỏ bài 1).
     ticks = iter([0.0, 0.0, 0.0, 400.0, 400.0, 400.0, 400.0, 400.0, 400.0])
     fake = FakeClient([R1, R2, R4, R4])
     assert nc.run(limit=4, client=fake, max_minutes=5, clock=lambda: next(ticks)) == 0
     status, st, _ = _run_row(engine)
-    assert st["budget_hit"] is True and st["classified"] < 4 and fake.calls == st["classified"]
+    assert st["selected"] == 4 and st["budget_hit"] is True and st["classified"] == 1 and fake.calls == st["classified"]
 
 
 def test_run_disposes_engine_when_industry_count_is_wrong(seeded, monkeypatch):

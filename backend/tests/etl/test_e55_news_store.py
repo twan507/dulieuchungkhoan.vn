@@ -25,6 +25,9 @@ def _ext(content="Nội dung dài " * 20, title="Tiêu đề A", published=None)
 
 def _cleanup(engine):
     with engine.begin() as c:
+        # I3: article_industry và llm_call có FK article_id (0018) — xoá trước news.article như vòng lặp ở test_e56_news_job.py
+        c.execute(sa.text("DELETE FROM news.article_industry"))
+        c.execute(sa.text("DELETE FROM ops.llm_call"))
         c.execute(sa.text("DELETE FROM news.article_ticker"))
         c.execute(sa.text("DELETE FROM news.article_source"))
         c.execute(sa.text("DELETE FROM news.article_revision"))

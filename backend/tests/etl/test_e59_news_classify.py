@@ -18,13 +18,16 @@ def test_schema_enums_and_shape():
     S = nc.build_schema(CODES)
     js = S.model_json_schema()
     assert S.__name__ == "Classification" and js["additionalProperties"] is False
-    assert set(js["required"]) == {"group", "sub", "confidence", "summary_ai", "tickers", "industries"}
+    # AC3: tickers/industries CÓ default [] — model bỏ hẳn trường khi rỗng (đo thật, 1/12 lời gọi, minimax.md §5) ⇒ không được required
+    assert set(js["required"]) == {"group", "sub", "confidence", "summary_ai"}
     assert js["properties"]["group"]["enum"] == ["1", "2", "3", "x"]
     assert len(js["properties"]["sub"]["enum"]) == 21 and "3i" in js["properties"]["sub"]["enum"] and "x" in js["properties"]["sub"]["enum"]
     assert js["properties"]["industries"]["items"]["enum"] == CODES                 # đúng thứ tự đưa vào
     v = S.model_validate(GOOD)
     assert v.group == "3" and v.industries == ["KIMLOAI"]
     assert S.model_validate(dict(GOOD, group="x", sub="x", tickers=[], industries=[])).sub == "x"
+    v2 = S.model_validate({"group": "x", "sub": "x", "confidence": 0.5, "summary_ai": "s"})
+    assert v2.tickers == [] and v2.industries == []
 
 
 @pytest.mark.parametrize("bad", [dict(GOOD, sub="1a"), dict(GOOD, confidence=1.2), dict(GOOD, industries=["THEP"]), dict(GOOD, extra=1),

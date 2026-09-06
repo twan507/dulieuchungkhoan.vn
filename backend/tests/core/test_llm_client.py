@@ -71,14 +71,14 @@ def test_text_json_without_tool_use_is_repaired():
     assert r.value.sub == "3d" and r.repaired is True and r.stop_reason == "end_turn"
 
 
-def test_invalid_then_valid_costs_two_calls_and_echoes_history():
+def test_invalid_then_valid_resends_user_with_correction():
     bad = dict(GOOD, sub="9z")
     c, seen = _client([(200, _msg([_tool(bad)])), (200, _msg([_tool(GOOD)]))])
     r = c.structured(Classification, system="S", user="U")
     assert r.value.sub == "3d" and r.repaired is True and r.usage.calls == 2 and r.usage.input_tokens == 428
     second = json.loads(seen[1].content)["messages"]
-    assert [m["role"] for m in second] == ["user", "assistant", "user"]
-    assert second[1]["content"][0]["type"] == "tool_use" and "Kết quả không hợp lệ" in second[2]["content"]
+    assert len(second) == 1 and second[0]["role"] == "user"
+    assert "U" in second[0]["content"] and "không hợp lệ" in second[0]["content"]
 
 
 def test_invalid_twice_is_schema_error_not_retryable():
@@ -87,6 +87,7 @@ def test_invalid_twice_is_schema_error_not_retryable():
     with pytest.raises(LLMError) as e:
         c.structured(Classification, system="S", user="U")
     assert e.value.reason == "schema" and e.value.retryable is False and len(seen) == 2
+    assert e.value.usage.calls == 2 and e.value.usage.input_tokens == 428
 
 
 def test_no_tool_no_json_is_schema_error():
@@ -130,3 +131,24 @@ def test_token_plan_remains_base_resp_error_is_retryable():
     with pytest.raises(LLMError) as e:
         c.token_plan_remains()
     assert e.value.retryable is True and e.value.reason == "transport" and "1002" in str(e.value)
+
+
+def test_token_plan_remains_non_json_200_body_is_transport_error():
+    def handler(req):
+        return httpx2.Response(200, text="<html>gateway</html>")
+    c = LLMClient(SET, http_client=httpx2.Client(transport=httpx2.MockTransport(handler)), max_retries=0)
+    with pytest.raises(LLMError) as e:
+        c.token_plan_remains()
+    assert e.value.reason == "transport" and e.value.retryable is True
+
+
+@pytest.mark.parametrize("base_url", ["https://x.test/anthropic", "https://x.test/v1"])
+def test_token_plan_remains_strips_exactly_one_known_suffix(base_url):
+    seen = []
+
+    def handler(req):
+        seen.append(req)
+        return httpx2.Response(200, json=json.loads((FIX / "token_plan_remains.json").read_text(encoding="utf-8")))
+    c = LLMClient(LLMSettings(api_key=KEY, base_url=base_url), http_client=httpx2.Client(transport=httpx2.MockTransport(handler)), max_retries=0)
+    c.token_plan_remains()
+    assert str(seen[0].url) == "https://x.test/v1/token_plan/remains"
