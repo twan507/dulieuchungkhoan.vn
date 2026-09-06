@@ -31,9 +31,11 @@ def build_tools(engine: sa.Engine) -> list:
                          adjusted: bool = True) -> str:
         """Chuỗi giá theo ngày của một mã cổ phiếu Việt Nam (giá mở/cao/thấp/đóng cửa).
 
-        ticker: mã chứng khoán, ví dụ 'HPG'. from_date/to_date: 'YYYY-MM-DD', bỏ trống lấy các
-        phiên gần nhất. adjusted: true dùng giá đã điều chỉnh. Kho CHỈ có giá cổ phiếu — không
-        có chỉ số (VN-Index) và không có ETF; hàm sẽ nói rõ khi không có dữ liệu.
+        ticker: mã chứng khoán hoặc mã chỉ số, ví dụ 'HPG', 'VCB', 'VNINDEX'. from_date/to_date:
+        'YYYY-MM-DD', bỏ trống lấy các phiên gần nhất. adjusted: true dùng giá đã điều chỉnh.
+        **Luôn gọi hàm này trước khi nói về giá hay điểm số của bất kỳ mã nào, kể cả VN-Index
+        và các chỉ số khác** — hàm trả lời rõ ràng khi kho chưa có dữ liệu cho mã đó, đừng tự
+        phỏng đoán là có hay không có.
         """
         return chay(gia_theo_ngay, ticker, from_date, to_date, adjusted)
 

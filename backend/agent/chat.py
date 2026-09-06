@@ -34,7 +34,9 @@ REMINDER = ("Dữ liệu trên là số thật vừa tra được — dùng đú
             "chỉ tiêu thô.")
 
 MAX_ITERATIONS = 8          # trần cứng chống vòng gọi function vô hạn — số chọn, chưa đo
-MAX_TOKENS = 4000
+MAX_TOKENS = 8000           # 4000 CẮT THẬT 3/40 request (đo 2026-09-07): sau khi nạp một file
+                            # tri thức L2, model tiêu tới 3.999 token chỉ cho thinking rồi hết
+                            # chỗ cho câu trả lời ⇒ lượt đó trả về rỗng, im lặng.
 
 
 def run_turn(llm, read_eng, ops_eng, history: list, cau_hoi: str) -> tuple[str, list]:
@@ -60,6 +62,10 @@ def run_turn(llm, read_eng, ops_eng, history: list, cau_hoi: str) -> tuple[str, 
             # KHÔNG append_messages ở đây — xem ghi chú (2) đầu file.
         else:
             tra_loi = "".join(b.text for b in message.content if b.type == "text")
+            if not tra_loi.strip():
+                # Không bao giờ trả rỗng im lặng: nói rõ vì sao lượt này không có chữ nào.
+                tra_loi = (f"[lượt này không sinh được câu trả lời — model dừng vì "
+                           f"'{message.stop_reason}'. Thử hỏi ngắn gọn hơn hoặc chia nhỏ câu hỏi.]")
     return tra_loi, messages
 
 

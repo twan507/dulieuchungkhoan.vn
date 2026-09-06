@@ -96,11 +96,11 @@ def test_lich_su_song_qua_hai_luot(model_gia, tool_dem):
     assert len(lich_su) == 4          # user · assistant(tool_use) · user(tool_result) · assistant
 
 
-def test_system_luon_co_hai_block_va_scope_guard_dung_truoc(model_gia, tool_dem):
+def test_system_du_ba_block_va_scope_guard_dung_truoc(model_gia, tool_dem):
     """L1 phải có mặt từ request ĐẦU TIÊN — không bao giờ đến sau function."""
     llm, ghi = model_gia
     run_turn(llm, None, None, [], "Giá HPG?")
     system = ghi["requests"][0]["system"]
-    assert len(system) == 2
+    assert len(system) == 3
     assert "chỉ trả lời trong lĩnh vực chứng khoán" in system[0]["text"]
     assert len(system[1]["text"]) > 50_000

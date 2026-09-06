@@ -1,8 +1,9 @@
 """Sổ mỗi request gọi model vào ops.llm_call.
 
 MỘT DÒNG = MỘT REQUEST (http_calls=1) — một câu chat nhiều vòng function sinh nhiều dòng.
-status: 'ok' khi stop_reason='end_turn'; mọi kết thúc khác ('max_tokens', chạm max_iterations,
-exception) là 'failed' kèm error mô tả. 'repaired' không dùng ở lát 10 (đó là ánh xạ của
+status: 'ok' khi stop_reason là 'end_turn' HOẶC 'tool_use' — lượt gọi công cụ là một bước
+bình thường giữa chừng, không phải hỏng (đo 2026-09-07: bản đầu ghi nhầm mọi lượt tool thành
+'failed', làm sổ nói dối). 'failed' dành cho 'max_tokens', chạm max_iterations, và exception. 'repaired' không dùng ở lát 10 (đó là ánh xạ của
 core.llm.client cho vòng structured output, không phải vòng chat). thinking='adaptive' vì
 vòng chat lát 10 chỉ dùng adaptive.
 
@@ -38,13 +39,13 @@ def log_llm_call(ops_eng, message, *, purpose: str = "chat", model: str, latency
             conn.execute(_SQL, {
                 "purpose": purpose,
                 "model": model,
-                "status": "ok" if stop == "end_turn" else "failed",
+                "status": "ok" if stop in ("end_turn", "tool_use") else "failed",
                 "vao": u.input_tokens,
                 "cache": u.cache_read_tokens,
                 "ra": u.output_tokens,
                 "nghi": u.thinking_tokens,
                 "ms": latency_ms,
-                "loi": None if stop == "end_turn" else f"stop_reason={stop}",
+                "loi": None if stop in ("end_turn", "tool_use") else f"stop_reason={stop}",
             })
             conn.commit()
     except Exception as e:                                   # noqa: BLE001 — chỉ giữ tên lớp, không lộ nội dung lỗi
