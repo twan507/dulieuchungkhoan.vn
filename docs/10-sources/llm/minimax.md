@@ -76,6 +76,8 @@ Phương pháp ép kiểu cho code (chưa viết, thiết kế ở [brainstorm �
 
 Quy giá pay-go (adaptive, phần system ≈ 1,3k token đã cache): ≈ 1,85k vào mới × $0,30/M + 1,3k đọc cache × $0,06/M + ≈ 1,0k ra × $1,20/M ≈ **$0,0018 / bài (≈ 0,2 xu)** ⇒ ~350 bài/ngày ≈ **$0,65/ngày**, kho 7.956 bài ≈ **$14** một lần. Dưới Token Plan tính theo quota cửa sổ, không theo tiền. Tuần tự 350 bài × ~10 s ≈ **1 giờ/ngày**; song song 2–3 luồng nằm trong "3–4 agent" của gói.
 
+**Số lô thật** *(đo 2026-09-06 chiều, job `etl classify`, schema có `industries`, [ledger lát 9a §2.3](../../90-records/plans/2026-09-06-news-classify-llm/ledger.md))*: adaptive 230 bài — độ trễ **p50 8,0 s · p90 16,5 s · max 50 s**, vào p50 **3.009**, ra p50 **745** (thinking ≈ 330), cache trúng ≈ 50 %, **$0,0019/bài**, ≈ 6 bài/phút tuần tự; disabled 100 bài — p50 3,6 s, ra 294, $0,0013/bài; 0 lỗi schema / 330 lời gọi sau khi mảng thành tuỳ chọn, 3 lần đường sửa (gửi lại user + câu sửa) thành công; 330 lời gọi làm cửa sổ 5 giờ tụt 97 % → 91 %.
+
 ⚠️ Cùng một bài, hai chế độ thinking cho **nhóm khác nhau** (3e vs 1c cho bài giá vàng SJC) — độ ổn định phải đo bằng bộ đánh giá gán tay trước khi bật lưới (lát 9).
 
 ### 7.1 Nhất quán nhãn, độ dài tóm tắt, mã cổ phiếu *(đo 13:00–13:40, 29 bài chung × 8 lượt)*

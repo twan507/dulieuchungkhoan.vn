@@ -76,3 +76,31 @@ JSONL: [`measure/ac5-dry-disabled-2026-09-06.jsonl`](measure/ac5-dry-disabled-20
 | Ngành mỗi bài | 0: 34 · 1: 23 · 2: 32 · 3: 11 (trần 3 chạm 11 %) |
 | Mã AI | 14/100 bài có mã (chưa lọc niêm yết — dry-run) |
 | `summary_ai` | p50 **349** ký tự (yêu cầu 200–300 — model vẫn vượt như đã đo) |
+
+### 2.3 AC4 — lượt ghi thật thinking `adaptive` (run 414, 15:22–15:54, **dừng tay theo chủ dự án** ở 182/400 bài) + lượt ngắn `--per-group 12` (run 422, 15:54–16:01, 48 bài)
+
+Chủ dự án 15:53: "khảo sát qua xem như vậy đủ dữ kiện chưa thì chốt luôn… không nhất thiết phải làm đủ" ⇒ **Ruling:** kill run 414 khi nhóm 1 xong 100, nhóm 2 được 82 (đủ số token/thời gian), đóng dòng `etl_run` bằng tay (`failed`, error "dừng tay (kill)…", stats dựng lại từ `ops.llm_call`); chạy thêm một lượt ngắn 12 bài/nhóm để có mẫu nhóm 3 và nhóm không gợi ý (mã, ngành suy từ mã) — cũng là AC6. Nếu sai: thiếu số nhóm 3/NULL ở cỡ 100 — bù được bằng một lệnh.
+
+| Chỉ số (mỗi lời gọi `ok`) | Run 414 (n=179 + 3 `repaired`) | Run 422 (n=48) | AC5 disabled (n=100) |
+|---|---|---|---|
+| Độ trễ p50 / p90 / max | **8,0 s / 16,5 s / 50 s** (repaired: 54 s, 2 lời gọi HTTP) | 7,4 s / 16,0 s / 23 s | 3,6 s / 7,1 s / 33 s |
+| Token vào p50 / cache đọc | **3.009** / trúng cache **97/179** | 2.503 / 25/48 | 2.877 / 47/100 |
+| Token ra p50 (thinking tổng) | **745** (58.720 thinking / 179) | 638 (16.069 / 48) | 294 (0) |
+| Tổng token vào / cache / ra / thinking | 511.301 / 180.983 / 156.265 / 61.366 | 129.957 / 52.380 / 37.348 / 16.069 | 274.819 / 95.241 / 31.371 / 0 |
+| Chi phí quy giá pay-go | **$0,352 ⇒ $0,0019/bài** | $0,087 ⇒ $0,0018/bài | $0,126 ⇒ $0,0013/bài |
+| Quota cửa sổ 5 giờ | 97 % → 92 % (sau AC5 + 182 bài) | 92 % → 91 % | 97 % → 95 % |
+| Nhịp tuần tự | **≈ 5,8 bài/phút** (182 bài / 31,5 phút) | 6,6 bài/phút | 13,7 bài/phút |
+
+⇒ **Adaptive so với disabled trên cùng loại bài:** độ trễ ≈ 2,2×, token ra ≈ 2,5×, chi phí quy giá ≈ 1,45× (phần vào chiếm đa số nên chênh tổng nhỏ hơn brainstorm ước 8 % — vì thinking thật ≈ 330 token/bài, nhiều hơn 250 đo hôm trưa). 350 bài/ngày adaptive ≈ **1 giờ, ≈ $0,66 quy giá, ≈ 6–7 % cửa sổ 5 giờ**. Toàn kho 7.797 bài còn lại ≈ 22 giờ, ≈ $15, ≈ 3 cửa sổ 5 giờ.
+
+**Đường sửa schema đã chạy thật 3 lần** (run 414, `status='repaired'`, `http_calls 2`): lần 1 model trả sai hình dạng, lần 2 (gửi lại user + câu sửa, phương án b) đúng — I2 của review cuối được kiểm bằng ca thật, không còn là giả định. 0 `failed` trên 230 lời gọi ghi thật sau khi mảng thành tuỳ chọn.
+
+**Kết quả phân loại (run 414, nhóm gợi ý 1 và 2):** nhóm 1 (100): giữ 66 · →2: 16 · →3: 2 · →`x`: 16; nhóm 2 (82): giữ 53 · →1: 1 · →`x`: 28. **`x` = 44/182 = 24 %**. Feed bị ghi đè > 50 %: `bnews/kinh-te-viet-nam-1` 13/19, `vneconomy/tieu-diem` 6/9, `vietnambiz/tai-chinh` 2/3, `cafef/tai-chinh-quoc-te` 4/7 (run 422) — phần lớn sang `x` (feed tổng hợp lẫn tin xã hội/PR), đúng cơ chế §7.3. Sub nhiều nhất: `2d` 35, `1b` 18, `1a` 16, `1d` 13, `2e` 12. Run 422 (12/nhóm): nhóm 3 giữ 8/12, →1: 2, →`x`: 2; không gợi ý (12): 1: 3 · 2: 5 · 3: 2 · `x`: 2.
+
+**Ngành:** 204 dòng `ai` trên 230 bài (≈ 0,9/bài; nhóm 1/2 gần như bài nào cũng có ngành — `CONGNGHE` 20, `XAYDUNG` 18, `NGANHANG` 14, `VANTAI` 14, `DAUKHI` 12); 20 dòng `ticker` trên 8 bài; **AC7:** `ai ∩ ticker` 9, `ticker` không có `ai` 11. Soi tay 5 bài nhóm 1/2: cao tốc ⇒ `VATLIEU/XAYDUNG`, thuốc thú y ⇒ `THUCPHAM/NONGNGHIEP`, lãi suất ⇒ `NGANHANG`, du lịch ⇒ `DULICH` — hợp lý; "Myanmar muốn học tập Việt Nam" ⇒ 3 ngành gượng (bài đối ngoại). ⚠️ Bài rổ FTSE 28 mã ⇒ 8 ngành `ticker` — với bài liệt kê danh mục, ngành suy từ mã thành nhiễu; cân nhắc ở lát 9b: chỉ suy ngành từ mã khi bài ≤ N mã.
+
+**Mã (run 422, nhóm 3 và không gợi ý):** `via='ai'` 41 (1 bị lọc không niêm yết), `lookup` bù 4. ⚠️ Tầng 2 bắt nhầm **`USD`** (là một mã niêm yết thật trong `market.security` — bài FTSE) và `AMC` cho "HD AMC" — false positive của regex 3 chữ, tầng 3 không mắc; ghi vào nợ lát 9b (danh sách loại trừ cho tầng 2, hoặc bỏ tầng 2 khi đã có tầng 3).
+
+**AC6** ✅ run 422 chọn 48 bài **khác** run 414 (tổng `classified_from IS NOT NULL` = 230 = 182 + 48; 7.797 còn NULL; `title_only` 0); PK `article_industry`/`article_ticker` không sinh dòng trùng.
+
+**Tổng chi phí lát này (quy giá):** AC3 $0,02 + AC5 $0,13 + run 414 $0,35 + run 422 $0,09 ≈ **$0,59**; quota cửa sổ 5 giờ 97 % → 91 %, tuần 86 % → 85 %.
