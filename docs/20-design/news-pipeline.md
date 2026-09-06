@@ -58,8 +58,8 @@ Ba nhóm đích:
 
 | Mã | Sub | Tỷ trọng đo được |
 |---|---|---:|
-| `1a` | Thể chế và văn bản pháp quy | 12,5% |
-| `1b` | Điều hành Chính phủ *(gồm kiến nghị / tiếng nói khu vực tư nhân)* | 8,8% |
+| `1a` | Thể chế và văn bản quy phạm pháp luật | 12,5% |
+| `1b` | Điều hành của Đảng, Chính phủ, địa phương — chỉ đạo, kế hoạch, quyết định cụ thể *(gồm kiến nghị / tiếng nói khu vực tư nhân; đổi tên 2026-09-06: bản cũ "Điều hành Chính phủ" không phủ Bộ Chính trị và địa phương — phép thử: văn bản quy phạm ⇒ `1a`, quyết định/kế hoạch cụ thể ⇒ `1b`)* | 8,8% |
 | `1c` | Tiền tệ và tỷ giá | **16,0%** |
 | `1d` | Đầu tư công và hạ tầng | 11,6% |
 | `1e` | Số liệu vĩ mô | 5,5% |
@@ -108,7 +108,9 @@ Tin xã hội, thể thao, giáo dục, y tế thuần; PR và advertorial. **X�
 
 - **Phân nhóm theo chủ thể của bài:** chủ thể là Việt Nam (Nhà nước, chính sách, lãnh đạo, số liệu, đối ngoại) ⇒ nhóm 1; chủ thể là nước ngoài/thế giới ⇒ nhóm 2; chủ thể là doanh nghiệp niêm yết hoặc thị trường tài sản trong nước ⇒ nhóm 3. Luật Chứng khoán do Quốc hội cho ý kiến: chủ thể là Nhà nước ⇒ `1a`, không phải nhóm 3.
 - **Bài tổng hợp nhiều chủ đề** (điểm tin tuần): chọn sub của chủ đề dẫn tiêu đề. Không tạo sub "tổng hợp" — nó sẽ thành thùng rác.
-- Ít luật, mỗi luật sắc: model nhỏ không theo được luật vụn. Gặp ca mới thì làm sắc tiêu chí chung, không thêm ngoại lệ.
+- **Mã ở bản tin thị trường:** chỉ gắn khi tiêu đề hoặc sapo nêu tên mã (hoặc công ty mẹ niêm yết có số liệu riêng trong bài); bản tin dòng tiền, nhận định chung, bảng xếp hạng dài không nêu mã ⇒ rỗng. *(chốt 2026-09-06 từ phân xử gold: chỗ hai lượt lệch nhiều nhất)*
+- **Ngành cho tin tiền tệ:** lãi suất, tỷ giá, ngân hàng trung ương (`1c`, `2b`) luôn gồm `NGANHANG` — chủ dự án: "Fed ảnh hưởng ngân hàng là đúng". Ngành AI ghi ngành *chịu tác động*, không phản chiếu ngành của mã đã gắn (đường `ticker` §8b đã làm việc đó).
+- Ít luật, mỗi luật sắc: model nhỏ không theo được luật vụn. Gặp ca mới thì làm sắc tiêu chí chung, không thêm ngoại lệ. **Nợ cây ngành** (ghi nhận 2026-09-06, chưa sửa vì cây 6×24 đã chốt): không có ô cho công nghiệp ô tô/xe điện (VinFast phải mượn `THIETBI`) và holding/đầu tư phi ngân hàng; dịch vụ dầu khí dễ bị gán `DAUKHI` theo tên.
 
 ---
 
