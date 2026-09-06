@@ -319,10 +319,20 @@
       "nhom_mac_dinh": null,
       "ghi_chu": "Khong co RSS. lastmod = gio dang that +07:00, giu ca thang nen backfill duoc. Ghep voi trang chuyen muc theo post ID de gan nhom."
     },
-    {"nguon": "bnews", "url": "https://bnews.vn/sitemap/news-{Y}-{M}.xml", "nhom_mac_dinh": null, "chi_backfill": true,
-     "ghi_chu": "Chi backfill (lat 8b), khong poll trong collect (da co 8 feed RSS). Sitemap thang, M KHONG dem 0, 3 phan tu dau la trang chu/photo/video, giam dan, lastmod = gio dang (do 2026-09-06: khop feed 20/20, ld+json 3/3). Lui toi 2015-08, ~4.000 bai/thang."},
-    {"nguon": "nguoiquansat", "url": "https://nguoiquansat.vn/sitemap-article-{YYYY-MM-DD}.xml", "nhom_mac_dinh": null, "chi_backfill": true,
-     "ghi_chu": "Chi backfill (lat 8b). Sitemap theo NGAY tu 2021-07-16, khong co phan tu trang chu, giam dan, lastmod = gio dang (do 2026-09-06). WAF 403 chap chon khong theo UA (5/12 lan dau, retry qua) - de Fetcher retry. 25-200 bai/ngay."},
+    {
+      "nguon": "bnews",
+      "url": "https://bnews.vn/sitemap/news-{Y}-{M}.xml",
+      "nhom_mac_dinh": null,
+      "chi_backfill": true,
+      "ghi_chu": "Chi backfill (lat 8b), khong poll trong collect (da co 8 feed RSS). Sitemap thang, M KHONG dem 0, 3 phan tu dau la trang chu/photo/video, giam dan, lastmod = gio dang (do 2026-09-06: khop feed 20/20, ld+json 3/3). Lui toi 2015-08, ~4.000 bai/thang."
+    },
+    {
+      "nguon": "nguoiquansat",
+      "url": "https://nguoiquansat.vn/sitemap-article-{YYYY-MM-DD}.xml",
+      "nhom_mac_dinh": null,
+      "chi_backfill": true,
+      "ghi_chu": "Chi backfill (lat 8b). Sitemap theo NGAY tu 2021-07-16, khong co phan tu trang chu, giam dan, lastmod = gio dang (do 2026-09-06). WAF 403 chap chon khong theo UA (5/12 lan dau, retry qua) - de Fetcher retry. 25-200 bai/ngay."
+    },
     {
       "nguon": "tinnhanhck",
       "url": "https://www.tinnhanhchungkhoan.vn/ck-quoc-te/",

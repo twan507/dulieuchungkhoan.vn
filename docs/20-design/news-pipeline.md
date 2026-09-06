@@ -402,7 +402,7 @@ Theo thứ tự phụ thuộc:
 3. **Chốt mô hình embedding** trước khi bắt đầu nạp dữ liệu.
 4. **Dựng khung thu thập + chuẩn hoá**, chạy không có AI trong 1 tuần để đo tỷ lệ dedupe thật. ✅ *(lát 8, 2026-09-06 — không AI, `--loop`)*
 5. Có số dedupe rồi mới chốt ngân sách và bật lưới phân loại.
-6. **Backfill lịch sử** từ sitemap TinnhanhCK / BNews / NguoiQuanSat — làm càng sớm càng tốt, dữ liệu đó chỉ còn chừng nào họ còn giữ sitemap. ✅ *(TinnhanhCK lát 8; BNews/NguoiQuanSat lát 8b 2026-09-06 — cùng job `--backfill-sitemap --source`, mỗi nguồn đã chạy tháng 2026-08)*
+6. **Backfill lịch sử** từ sitemap TinnhanhCK / BNews / NguoiQuanSat — làm càng sớm càng tốt, dữ liệu đó chỉ còn chừng nào họ còn giữ sitemap. ✅ *(TinnhanhCK lát 8; BNews/NguoiQuanSat lát 8b 2026-09-06 — cùng job `--backfill-sitemap --source`; tháng 2026-08 mỗi nguồn đang nghiệm thu, số ghi ở ledger lát 8b)*
 
 ### Cảnh báo cho người triển khai
 
