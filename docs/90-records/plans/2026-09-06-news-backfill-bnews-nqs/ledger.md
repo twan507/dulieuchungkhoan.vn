@@ -58,7 +58,7 @@ Mọi lượt dưới credential production (`ETL_DATABASE_URL`, role `dlck_etl`
 
 ## 5. Trạng thái bàn giao
 
-- Nhánh `feat/news-backfill-sitemaps` gộp `main` bằng `--no-ff` (xem commit merge); **806 passed, 2 skipped** (1 warning starlette có sẵn); không migration (`0017` head).
+- Nhánh `feat/news-backfill-sitemaps` gộp `main` bằng `--no-ff` (**`dc217ce`**, 2026-09-06 ~10:05 VN); **806 passed, 2 skipped** (1 warning starlette có sẵn); không migration (`0017` head).
 - Kho `news.article` lúc chốt: **7.956 bài** (6.312 từ sitemap, `group_from_feed NULL`) — nguoiquansat 2.466 (sitemap 2.293, từ 2026-08-19) · bnews 2.401 (sitemap 2.316, từ 2026-08-13) · tinnhanhck 1.904 (sitemap 1.703, từ 2026-07-31) · vneconomy 395 · vietstock 364 · cafef 179 · vietnambiz 143 · baochinhphu 104. `article_source` 7.970. `article_ticker`: lookup 436, url 24. Mọi trường AI NULL, `trade_name` 0 dòng.
 - `--loop` lát 8 vẫn chạy trong cửa sổ `dlck-news-loop` (vòng gần nhất 09:53); sơ bộ từ 04:13: 69 vòng, `items 115.349`, `new 62`, `merged_url 0`, `merged_title 2`, `refused 1`, `articles_failed 0`, `lists_failed 1` — cuối tuần, chưa dùng chốt AC7 lát 8 (chờ thứ 2 07/09).
 - **Nợ để lại:** AC4 bỏ (ruling 6); `Seen.load` quét toàn bảng (M1 lát 8) — kho 7.956 dòng, ngưỡng ~100k còn xa; minor để lại của review: `collect` ngầm coi sitemap không-backfill là theo tháng, `lastmod` naive → `astimezone`, `run_backfill` return sớm không `dispose`, `MONTH_KEY` lỏng hơn `MONTH`, `periods_desc` không cắt `today` cho nguồn tháng; 2 trang tĩnh TinnhanhCK (`lien-he-post83928`, `thong-tin-toa-soan-post83927`, giờ 2013) lọt qua trang chuyên mục — lát 9 lọc khi phân loại, lát 12 xét luật.
