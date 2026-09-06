@@ -99,7 +99,7 @@ def _fake_get(calls=None, dead=(), feed_503=()):
 
 def _cleanup(engine):
     with engine.begin() as c:
-        for t in ("news.article_ticker", "news.article_source", "news.article_revision", "news.article"):
+        for t in ("news.article_industry", "ops.llm_call", "news.article_ticker", "news.article_source", "news.article_revision", "news.article"):
             c.execute(sa.text(f"DELETE FROM {t}"))
         c.execute(sa.text("DELETE FROM staging.raw_payload WHERE source = ANY(:s)"), {"s": list(NAMES)})
         c.execute(sa.text("DELETE FROM ops.etl_run WHERE job LIKE 'news.%'"))
