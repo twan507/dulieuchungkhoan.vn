@@ -54,7 +54,7 @@ Phần giả định **không nặng hơn** dữ kiện ⇒ đủ điều kiện
 ### A — `backend/core/llm/` mỏng trên SDK `anthropic`, trỏ giao diện Anthropic của MiniMax *(trục: tốc độ + đúng khuyến nghị nguồn)*
 
 - `LLMSettings.from_env()` (khoá `LLM_API`, `LLM_BASE_URL` mặc định `https://api.minimax.io/anthropic`, `LLM_MODEL` mặc định `MiniMax-M3`, timeout, số luồng), `repr` che khoá.
-- `LLMClient` bọc `anthropic.Anthropic(...)`: `structured(schema: type[BaseModel], system, user, *, thinking="adaptive", max_tokens, temperature) -> Structured[T]` (ép công cụ tên `schema.__name__`, kiểm Pydantic, đường sửa theo F3), `messages(...)`/`stream(...)` mỏng cho agent, `token_plan_remains()`, và `raw` (client SDK) cho `tool_runner`.
+- `LLMClient` bọc `anthropic.Anthropic(...)`: `structured(schema: type[BaseModel], system, user, *, thinking="disabled", max_tokens, temperature) -> Structured[T]` (ép công cụ tên `schema.__name__`, kiểm Pydantic, đường sửa theo F3), `messages(...)`/`stream(...)` mỏng cho agent, `token_plan_remains()`, và `raw` (client SDK) cho `tool_runner`.
 - `Usage` cộng dồn `input/cache_read/output/thinking/calls/retries`, quy tiền theo bảng giá pay-go trong `minimax.md` (để so sánh, không phải hoá đơn).
 - **Rủi ro tự khai:** (i) SDK đổi phiên bản có thể thêm tham số MiniMax không hỗ trợ (bị bỏ qua lặng lẽ — F3) ⇒ cần kiểm hợp đồng sống định kỳ (lát 12), (ii) `httpx2` thêm một dependency HTTP thứ hai, (iii) beta `tool_runner` là beta của SDK.
 
@@ -114,7 +114,7 @@ class Structured(Generic[T]):
 
 class LLMClient:
     def __init__(self, settings: LLMSettings, *, http_client=None): ...   # http_client bơm transport giả khi test
-    def structured(self, schema: type[T], *, system: str, user: str | list, thinking: str = "adaptive",
+    def structured(self, schema: type[T], *, system: str, user: str | list, thinking: str = "disabled",   # đo: tắt = đủ hình dạng, 3 s
                    max_tokens: int = 2000, temperature: float | None = None) -> Structured[T]: ...
     def messages(self, *, system, messages, tools=(), tool_choice=None, thinking="adaptive", max_tokens=4000): ...  # trả Message của SDK
     def stream(self, **kw): ...                                             # bọc client.messages.stream
