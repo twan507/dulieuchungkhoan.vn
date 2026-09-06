@@ -140,8 +140,12 @@ lát 9a  tin tức — lưới AI        ✅ XONG 2026-09-06 — dedupe đo 0,5 
                                    hai đường ticker/ai + ops.llm_call); job `etl classify` có TRẦN bắt buộc, phân loại 20 sub + summary_ai + mã tầng 3
                                    lọc niêm yết + GẮN NGÀNH (24 ngành, mọi nhóm — chủ dự án bổ sung); 865 test. Chạy thử ≈ 100 bài/nhóm gợi ý
                                    (chủ dự án: không chạy toàn kho), số đo token/thời gian ở ledger. CHƯA bật chạy tự động. TIẾP: lát 9b
-lát 9b  tin tức — gold + embedding  bộ gán tay 100–150 bài (3 lượt × 2 chế độ thinking) → chốt ngưỡng confidence, trần cắt, thinking → bật lưới
-                                   trong --loop; embedding (mô hình 768 chiều tự host hay đổi halfvec(768); embo-01 bị chặn dưới Token Plan)
+lát 9b  tin tức — gold + dedupe   ✅ XONG 2026-09-06 — bộ gold 400 bài (2 lượt Opus độc lập, đồng thuận 89 %, 3 trọng tài phân xử 43 bài lệch);
+                                   CHẤM: đúng nhóm 93,8 % · nhóm+sub 84,8 % · mã P 74 % R 98 % · ngành P 56 % R 94 % (sau 2 luật prompt đo lại);
+                                   chốt thinking adaptive · ngưỡng confidence 0,8 · trần 3.000; taxonomy mở rộng (2f, 3e thị trường tài sản,
+                                   nhóm 3 gồm DN chưa niêm yết) — migration 0019; khoá dedupe THỨ TƯ bằng pg_trgm 0,6 + chặn theo ngày (0020)
+                                   thay cho embedding (đo: trigram bắt 2,0–5,9 % bài, gấp 4–12 lần khoá tiêu đề y hệt); móc `--loop --classify N`
+                                   dựng sẵn nhưng MẶC ĐỊNH TẮT; 877 test. Chọn mô hình embedding DỜI sang lát 10. TIẾP: lát 10
 lát 10  tầng ngữ nghĩa           nối kho ↔ hai skill chứng khoán, function calling (chatbot-semantic-layer.md)
 lát 11  test vòng 6              có function calling
 lát 12  giám sát hợp đồng        contract_snapshot + source_build + series_health (market-data-store §7.1) — phủ MỌI nguồn một lần,
@@ -295,6 +299,26 @@ Năm job `python -m etl fred|fx|lbma|yahoo|binance` (spec [`2026-09-05-global-et
 | `feeds.json` `crawl_html` hiện không có hai nguồn này — thêm hai dòng (chủ danh sách nguồn), `_meta.crawl_html` 6 → 8 và `RegistryError` đếm theo | `docs/10-sources/news/feeds.json` · `news_registry.build` |
 
 **Điểm brainstorm phải chốt:** (1) BNews/NguoiQuanSat có sitemap tháng thật không và dùng được tới năm nào (đo, ~10 lời gọi); (2) một job backfill chung tham số `--source` hay hai job — đề xuất một job `--backfill-sitemap --source bnews` với con trỏ theo `(job, source)`; (3) `published_at` cho bài backfill BNews = `lastmod` (`src='feed'`) — chấp nhận nếu đo thấy `lastmod` ≈ giờ đăng, nếu không thì `unknown`; (4) `--from` cho từng nguồn (tuỳ độ sâu đo được); (5) có chạy song song với `--loop` không (được, nhưng cùng host BNews/NguoiQuanSat ⇒ tải gấp đôi lên hai host đó — đo A2 của lát 8 chưa gồm backfill). Quy trình như lát 8: đọc → đo (hỏi trước) → brainstorm → spec → plan → subagent Sonnet → review hai trục → verify → merge.
+
+### Điểm vào cho lát 10 — tầng ngữ nghĩa: nối kho ↔ hai skill bằng function calling, đọc trước khi bắt đầu
+
+*(viết 2026-09-06 tối, ngay sau khi đóng lát 9)*
+
+**Trạng thái bàn giao:** `main` = lát 9 trọn vẹn · **877 test xanh, 2 skipped** · migration head **`0020`** · `backend/api/` **trống hoàn toàn**, `backend/agent/` mới chỉ có hai skill dạng prompt (3.046 dòng) · `backend/core/llm/` sẵn sàng (`structured()`, `token_plan_remains()`, `close()`, `raw` cho `tool_runner`) · kho: `market.*` đầy đủ (giá, BCTC, sự kiện, screener, snapshot), `macro`/`asset` 176 series, `news.*` **8.105 bài** nhưng **chỉ 230 bài có nhãn AI** (chủ dự án: sẽ không chạy backfill 7 nghìn bài) · không có job nào chạy tự động.
+
+| Cần biết trước | Ở đâu |
+|---|---|
+| 🔴 **Thiết kế đã có, chưa duyệt:** luật phân định 4 tầng (system prompt · L1 hình dạng · L2 nội dung · function dữ kiện), 8 function, 3 luật nối (số thật đè số ví dụ · khung ngành lấy lúc chạy · mã là khoá nối), 4 điều "chưa biết" | [chatbot-semantic-layer.md](../20-design/chatbot-semantic-layer.md) — **tài liệu duy nhất trong kho chưa qua kiểm chứng thực tế** |
+| 5 function gốc + từ điển chỉ tiêu + view người-đọc-được | [market-data-store §6](../20-design/market-data-store.md) |
+| 🔴 **Mâu thuẫn phải sửa trước khi viết code:** `get_industry_tree` trong tài liệu tầng ngữ nghĩa trả **cây ICB 4 cấp**, trong khi dự án đã chốt **bộ 24 ngành riêng là chuẩn duy nhất khi hiển thị/phân tích, ICB chỉ tham khảo**; đường đọc hợp nhất là view `market.v_issuer_industry` | [industry-tree.md §1](../20-design/industry-tree.md) · [database/README](../../database/README.md) |
+| Hợp đồng LLM đã đo: ép công cụ + enum ⇒ 0 lỗi schema/232 lời gọi · `tool_runner` chạy được với MiniMax · **streaming CHƯA đo** · phải echo nguyên `thinking` block kèm `signature` vào lượt sau · cache tự động chỉ trúng ≈ 50 % khi chạy lô | [minimax.md §5, §6, §10](../10-sources/llm/minimax.md) |
+| Chi phí thật để ước ngân sách chat: ≈ 3,0k token vào / 745 ra mỗi lời gọi phân loại (bài 3.000 ký tự), p50 8 s; **skill L2 dày 2.272 dòng** — tải cả vào ngữ cảnh là tốn, cần đo trước khi chốt cách nạp | ledger lát 9a §2.3 · chatbot-semantic-layer §4 |
+| Bộ test hồi quy 6 vòng (10 câu tính toán trên số liệu thật, đã có đáp án) — **phép kiểm chứng đầu tiên của lát 10**: chạy lại đúng bộ đó nhưng cho phép gọi function; 10/10 vẫn đúng **và** câu trả lời vẫn giữ hình dạng L1 thì hợp đồng đứng vững | [30-skills/maintenance.md §6](../30-skills/maintenance.md) |
+| Quyền đọc: role `dlck_api` chỉ SELECT trên `market`/`macro`/`asset`/`news` — function phải chạy dưới role này, **không** dùng `dlck_etl` | migration `0009`; luật §3.5 (test dưới đúng role) |
+| Token Plan là gói "cá nhân, tương tác"; mở web công khai phải đổi khoá pay-go (chỉ đổi `.env`) | minimax.md §3 |
+| Nợ mang sang từ lát 9: `x` recall 81 % (model ngại loại tin) · `1a`↔`1b` còn nhầm · ba ô thiếu trong cây ngành (ô tô/xe điện, holding, dịch vụ dầu khí) · lượt chạy nền của job gọi model bị đóng băng, phải chạy tiền cảnh theo khối | ledger lát 9a §8.1, §9.2 |
+
+**Điểm chủ dự án phải chốt ở phiên sau:** (1) **phạm vi lát 10** — chỉ tầng 8 function + một vòng chat chạy trong terminal để kiểm chứng hợp đồng (đề xuất), hay gồm cả endpoint API/web; (2) **chỗ đặt code** — `backend/agent/` dùng chung cho terminal lẫn API sau này (đề xuất) hay thẳng `backend/api/`; (3) `get_news` trả cả bài **chưa có nhãn AI** (7.875 bài) hay chỉ 230 bài đã phân loại — ảnh hưởng trực tiếp việc chatbot trả lời được gì về tin; (4) sửa `get_industry_tree` sang bộ 24 ngành riêng (đề xuất) hay giữ ICB; (5) cách nạp skill vào ngữ cảnh (nạp cả L1+L2 mỗi câu, hay nạp L2 theo nhu cầu) — cần đo chi phí trước khi chốt; (6) embedding cho tìm kiếm khái niệm: làm trong lát 10 hay để sau khi thấy chatbot thật sự cần ([embedding-decision.md](../90-records/plans/2026-09-06-news-classify-llm/embedding-decision.md)). Quy trình như lát 9: đọc → đo → brainstorm → spec → plan → subagent Sonnet → review hai trục → verify → merge.
 
 ### ~~Điểm vào cho lát 9~~ — ĐÃ DÙNG XONG 2026-09-06 chiều (thành lát 9a), giữ làm ngữ cảnh
 

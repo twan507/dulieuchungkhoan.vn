@@ -218,3 +218,14 @@ Ba lượt liên tiếp mở kiểu tách rời (`Start-Process cmd`, cả cửa
 Đã loại trừ bằng đo, không phải bằng suy đoán: quota còn 77 % (không phải hết quota) · một lời gọi thử riêng trả lời **0,6 s** và ba lời gọi cỡ thật 2,2–5,0 s (không phải model chậm hay bị tiết lưu) · `pg_stat_activity` cho thấy kết nối DB đã `ROLLBACK` và nhàn rỗi (không phải kẹt DB) · **cùng lệnh chạy ở tiền cảnh: 5 bài trong 64 giây, ghi file đủ** (không phải lỗi code).
 
 ⇒ **Luật vận hành mới:** lượt đo dài của job gọi model chạy **tiền cảnh, chia khối** (`--ids-file` từng khối ~40 bài ≈ 9 phút) chứ không mở tách tiến trình. Ghi chú này **thay** phỏng đoán "QuickEdit" ở §9 — QuickEdit không giải thích được ca cửa sổ thu nhỏ và ca chạy nền không có console. Nguyên nhân gốc **chưa xác định**; chỉ ghi hiện tượng đã đo và đường vòng đã kiểm chứng. *(Nợ: nếu lát 13 đăng ký task Scheduler cho job gọi model, phải thử một lượt thật dưới Task Scheduler trước — CLAUDE.md §3.5.)*
+
+## 10. Đóng lát 9 (2026-09-06 tối)
+
+**Chủ dự án chốt phương án A cho 9b-2** ("thôi chọn A đi, làm cho xong lát 9 này, đóng lại"): gộp tin bằng `pg_trgm`, dời chọn mô hình embedding sang lát 10. Đã làm nốt:
+
+- **Khoá dedupe thứ tư** (`news_store.find_near_duplicate` + nhánh trong `news_job.collect`, `stats.merged_near`): tiêu đề gần giống, **khác báo**, trong 48 giờ, `similarity >= 0,6` ⇒ chỉ thêm `article_source`, không tải lại bài.
+- **Ngưỡng và chốt chặn đều đo, không đoán**: phân bố 176 cặp ở 0,6 · 602 ở 0,45 (bắt đầu lẫn); soi tay dải 0,55–0,65 thấy 7/8 mẫu là trùng thật. Kiểu sai duy nhất còn lại là tiêu đề lặp hằng ngày khác ngày ⇒ chặn khi hai tiêu đề đều có ngày mà ngày khác nhau (chặn đúng **1/176**). Đã thử chặn theo "bộ số phải trùng" và **bỏ** vì chặn nhầm 27 cặp trùng thật.
+- **Migration `0020`**: chỉ mục GIN trigram trên `news.immutable_unaccent(lower(title))` — đúng biểu thức mà truy vấn so sánh (bài học `trade_name`).
+- Test: 8 ca trên cặp thật đã đo (`test_e55`), một ca ở tầng vòng thu thập (`test_e56`); bất biến cũ `new == items` đổi thành `new + merged_near == items`. **877 passed, 2 skipped.** Kho thật đã ở `0020`.
+
+**Trạng thái lát 9 khi đóng:** 9a xong · 9b-1 xong (gold 400 bài, ngưỡng `confidence` 0,8, thinking adaptive, hai luật prompt đã đo lại) · 9b-2 xong theo phương án A. **Không có gì chạy tự động**: `--classify` mặc định tắt, chưa đăng ký task, chưa chạy lưới cho 7.797 bài còn lại (chủ dự án: **sẽ không chạy backfill 7 nghìn bài**).
