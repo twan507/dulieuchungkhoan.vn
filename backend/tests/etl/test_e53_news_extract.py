@@ -116,6 +116,28 @@ def test_tinnhanhck_meta_missing_content_attr_is_none_not_crash():
     assert x.published_at is None
 
 
+def test_nguoiquansat_old_template_2024_title_time_and_body():
+    # Template cũ (bài <= ~2024, đo 2026-09-06): không có sc-longform-header; tiêu đề h1.c-detail-head__title,
+    # giờ span.c-detail-head__time '15-01-2024 13:04'; container article.entry và rác div.c-box vẫn đúng.
+    x = ne.extract(_page("nguoiquansat-2024"), "nguoiquansat")
+    assert x.title == "Đây là những tấm hộ chiếu quyền lực nhất thế giới năm 2024"
+    assert x.published_at == datetime(2024, 1, 15, 13, 4, tzinfo=VN)
+    assert x.sapo is None
+    assert x.content.startswith("Đã có một “sự rung chuyển” trong thế giới hộ chiếu.")
+    assert x.content.endswith("nhưng chỉ 15% công dân muốn sở hữu")
+    assert len(x.content) == 2387
+    assert "Theo Kiến thức Đầu tư" not in x.content and "ads_after_sapo" not in x.content
+
+
+def test_bnews_old_template_2020_still_extracts():
+    # Rule bnews không đổi ở 8b — chốt bằng bài 2020 (169672) để backfill lịch sử có bằng chứng (spec 8b A3).
+    x = ne.extract(_page("bnews-2020"), "bnews")
+    assert x.title == "Thị trường chứng khoán Mỹ tăng điểm trong phiên 14/9"
+    assert x.content.startswith("Trong phiên giao dịch ngày 14/9, thị trường chứng khoán Phố Wall (Mỹ) tăng điểm")
+    assert x.content.endswith("61 mã đứng giá và 59 mã giảm giá.")
+    assert len(x.content) == 1844 and x.published_at is None
+
+
 def test_errors_no_container_no_title_too_short():
     with pytest.raises(ne.ExtractError) as e:
         ne.extract("<html><body><p>nothing</p></body></html>", "cafef")
