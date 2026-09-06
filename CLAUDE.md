@@ -188,7 +188,7 @@ Hồ sơ khảo sát: `docs/90-records/surveys/YYYY-MM-DD-<tên>/`. **Sổ ghi t
 
 Mặc định subagent là **Sonnet**: plan chi tiết đã gỡ hết cái khó nên thực thi phần lớn là cơ học — chỉ nâng **Opus** khi đánh giá task còn suy luận nặng thật. Đề bài giao subagent phải **tự đủ** (spec rõ, đường dẫn file, tiêu chí kiểm chứng được) vì subagent không có ngữ cảnh hội thoại; kết quả phải **review trước khi chấp nhận** — kiến trúc sư chịu trách nhiệm cuối.
 
-🔴 **Quy tắc cứng: tuyệt đối cấm subagent chạy model Fable.** Mọi lời gọi subagent phải **chỉ định model tường minh** (`sonnet` mặc định · `opus` khi escalate) — bỏ trống là harness kế thừa model của phiên chính (Fable), tức vi phạm ngầm không có gì báo. Áp cho mọi loại agent, kể cả agent đọc-tìm (Explore). *(Sự cố 2026-08-25: một agent khảo sát 8 file được giao không chỉ định model, chạy nhầm Fable.)*
+🔴 **Quy tắc cứng: tuyệt đối cấm subagent chạy model Fable; sàn thấp nhất là Sonnet — không dùng Haiku.** Mọi lời gọi subagent phải **chỉ định model tường minh** (`sonnet` mặc định · `opus` khi escalate; **không có bậc nào thấp hơn `sonnet`**, kể cả cho việc "chỉ sửa một dòng" hay re-review nhỏ) — bỏ trống là harness kế thừa model của phiên chính (Fable), tức vi phạm ngầm không có gì báo. Áp cho mọi loại agent, kể cả agent đọc-tìm (Explore). *(Sự cố 2026-08-25: một agent khảo sát 8 file được giao không chỉ định model, chạy nhầm Fable. 2026-09-06: skill SDD gợi ý "cheapest tier" cho fix một dòng ⇒ đã dùng Haiku hai lần ở lát 8b; chủ dự án siết: sàn Sonnet.)*
 
 ### 4.2 Song song thì phải cách ly
 
