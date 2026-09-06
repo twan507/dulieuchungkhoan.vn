@@ -144,3 +144,106 @@ def test_log_call_writes_tokens_and_failed_without_key(seeded):
         rows = c.execute(sa.text("SELECT status, http_calls, input_tokens, cache_read_tokens, output_tokens, thinking_tokens, latency_ms, error"
                                  " FROM ops.llm_call WHERE purpose = 'news.classify' ORDER BY call_id")).all()
     assert [tuple(r) for r in rows] == [("ok", 1, 214, 2816, 250, 120, 5500, None), ("failed", 1, None, None, None, None, 300, "rate_limit: RateLimitError 429")]
+
+
+class FakeClient:
+    """Trả Structured theo kịch bản (dict ⇒ ok, Exception ⇒ raise). quota: (interval_pct, weekly_pct)."""
+    def __init__(self, results, quota=(97, 86)):
+        self.results, self.quota, self.calls, self.quota_calls = list(results), quota, 0, 0
+        self.settings = SimpleNamespace(model="MiniMax-M3")
+
+    def token_plan_remains(self):
+        self.quota_calls += 1
+        return QuotaRemains(self.quota[0], self.quota[1], {})
+
+    def structured(self, schema, *, system, user, thinking="adaptive", **kw):
+        self.calls += 1
+        r = self.results.pop(0)
+        if isinstance(r, Exception):
+            raise r
+        return Structured(schema.model_validate(r["value"]), Usage(2000, 1300, 500, 200, 1, r["lat"]), r.get("repaired", False), "tool_use")
+
+
+R1 = {"value": {"group": "3", "sub": "3d", "confidence": 0.9, "summary_ai": "Tóm tắt 1", "tickers": ["ZZK", "VFM"], "industries": ["KIMLOAI", "XAYDUNG"]}, "lat": 1.0}
+R2 = {"value": {"group": "x", "sub": "x", "confidence": 0.6, "summary_ai": "PR.", "tickers": [], "industries": []}, "lat": 2.0}
+R4 = {"value": {"group": "3", "sub": "3c", "confidence": 0.8, "summary_ai": "Tăng vốn.", "tickers": [], "industries": ["CHUNGKHOAN"]}, "lat": 4.0, "repaired": True}
+SCHEMA_ERR = LLMError("schema", retryable=False, detail="sub: không thuộc nhóm")
+
+
+def _run_row(engine):
+    with engine.connect() as c:
+        return c.execute(sa.text("SELECT status, stats, error FROM ops.etl_run WHERE job = 'news.classify' ORDER BY run_id DESC LIMIT 1")).one()
+
+
+def test_run_writes_stats_and_llm_calls_and_keeps_failed_article_null(seeded):
+    engine, ids = seeded
+    fake = FakeClient([R1, R2, SCHEMA_ERR, R4])
+    assert nc.run(per_group=1, client=fake) == 0
+    assert fake.calls == 4 and fake.quota_calls == 2                                      # trước lượt + sau lượt
+    status, st, err = _run_row(engine)
+    assert status == "success" and err is None
+    assert st["selected"] == 4 and st["classified"] == 3 and st["failed"] == 1 and st["failed_schema"] == 1 and st["repaired"] == 1
+    assert st["groups"] == {"1": 0, "2": 0, "3": 2, "x": 1} and st["overridden"] == 2 and st["title_only"] == 0
+    assert (st["tickers_ai"], st["tickers_ai_dropped"], st["tickers_lookup"], st["tickers_url"]) == (1, 1, 1, 0)
+    assert (st["industries_ai"], st["industries_ticker"]) == (3, 1)
+    assert st["tokens"] == {"input": 6000, "cache_read": 3900, "output": 1500, "thinking": 600}
+    assert st["latency_s"] == {"p50": 2.0, "p90": 2.0, "max": 4.0, "total": 7.0} and st["usd_estimate"] == 0.0038
+    assert st["quota"] == {"before": {"interval_pct": 97, "weekly_pct": 86}, "after": {"interval_pct": 97, "weekly_pct": 86}}
+    assert st["thinking"] == "adaptive" and st["cap_chars"] == 3000 and st["quota_stop"] is False and st["budget_hit"] is False
+    with engine.connect() as c:
+        calls = c.execute(sa.text("SELECT article_id, status, input_tokens, error FROM ops.llm_call WHERE purpose = 'news.classify' ORDER BY call_id")).all()
+        assert [tuple(r) for r in calls] == [(ids[0], "ok", 2000, None), (ids[1], "ok", 2000, None), (ids[2], "failed", None, "schema: sub: không thuộc nhóm"), (ids[3], "repaired", 2000, None)]
+        assert c.execute(sa.text("SELECT run_id FROM ops.llm_call WHERE article_id = :a"), {"a": ids[0]}).scalar_one() is not None
+        assert c.execute(sa.text("SELECT classified_from, group_no FROM news.article WHERE article_id = :a"), {"a": ids[2]}).one() == (None, None)
+    # lượt hai: bài đã phân loại không chọn lại; bài lỗi được chọn lại
+    fake2 = FakeClient([R1, R2])
+    assert nc.run(per_group=1, client=fake2) == 0
+    assert fake2.calls == 2                                                                # A3 (lỗi lượt 1) + A5 (bucket NULL còn lại)
+
+
+def test_quota_below_threshold_stops_before_any_call(seeded):
+    engine, ids = seeded
+    fake = FakeClient([R1], quota=(15, 50))
+    assert nc.run(limit=1, client=fake) == 0
+    status, st, _ = _run_row(engine)
+    assert status == "success" and st["quota_stop"] is True and st["classified"] == 0 and fake.calls == 0
+    fake2 = FakeClient([R1], quota=(50, 9))
+    assert nc.run(limit=1, client=fake2) == 0 and fake2.calls == 0
+
+
+def test_five_consecutive_retryable_failures_is_model_down(seeded):
+    engine, ids = seeded
+    fake = FakeClient([LLMError("rate_limit", retryable=True, detail="RateLimitError 429")] * 5 + [R1])
+    assert nc.run(limit=5, client=fake) == 1
+    status, st, err = _run_row(engine)
+    assert status == "failed" and "5 lời gọi liên tiếp" in err and st["failed"] == 5 and fake.calls == 5
+    assert _n(engine, "SELECT count(*) FROM ops.llm_call WHERE status = 'failed'") == 5
+
+
+def test_auth_error_stops_immediately_with_exit_2(seeded):
+    engine, ids = seeded
+    fake = FakeClient([LLMError("auth", retryable=False, detail="AuthenticationError 401"), R1])
+    assert nc.run(limit=2, client=fake) == 2
+    assert _run_row(engine)[0] == "failed" and fake.calls == 1
+
+
+def test_dry_run_calls_model_but_writes_nothing(seeded, tmp_path):
+    engine, ids = seeded
+    out = tmp_path / "dry.jsonl"
+    fake = FakeClient([R1, R2, SCHEMA_ERR, R4])
+    assert nc.run(per_group=1, dry_run=True, out=str(out), client=fake, thinking="disabled") == 0
+    lines = [json.loads(x) for x in out.read_text(encoding="utf-8").splitlines()]
+    assert [x["article_id"] for x in lines] == [ids[0], ids[1], ids[3]]
+    assert lines[0]["value"]["industries"] == ["KIMLOAI", "XAYDUNG"] and lines[0]["usage"]["input_tokens"] == 2000 and lines[0]["hint"] == 1
+    assert lines[2]["repaired"] is True and lines[0]["classified_from"] == "content" and lines[0]["content_chars"] == 355
+    assert _n(engine, "SELECT count(*) FROM ops.llm_call") == 0 and _n(engine, "SELECT count(*) FROM ops.etl_run WHERE job = 'news.classify'") == 0
+    assert _n(engine, "SELECT count(*) FROM news.article WHERE canonical_url LIKE 'https://zz.test/classify-%' AND classified_from IS NOT NULL") == 0
+
+
+def test_max_minutes_budget_hit(seeded):
+    engine, ids = seeded
+    ticks = iter([0.0, 0.0, 0.0, 400.0, 400.0, 400.0, 400.0, 400.0, 400.0])
+    fake = FakeClient([R1, R2, R4, R4])
+    assert nc.run(limit=4, client=fake, max_minutes=5, clock=lambda: next(ticks)) == 0
+    status, st, _ = _run_row(engine)
+    assert st["budget_hit"] is True and st["classified"] < 4 and fake.calls == st["classified"]

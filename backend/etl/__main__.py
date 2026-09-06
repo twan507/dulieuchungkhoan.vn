@@ -108,6 +108,25 @@ def main(argv: list[str] | None = None) -> int:
         if parsed.minutes is not None and not parsed.loop:
             parser.error("--minutes chỉ đi với --loop")
         return etl.news_job.run(sources=parsed.sources, dry_run=parsed.dry_run, loop=parsed.loop, minutes=parsed.minutes)
+    if args[0] == "classify":
+        import etl.news_classify
+        parser = argparse.ArgumentParser(prog="etl classify")
+        parser.add_argument("--limit", type=int, help="tối đa N bài chưa phân loại, mới nhất trước")
+        parser.add_argument("--per-group", type=int, dest="per_group", help="N bài mới nhất của MỖI nhóm gợi ý feed (1 · 2 · 3 · không nhóm)")
+        parser.add_argument("--thinking", choices=("adaptive", "disabled"), default="adaptive")
+        parser.add_argument("--dry-run", action="store_true", dest="dry_run", help="gọi model thật nhưng KHÔNG ghi kho — để đo")
+        parser.add_argument("--out", help="file JSONL từng bài (chỉ với --dry-run; mặc định stdout)")
+        parser.add_argument("--max-minutes", type=float, dest="max_minutes")
+        parser.add_argument("--cap-chars", type=int, dest="cap", default=etl.news_classify.CAP_CHARS)
+        parsed = parser.parse_args(args[1:])
+        if (parsed.limit is None) == (parsed.per_group is None):
+            parser.error("cần đúng một trong --limit N / --per-group N — mọi lượt phân loại phải có trần (tốn quota)")
+        if (parsed.limit is not None and parsed.limit <= 0) or (parsed.per_group is not None and parsed.per_group <= 0):
+            parser.error("--limit/--per-group phải > 0")
+        if parsed.out and not parsed.dry_run:
+            parser.error("--out chỉ đi cùng --dry-run")
+        return etl.news_classify.run(limit=parsed.limit, per_group=parsed.per_group, thinking=parsed.thinking, dry_run=parsed.dry_run,
+                                     out=parsed.out, max_minutes=parsed.max_minutes, cap=parsed.cap)
     if args[0] in ("fred", "fx", "lbma", "yahoo", "binance"):
         import importlib
         mod = importlib.import_module(f"etl.{args[0]}_job")
@@ -123,7 +142,7 @@ def main(argv: list[str] | None = None) -> int:
         extra = {"intraday": parsed.intraday} if args[0] in ("yahoo", "binance") else {}
         return mod.run(keys=parsed.keys, dry_run=parsed.dry_run, backfill=getattr(parsed, "backfill", False), **extra)
     print(f"etl: subcommand không hợp lệ: {args[0]!r} (hỗ trợ: omo, refdata, screener, events, price, snapshot, fundamentals,"
-          " wichart, news, fred, fx, lbma, yahoo, binance)", file=sys.stderr)
+          " wichart, news, classify, fred, fx, lbma, yahoo, binance)", file=sys.stderr)
     return 2
 
 
