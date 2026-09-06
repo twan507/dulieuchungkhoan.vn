@@ -71,9 +71,9 @@ Ba nhóm đích:
 
 | Mã | Sub |
 |---|---|
-| `2a` | Chứng khoán thế giới |
+| `2a` | Thị trường tài chính thế giới (chứng khoán, tiền mã hoá) *(đổi tên 2026-09-06: Bitcoin không có chỗ)* |
 | `2b` | Ngân hàng trung ương |
-| `2c` | Hàng hoá và năng lượng |
+| `2c` | Hàng hoá và năng lượng — vàng, dầu, kim loại là hàng hoá; chỉ khi chủ thể là ngân hàng trung ương (dự trữ vàng) mới là `2b` *(làm sắc 2026-09-06: 22/311 ghi chú khó của bộ gold lẫn 2a/2b/2c)* |
 | `2d` | An ninh và địa chính trị |
 | `2e` | Thương mại và thuế quan |
 | `2f` | Doanh nghiệp và kinh tế các nước *(thêm 2026-09-06)* |
@@ -82,9 +82,9 @@ Ba nhóm đích:
 >
 > `2d` và `2e` được thêm ở vòng audit cuối. Trước đó địa chính trị bị xếp nhầm vào nhãn loại bỏ — sai, vì thuế quan và cấm vận tác động trực tiếp lên doanh nghiệp xuất khẩu niêm yết (dệt may, thuỷ sản, thép).
 
-### Nhóm 3 · Doanh nghiệp niêm yết và thị trường tài sản trong nước (9 sub)
+### Nhóm 3 · Doanh nghiệp Việt Nam và thị trường tài sản trong nước (9 sub)
 
-*(Mở rộng 2026-09-06: chủ thể của nhóm 3 là doanh nghiệp niêm yết **hoặc thị trường tài sản trong nước** — chứng khoán, vàng, bất động sản dân sinh. Trước đó tin giá vàng SJC, giá chung cư, môi giới địa ốc không có sub nào nhận; theo luật chủ thể, chủ thể là "thị trường" thì về `3e`. Bài mà chủ thể là Ngân hàng Nhà nước điều hành vàng vẫn là `1c`.)*
+*(Mở rộng 2026-09-06: chủ thể của nhóm 3 là **doanh nghiệp Việt Nam — niêm yết hay chưa** (TKV, VinFast, công ty chỉ phát hành trái phiếu… bộ gold: 98/251 nhãn nhóm 3 không có mã, 34 ghi chú khó về đúng chuyện này; mã chỉ gắn khi niêm yết) **hoặc thị trường tài sản trong nước** — chứng khoán, vàng, bất động sản dân sinh. Trước đó tin giá vàng SJC, giá chung cư, môi giới địa ốc không có sub nào nhận; theo luật chủ thể, chủ thể là "thị trường" thì về `3e`. Bài mà chủ thể là Ngân hàng Nhà nước điều hành vàng vẫn là `1c`.)*
 
 | Mã | Sub |
 |---|---|
