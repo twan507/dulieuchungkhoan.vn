@@ -195,5 +195,5 @@ def test_store_works_under_etl_role(db):
         assert "ZZA" in listed2
         cursor = c.execute(sa.text(
             "SELECT stats->>'cursor' FROM ops.etl_run WHERE job = :j AND stats->>'cursor' IS NOT NULL"
-            " ORDER BY run_id DESC LIMIT 1"), {"j": "news.backfill_sitemap"}).scalar()
+            " ORDER BY run_id DESC LIMIT 1"), {"j": "news.backfill_sitemap:tinnhanhck"}).scalar()
         assert cursor is None or isinstance(cursor, str)
