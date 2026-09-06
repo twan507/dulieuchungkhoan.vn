@@ -137,3 +137,24 @@ Chủ dự án chốt: sửa ở prompt, không hậu kỳ; **tổng quát hoá,
 1. **Nhóm 2 không có sub cho doanh nghiệp / chính sách kinh tế nội bộ nước ngoài** (Apple–Tim Cook, Amazon–Nvidia, Heineken, visa Nhật, Thái Lan siết data center, kỷ luật lãnh đạo DNNN Trung Quốc) — hiện dồn tạm vào `2a`/`2d`. Phương án: thêm `2f` "Doanh nghiệp và chính sách kinh tế nước ngoài", hoặc quy ước cứng.
 2. **Tin thị trường trong nước không phải Nhà nước, không phải DN niêm yết** (môi giới địa ốc, giá chung cư Hà Nội, giá vàng SJC, giá bạc) — không sub nào khớp; tạm `1e`/`1c`. Cần quy ước: vàng/bất động sản dân sinh thuộc `1c`/`1e` hay nhóm 3 (`3e`)?
 3. **Bài điểm tin tuần / văn bản pháp quy phi kinh tế** (Quốc ca, Luật Chứng khoán do UBTVQH cho ý kiến — nhóm 1 hay 3?).
+
+## 8. Lát 9b bắt đầu — bộ gold 400 bài và lần chấm đầu (2026-09-06 16:55–18:15)
+
+**Bộ gold v2:** 400 bài (150 cũ + 250 mới; 100 mỗi nhóm gợi ý; seed 20260906), taxonomy mở rộng trước khi gán (`2f`, `3e` thị trường tài sản, nhóm 3 gồm DN chưa niêm yết, luật chủ thể). Hai lượt Opus độc lập (8 agent × 50 bài mỗi lượt) đồng thuận nhóm 99 % · sub 98 % · mã 97 % · ngành 94 % · cả bốn 89 %; 43 bài lệch do ba trọng tài Opus phân xử (19 theo lượt 1, 23 theo lượt 2, 1 nhãn mới); luật nhất quán `NGANHANG` cho `1c`/`2b` áp thêm 4 bài. Kết quả: nhóm 1: 126 · 2: 93 · 3: 127 · x: 54. Hồ sơ: [`eval/`](eval/README.md). Lưu ý: hai lượt cùng một model nên "đồng thuận" đo độ tự nhất quán, không phải hai người.
+
+**Taxonomy sau khi gán** (news-pipeline §3 đã sửa cùng lượt): ngoài `2f`/`3e`, phân tích 800 nhãn + 311 ghi chú khó lộ thêm: DN Việt Nam chưa niêm yết (34 ghi chú, 98/251 nhãn nhóm 3 không mã) ⇒ nhóm 3 gồm DN chưa niêm yết, mã chỉ khi niêm yết; `2a` gồm tiền mã hoá; vàng/dầu/kim loại là `2c`, chỉ NHTW mới `2b`; `1b` phủ Đảng/địa phương với phép thử quy phạm↔quyết định cụ thể; mã ở bản tin thị trường chỉ khi tiêu đề/sapo nêu tên; tin tiền tệ luôn `NGANHANG`. Nợ cây ngành: ô tô/xe điện, holding, dịch vụ dầu khí.
+
+**Chấm MiniMax M3 trên 400 bài gold** (`etl classify --dry-run --ids-file`, prompt TRƯỚC bốn câu làm sắc cuối, 17:14–18:13, 0 lỗi schema, 2 `repaired` mỗi lượt):
+
+| | thinking adaptive | thinking disabled |
+|---|---|---|
+| Đúng nhóm | **376/400 = 94,0 %** | 366/400 = 91,5 % |
+| Đúng nhóm + sub | **338/400 = 84,5 %** | 325/400 = 81,2 % |
+| Nhãn `x` (54 bài gold) | precision 91 % · recall 74 % | 88 % · 70 % |
+| Mã (127 bài gold nhóm 3) | P 56 % · **R 98 %** (fp 92) | P 51 % · R 97 % (fp 114) |
+| Ngành (mọi bài) | P 46 % · **R 90 %** (fp 265); khớp tập 57 % | P 45 % · R 90 %; khớp tập 55 % |
+| Đúng nhóm+sub theo `confidence` | < 0,7: 1/7 · 0,7–0,9: 99/126 (79 %) · ≥ 0,9: 238/267 (89 %) | < 0,7: 1/7 · 0,7–0,9: 56/94 (60 %) · ≥ 0,9: 268/299 (90 %) |
+
+Nhầm nhóm nhiều nhất (adaptive): gold `x` → model `1` (9 bài: hướng dẫn dân sinh, thiên tai, PR bị coi là tin trong nước) · `1` → `3` (3) · `x` → `3` (3). Nhầm sub cùng nhóm: `1b`→`1a` (8 — đúng chỗ vừa làm sắc phép thử quy phạm↔quyết định), `3d`→`3a` (4), `3f`→`3e` (4), `2f`→`2c` (3).
+
+**Đọc kết quả:** (1) thinking adaptive hơn disabled ≈ 3 điểm ở cả nhóm lẫn sub, chênh lớn nhất ở dải `confidence` 0,8–0,9 (79 % so 59 %) ⇒ **giữ adaptive**. (2) Model **bắt đủ nhưng gắn thừa**: recall mã 98 %, ngành 90 %; precision thấp vì prompt lúc chấm chưa có luật "mã chỉ khi tiêu đề/sapo nêu tên" và gold gán ngành chặt (chỉ ngành chịu tác động) — lượt chấm lại với prompt mới đang chạy (`pred-adaptive-v2`). (3) **Ngưỡng `confidence` đề xuất 0,8**: dưới 0,8 có 37/400 bài (9 %) đúng 65 %; từ 0,8 trở lên 363 bài đúng 86,5 % — đưa 9 % bài vào hàng rà tay là chi phí chấp nhận được. (4) `x` bị bỏ sót 26 % — model ngại loại tin; đáng xem lại câu định nghĩa `x` sau lượt chấm lại.

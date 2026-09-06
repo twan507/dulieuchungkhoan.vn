@@ -69,7 +69,7 @@ def test_user_prompt_title_only_below_200_and_missing_hint():
 def test_system_prompt_rules_after_owner_review_2026_09_06():
     s = nc.system_prompt(INDUSTRIES)
     assert "3–5 câu ngắn" in s and "súc tích" in s and "báo chí" in s and "200–300" not in s   # theo câu, ngắn, giọng báo chí — không theo ký tự
-    assert f"tối đa {nc.MAX_TICKERS} mã" in s and "quan trọng nhất trước" in s and "nổi bật nhất" in s   # bài liệt kê: chỉ mã nổi bật
+    assert f"tối đa {nc.MAX_TICKERS} mã" in s and "quan trọng nhất trước" in s and "nêu tên" in s and "để rỗng" in s   # mã: chỉ khi tiêu đề/sapo nêu tên
     assert f"tối đa {nc.MAX_INDUSTRIES} ngành" in s
     assert "chủ thể" in s and s.count("chủ thể") >= 2 and "niêm yết hay chưa" in s   # tiêu chí tổng quát theo CHỦ THỂ; nhóm 3 gồm DN chưa niêm yết
     assert "Bài viết" in s                                              # vẫn cấm mở đầu "Bài viết nói về"
