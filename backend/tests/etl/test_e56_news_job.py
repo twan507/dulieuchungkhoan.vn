@@ -297,3 +297,18 @@ def test_collect_builds_day_key_for_a_day_sitemap_source_that_is_not_backfill_on
     status, stats, _ = _last(clean)
     assert status == "success" and stats["lists_ok"] == 54 and stats["lists_failed"] == 0
     assert any(u.endswith("/sitemap-article-2026-09-06.xml") for u in calls)          # NOW = 2026-09-06 00:00 VN
+
+
+def test_loop_calls_classify_only_when_flag_set(clean, monkeypatch):
+    """Móc lưới vào vòng lặp: có --classify N thì mỗi vòng gọi news.classify với trần N; không có thì KHÔNG gọi (mặc định tắt,
+    chủ dự án chưa bật live 2026-09-06). Dãy clock giống test ngân sách: t0 · started · kiểm phút ⇒ đúng MỘT vòng."""
+    monkeypatch.setattr("etl.http_fetch.Fetcher._throttle", lambda self: None)
+    import etl.news_classify
+    calls = []
+    monkeypatch.setattr(etl.news_classify, "run", lambda **kw: calls.append(kw) or 0)
+    ticks = iter([0.0, 0.0, 70.0])
+    assert nj.run(loop=True, minutes=1, get=_fake_get(), sleep=lambda s: None, now=NOW, clock=lambda: next(ticks)) == 0
+    assert calls == []
+    ticks2 = iter([0.0, 0.0, 70.0])
+    assert nj.run(loop=True, minutes=1, get=_fake_get(), sleep=lambda s: None, now=NOW, clock=lambda: next(ticks2), classify_per_cycle=7) == 0
+    assert calls == [{"limit": 7}]

@@ -93,12 +93,13 @@ def main(argv: list[str] | None = None) -> int:
         parser.add_argument("--to", dest="to_month")
         parser.add_argument("--max-minutes", type=float, dest="max_minutes")
         parser.add_argument("--stop-before-open", action="store_true", dest="stop_before_open")
+        parser.add_argument("--classify", type=int, metavar="N", help="sau mỗi vòng --loop, phân loại tối đa N bài mới (mặc định TẮT)")
         parsed = parser.parse_args(args[1:])
         if parsed.backfill_sitemap:
             if not parsed.from_month or not etl.news_job.MONTH.match(parsed.from_month):
                 parser.error("--backfill-sitemap cần --from dạng YYYY-MM")
-            if parsed.loop or parsed.dry_run or parsed.sources is not None or parsed.minutes is not None:
-                parser.error("--backfill-sitemap không đi cùng --loop/--dry-run/--sources/--minutes")
+            if parsed.loop or parsed.dry_run or parsed.sources is not None or parsed.minutes is not None or parsed.classify is not None:
+                parser.error("--backfill-sitemap không đi cùng --loop/--dry-run/--sources/--minutes/--classify")
             return etl.news_job.run_backfill(from_month=parsed.from_month, to_month=parsed.to_month,
                                              max_minutes=parsed.max_minutes, stop_before_open=parsed.stop_before_open,
                                              source=parsed.source or "tinnhanhck")
@@ -107,7 +108,10 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("--to/--max-minutes/--stop-before-open/--source chỉ đi cùng --backfill-sitemap")
         if parsed.minutes is not None and not parsed.loop:
             parser.error("--minutes chỉ đi với --loop")
-        return etl.news_job.run(sources=parsed.sources, dry_run=parsed.dry_run, loop=parsed.loop, minutes=parsed.minutes)
+        if parsed.classify is not None and (not parsed.loop or parsed.dry_run or parsed.classify <= 0):
+            parser.error("--classify N (N > 0) chỉ đi với --loop và không đi cùng --dry-run")
+        return etl.news_job.run(sources=parsed.sources, dry_run=parsed.dry_run, loop=parsed.loop, minutes=parsed.minutes,
+                                classify_per_cycle=parsed.classify)
     if args[0] == "classify":
         import etl.news_classify
         parser = argparse.ArgumentParser(prog="etl classify")

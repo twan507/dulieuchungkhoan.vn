@@ -9,7 +9,7 @@ def test_news_flags_reach_run(monkeypatch):
     seen = {}
     monkeypatch.setattr(etl.news_job, "run", lambda **kw: seen.update(kw) or 0)
     assert m.main(["news", "--loop", "--minutes", "90", "--sources", "cafef,bnews"]) == 0
-    assert seen == {"sources": ["cafef", "bnews"], "dry_run": False, "loop": True, "minutes": 90.0}
+    assert seen == {"sources": ["cafef", "bnews"], "dry_run": False, "loop": True, "minutes": 90.0, "classify_per_cycle": None}
     assert m.main(["news", "--dry-run"]) == 0 and seen["dry_run"] is True and seen["loop"] is False and seen["minutes"] is None
 
 
@@ -52,6 +52,20 @@ def test_backfill_source_flag(monkeypatch):
     for bad in (["news", "--backfill-sitemap", "--source", "cafef", "--from", "2026-08"],       # không có sitemap
                 ["news", "--source", "bnews"],                                                 # --source chỉ đi cùng --backfill-sitemap
                 ["news", "--loop", "--source", "bnews"]):
+        with pytest.raises(SystemExit) as e:
+            m.main(bad)
+        assert e.value.code == 2
+
+
+def test_classify_flag_requires_loop_and_positive(monkeypatch):
+    # Lưới trong vòng lặp MẶC ĐỊNH TẮT (chủ dự án chưa bật live) — chỉ chạy khi truyền --classify N với --loop
+    import etl.news_job
+    seen = {}
+    monkeypatch.setattr(etl.news_job, "run", lambda **kw: seen.update(kw) or 0)
+    assert m.main(["news", "--loop", "--classify", "20"]) == 0 and seen["classify_per_cycle"] == 20
+    assert m.main(["news", "--loop"]) == 0 and seen["classify_per_cycle"] is None
+    for bad in (["news", "--classify", "20"], ["news", "--loop", "--classify", "0"], ["news", "--loop", "--dry-run", "--classify", "5"],
+                ["news", "--backfill-sitemap", "--from", "2026-08", "--classify", "5"]):
         with pytest.raises(SystemExit) as e:
             m.main(bad)
         assert e.value.code == 2

@@ -331,7 +331,9 @@ uv run python -m etl wichart --intraday          # 47 key tần suất ngày (fr
 uv run python -m etl news                                  # một lượt: 47 feed RSS + 6 nguồn crawl HTML → news.*, dedupe URL + tiêu đề 48h, gắn mã tầng 1–2
 uv run python -m etl news --dry-run                         # fetch + chuẩn hoá + dedupe, KHÔNG ghi gì; in stats
 uv run python -m etl news --sources cafef,vietstock         # lượt con theo nguồn (danh sách phân tách bằng dấu phẩy)
-uv run python -m etl news --loop [--minutes N]              # vòng lặp chạy tay, mặc định 5 phút/vòng, sitemap TinnhanhCK mỗi 3 vòng;
+uv run python -m etl news --loop [--minutes N] [--classify N]  # vòng lặp chạy tay, mặc định 5 phút/vòng, sitemap TinnhanhCK mỗi 3 vòng;
+                                                             # --classify N: sau MỖI vòng phân loại tối đa N bài mới (job news.classify riêng, quota guard,
+                                                             # lỗi không giết vòng thu thập). MẶC ĐỊNH TẮT — lưới chỉ chạy khi truyền cờ (chưa bật live);
                                                              # mỗi vòng một etl_run news.collect; Ctrl+C dừng sạch (đóng sổ "dừng tay")
 uv run python -m etl news --backfill-sitemap [--source tinnhanhck|bnews|nguoiquansat] --from 2026-08 [--to 2026-08] [--max-minutes N] [--stop-before-open]
                                                              # job news.backfill_sitemap:<source> (mặc định tinnhanhck): kỳ đi lùi — TinnhanhCK/BNews theo THÁNG,

@@ -216,7 +216,10 @@ def _one_cycle(engine, registry, *, subset, dry_run, cycle, get, sleep, now, rng
         return 2
 
 
-def run(sources=None, dry_run=False, loop=False, minutes=None, get=None, sleep=time.sleep, now=None, rng=None, clock=time.monotonic) -> int:
+def run(sources=None, dry_run=False, loop=False, minutes=None, get=None, sleep=time.sleep, now=None, rng=None, clock=time.monotonic,
+        classify_per_cycle: int | None = None) -> int:
+    """`classify_per_cycle`: sau mỗi vòng thu thập, phân loại tối đa N bài mới (job `news.classify` riêng, có quota guard).
+    MẶC ĐỊNH TẮT — lưới chỉ chạy khi người vận hành truyền `--classify N` (chủ dự án chưa bật live, 2026-09-06)."""
     logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
     load_dotenv()
@@ -241,6 +244,11 @@ def run(sources=None, dry_run=False, loop=False, minutes=None, get=None, sleep=t
                             get=get, sleep=sleep, now=now or datetime.now(timezone.utc), rng=rng)
             if rc != 0 or not loop:
                 return rc
+            if classify_per_cycle:
+                from etl import news_classify
+                crc = news_classify.run(limit=classify_per_cycle)      # sổ riêng `news.classify`; hết quota ⇒ quota_stop, không giết vòng thu thập
+                if crc != 0:
+                    log.warning("classify sau vòng %s trả mã %s — vòng thu thập vẫn tiếp tục", cycle, crc)
             cycle += 1
             if minutes is not None:
                 # I5: --minutes là TRẦN tổng thời gian chạy, không phải "thêm tối đa một vòng + một nhịp đầy" —

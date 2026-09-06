@@ -110,6 +110,7 @@ Tin xã hội, thể thao, giáo dục, y tế thuần; PR và advertorial. **X�
 - **Bài tổng hợp nhiều chủ đề** (điểm tin tuần): chọn sub của chủ đề dẫn tiêu đề. Không tạo sub "tổng hợp" — nó sẽ thành thùng rác.
 - **Mã ở bản tin thị trường:** chỉ gắn khi tiêu đề hoặc sapo nêu tên mã (hoặc công ty mẹ niêm yết có số liệu riêng trong bài); bản tin dòng tiền, nhận định chung, bảng xếp hạng dài không nêu mã ⇒ rỗng. *(chốt 2026-09-06 từ phân xử gold: chỗ hai lượt lệch nhiều nhất)*
 - **Ngành cho tin tiền tệ:** lãi suất, tỷ giá, ngân hàng trung ương (`1c`, `2b`) luôn gồm `NGANHANG` — chủ dự án: "Fed ảnh hưởng ngân hàng là đúng". Ngành AI ghi ngành *chịu tác động*, không phản chiếu ngành của mã đã gắn (đường `ticker` §8b đã làm việc đó).
+- **Nhịp chạy lưới** *(dựng 2026-09-06, chưa bật)*: `etl news --loop --classify N` phân loại tối đa N bài mới sau mỗi vòng thu thập, dùng lại job `news.classify` (trần, quota guard, `ops.llm_call`); lỗi phân loại không giết vòng thu thập. **Mặc định tắt** — chủ dự án chưa muốn chạy live; bật bằng cách truyền cờ, hoặc lát 13 đăng ký task.
 - Ít luật, mỗi luật sắc: model nhỏ không theo được luật vụn. Gặp ca mới thì làm sắc tiêu chí chung, không thêm ngoại lệ. **Nợ cây ngành** (ghi nhận 2026-09-06, chưa sửa vì cây 6×24 đã chốt): không có ô cho công nghiệp ô tô/xe điện (VinFast phải mượn `THIETBI`) và holding/đầu tư phi ngân hàng; dịch vụ dầu khí dễ bị gán `DAUKHI` theo tên.
 
 ---
