@@ -313,7 +313,7 @@ Vì mục đích là tra cứu quá khứ, đừng đợi kho tự tích luỹ. 
 
 *(đo 2026-09-05)* Sitemap TinnhanhCK lùi tới **2015-06**; phần tử đầu tiên là URL trang chủ, `lastmod` chỉ là giờ sinh file; **`lastmod` là giờ SỬA bài, không phải giờ đăng** — giờ đăng lấy ở `meta.cms-date` trên trang, `lastmod` chỉ để dự phòng.
 
-*(lát 8b, 2026-09-06)* Một job `etl news --backfill-sitemap --source {tinnhanhck|bnews|nguoiquansat}`; registry là chủ mẫu URL + đơn vị kỳ (tháng/ngày) + regex URL bài; con trỏ riêng từng nguồn (`news.backfill_sitemap:<source>`). BNews và NguoiQuanSat: `published_at` = `lastmod` (`src='feed'`) vì đo thấy bằng giờ đăng. Độ sâu chạy thật: chủ dự án chốt **tạm 1 tháng (2026-08)** mỗi nguồn; lùi thêm là chạy lại với `--from` xa hơn, con trỏ nối tiếp. Chi tiết nguồn: [news/README §5.4–5.5](../10-sources/news/README.md).
+*(lát 8b, 2026-09-06)* Một job `etl news --backfill-sitemap --source {tinnhanhck|bnews|nguoiquansat}`; registry là chủ mẫu URL + đơn vị kỳ (tháng/ngày) + regex URL bài; con trỏ riêng từng nguồn (`news.backfill_sitemap:<source>`). BNews và NguoiQuanSat: `published_at` = `lastmod` (`src='feed'`) vì đo thấy bằng giờ đăng. Độ sâu chạy thật: chủ dự án chốt **backfill chỉ để nghiệm thu** — mỗi nguồn hai lượt 60 phút trên tháng 2026-08 rồi dừng; lùi thêm (nếu có ngày cần) là chạy lại với `--from` xa hơn, con trỏ nối tiếp. Cùng ngày đo thấy CafeF/VnEconomy/Vietstock cũng có sitemap lịch sử — **loại có chủ đích**, không mở lát ([news/README §5.6](../10-sources/news/README.md)). Chi tiết nguồn: [news/README §5.4–5.5](../10-sources/news/README.md).
 
 ### 9.7 Bản quyền
 

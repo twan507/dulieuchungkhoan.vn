@@ -199,6 +199,18 @@ https://nguoiquansat.vn/sitemap-article-{YYYY}-{MM}-{DD}.xml ← theo NGÀY, 1.8
 
 Hồ sơ đo: [`measure-sitemap-bnews-nqs-2026-09-06.md`](../../90-records/plans/2026-09-06-news-backfill-bnews-nqs/measure-sitemap-bnews-nqs-2026-09-06.md).
 
+### 5.6 Sitemap của năm nguồn còn lại *(đo 2026-09-06, chỉ tra cứu — KHÔNG backfill, quyết định chủ dự án)*
+
+Chủ dự án chốt 2026-09-06 sáng: backfill chỉ để nghiệm thu công cụ; mục tiêu là cả 8 nguồn chạy đều từ hôm nay qua `--loop`. Bảng này ghi lại để không ai tin lại câu "chỉ ba nguồn có sitemap" của khảo sát 13/08.
+
+| Nguồn | Sitemap lịch sử | Lùi được tới | Khối lượng | Ghi chú |
+|---|---|---|---|---|
+| CafeF | có — `sitemaps/sitemaps-{YYYY}-{M}-{d1}-{d2}.xml`, mỗi file **5 ngày**, 770 file trong index | 2016-01 | 1.772 URL / 5 ngày (08/2026) | index còn `google-news-sitemap.xml`, `latest-news-sitemap.xml`; muốn dùng cần đơn vị kỳ "5 ngày" |
+| VnEconomy | có — `sitemap/news-{YYYY}-{MM}.xml` theo tháng (**MM đệm 0**, khác TinnhanhCK/BNews), 230 file | 2007-01 | 1.828 URL / tháng (08/2026) | khớp khuôn tháng sẵn có |
+| Vietstock | có — **một file duy nhất** `sitemap.xml` 36 MB, 191.781 URL bài, mỗi URL có `lastmod` | 2017-12 | ~22.000 URL / năm | hình dạng khác hẳn: không chia kỳ, phải cắt theo `lastmod`; 318 URL có năm `1753` trong đường dẫn (rác CMS) |
+| VietnamBiz | **không** — `sitemap.xml` chuyển hướng về `/error`, robots không khai | — | — | lịch sử chỉ còn đường trang chuyên mục phân trang — *chưa kiểm* |
+| BaoChinhPhu | **không** — `sitemap.xml` 404, `sitemap-news.xml` 404, robots không khai | — | — | như trên — *chưa kiểm* |
+
 ## 6. Quy tắc chuẩn hoá
 
 ### 6.1 Encoding
