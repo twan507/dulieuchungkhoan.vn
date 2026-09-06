@@ -25,6 +25,33 @@
 - Commit theo mốc, Conventional Commits, message tiếng Anh, kết bằng `Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>`.
 - Nhánh: `feat/semantic-layer`. Không commit thẳng `main`.
 
+### 🔴 Dữ liệu test — sửa plan 2026-09-07 sau khi chạy Task 4
+
+Bản đầu của plan giả định test tool đọc được dữ liệu thật. **Sai**: `migrated_engine` dựng DB test **rỗng**, chỉ `market.industry` có sẵn 30 dòng do migration seed. Đọc kho dev thật thì tiêu chí trôi theo dữ liệu (ETL chạy là số đổi) — vi phạm §4.4.4.
+
+⇒ Đã thêm fixture **`kho`** ở `backend/tests/agent/conftest.py`, seed một kho thu nhỏ tất định trong transaction của `db`. **Mọi test chạm DB phải nhận cả hai fixture: `def test_x(db, kho):`** — quên `kho` là bảng rỗng, test đỏ vô nghĩa.
+
+Nội dung seed và các giá trị chốt để viết expected:
+
+| Bảng | Nội dung |
+|---|---|
+| `market.security`/`issuer` | HPG (KIMLOAI) · VCB, TIN, HDB, LPB (NGANHANG) · FPT (CONGNGHE) · CUOI (`delisted`) · VNINDEX (`index`) |
+| `market.metric_dictionary` | 21 mã trong bảng nhãn + `prf` (để test từ chối mã ngoài bảng) |
+| `market.price_daily` | HPG: 2026-09-01 = 21.200 · 09-02 = 21.400 · **09-03 = 21.600** (`close_raw` = `close_adj`) |
+| `market.financial_statement` | FPT 2024 `length_report=5` `IS`: `isa3` 62.848.794.351.367 · `isa9` −6.115.961.971.783 · `isa20` 9.427.422.530.444 · `isa22` 7.856.767.812.178 |
+| `market.screener_daily` | phiên **2026-09-04**: HPG `rtd21` 7,89115654 / `rtq12` 0,17377625 · VCB 11,81676534 / 0,17922416 · TIN `rtq12` 0,73478649 · HDB 0,24836986 · LPB 0,2466187 · FPT 21,30 / 0,2647472 |
+| `market.corporate_event` | FPT: 2 `CashDividend` (exright **2025-06-12**, **2025-12-01**) + 1 `AGM` 2025-03-10 |
+| `macro` | `vn.cpi` đơn vị `%`: 2026-06 = 4,38 · 07 = 4,39 · **08 = 4,45** |
+| `asset` | `wti` (`USD/thùng`, `price_type='futures'`): 09-04 = 90,57 · **09-05 = 91,22**; `btc` ở `ohlc_daily` |
+| `news` | 3 bài: 2026-08-10 chứa **đúng cụm** "lãi suất điều hành" (sub `1b`) · 2026-08-20 chứa các từ đó **nằm rời** (sub `1a`) · 2026-09-02 chưa phân loại |
+
+Bài tin thứ hai là chốt phân biệt `phraseto_tsquery` với `plainto_tsquery`: tìm theo **cụm** ra **1 bài**, tìm theo **từ khoá** ra **2 bài**.
+
+### 🔴 Hai bẫy kỹ thuật gặp thật khi chạy Task 4
+
+1. **`:p::jsonb` KHÔNG được SQLAlchemy nhận là bind param** — nó lặng lẽ bỏ tham số khỏi dict rồi ném `ProgrammingError` khó đọc. Viết `CAST(:p AS jsonb)`, `CAST(:d AS date)`. Áp cho mọi chỗ ép kiểu trên tham số.
+2. **`asset.asset.calendar` chỉ nhận `'trading_days'` hoặc `'24x7'`**; `asset.price_daily.price_type` chỉ nhận `spot|futures|fixing|close`. `wti` là `futures`.
+
 ---
 
 ## Task 0 — Gỡ rủi ro lớn nhất trước khi xây gì
@@ -1607,6 +1634,8 @@ def so_sanh_cung_nganh(conn: sa.Connection, tickers: list[str] | None = None,
 
 **Files:** Create `backend/agent/tools/get_macro_series.py`, `backend/tests/agent/test_a10_macro.py`
 **Produces:** `def chuoi_vi_mo(conn, code=None, keyword=None, from_date=None, to_date=None, limit=None) -> str`
+
+🔴 **`asset.price_daily` có cột `price_type`** (`spot|futures|fixing|close`) và một mã có thể mang **nhiều loại giá** — vàng có cả `spot` lẫn `fixing`, dầu có `futures`. ADR §2.3 cấm trộn: *"lược đồ phải có cột phân biệt loại giá; trộn chung một cột sẽ tạo bậc nhảy 2% tại điểm đổi nguồn"*. Vì vậy hàm **chọn đúng MỘT loại** trong khoảng hỏi (loại có nhiều dòng nhất), trả kèm `loai_gia` và `cac_loai_gia_co_san`, tuyệt đối không gộp hai loại vào một chuỗi.
 
 - [ ] **Bước 1: Viết test đỏ**
 
