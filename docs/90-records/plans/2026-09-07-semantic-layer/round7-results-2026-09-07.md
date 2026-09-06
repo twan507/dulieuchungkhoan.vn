@@ -8,22 +8,25 @@ Chạy bằng `python -m agent` trên kho dev, **tiền cảnh, chia khối** 3�
 
 ## 1. Kết quả hai lớp
 
+🔴 **Chấm hai lượt — rubric lượt đầu sai, đã sửa.** Chủ dự án chốt 2026-09-07: **"phép tính phải ghi số chứ không ghi văn xuôi"**. Rubric lượt đầu chấm mục 1 là *"mạch lập luận, không phải tờ công thức"* nên **phạt nhầm** hai câu tính toán trình bày đúng cách. Rubric đã sửa (chia mục 1 theo loại câu, thêm cổng *"số dẫn xuất phải kèm phép tính"*), và **chấm lại từ đầu cả 15 câu** trên thước đo mới. Bảng chấm: [lượt đầu](round7-grading-2026-09-07.md) · [lượt sửa](round7-grading-v2-2026-09-07.md).
+
 | | Kết quả | Ngưỡng AC7 | |
 |---|---|---|---|
 | **Lớp 1 — số** | **15/15 đúng** | 15/15 | ✅ đạt |
-| **Lớp 2 — hình dạng L1** | **12/15 đạt** | ≥ 14/15 | ❌ **không đạt** |
+| **Lớp 2 — hình dạng L1** | **13/15 đạt** *(12/15 ở lượt chấm đầu)* | ≥ 14/15 | ❌ **không đạt** |
 
-**Ba câu trượt hình dạng, cùng hai kiểu hỏng:**
+**Hai câu còn trượt — cả hai là lỗi thật, không phải do thước đo:**
 
-| Câu | Điểm | Trượt vì |
-|---|---|---|
-| A3 (WACC) | 3/5 | trình bày thuần công thức LaTeX + heading "Bước 1/2/3" như tờ công thức, mất mạch lập luận; không phân biệt nguồn số |
-| A4b (Gordon) | 3/5 | cùng kiểu trình bày như A3; không phân biệt nguồn số |
-| B5 (cổ tức FPT) | 3/5 | chỉ liệt kê hai sự kiện rồi dừng, không diễn giải, không nêu điều kiện đổi kết luận |
+| Câu | Trượt vì |
+|---|---|
+| A4b (Gordon) | 🔴 **bịa số dẫn xuất**: tự thêm dải nhạy "23.500–32.500 đồng" cho `Ke ± 1%` mà **không hiện phép tính nào**; tính đúng phải là **≈ 24.643–30.962 đồng** — lệch 4–5% ở cả hai đầu, không phải làm tròn. Vi phạm cổng 6 |
+| B5 (cổ tức FPT) | chỉ liệt kê hai sự kiện rồi dừng, không diễn giải, không nêu điều kiện đổi kết luận — 3/5, dưới ngưỡng |
 
-**Mẫu hỏng lặp lại nhất:** mục *"phân biệt số nào tra được, số nào là giả định của đề"* bị bỏ ở **5/15 câu** (A3, A4b, A5, B3, B4b) — mục dễ đạt nhất lại hay quên nhất. Hai câu tính nặng nhất (A3, A4b) rơi vào lối trình bày tài liệu tham khảo, trong khi bốn câu tính khác cùng dạng (A1, A2b, A5, A6) giữ đúng văn phong.
+**Câu đổi kết quả:** A3 (WACC) từ trượt sang **đạt** — nó trình bày phép tính bằng số, đúng cách; rubric cũ phạt nó vì lý do sai. B5 giữ nguyên trượt: lượt đầu chấm đúng.
 
-**Một lỗi bịa số:** A4b tự thêm dải nhạy "23.500–32.500 đồng" cho `Ke ± 1%`; tính đúng phải là **≈ 24.643–30.962 đồng**. Lệch 4–5% ở cả hai đầu, không phải làm tròn. Hai con số chính của câu vẫn đúng nên lớp 1 không ảnh hưởng, nhưng đây là **lỗi nặng nhất của cả lượt**: model bịa một con số *dẫn xuất* mà không ai kiểm.
+**Mẫu hỏng lặp lại nhất** (giữ nguyên qua cả hai lượt): mục *"phân biệt số nào tra được, số nào là giả định của đề"* bị bỏ ở **5/15 câu** — mục dễ đạt nhất lại hay quên nhất.
+
+**Rà quét lại toàn bộ 15 câu theo cổng mới:** ngoài A4b, **không còn con số dẫn xuất nào bị nêu trần** — mọi số trung gian ở nhóm A đều kèm phép tính tại chỗ, mọi số ở nhóm B đều gắn với kết quả tra cứu.
 
 ## 2. Chín function đều được model gọi đúng chỗ
 
@@ -63,12 +66,12 @@ Chi phí thật **$0,016/câu** thấp hơn ước lượng $0,022–0,048 của
 | AC | Kết quả |
 |---|---|
 | **AC1** `tool_runner` chạy với MiniMax | ✅ — spike Task 0 và mọi lượt chat |
-| **AC2** không test nào xanh thành đỏ | ✅ — `main` **877 passed, 2 skipped**; nhánh **951 passed, 2 skipped** (+74, không skip mới) |
+| **AC2** không test nào xanh thành đỏ | ✅ — `main` **877 passed, 2 skipped**; nhánh **953 passed, 2 skipped** (+76, không skip mới) |
 | **AC3** đường đọc dưới `dlck_api`, không ghi được | ✅ — `current_user=agent_reader`, thuộc `dlck_api`, `INSERT` bị chặn (`ProgrammingError`); `assert_read_only()` chạy ở khởi động |
 | **AC4** cả 9 function trả đúng dữ liệu thật | ✅ — bảng §2 |
 | **AC5** câu ngoài lĩnh vực bị từ chối gọn | ✅ — 4/4 (ẩm thực, lập trình, và hai câu trong lượt nghiệm thu) |
 | **AC6** VN-Index: nói thẳng kho chưa có | ⚠️ **đạt sau khi sửa**. Lượt đầu model **không gọi function nào**, tự đoán là không tra được rồi đẩy sang trang ngoài — đúng kết quả nhưng sai đường. Sau khi mô tả function nói rõ "luôn gọi trước khi nói về giá hay điểm của bất kỳ mã nào, kể cả VN-Index", model gọi `get_price_series`, nhận "kho chưa có dữ liệu giá cho chỉ số VNINDEX" và nói đúng điều đó |
-| **AC7** bộ hồi quy | ❌ **không đạt** — số 15/15 nhưng hình dạng 12/15 (ngưỡng 14) |
+| **AC7** bộ hồi quy | ❌ **không đạt** — số 15/15, hình dạng **13/15** sau khi sửa rubric (ngưỡng 14). Hai câu trượt là lỗi thật: một ca bịa số dẫn xuất, một ca tra cứu không diễn giải |
 | **AC8** đo chi phí | ✅ — §3 |
 | **AC9** không rò kết nối | ✅ — `idle in transaction` của `agent_reader` = **0**, tổng kết nối đang mở = 0 |
 
@@ -87,7 +90,9 @@ Lỗi 1 và 2 đều thuộc loại **hỏng im lặng**: không exception, khô
 **Hợp đồng đứng vững ở phần dữ kiện, chưa vững ở phần hình dạng.**
 
 - Function calling **không** làm hỏng độ chính xác: 15/15 số đúng, 9/9 function được gọi đúng chỗ, và model biết nói "kho chưa có" thay vì bịa khi được mô tả function bảo nó phải tra trước.
-- Nhưng L1 **mất quyền định hình ở đúng những câu khó nhất**: hai câu tính nặng nhất rơi vào lối trình bày tài liệu tham khảo, và một câu tra cứu thuần (B5) tụt xuống mức liệt kê. Câu nhắc "quay lại mạch L1" chèn ở lượt `tool_result` **không cứu được** hai ca A3/A4b vì chúng không gọi function nào hoặc chỉ gọi một lần rồi tự trình bày.
-- Model còn **bịa số dẫn xuất** (dải nhạy của A4b) — chỗ này function calling không giúp được gì vì đó là số tự tính, không phải số tra.
+- Chỗ hỏng thật còn lại có **hai** kiểu, và chỉ một trong hai liên quan tới hình dạng: (a) model **bịa số dẫn xuất** — dải nhạy của A4b, function calling không cứu được vì đó là số tự tính chứ không phải số tra; (b) một câu tra cứu thuần (B5) tụt xuống mức liệt kê, không diễn giải.
+- Câu nhắc "quay lại mạch L1" chèn ở lượt `tool_result` **chưa đo được tác dụng** — mọi lượt đều chạy *có* nhắc nên không có số đối chứng.
 
-**Đây là kết quả của lát, không phải lỗi cần giấu.** Ba việc kế tiếp, xếp theo giá trị: (1) làm rõ trong L1 rằng phần trình bày phép tính vẫn phải là văn xuôi có mạch, không phải bảng công thức; (2) thêm một mục vào rubric buộc mọi số **dẫn xuất** phải kèm phép tính; (3) đo lại xem câu nhắc `REMINDER` có tác dụng thật không — hiện chưa có số đối chứng vì mọi lượt đều chạy **có** nhắc.
+**Đây là kết quả của lát, không phải lỗi cần giấu.** Hai việc kế tiếp, xếp theo giá trị: (1) buộc mọi số **dẫn xuất** phải kèm phép tính — đã đưa vào rubric thành cổng loại trực tiếp, còn cần đưa thành luật ở tầng prompt để chặn từ đầu chứ không chỉ bắt lúc chấm; (2) đo xem `REMINDER` có tác dụng thật không, bằng cách chạy một lượt **không** nhắc để đối chứng.
+
+*(Việc "sửa L1 cho câu tính toán viết văn xuôi" đã bị **loại** — chủ dự án chốt 2026-09-07: bài tính phải hiện phép tính bằng số. Không đụng vào L1.)*

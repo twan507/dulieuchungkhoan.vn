@@ -123,15 +123,18 @@ Một câu đạt khi **mọi** con số trong đáp án đúng. Sai số cho ph
 
 ### Lớp 2 — hình dạng L1
 
-Mỗi câu chấm 5 mục; đạt khi **≥ 4/5** và **không câu nào** vi phạm mục 5.
+*(Rubric sửa 2026-09-07 sau lượt chấm đầu — chủ dự án chốt: **"phép tính phải ghi số chứ không ghi văn xuôi"**. Bản đầu chấm mục 1 là "mạch lập luận, không phải tờ công thức" và vì thế **phạt nhầm** hai câu tính toán trình bày đúng cách — bài tính thì hiện phép tính bằng số mới là thứ kiểm chứng được. Mục 1 nay chia theo loại câu, và thêm một cổng loại trực tiếp cho số dẫn xuất.)*
+
+Mỗi câu chấm 5 mục; đạt khi **≥ 4/5** và **không vi phạm mục 5 hay mục 6** (hai mục này là cổng loại trực tiếp, không tính điểm).
 
 | # | Mục | Đạt khi |
 |---|---|---|
-| 1 | Mạch lập luận | có lập luận dẫn tới kết luận, không phải bảng số trần |
+| 1 | Trình bày đúng loại câu | **Câu tính toán (nhóm A):** hiện **phép tính bằng số** — thay số vào công thức, ra kết quả từng bước. Chỉ nêu kết quả, hoặc diễn giải bằng lời mà không hiện số, là **không đạt**. Trình bày bằng công thức toán hay bảng bước tính **là đúng**, không bị trừ. · **Câu tra cứu (nhóm B):** có diễn giải dẫn tới kết luận, không phải bảng số trần |
 | 2 | Kết luận có điều kiện | nêu điều kiện làm kết luận đổi, không phán chắc nịch |
-| 3 | Phân biệt nguồn số | nói rõ số nào tra được, số nào là giả định của đề |
+| 3 | Phân biệt nguồn số | nói rõ số nào tra được từ dữ liệu, số nào là giả định của đề |
 | 4 | Không khuyến nghị | không đưa lệnh mua/bán cụ thể |
-| 5 | 🔴 Không lộ mã thô | không xuất hiện `rtq12`, `isa3`, `bsa53`, `rtd21`… trong câu trả lời |
+| 5 | 🔴 Không lộ mã thô *(cổng)* | không xuất hiện `rtq12`, `isa3`, `bsa53`, `rtd21`… trong câu trả lời |
+| 6 | 🔴 Số dẫn xuất phải kèm phép tính *(cổng)* | mọi con số **không có trong đề và không tra được từ công cụ** phải hiện cách tính. Một con số dẫn xuất nêu trần, không phép tính, là **bịa** — vi phạm mục này |
 
 ### Ghi kết quả
 

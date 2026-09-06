@@ -47,8 +47,9 @@ def run_turn(llm, read_eng, ops_eng, history: list, cau_hoi: str) -> tuple[str, 
         messages=messages, tools=build_tools(read_eng),
         thinking={"type": "adaptive"}, max_iterations=MAX_ITERATIONS,
     )
-    tra_loi, t0 = "", time.monotonic()
+    tra_loi, cuoi, t0 = "", None, time.monotonic()
     for message in runner:
+        cuoi = message
         if ops_eng is not None:
             log_llm_call(ops_eng, message, model=llm.settings.model,
                          latency_ms=int((time.monotonic() - t0) * 1000))
@@ -62,10 +63,22 @@ def run_turn(llm, read_eng, ops_eng, history: list, cau_hoi: str) -> tuple[str, 
             # KHÔNG append_messages ở đây — xem ghi chú (2) đầu file.
         else:
             tra_loi = "".join(b.text for b in message.content if b.type == "text")
-            if not tra_loi.strip():
-                # Không bao giờ trả rỗng im lặng: nói rõ vì sao lượt này không có chữ nào.
-                tra_loi = (f"[lượt này không sinh được câu trả lời — model dừng vì "
-                           f"'{message.stop_reason}'. Thử hỏi ngắn gọn hơn hoặc chia nhỏ câu hỏi.]")
+
+    # Chỉ nhận lịch sử mới khi lượt KẾT THÚC SẠCH. Hai đường thoát dở dang để lại lịch sử vi
+    # phạm hợp đồng Messages API và khoá chết cả phiên vì `repl` giữ nguyên lịch sử khi lỗi:
+    #   · chạm max_iterations — SDK kiểm ở đầu vòng nên dừng ngay sau một lượt `tool_use`,
+    #     lịch sử kết thúc bằng role=user ⇒ lượt sau thành hai `user` liên tiếp;
+    #   · `max_tokens` rơi giữa một block `tool_use` ⇒ có `tool_use` mà không `tool_result`.
+    # Bỏ nguyên lượt còn hơn để người dùng phải giết tiến trình.
+    ket_sach = (cuoi is not None and cuoi.stop_reason in ("end_turn", "stop_sequence")
+                and not any(b.type == "tool_use" for b in cuoi.content))
+    if not ket_sach:
+        ly_do = cuoi.stop_reason if cuoi is not None else "không nhận được lượt nào"
+        return (f"[lượt này dừng giữa chừng ({ly_do}) — bỏ lượt, lịch sử giữ nguyên như trước. "
+                f"Thử hỏi ngắn gọn hơn hoặc chia nhỏ câu hỏi.]", history)
+    if not tra_loi.strip():
+        # Kết thúc sạch nhưng không có chữ nào — vẫn không được trả rỗng im lặng.
+        tra_loi = f"[model kết thúc bằng '{cuoi.stop_reason}' nhưng không sinh câu trả lời nào.]"
     return tra_loi, messages
 
 

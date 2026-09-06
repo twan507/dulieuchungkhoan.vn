@@ -104,3 +104,54 @@ def test_system_du_ba_block_va_scope_guard_dung_truoc(model_gia, tool_dem):
     assert len(system) == 3
     assert "chỉ trả lời trong lĩnh vực chứng khoán" in system[0]["text"]
     assert len(system[1]["text"]) > 50_000
+
+
+# --- Hai đường thoát dở dang: lịch sử không được nhiễm độc (review trục Chuẩn, C2) ---
+#
+# Chạm MAX_ITERATIONS: `_should_stop()` của SDK kiểm ở ĐẦU vòng nên runner dừng ngay sau một
+# lượt `tool_use`, không có lượt assistant cuối ⇒ lịch sử kết thúc bằng role=user, lượt sau
+# thành HAI lượt `user` liên tiếp — Messages API từ chối. Còn `stop_reason='max_tokens'` rơi
+# giữa một block `tool_use` để lại `tool_use` KHÔNG có `tool_result` theo sau. Cả hai đều làm
+# mọi lượt chat SAU đó nổ, mà `repl` lại "giữ nguyên lịch sử" nên hỏng là hỏng cả phiên.
+
+
+def _llm_gia(handler):
+    from core.llm.client import LLMClient
+    from core.llm.settings import LLMSettings
+    s = LLMSettings(api_key="khoa-gia", base_url="https://api.minimax.io/anthropic",
+                    model="MiniMax-M3", timeout_s=30)
+    return LLMClient(s, http_client=httpx2.Client(transport=httpx2.MockTransport(handler)))
+
+
+def test_cham_tran_vong_lap_thi_giu_nguyen_lich_su_cu(tool_dem):
+    """Model gọi công cụ mãi không dừng ⇒ bỏ lượt, trả lại đúng lịch sử đã có."""
+    def handler(request):
+        return httpx2.Response(200, json=_msg(
+            [{"type": "tool_use", "id": "tu_x", "name": "get_price_series",
+              "input": {"ticker": "HPG"}}], "tool_use"))
+
+    llm = _llm_gia(handler)
+    try:
+        cu = [{"role": "user", "content": "câu trước"}, {"role": "assistant", "content": "đáp trước"}]
+        tra_loi, moi = run_turn(llm, None, None, cu, "Giá HPG?")
+    finally:
+        llm.close()
+    assert moi == cu, "lịch sử phải giữ nguyên, không được nhận lượt dở dang"
+    assert tra_loi.strip(), "không được trả chuỗi rỗng"
+    assert "dừng giữa chừng" in tra_loi
+
+
+def test_het_max_tokens_giua_luot_cong_cu_thi_bo_luot(tool_dem):
+    """max_tokens rơi giữa tool_use ⇒ lịch sử sẽ có tool_use không tool_result — phải bỏ lượt."""
+    def handler(request):
+        return httpx2.Response(200, json=_msg(
+            [{"type": "tool_use", "id": "tu_y", "name": "get_price_series",
+              "input": {"ticker": "HPG"}}], "max_tokens"))
+
+    llm = _llm_gia(handler)
+    try:
+        tra_loi, moi = run_turn(llm, None, None, [], "Giá HPG?")
+    finally:
+        llm.close()
+    assert moi == [], "lịch sử rỗng ban đầu phải giữ rỗng, không nhận lượt hỏng"
+    assert "max_tokens" in tra_loi
