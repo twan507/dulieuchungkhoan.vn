@@ -108,6 +108,18 @@ def test_apply_group3_with_ai_ticker_filter_and_industries_both_ways(seeded):
     assert _n(engine, "SELECT count(*) FROM news.article_ticker WHERE article_id = :a", a=ids[0]) == 1
 
 
+def test_select_by_ids_keeps_order_and_includes_classified(seeded):
+    # lát 9b: chấm lưới trên bộ gold — chọn đúng danh sách bài, kể cả bài đã phân loại, giữ thứ tự đưa vào; id lạ bị bỏ qua
+    engine, ids = seeded
+    with engine.begin() as c:
+        c.execute(sa.text("UPDATE news.article SET classified_from = 'content' WHERE article_id = :a"), {"a": ids[1]})
+    with engine.connect() as c:
+        rows = nc.select_articles(c, ids=[ids[3], ids[1], 999999999, ids[0]])
+        assert [r.article_id for r in rows] == [ids[3], ids[1], ids[0]]
+        with pytest.raises(ValueError):
+            nc.select_articles(c, ids=[ids[0]], limit=1)
+
+
 def test_apply_caps_ai_tickers_at_max_after_listed_filter(seeded):
     # Chủ dự án 2026-09-06: bài liệt kê (bảng lương 17 ngân hàng, rổ FTSE 27 mã) không được gắn cả danh sách — trần MAX_TICKERS,
     # giữ thứ tự model xếp (quan trọng nhất trước); mã bịa bị lọc TRƯỚC khi đếm trần để không chiếm chỗ.

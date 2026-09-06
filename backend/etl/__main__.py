@@ -118,15 +118,25 @@ def main(argv: list[str] | None = None) -> int:
         parser.add_argument("--out", help="file JSONL từng bài (chỉ với --dry-run; mặc định stdout)")
         parser.add_argument("--max-minutes", type=float, dest="max_minutes")
         parser.add_argument("--cap-chars", type=int, dest="cap", default=etl.news_classify.CAP_CHARS)
+        parser.add_argument("--ids-file", dest="ids_file", help="file JSON danh sách article_id — chấm bộ gold; chỉ với --dry-run, thay cho --limit/--per-group")
         parsed = parser.parse_args(args[1:])
-        if (parsed.limit is None) == (parsed.per_group is None):
+        ids = None
+        if parsed.ids_file:
+            import json
+            if not parsed.dry_run or parsed.limit is not None or parsed.per_group is not None:
+                parser.error("--ids-file chỉ đi cùng --dry-run và không đi cùng --limit/--per-group")
+            with open(parsed.ids_file, encoding="utf-8") as fh:
+                ids = [int(x) for x in json.load(fh)]
+            if not ids:
+                parser.error("--ids-file rỗng")
+        elif (parsed.limit is None) == (parsed.per_group is None):
             parser.error("cần đúng một trong --limit N / --per-group N — mọi lượt phân loại phải có trần (tốn quota)")
         if (parsed.limit is not None and parsed.limit <= 0) or (parsed.per_group is not None and parsed.per_group <= 0):
             parser.error("--limit/--per-group phải > 0")
         if parsed.out and not parsed.dry_run:
             parser.error("--out chỉ đi cùng --dry-run")
         return etl.news_classify.run(limit=parsed.limit, per_group=parsed.per_group, thinking=parsed.thinking, dry_run=parsed.dry_run,
-                                     out=parsed.out, max_minutes=parsed.max_minutes, cap=parsed.cap)
+                                     out=parsed.out, max_minutes=parsed.max_minutes, cap=parsed.cap, ids=ids)
     if args[0] in ("fred", "fx", "lbma", "yahoo", "binance"):
         import importlib
         mod = importlib.import_module(f"etl.{args[0]}_job")

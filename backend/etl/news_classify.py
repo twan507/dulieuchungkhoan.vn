@@ -113,8 +113,21 @@ ORDER BY a.published_at DESC NULLS LAST, a.article_id DESC
 LIMIT :n"""
 
 
-def select_articles(conn, *, limit: int | None = None, per_group: int | None = None) -> list[Row]:
-    """Bài chưa phân loại, mới nhất trước (spec §4.2-XI). per_group: N bài đầu của MỖI bucket group_from_feed 1 · 2 · 3 · NULL."""
+_SELECT_IDS = """
+SELECT a.article_id, a.primary_source, a.feed, a.group_from_feed, a.ticker_step_ran, a.canonical_url, r.title, r.sapo, r.content
+FROM news.article a
+JOIN LATERAL (SELECT title, sapo, content FROM news.article_revision r WHERE r.article_id = a.article_id ORDER BY version DESC LIMIT 1) r ON true
+WHERE a.article_id = ANY(:ids)"""
+
+
+def select_articles(conn, *, limit: int | None = None, per_group: int | None = None, ids: list[int] | None = None) -> list[Row]:
+    """Bài chưa phân loại, mới nhất trước (spec §4.2-XI). per_group: N bài đầu của MỖI bucket group_from_feed 1 · 2 · 3 · NULL.
+    ids: đúng danh sách bài (kể cả đã phân loại, giữ thứ tự đưa vào) — để chấm lưới trên bộ gold ở chế độ dry-run (lát 9b)."""
+    if ids is not None:
+        if limit is not None or per_group is not None:
+            raise ValueError("ids không đi cùng limit / per_group")
+        got = {r[0]: Row(*r) for r in conn.execute(sa.text(_SELECT_IDS), {"ids": list(ids)}).all()}
+        return [got[i] for i in ids if i in got]
     if (limit is None) == (per_group is None):
         raise ValueError("cần đúng một trong limit / per_group")
     out: list[Row] = []
@@ -300,7 +313,7 @@ def classify_run(engine, client, rows: list[Row], *, run_id, schema, system: str
 
 
 def run(limit: int | None = None, per_group: int | None = None, thinking: str = "adaptive", dry_run: bool = False, out: str | None = None,
-        max_minutes: float | None = None, cap: int = CAP_CHARS, client=None, clock=time.monotonic) -> int:
+        max_minutes: float | None = None, cap: int = CAP_CHARS, client=None, clock=time.monotonic, ids: list[int] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     logging.getLogger("httpx2").setLevel(logging.WARNING)
     logging.getLogger("anthropic").setLevel(logging.WARNING)
@@ -315,7 +328,7 @@ def run(limit: int | None = None, per_group: int | None = None, thinking: str = 
             if len(inds) != 24:
                 raise RuntimeError(f"market.industry level 2 có {len(inds)} mã, mong 24 (industry-tree.md)")
             listed = news_store.load_listed(c)
-            rows = select_articles(c, limit=limit, per_group=per_group)
+            rows = select_articles(c, limit=limit, per_group=per_group, ids=ids)
     except (RuntimeError, ValueError, LLMConfigError, sa.exc.SQLAlchemyError) as e:   # M15: lỗi kết nối DB lúc khởi động cũng phải đóng gọn, không văng traceback
         log.error("%s", e)
         if engine is not None:                     # lỗi sau khi đã mở engine — đừng rò pool (news_job.run_backfill cùng khuôn)
