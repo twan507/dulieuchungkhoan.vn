@@ -343,7 +343,7 @@ uv run python -m etl news --backfill-sitemap [--source tinnhanhck|bnews|nguoiqua
 
 **Dedupe:** URL thô đã thấy ⇒ bỏ (`seen`); canonical trùng ⇒ `merged_url`, thêm `article_source`; tiêu đề chuẩn hoá (bỏ dấu, đ→d, bỏ tiền tố `(Chinhphu.vn) -`/`(ĐTCK)`/`BNEWS`) trùng trong **48 giờ** ⇒ `merged_title`, thêm `article_source`; còn lại tải bài, bóc, ghi `article` + `article_revision` v1 + `article_source` + `article_ticker`.
 
-**Gắn mã** — lát 8 chạy **cả hai** tầng đầu, mỗi tầng một dòng `article_ticker` (`via`) để lát 12 đối chiếu: tầng `url` (CafeF CBTT, loại `HNX`/`HOSE`/`UPCOM`) · tầng `lookup` (regex 3 ký tự in hoa trên tiêu đề + sapo, **bắt buộc** đối chiếu `market.security` `listed`). Tầng 3 (AI + bảng tên thương mại) là lát 9. `ticker_step_ran = true` cho mọi bài nhóm 3, `false` cho nhóm 1–2.
+**Gắn mã** — lát 8 chạy **cả hai** tầng đầu, mỗi tầng một dòng `article_ticker` (`via`) để lát 12 đối chiếu: tầng `url` (CafeF CBTT, loại `HNX`/`HOSE`/`UPCOM`) · tầng `lookup` (regex 3 ký tự in hoa trên tiêu đề + sapo, **bắt buộc** đối chiếu `market.security` `listed`). Tầng 3 (AI, lọc niêm yết, trần 5 mã) ở `etl classify` (lát 9a). **2026-09-06:** tầng 2 bỏ thêm `news_tag.AMBIGUOUS` (USD/HCM/CEO/SEA/VND/BOT/PPP… — mã thật trùng chữ thường, đo 60/470 dòng sai) và `load_listed` bỏ chỉ số (`VN30`). `ticker_step_ran = true` cho mọi bài nhóm 3, `false` cho nhóm 1–2.
 
 **Bằng chứng:** không lưu HTML bài thành công; `raw_payload` chỉ giữ XML/HTML danh sách khi hash đổi và HTML bài khi bóc bị từ chối (`meta.refused`).
 

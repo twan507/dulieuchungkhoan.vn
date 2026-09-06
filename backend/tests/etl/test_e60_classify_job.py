@@ -90,7 +90,7 @@ def test_apply_group3_with_ai_ticker_filter_and_industries_both_ways(seeded):
         row = [r for r in nc.select_articles(c, per_group=1) if r.article_id == ids[0]][0]
     with engine.begin() as c:
         st = nc.apply(c, row, v, content_chars=350, classified_from="content", listed=listed, industry_ids=industry_ids)
-    assert st == {"overridden": 1, "tickers_url": 0, "tickers_lookup": 0, "tickers_ai": 1, "tickers_ai_dropped": 1, "industries_ai": 2, "industries_ticker": 1}
+    assert st == {"overridden": 1, "tickers_url": 0, "tickers_lookup": 0, "tickers_ai": 1, "tickers_ai_dropped": 1, "tickers_ai_capped": 0, "industries_ai": 2, "industries_ticker": 1}
     with engine.connect() as c:
         a = c.execute(sa.text("SELECT group_no, sub, confidence, classified_from, content_chars, group_overridden, labels, ticker_step_ran"
                               " FROM news.article WHERE article_id = :a"), {"a": ids[0]}).one()
@@ -108,6 +108,27 @@ def test_apply_group3_with_ai_ticker_filter_and_industries_both_ways(seeded):
     assert _n(engine, "SELECT count(*) FROM news.article_ticker WHERE article_id = :a", a=ids[0]) == 1
 
 
+def test_apply_caps_ai_tickers_at_max_after_listed_filter(seeded):
+    # Chủ dự án 2026-09-06: bài liệt kê (bảng lương 17 ngân hàng, rổ FTSE 27 mã) không được gắn cả danh sách — trần MAX_TICKERS,
+    # giữ thứ tự model xếp (quan trọng nhất trước); mã bịa bị lọc TRƯỚC khi đếm trần để không chiếm chỗ.
+    engine, ids = seeded
+    industry_ids, listed, S = _ctx(engine)
+    with engine.begin() as c:
+        c.execute(sa.text("INSERT INTO market.security (ticker, exchange, security_type, status) VALUES "
+                          "('ZZ1','ZZ','stock','listed'), ('ZZ2','ZZ','stock','listed'), ('ZZ3','ZZ','stock','listed'), ('ZZ4','ZZ','stock','listed'), ('ZZ5','ZZ','stock','listed')"))
+    with engine.connect() as c:
+        listed = dict(c.execute(sa.text("SELECT ticker, security_id FROM market.security WHERE status = 'listed'")).all())
+        row = [r for r in nc.select_articles(c, per_group=5) if r.article_id == ids[2]][0]
+    v = S.model_validate({"group": "3", "sub": "3e", "confidence": 0.9, "summary_ai": "Rổ.", "industries": [],
+                          "tickers": ["ZZK", "VFM", "ZZ1", "ZZ2", "ZZ3", "ZZ4", "ZZ5", "ZZQ"]})   # 8 mã, 1 bịa ⇒ 7 hợp lệ ⇒ giữ 5 đầu
+    with engine.begin() as c:
+        st = nc.apply(c, row, v, content_chars=350, classified_from="content", listed=listed, industry_ids=industry_ids)
+    assert (st["tickers_ai"], st["tickers_ai_dropped"], st["tickers_ai_capped"]) == (5, 1, 2)
+    with engine.connect() as c:
+        tk = c.execute(sa.text("SELECT s.ticker FROM news.article_ticker t JOIN market.security s USING (security_id) WHERE t.article_id = :a AND t.via = 'ai' ORDER BY s.ticker"), {"a": ids[2]}).all()
+    assert [x[0] for x in tk] == ["ZZ1", "ZZ2", "ZZ3", "ZZK", "ZZQ"] or [x[0] for x in tk] == ["ZZ1", "ZZ2", "ZZ3", "ZZ4", "ZZK"]
+
+
 def test_apply_x_label_and_tier2_catchup_for_ungrouped(seeded):
     engine, ids = seeded
     industry_ids, listed, S = _ctx(engine)
@@ -123,7 +144,7 @@ def test_apply_x_label_and_tier2_catchup_for_ungrouped(seeded):
     g3 = S.model_validate({"group": "3", "sub": "3c", "confidence": 0.8, "summary_ai": "Tăng vốn.", "tickers": [], "industries": ["CHUNGKHOAN", "CHUNGKHOAN"]})
     with engine.begin() as c:
         st = nc.apply(c, rows[ids[3]], g3, content_chars=350, classified_from="content", listed=listed, industry_ids=industry_ids)
-    assert st == {"overridden": 0, "tickers_url": 0, "tickers_lookup": 1, "tickers_ai": 0, "tickers_ai_dropped": 0, "industries_ai": 1, "industries_ticker": 0}
+    assert st == {"overridden": 0, "tickers_url": 0, "tickers_lookup": 1, "tickers_ai": 0, "tickers_ai_dropped": 0, "tickers_ai_capped": 0, "industries_ai": 1, "industries_ticker": 0}
     with engine.connect() as c:
         tk = c.execute(sa.text("SELECT s.ticker, t.via FROM news.article_ticker t JOIN market.security s USING (security_id) WHERE t.article_id = :a"), {"a": ids[3]}).all()
         assert [tuple(x) for x in tk] == [("ZZQ", "lookup")]                                # ZZQ không có ngành ⇒ 0 dòng 'ticker'
@@ -188,7 +209,7 @@ def test_run_writes_stats_and_llm_calls_and_keeps_failed_article_null(seeded):
     assert status == "success" and err is None
     assert st["selected"] == 4 and st["classified"] == 3 and st["failed"] == 1 and st["failed_schema"] == 1 and st["repaired"] == 1
     assert st["groups"] == {"1": 0, "2": 0, "3": 2, "x": 1} and st["overridden"] == 2 and st["title_only"] == 0
-    assert (st["tickers_ai"], st["tickers_ai_dropped"], st["tickers_lookup"], st["tickers_url"]) == (1, 1, 1, 0)
+    assert (st["tickers_ai"], st["tickers_ai_dropped"], st["tickers_lookup"], st["tickers_url"], st["tickers_ai_capped"]) == (1, 1, 1, 0, 0)
     assert (st["industries_ai"], st["industries_ticker"]) == (3, 1)
     assert st["tokens"] == {"input": 6000, "cache_read": 3900, "output": 1500, "thinking": 600}
     assert st["latency_s"] == {"p50": 2.0, "p90": 2.0, "max": 4.0, "total": 7.0} and st["usd_estimate"] == 0.0038

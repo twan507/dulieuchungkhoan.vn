@@ -201,3 +201,18 @@ def test_store_works_under_etl_role(db):
             "SELECT stats->>'cursor' FROM ops.etl_run WHERE job = ANY(:j) AND stats->>'cursor' IS NOT NULL"
             " ORDER BY run_id DESC LIMIT 1"), {"j": ["news.backfill_sitemap:tinnhanhck", "news.backfill_sitemap"]}).scalar()
         assert cursor is None or isinstance(cursor, str)
+
+
+def test_load_listed_excludes_indexes(migrated_engine):
+    # VN30/HNX30/VN100 nằm trong market.security (security_type='index', status listed) — không phải mã để gắn tin (đo 2026-09-06: bài FTSE
+    # bị gắn 'VN30' qua lookup). ETF/chứng chỉ quỹ vẫn giữ: tin 3f nhắc FUEVFVND là hợp lệ.
+    with migrated_engine.begin() as c:
+        c.execute(sa.text("DELETE FROM market.security WHERE ticker IN ('ZZIDX','ZZETF')"))
+        c.execute(sa.text("INSERT INTO market.security (ticker, exchange, security_type, status) VALUES ('ZZIDX','ZZ','index','listed'), ('ZZETF','ZZ','etf','listed')"))
+    try:
+        with migrated_engine.connect() as c:
+            listed = ns.load_listed(c)
+        assert "ZZIDX" not in listed and "ZZETF" in listed
+    finally:
+        with migrated_engine.begin() as c:
+            c.execute(sa.text("DELETE FROM market.security WHERE ticker IN ('ZZIDX','ZZETF')"))

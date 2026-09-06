@@ -64,3 +64,13 @@ def test_user_prompt_title_only_below_200_and_missing_hint():
     text2, n2, cf2 = nc.user_prompt(_row("", hint=1, sapo=None))
     assert (n2, cf2) == (0, "title_only") and "Sapo: \n" in text2
     assert nc.user_prompt(_row("c" * 200))[1:] == (200, "content")                 # biên: đúng 200 là content
+
+
+def test_system_prompt_rules_after_owner_review_2026_09_06():
+    s = nc.system_prompt(INDUSTRIES)
+    assert "3–5 câu" in s and "200–300" not in s                      # độ dài theo câu, không theo ký tự (model không tuân số ký tự)
+    assert f"tối đa {nc.MAX_TICKERS} mã" in s and "quan trọng nhất trước" in s and "nổi bật nhất" in s   # bài liệt kê: chỉ mã nổi bật
+    assert f"tối đa {nc.MAX_INDUSTRIES} ngành" in s
+    assert "chủ thể" in s and s.count("chủ thể") >= 2                  # tiêu chí tổng quát nhóm 1/2 và mã: theo CHỦ THỂ, không luật vụn
+    assert "Bài viết" in s                                              # vẫn cấm mở đầu "Bài viết nói về"
+    assert nc.SYSTEM_RULES.count(chr(10)) <= 4 and nc.SYSTEM_TAXONOMY.count(chr(10)) <= 5   # ít luật, mỗi luật sắc — model nhỏ

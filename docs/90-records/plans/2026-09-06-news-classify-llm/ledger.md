@@ -112,3 +112,17 @@ Chủ dự án 15:53: "khảo sát qua xem như vậy đủ dữ kiện chưa th
 - **Mã:** đúng với bài đơn chủ thể (PAP, KLB, NVL/KBC/PDR/AGG); **bài liệt kê** (bảng lương 17 mã, rổ FTSE 27 mã) gắn hết danh sách — đúng luật "một tin nhiều mã" nhưng làm ngành `ticker` thành nhiễu (FTSE ⇒ 8 ngành). Tầng 2 `lookup` có **false positive**: `USD` (mã niêm yết thật), `ACB` trong bài KLB (chỉ nhắc nơi làm cũ). Phân bố nhóm 3: 4 bài 0 mã · 3 bài 1–3 · 3 bài 4–9 · 2 bài ≥ 10.
 - **Ngành:** hợp lý ở tin ngành rõ (VANTAI, NGANHANG, DANDUNG/XAYDUNG); lỏng ở vĩ mô quốc tế (Fed ⇒ `NGANHANG`, Iran ⇒ `DAUKHI` chấp nhận được) — cần luật "ngành = ngành VN chịu tác động" trong prompt hoặc chấp nhận.
 - ⇒ Việc rẻ nên làm trước bộ gold (9b): (1) hậu kỳ `summary_ai` (cắt 300, bỏ "Bài viết", không tóm tắt `x`); (2) danh sách loại trừ tầng 2 (`USD`, `GDP`… có trong `market.security`) hoặc bỏ tầng 2 khi tầng 3 đã chạy; (3) đánh dấu bài liệt kê (≥ 5 mã) và không suy ngành từ mã cho chúng; (4) prompt: tin đối ngoại của lãnh đạo VN ⇒ nhóm 1.
+
+## 6. Đợt sửa prompt + gắn mã theo chủ dự án (nhánh `fix/news-classify-prompt`, 16:05–16:30)
+
+Chủ dự án chốt: sửa ở prompt, không hậu kỳ; **tổng quát hoá, ít luật, mỗi luật sắc** (model nhỏ không theo được nhiều luật vụn); độ dài tóm tắt theo **câu** (3–5) thay vì ký tự; danh sách mã dễ nhận sai (USD, WTO, WHO…); **trần số mã và số ngành** mỗi bài, chọn đáng chú ý nhất; Fed → `NGANHANG` là đúng (tôi rút nhận xét).
+
+| Thay đổi | Chi tiết |
+|---|---|
+| Prompt (10 dòng) | Nhóm 1/2/3/x phân theo **chủ thể** của bài (Việt Nam / nước ngoài / doanh nghiệp niêm yết / không phải tin kinh tế) — ca lãnh đạo Việt Nam đi thăm tự rơi vào nhóm 1, không cần luật riêng; `summary_ai` 3–5 câu, giữ số, không mở đầu "Bài viết"; `tickers` = chủ thể chính, tối đa 5, quan trọng nhất trước; `industries` tối đa 3 chịu tác động trực tiếp nhất. Bỏ hẳn "200–300 ký tự" |
+| `MAX_TICKERS = 5` | `apply` lọc niêm yết trước rồi cắt trần, đếm `tickers_ai_capped` |
+| Tầng 2 | `news_tag.AMBIGUOUS` (đo trên 470 dòng lookup: USD 25 · HCM 20 · CEO 7 · SEA 3 · VND 2 · BOT 2 · PPP 1) + tiền tệ/chỉ số/viết tắt thường gặp; `load_listed` bỏ `security_type='index'` (VN30, HNX30…). Tầng 3 không bị giới hạn — AI đọc ngữ cảnh |
+| Dọn kho | xoá **60** dòng `article_ticker via='lookup'` sai (USD/HCM/CEO/SEA/VND/BOT/PPP) + **2** dòng ngành `ticker` mồ côi; `lookup` còn 394 |
+| Test | +4 (e54 nhập nhằng, e55 bỏ index, e59 luật prompt, e60 trần mã), 3 expected cũ cập nhật; **869 passed, 2 skipped** |
+
+**Dry-run 12 bài với prompt mới (16:25):** 12/12 xanh; số câu 4·4·7·4·7·4·4·4·4·6·4·5 ⇒ **10/12 trong 3–5 câu**, nhưng câu dài hơn — tóm tắt trung bình ≈ **900 ký tự** (trước 355): model theo số câu bằng cách kéo dài câu. Trần mã chạy đúng (bài ETF 10.000 tỷ: 5 mã VIC/VHM/STB/FPT/HPG). Tổng thống Myanmar nhắc Viettel ⇒ `1/1b` (trước kiểu bài này bị `2d`). Tin Mỹ–Iran ⇒ `NGANHANG` (chấp nhận theo chủ dự án). **Chưa phân loại lại 230 bài đã chạy bằng prompt cũ** — chờ chủ dự án gọi tên (≈ 40 phút, $0,45).

@@ -111,7 +111,7 @@ Tin xã hội, thể thao, giáo dục, y tế thuần; PR và advertorial.
 
 **Vì sao đọc toàn văn thay vì tiêu đề + sapo:** phân loại chính xác hơn hẳn ở những ca nhảy nhóm 1↔3 mà tiêu đề gây hiểu nhầm (mục 7.2). Và một khi đã nạp toàn văn thì sinh `summary_ai` trong cùng lượt gọi gần như miễn phí — chỉ thêm ~100 token đầu ra.
 
-**Khuôn `summary_ai` phải cố định**, vì nhất quán chính là lý do sinh ra nó: 2–3 câu, 200–300 ký tự, không mở đầu bằng "Bài viết nói về…", **giữ nguyên mọi con số xuất hiện trong bản gốc**. Lưu song song với `summary` gốc, không ghi đè — bản gốc giữ được từ ngữ nguyên bản của toà soạn, đôi khi chính cách chọn chữ là thứ cần tìm. Nên embed cả hai và giữ riêng.
+**Khuôn `summary_ai` phải cố định**, vì nhất quán chính là lý do sinh ra nó: **3–5 câu** *(đổi từ "2–3 câu, 200–300 ký tự" ngày 2026-09-06: MiniMax M3 không tuân số ký tự — p50 355, max 625 — nhưng theo được số câu 10/12; đổi lại câu dài hơn, ≈ 900 ký tự)*, không mở đầu bằng "Bài viết nói về…", **giữ nguyên mọi con số xuất hiện trong bản gốc**. Lưu song song với `summary` gốc, không ghi đè — bản gốc giữ được từ ngữ nguyên bản của toà soạn, đôi khi chính cách chọn chữ là thứ cần tìm. Nên embed cả hai và giữ riêng.
 
 ### 7.1b Đường lui khi không lấy được nội dung
 
@@ -162,6 +162,8 @@ Chỉ chạy cho tin được phân vào nhóm 3. Dừng ở tầng đầu tiên
 **Tầng 2 · Regex + đối chiếu danh sách niêm yết** — bắt chuỗi 3 ký tự in hoa rồi **bắt buộc** đối chiếu danh sách ~1.600 mã HOSE/HNX/UPCoM.
 
 > Không được nhận dạng bằng regex đơn thuần. `USD`, `GDP`, `CPI`, `FDI`, `ESG`, `IPO`, `ETF`, `EVN` đều là chuỗi 3 chữ in hoa — và trớ trêu là `SME` lại đúng là một mã thật.
+>
+> **Đối chiếu niêm yết chưa đủ** *(đo 2026-09-06, 470 dòng tầng 2)*: `USD` (Công trình Đô thị Sóc Trăng), `HCM` (Chứng khoán HSC, nhưng 20/20 lần là TP.HCM), `CEO`, `SEA`, `VND`, `BOT`, `PPP` đều là mã thật và đều bắt sai. Tầng 2 loại thêm danh sách `news_tag.AMBIGUOUS` (mã trùng chữ viết tắt thường gặp) và bỏ chỉ số (`VN30`…) khỏi danh sách đối chiếu; tầng 3 đọc ngữ cảnh nên không giới hạn. **Trần mỗi bài: 5 mã, 3 ngành** — bài liệt kê danh mục chỉ giữ mã nổi bật nhất (chủ dự án chốt 2026-09-06).
 
 **Tầng 3 · AI + bảng ánh xạ tên doanh nghiệp** — xử lý tiêu đề gọi tên thay vì gọi mã.
 

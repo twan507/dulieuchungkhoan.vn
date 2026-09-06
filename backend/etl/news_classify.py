@@ -23,6 +23,8 @@ from etl.news_job import _engine
 
 CAP_CHARS = 3000              # trần ký tự thân bài nạp model (news-pipeline §12: 3.000 hay 4.000 chốt sau khi có ca sai thật)
 TITLE_ONLY_BELOW = 200        # thân < 200 ký tự (CafeF CBTT) ⇒ classified_from='title_only' (§7.1b)
+MAX_TICKERS = 5               # trần mã AI mỗi bài (chủ dự án 2026-09-06: bài liệt kê không gắn cả danh sách)
+MAX_INDUSTRIES = 3            # trần ngành AI mỗi bài
 GROUPS = ("1", "2", "3", "x")
 SUBS = {"1": ["1a", "1b", "1c", "1d", "1e", "1f"], "2": ["2a", "2b", "2c", "2d", "2e"],
         "3": ["3a", "3b", "3c", "3d", "3e", "3f", "3g", "3h", "3i"], "x": ["x"]}
@@ -30,16 +32,16 @@ ALL_SUBS = [s for v in SUBS.values() for s in v]
 
 # Khối tĩnh — đặt đầu system để cache tự động (≥ 512 token, minimax.md §6). Taxonomy chép từ news-pipeline §3 (đã đo 232 lời gọi).
 SYSTEM_TAXONOMY = """Bạn là bộ phân loại tin tài chính Việt Nam của dulieuchungkhoan.vn. Đọc toàn văn bài và trả về đúng một lời gọi công cụ Classification.
-Taxonomy 3 nhóm / 20 sub; nhãn x = loại bỏ (tin xã hội, thể thao, giáo dục, y tế thuần; PR, advertorial). Khi group = x thì sub = x.
+Phân nhóm theo CHỦ THỂ của bài: nhóm 1 = chủ thể là Việt Nam (Nhà nước, chính sách, lãnh đạo, số liệu, hoạt động đối ngoại của Việt Nam); nhóm 2 = chủ thể là nước ngoài hay thế giới; nhóm 3 = chủ thể là doanh nghiệp niêm yết hoặc thị trường chứng khoán Việt Nam; x = không phải tin tài chính - kinh tế (xã hội, thể thao, giải trí, PR, advertorial); khi group = x thì sub = x.
 Nhóm 1 · Vĩ mô trong nước: 1a Thể chế và văn bản pháp quy · 1b Điều hành Chính phủ (gồm kiến nghị, tiếng nói khu vực tư nhân) · 1c Tiền tệ và tỷ giá · 1d Đầu tư công và hạ tầng · 1e Số liệu vĩ mô · 1f Thuế và ngân sách.
 Nhóm 2 · Tài chính quốc tế: 2a Chứng khoán thế giới · 2b Ngân hàng trung ương · 2c Hàng hoá và năng lượng · 2d An ninh và địa chính trị · 2e Thương mại và thuế quan.
 Nhóm 3 · Doanh nghiệp niêm yết: 3a CBTT và sự kiện quyền · 3b Giao dịch nội bộ và cổ đông lớn · 3c Vốn và cấu trúc · 3d KQKD và vận hành · 3e Nhận định và diễn biến thị trường · 3f Phái sinh, chứng quyền, ETF/quỹ · 3g Vi phạm và xử phạt · 3h Margin và ký quỹ · 3i Xếp hạng tín nhiệm và ESG."""
 
-SYSTEM_RULES = """Quy tắc: nhóm gợi ý từ feed chỉ là tín hiệu, được phép ghi đè (1↔3 nhảy thường xuyên). confidence trong [0,1].
-summary_ai: 2–3 câu, 200–300 ký tự, không mở đầu bằng "Bài viết nói về", giữ nguyên mọi con số trong bản gốc.
-tickers: mã niêm yết HOSE/HNX/UPCoM là chủ thể của bài (chỉ khi nhóm 3), rỗng nếu không có; không bịa.
-industries: mã ngành (trong danh sách trên) mà bài liên quan TRỰC TIẾP, áp cho mọi nhóm (tin chính sách, giá hàng hoá, thuế quan cũng thuộc ngành);
-tối đa 3 ngành, xếp ngành liên quan nhất trước; rỗng nếu bài không thuộc ngành nào (vĩ mô thuần, tin loại bỏ)."""
+# Ít luật, mỗi luật sắc — model nhỏ không theo được nhiều luật vụn (chủ dự án 2026-09-06). Giới hạn ghi bằng CÂU và bằng SỐ, không bằng ký tự.
+SYSTEM_RULES = f"""Quy tắc: nhóm gợi ý từ feed chỉ là tín hiệu, được phép ghi đè. confidence trong [0,1].
+summary_ai: 3–5 câu, giữ nguyên mọi con số trong bản gốc, không mở đầu bằng "Bài viết".
+tickers: chỉ khi nhóm 3; mã niêm yết là CHỦ THỂ CHÍNH của bài, tối đa {MAX_TICKERS} mã, quan trọng nhất trước; bài liệt kê nhiều mã thì chỉ chọn mã nổi bật nhất; không bịa.
+industries: tối đa {MAX_INDUSTRIES} ngành (mã trong danh sách trên) chịu tác động trực tiếp nhất, áp cho mọi nhóm; rỗng nếu không có."""
 
 
 @dataclass(frozen=True)
@@ -96,7 +98,6 @@ def user_prompt(row: Row, cap: int = CAP_CHARS) -> tuple[str, int, str]:
 
 
 PURPOSE = "news.classify"
-MAX_INDUSTRIES = 3
 
 
 def _bucket_sql(hint) -> str:
@@ -129,7 +130,8 @@ def select_articles(conn, *, limit: int | None = None, per_group: int | None = N
 def apply(conn, row: Row, value, *, content_chars: int, classified_from: str, listed: dict[str, int], industry_ids: dict[str, int]) -> dict:
     """Ghi MỘT bài trong giao dịch của caller. x ⇒ group_no NULL + labels {x} (0007). Mã: chỉ nhóm 3 — tầng 2 bù nếu chưa chạy
     (bài backfill), tầng 3 = mã model ∩ niêm yết. Ngành: 'ai' từ model (≤ 3), 'ticker' từ MỌI article_ticker qua v_issuer_industry."""
-    st = {"overridden": 0, "tickers_url": 0, "tickers_lookup": 0, "tickers_ai": 0, "tickers_ai_dropped": 0, "industries_ai": 0, "industries_ticker": 0}
+    st = {"overridden": 0, "tickers_url": 0, "tickers_lookup": 0, "tickers_ai": 0, "tickers_ai_dropped": 0, "tickers_ai_capped": 0,
+          "industries_ai": 0, "industries_ticker": 0}
     group_no = None if value.group == "x" else int(value.group)
     sub = None if value.group == "x" else value.sub
     overridden = row.group_from_feed is not None and group_no != row.group_from_feed
@@ -153,11 +155,13 @@ def apply(conn, row: Row, value, *, content_chars: int, classified_from: str, li
                 tickers.append((t, "lookup"))
                 st["tickers_lookup"] += 1
         for t in dict.fromkeys(x.strip().upper() for x in value.tickers if x.strip()):
-            if t in listed:
+            if t not in listed:
+                st["tickers_ai_dropped"] += 1                          # VFM bịa (minimax.md §7.1) — không vào kho
+            elif st["tickers_ai"] >= MAX_TICKERS:
+                st["tickers_ai_capped"] += 1                           # quá trần: model đã xếp quan trọng nhất trước, phần đuôi bỏ
+            else:
                 tickers.append((t, "ai"))
                 st["tickers_ai"] += 1
-            else:
-                st["tickers_ai_dropped"] += 1                          # VFM bịa (minimax.md §7.1) — không vào kho
         for t, via in tickers:
             conn.execute(sa.text("INSERT INTO news.article_ticker (article_id, security_id, via) VALUES (:a, :s, :v) ON CONFLICT DO NOTHING"),
                          {"a": row.article_id, "s": listed[t], "v": via})
@@ -203,7 +207,7 @@ class ModelDown(Exception):
 def _empty_stats(thinking: str, cap: int, selected: int) -> dict:
     return {"thinking": thinking, "cap_chars": cap, "selected": selected, "classified": 0, "failed": 0, "failed_schema": 0, "repaired": 0,
             "groups": {"1": 0, "2": 0, "3": 0, "x": 0}, "overridden": 0, "title_only": 0, "tickers_url": 0, "tickers_lookup": 0,
-            "tickers_ai": 0, "tickers_ai_dropped": 0, "industries_ai": 0, "industries_ticker": 0,
+            "tickers_ai": 0, "tickers_ai_dropped": 0, "tickers_ai_capped": 0, "industries_ai": 0, "industries_ticker": 0,
             "tokens": {"input": 0, "cache_read": 0, "output": 0, "thinking": 0}, "latency_s": {"p50": None, "p90": None, "max": None, "total": 0.0},
             "usd_estimate": 0.0, "quota": {}, "quota_stop": False, "budget_hit": False, "model_down": False, "warnings": []}
 

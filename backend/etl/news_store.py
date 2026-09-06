@@ -21,7 +21,9 @@ REFUSED_TTL = timedelta(days=7)   # §4.6-VII: URL bị từ chối không tải
 
 
 def load_listed(conn) -> dict[str, int]:
-    return dict(conn.execute(sa.text("SELECT ticker, security_id FROM market.security WHERE status = 'listed'")).all())
+    """Mã để GẮN TIN: cổ phiếu + ETF/chứng chỉ quỹ. Chỉ số (VN30, HNX30, VN100…) cũng nằm trong market.security nhưng không phải
+    mã doanh nghiệp — đo 2026-09-06: bài rổ FTSE bị gắn 'VN30' qua lookup."""
+    return dict(conn.execute(sa.text("SELECT ticker, security_id FROM market.security WHERE status = 'listed' AND security_type <> 'index'")).all())
 
 
 def published_for(item, ext) -> tuple[datetime | None, str]:
