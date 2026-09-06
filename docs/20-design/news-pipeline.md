@@ -76,10 +76,15 @@ Ba nhóm đích:
 | `2c` | Hàng hoá và năng lượng |
 | `2d` | An ninh và địa chính trị |
 | `2e` | Thương mại và thuế quan |
+| `2f` | Doanh nghiệp và kinh tế các nước *(thêm 2026-09-06)* |
 
+> `2f` thêm khi gán bộ gold 150 bài (2026-09-06): tin doanh nghiệp nước ngoài (Apple, Nvidia, Heineken) và chính sách kinh tế nội bộ của nước ngoài (visa Nhật, Thái Lan tạm dừng 49 data center, kỷ luật lãnh đạo DNNN Trung Quốc) chiếm ~4 % mẫu mà không sub nào của nhóm 2 nhận — cả ba annotator độc lập cùng vấp, phải nhét vào `2a`/`2c`/`2d` và làm bẩn ba sub đó. Không thêm sub "công nghệ/AI": sub là **loại sự kiện**, ngành là **trục riêng** (`CONGNGHE`) — tin AI về Nvidia = `2f` + `CONGNGHE`.
+>
 > `2d` và `2e` được thêm ở vòng audit cuối. Trước đó địa chính trị bị xếp nhầm vào nhãn loại bỏ — sai, vì thuế quan và cấm vận tác động trực tiếp lên doanh nghiệp xuất khẩu niêm yết (dệt may, thuỷ sản, thép).
 
-### Nhóm 3 · Doanh nghiệp niêm yết (9 sub)
+### Nhóm 3 · Doanh nghiệp niêm yết và thị trường tài sản trong nước (9 sub)
+
+*(Mở rộng 2026-09-06: chủ thể của nhóm 3 là doanh nghiệp niêm yết **hoặc thị trường tài sản trong nước** — chứng khoán, vàng, bất động sản dân sinh. Trước đó tin giá vàng SJC, giá chung cư, môi giới địa ốc không có sub nào nhận; theo luật chủ thể, chủ thể là "thị trường" thì về `3e`. Bài mà chủ thể là Ngân hàng Nhà nước điều hành vàng vẫn là `1c`.)*
 
 | Mã | Sub |
 |---|---|
@@ -87,7 +92,7 @@ Ba nhóm đích:
 | `3b` | Giao dịch nội bộ và cổ đông lớn |
 | `3c` | Vốn và cấu trúc |
 | `3d` | KQKD và vận hành |
-| `3e` | Nhận định và diễn biến thị trường |
+| `3e` | Diễn biến và nhận định thị trường (chứng khoán, vàng, bất động sản) *(mở rộng 2026-09-06)* |
 | `3f` | Phái sinh, chứng quyền, ETF/quỹ |
 | `3g` | Vi phạm và xử phạt |
 | `3h` | Margin và ký quỹ |
@@ -97,7 +102,13 @@ Ba nhóm đích:
 
 ### Nhãn `x` — loại bỏ
 
-Tin xã hội, thể thao, giáo dục, y tế thuần; PR và advertorial.
+Tin xã hội, thể thao, giáo dục, y tế thuần; PR và advertorial. **Xét nội dung, không xét hình thức:** văn bản pháp quy phi kinh tế (Nghị định về Quốc ca) vẫn là `x`.
+
+### Luật chung khi phân nhóm *(chốt 2026-09-06 cùng bộ gold)*
+
+- **Phân nhóm theo chủ thể của bài:** chủ thể là Việt Nam (Nhà nước, chính sách, lãnh đạo, số liệu, đối ngoại) ⇒ nhóm 1; chủ thể là nước ngoài/thế giới ⇒ nhóm 2; chủ thể là doanh nghiệp niêm yết hoặc thị trường tài sản trong nước ⇒ nhóm 3. Luật Chứng khoán do Quốc hội cho ý kiến: chủ thể là Nhà nước ⇒ `1a`, không phải nhóm 3.
+- **Bài tổng hợp nhiều chủ đề** (điểm tin tuần): chọn sub của chủ đề dẫn tiêu đề. Không tạo sub "tổng hợp" — nó sẽ thành thùng rác.
+- Ít luật, mỗi luật sắc: model nhỏ không theo được luật vụn. Gặp ca mới thì làm sắc tiêu chí chung, không thêm ngoại lệ.
 
 ---
 

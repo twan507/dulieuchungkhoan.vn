@@ -21,7 +21,7 @@ def test_schema_enums_and_shape():
     # AC3: tickers/industries CÓ default [] — model bỏ hẳn trường khi rỗng (đo thật, 1/12 lời gọi, minimax.md §5) ⇒ không được required
     assert set(js["required"]) == {"group", "sub", "confidence", "summary_ai"}
     assert js["properties"]["group"]["enum"] == ["1", "2", "3", "x"]
-    assert len(js["properties"]["sub"]["enum"]) == 21 and "3i" in js["properties"]["sub"]["enum"] and "x" in js["properties"]["sub"]["enum"]
+    assert len(js["properties"]["sub"]["enum"]) == 22 and "2f" in js["properties"]["sub"]["enum"] and "3i" in js["properties"]["sub"]["enum"] and "x" in js["properties"]["sub"]["enum"]
     assert js["properties"]["industries"]["items"]["enum"] == CODES                 # đúng thứ tự đưa vào
     v = S.model_validate(GOOD)
     assert v.group == "3" and v.industries == ["KIMLOAI"]
@@ -47,7 +47,7 @@ def test_build_schema_rejects_duplicate_or_empty_codes():
 def test_system_prompt_lists_industries_from_input_not_hardcoded():
     s = nc.system_prompt(INDUSTRIES)
     assert s.count(" — Tên ") == 24 and "KIMLOAI — Tên KIMLOAI" in s
-    assert "3i Xếp hạng tín nhiệm và ESG" in s and "tối đa 3" in s
+    assert "3i Xếp hạng tín nhiệm và ESG" in s and "2f Doanh nghiệp và kinh tế các nước" in s and "tối đa 3" in s
     assert nc.system_prompt([("ZZNGANH", "Ngành thử")]).count(" — ") == 1
 
 
