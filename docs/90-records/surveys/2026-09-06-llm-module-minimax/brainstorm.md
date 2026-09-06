@@ -14,8 +14,9 @@ Dữ kiện nguồn: [minimax.md](../../../10-sources/llm/minimax.md) (tầng re
 |---|---|---|
 | F1 | Chủ dự án: chỉ dùng **MiniMax M3**, khoá Token Plan ở `LLM_API`; không OpenAI, không Claude | lời chủ dự án 2026-09-06 |
 | F2 | Khoá chạy trên `api.minimax.io` cả hai giao diện (OpenAI `/v1`, Anthropic `/anthropic`); MiniMax khuyến nghị giao diện Anthropic cho M3 | đo + tài liệu |
-| F3 | Đầu ra có cấu trúc **chỉ tin được** bằng *giao diện Anthropic + ép công cụ + thinking adaptive* (5/5); tắt thinking 1/2; `json_schema` và `output_config` không cưỡng chế | đo (mẫu nhỏ) |
-| F4 | Tiếng Việt **1,62 ký tự/token** (20 bài); một bài phân loại ≈ 2,9k vào / 0,7–1,3k ra / 8–12 s với thinking | đo |
+| F3 | Đầu ra có cấu trúc: **ép công cụ + schema có enum ⇒ 0 lỗi schema / 232 lời gọi** (29 bài × 8 lượt) ở cả thinking bật lẫn tắt trên giao diện Anthropic, và cả giao diện OpenAI khi thinking bật; `json_schema`/`output_config` không cưỡng chế; ép function khi tắt thinking ở giao diện OpenAI hỏng 3/3 | đo ([minimax.md §5](../../../10-sources/llm/minimax.md)) |
+| F4 | Tiếng Việt **1,62 ký tự/token** (20 bài); một bài phân loại ≈ 2,9k vào; thinking tắt: ≈ 250 token ra, **3 s**; thinking bật: ≈ 500 token ra, 4,7–5,5 s (đuôi 22 s) | đo |
+| F4b | Nhất quán nhãn giữa hai lượt bất kỳ 86–100% nhóm, 72–97% nhóm+sub; **thinking và `temperature 0` không đổi con số này**; bất đồng dồn vào 6/29 bài mơ hồ thật; model bỏ qua độ dài `summary_ai` (p50 331–360 ký tự); bịa mã `VFM` 2/19 lần | đo ([minimax.md §7.1](../../../10-sources/llm/minimax.md)) |
 | F5 | Cache tự động chạy (system + tools ≈ 2,8k token đọc lại từ lượt 2); `cache_control` vô hiệu trên M3 | đo |
 | F6 | SDK `anthropic` 1.4.0 chạy đủ `messages.create` / vòng tool nhiều lượt / `beta.messages.tool_runner` với MiniMax | đo |
 | F7 | Token Plan: cửa sổ 5 giờ + tuần, chỉ lộ % còn lại qua `GET /v1/token_plan/remains`; tài liệu nói gói cho "cá nhân, tương tác", production nên pay-go; song song ≈ 3–4 agent | đo + tài liệu |
@@ -30,12 +31,12 @@ Dữ kiện nguồn: [minimax.md](../../../10-sources/llm/minimax.md) (tầng re
 
 | # | Giả định | Kiểm ở đâu | Nếu sai |
 |---|---|---|---|
-| A1 | Tỷ lệ ép-công-cụ-đúng ≈ 100% với thinking adaptive cũng đúng ở quy mô trăm bài | bước đo lát 9 (100 bài) | thêm vòng sửa: parse text JSON, gọi lại 1 lần; ngưỡng `failed` |
+| A1 | ~~Ép công cụ đúng ≈ 100% ở quy mô trăm bài~~ ✅ **đã đo 232 lời gọi, 0 lỗi schema** (F3) — vòng sửa vẫn giữ làm lưới an toàn cho toàn kho | — | — |
 | A2 | Quota Token Plan đủ cho ~350 bài/ngày + backlog 8k bài (ước ≈ 3M token vào/ngày lúc nạp backlog) | đọc `remains` trước/sau lô 100 bài | chạy backlog rải nhiều cửa sổ 5 giờ; hoặc khoá pay-go cho backlog |
 | A3 | Streaming qua SDK (`messages.stream`) hoạt động trên MiniMax | đo ở lát 10 | chatbot trả lời không streaming trước |
 | A4 | HTTP 429/5xx của giao diện tương thích được SDK map thành `RateLimitError`/`APIStatusError` (SDK tự retry 2 lần) | quan sát khi chạy thật | bọc retry riêng theo `base_resp` |
 | A5 | Không có endpoint `count_tokens`; ước bằng 1,62 ký tự/token là đủ để cắt trần | đo `messages.count_tokens` ở lát 9 | dùng `max_tokens: 1` để đếm khi cần chính xác |
-| A6 | Độ chính xác phân loại M3 đạt mức chấp nhận trên taxonomy 20 sub (chưa có số nào) | **bộ đánh giá gán tay** ≥ 100 bài | chỉnh prompt / few-shot; không có model dự phòng theo F1 |
+| A6 | Độ chính xác phân loại M3 đạt mức chấp nhận trên taxonomy 20 sub (chưa có số đúng/sai; mới có nhất quán 86–100% — F4b) | **bộ đánh giá gán tay** ≥ 100 bài, chạy **3 lượt** mỗi cấu hình vì nhãn tự lệch 10% | chỉnh prompt / few-shot / gộp sub mơ hồ; không có model dự phòng theo F1 |
 
 Phần giả định **không nặng hơn** dữ kiện ⇒ đủ điều kiện sinh phương án.
 
@@ -121,7 +122,9 @@ class LLMClient:
     raw: anthropic.Anthropic                                                 # cho beta.messages.tool_runner ở lát 10
 ```
 
-Luật trong `structured()` (từ F3): ép `tool_choice={"type":"tool","name":schema.__name__}`; bỏ block text (kể cả `"<tool_call>\n"`); nếu không có `tool_use` mà có text JSON ⇒ parse (`repaired=True`); Pydantic lỗi ⇒ gọi lại **một** lần kèm thông báo lỗi; vẫn lỗi ⇒ `LLMError(retryable=False, reason="schema")` để job đếm `failed`, không tạo dòng rỗng (khuôn §4.6-VII lát 8).
+Luật trong `structured()` (từ F3): ép `tool_choice={"type":"tool","name":schema.__name__}`; **schema phải có enum** cho mọi trường phân loại (đo: enum là thứ làm 0 lỗi); bỏ block text (kể cả `"<tool_call>\n"`); nếu không có `tool_use` mà có text JSON ⇒ parse (`repaired=True`); Pydantic lỗi ⇒ gọi lại **một** lần kèm thông báo lỗi; vẫn lỗi ⇒ `LLMError(retryable=False, reason="schema")` để job đếm `failed`, không tạo dòng rỗng (khuôn §4.6-VII lát 8). Hai luật rút từ F4b nằm ở **consumer**, không ở `core/llm`: (i) độ dài `summary_ai` là ràng buộc mềm — cắt/ghi cờ, không fail; (ii) `tickers` phải lọc qua `market.security` (`VFM` bịa) trước khi ghi `article_ticker via='ai'`.
+
+**Thinking cho phân loại — đề xuất mặc định `disabled`** (đo F3/F4/F4b: hợp lệ 100% ở cả hai, nhất quán như nhau, tắt nhanh gấp 1,8× và ra ít token gấp 2×); `adaptive` giữ cho chatbot (F6, MiniMax khuyến nghị cho tool loop). Đảo ngược nếu bộ đánh giá gán tay cho thấy bật thinking **đúng** hơn có ý nghĩa — độ chính xác chưa đo, chỉ mới đo nhất quán.
 
 ### 4.3 Cấu hình và bí mật
 
@@ -138,7 +141,7 @@ Luật trong `structured()` (từ F3): ép `tool_choice={"type":"tool","name":sc
 ### 4.5 Bộ đánh giá trước khi bật lưới (bắt buộc — A6)
 
 - Gán tay **100–150 bài** lấy ngẫu nhiên phân tầng theo nguồn và nhóm gợi ý (có cả bài backfill không nhóm), lưu `docs/90-records/plans/<lát 9>/eval/gold.jsonl` (id, group, sub, tickers).
-- Đo: độ đúng group/sub, tỷ lệ `repaired`/`failed`, độ ổn định (3 lần cùng bài, `temperature` mặc định vs 0), thinking adaptive vs disabled, trần 3.000 vs 4.000. Chi phí đo ≈ 150 × 3 × 0,2 xu ≈ $1 (quy đổi).
+- Đo: độ đúng group/sub so gold, tỷ lệ `repaired`/`failed`, **độ ổn định 3 lượt** (đã biết: nhãn tự lệch ~10% nhóm dù `temperature 0`), thinking adaptive vs disabled (đã biết: hình dạng và nhất quán ngang nhau — chỉ còn câu độ đúng), trần 3.000 vs 4.000, tỷ lệ `x` (mẫu backfill: 34%). Chi phí đo ≈ 150 × 3 × 2 cấu hình × 0,1–0,2 xu ≈ $1–2 (quy đổi). Khung chạy có sẵn: [reliability/mm_reliability.py](reliability/mm_reliability.py) — chốt danh sách `article_id` trước khi đo (tập trôi khi `--loop` chạy).
 - Ngưỡng `confidence` chốt từ phân bố trên gold, không đoán.
 
 ### 4.6 Lát 10 (chatbot) dùng lại thế nào
@@ -167,7 +170,7 @@ Kiểm hợp đồng **sống** (không CI): script `docs/10-sources/llm/verify_
 ## 5. Điều kiện đảo ngược và việc chủ dự án cần chốt ở phiên sau
 
 1. **Duyệt vị trí `backend/core/llm/` và phương án A** (hay muốn tách tiến trình `llm` riêng — không đề xuất, vì F9 và YAGNI).
-2. **Thinking bật cho phân loại** (F3) — chấp nhận ~10 s/bài và ~1k token ra/bài.
+2. **Thinking cho phân loại: đề xuất TẮT** (đo 232 lời gọi: hợp lệ 100% cả hai chế độ, nhất quán ngang nhau, tắt = 3 s và ≈ 250 token ra) — chốt cuối cùng sau bộ đánh giá gán tay (độ đúng chưa đo).
 3. **Tách lát 9 thành 9a/9b** (4.7) và hướng embedding.
 4. **Bộ đánh giá gán tay 100–150 bài**: ai gán (chủ dự án / trợ lý gán rồi chủ dự án rà 20%), khi nào.
 5. **Ngưỡng quota** dừng lô (4.4) và cách chạy nhịp thường (trong `--loop` hay job lô).

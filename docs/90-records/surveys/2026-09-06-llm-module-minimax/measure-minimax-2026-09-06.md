@@ -73,3 +73,17 @@ Hai host `www.minimax.io` và `api.minimax.io` trả giống nhau.
 
 ## 10. Tài liệu chính thức đã đọc (2026-09-06)
 `docs/guides/rate-limits` (M3 200 RPM · 10M TPM) · `docs/api-reference/text-anthropic-api` · `docs/api-reference/text-openai-api` · `docs/guides/pricing-paygo` · `docs/guides/pricing-token-plan` · `docs/token-plan/intro` · `docs/token-plan/faq` · `docs/api-reference/text-prompt-caching` · `docs/api-reference/anthropic-api-compatible-cache` · `docs/guides/text-m3-function-call` · `docs/guides/models-intro` · `docs/api-reference/errorcode` · `docs/llms.txt` (index). `docs/api-reference/embeddings-api` ⇒ 404 (URL đoán sai; số chiều 1536 lấy từ LangChain/Spring AI, chưa kiểm).
+
+## 11. Độ tin cậy đầu ra có cấu trúc — 13:00–13:40 VN, 8 lượt × 30 bài (232 lời gọi trên 29 bài chung)
+Script [reliability/mm_reliability.py](reliability/mm_reliability.py), JSONL từng lượt trong [reliability/](reliability/). Tổng kết từng lượt (n = 30, tập trôi nhẹ):
+```
+ant_adaptive        tool_ok 29 tool_invalid 1 · p50 5.5 s max 22.6 · in 2252 cache 1024 out 498 think 377
+ant_adaptive_rep2   tool_ok 29 tool_invalid 1 · p50 4.7 s max 11.8 · in 63 cache 2688 out 530 think 522   (prompt lặp ⇒ cache phủ cả bài)
+ant_disabled        tool_ok 30                · p50 3.0 s max 7.5  · in 2519 cache 128 out 251
+ant_disabled_rep2   tool_ok 30                · p50 3.0 s max 21.1 · in 132 cache 2646 out 256
+ant_disabled_rep3   tool_ok 30                · p50 3.1 s max 7.8  · in 47 cache 2816 out 254
+ant_disabled_t0     tool_ok 29 tool_invalid 1 · p50 2.8 s max 7.1  · in 50 cache 2688 out 251   (temperature 0)
+oai_thinking        tool_ok 27 tool_invalid 3 · p50 5.8 s max 13.4 · in 2961 cache 2742 out 549 think 333
+oai_thinking_rep2   tool_ok 25 tool_invalid 5 · p50 6.7 s max 32.0 · in 2961 cache 2816 out 631 think 361
+```
+Mọi `tool_invalid` = `summary_ai` > 450 ký tự (453–505), không có lỗi khoá/enum/confidence. Nhất quán nhóm giữa hai lượt bất kỳ 25–29/29; bất đồng 6/29 bài; nhóm+sub lệch thêm 3/29. Mã gắn: 17/19 niêm yết thật, 2 lần `VFM` bịa. Phân bố nhãn lượt 1 (adaptive): x 10 · 1 9 · 2 7 · 3 3 (27/29 là bài backfill không nhóm gợi ý).

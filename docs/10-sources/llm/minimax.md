@@ -41,19 +41,21 @@ Giá **pay-as-you-go** để quy đổi chi phí *(tài liệu pricing-paygo, 20
 
 20 bài thật trong kho (`tiêu đề + 3.000 ký tự đầu thân bài`, gửi `max_tokens: 1` rồi đọc `usage.prompt_tokens`): **56.097 ký tự / 34.647 token = 1,62 ký tự/token**, dải 1,47–1,73 theo bài. ⇒ một bài cắt trần 3.000 ký tự ≈ **1.850 token**; trần 4.000 ≈ 2.450 token. Con số này **thay** ước lượng 2,5–3,5 ký tự/token ghi ở roadmap sáng 2026-09-06.
 
-## 5. Đầu ra có cấu trúc — thứ gì tin được *(đo, mẫu nhỏ)*
+## 5. Đầu ra có cấu trúc — đo 232 lời gọi trên bài thật *(đo 13:00–13:40)*
 
-| Cách | Giao diện | Thinking | Kết quả |
-|---|---|---|---|
-| `tool_choice: {"type":"tool","name":…}` (ép gọi công cụ) | Anthropic | adaptive | **5/5** trả `tool_use` với `input` đúng khoá (2 bài thật + 3 lời gọi qua SDK) |
-| ép công cụ | Anthropic | disabled | **1/2** — một lần trả JSON dạng **text**, `stop_reason: end_turn` |
-| ép công cụ (`tool_choice.function`) | OpenAI | disabled | **0/3** — trả văn xuôi/JSON text, không `tool_calls` |
-| ép công cụ | OpenAI | mặc định (bật) | 1/1 `tool_calls` |
-| `response_format: json_schema` | OpenAI | disabled | JSON hợp lệ nhưng **không đúng schema** (thiếu `confidence`/`summary_ai`, thêm `note`) |
-| `response_format: json_schema` | OpenAI | adaptive | JSON **không hợp lệ** (bọc ```json, khoá tự đặt) |
-| `output_config.format` | Anthropic | — | **bị bỏ qua**, trả markdown |
+Bộ đo: 30 bài thật (tập trôi nhẹ giữa các lượt vì `--loop` đang ghi bài mới ⇒ **29 bài chung**), system prompt taxonomy 20 sub (≈1,1k token), công cụ `classify` với **enum** cho `group` (`1|2|3|x`) và `sub` (20 mã + `x`), `required` đủ 5 khoá, `additionalProperties: false`, câu lệnh "trả về đúng một lời gọi công cụ classify". Script và JSONL thô: [reliability/](../../90-records/surveys/2026-09-06-llm-module-minimax/reliability/).
 
-Kết luận vận hành: **giao diện Anthropic + ép công cụ + thinking adaptive**, rồi **kiểm bằng Pydantic** (enum cho `group`/`sub`), có đường sửa: `end_turn` kèm text JSON ⇒ parse text; không hợp lệ ⇒ gọi lại một lần. Quirk *(đo)*: khi ép công cụ, đôi lúc có block text thừa `"<tool_call>\n"` đứng trước `tool_use` — bỏ qua block text khi đọc kết quả.
+| Cấu hình | Lượt | `tool_use` đúng khoá + enum | Sai "mềm" (chỉ `summary_ai` > 450 ký tự) | Độ trễ p50 / max | Token ra p50 (thinking) |
+|---|---|---|---|---|---|
+| Anthropic · ép công cụ · thinking **adaptive** | 2 | **29/29 · 29/29** | 1 · 1 | 5,5 s / 22,6 · 4,7 / 11,8 | 498 (377) · 530 (522) |
+| Anthropic · ép công cụ · thinking **disabled** | 3 + 1 (`temperature 0`) | **29/29 ×4** | 0 · 0 · 0 · 1 | 3,0 / 7,5 · 3,0 / 21,1 · 3,1 / 7,8 · 2,8 / 7,1 | 251–256 |
+| OpenAI · ép function · thinking mặc định (bật, `reasoning_split`) | 2 | **29/29 · 29/29** | 3 · 4 | 5,8 / 13,4 · 6,7 / 32,0 | 549 (333) · 631 (361) |
+
+- **0 lỗi schema thật trên 232 lời gọi**: không thiếu khoá, không sai enum, không `sub` lệch nhóm, `confidence` luôn trong [0,1], `tickers` luôn là mảng chuỗi. Mọi ca "sai" đều là `summary_ai` vượt 450 ký tự (mục 7.1) — ràng buộc mềm, không phải hình dạng.
+- Kết luận **sửa lại** mẫu nhỏ buổi trưa (khi prompt chưa có enum và câu lệnh ép): tắt thinking **không** làm ép công cụ mất hiệu lực; 1/2 ca hỏng lúc đó đến từ prompt lỏng. `json_schema` (giao diện OpenAI) và `output_config` (Anthropic) vẫn **không cưỡng chế** (đo buổi trưa, §11).
+- Giao diện OpenAI cũng cho hình dạng đúng khi ép function với thinking bật, nhưng `summary_ai` dài hơn và độ trễ đuôi tệ hơn (32 s); ép function khi **tắt** thinking hỏng 3/3 (buổi trưa). ⇒ Giao diện Anthropic vẫn là lựa chọn: hình dạng block sạch, thinking tách riêng, cache có trường usage, MiniMax khuyến nghị.
+
+Phương pháp ép kiểu cho code (chưa viết, thiết kế ở [brainstorm §4.2](../../90-records/surveys/2026-09-06-llm-module-minimax/brainstorm.md)): schema Pydantic với enum → ép công cụ → kiểm → text JSON thì parse → sai thì gọi lại một lần → vẫn sai thì `failed`. Với số đo này đường sửa gần như không kích hoạt, nhưng phải có vì mẫu 232 chưa phải toàn kho.
 
 ## 6. Prompt caching *(đo + tài liệu)*
 
@@ -72,6 +74,15 @@ Kết luận vận hành: **giao diện Anthropic + ép công cụ + thinking ad
 Quy giá pay-go (adaptive, phần system ≈ 1,3k token đã cache): ≈ 1,85k vào mới × $0,30/M + 1,3k đọc cache × $0,06/M + ≈ 1,0k ra × $1,20/M ≈ **$0,0018 / bài (≈ 0,2 xu)** ⇒ ~350 bài/ngày ≈ **$0,65/ngày**, kho 7.956 bài ≈ **$14** một lần. Dưới Token Plan tính theo quota cửa sổ, không theo tiền. Tuần tự 350 bài × ~10 s ≈ **1 giờ/ngày**; song song 2–3 luồng nằm trong "3–4 agent" của gói.
 
 ⚠️ Cùng một bài, hai chế độ thinking cho **nhóm khác nhau** (3e vs 1c cho bài giá vàng SJC) — độ ổn định phải đo bằng bộ đánh giá gán tay trước khi bật lưới (lát 9).
+
+### 7.1 Nhất quán nhãn, độ dài tóm tắt, mã cổ phiếu *(đo 13:00–13:40, 29 bài chung × 8 lượt)*
+
+- **Nhất quán nhóm giữa hai lượt bất kỳ: 25–29/29 (86–100%)**; nhóm + sub: 21–28/29 (72–97%). Bật/tắt thinking, giao diện OpenAI hay Anthropic, và `temperature 0` **không** khác nhau đáng kể — chính lượt lặp cùng cấu hình cũng lệch 2–4 bài. `temperature 0` không làm M3 tất định.
+- Bất đồng dồn vào **6/29 bài mơ hồ thật**: VinSpace–SpaceX (`x` hay `3a/3c/3d`), chuỗi gym nợ BHXH (`x` hay `1b`), xuất khẩu nông sản (`1e` hay `2c/2e`), phiên toà Zuckerberg (`x`/`2a`/`2d`), Thủ tướng hội kiến Myanmar (`1b`/`2d`). Ranh giới yếu nhất: `x` với tin doanh nghiệp, và trong nước với quốc tế. 3/29 bài đồng thuận nhóm nhưng lệch sub.
+- Mẫu backfill (27/29 không có nhóm gợi ý): model gán `x` **10/29 (34%)**, nhóm 1: 9, nhóm 2: 7, nhóm 3: 3 — kho backfill BNews/NQS có nhiều tin ngoài tài chính, lưới sẽ loại khoảng một phần ba.
+- `summary_ai`: prompt yêu cầu 200–300 ký tự nhưng model cho **p50 331–360, tối đa 505**; > 300 ký tự ở 70–87% bài; giao diện OpenAI dài nhất. Model **không** tuân độ dài — cắt hay chấp nhận là quyết định của lát 9, đừng coi là lỗi schema.
+- Mã cổ phiếu (3 lượt lưu trọn): 19 lần gắn, **17 là mã niêm yết thật** (`TCX`, `VPX`, `VCK`, `LPS`, `MSB`, `VIC`), **2 lần bịa `VFM`** cho bài VinFast (niêm yết Nasdaq `VFS`, không có mã VN). Nhóm ≠ 3 không bao giờ gắn mã (đúng luật). ⇒ tầng 3 **bắt buộc** đối chiếu `market.security` như tầng 2 (news-pipeline §8).
+- Cache tự động khi lặp **nguyên prompt** (cùng bài): token vào mới chỉ 47–132, đọc cache 2,6–2,8k ⇒ cache phủ cả `messages`, không chỉ system.
 
 ## 8. Embedding — `embo-01` *(đo + tài liệu bên thứ ba)*
 
@@ -94,3 +105,7 @@ Endpoint gốc trả **HTTP 200 kèm `base_resp.status_code`**: `1000` lỗi l�
 3. Tắt thinking làm ép công cụ mất hiệu lực từng lúc (§5).
 4. `output_config` và `cache_control` không báo lỗi khi vô hiệu — "gọi thành công" không có nghĩa là tính năng chạy (CLAUDE.md §1.3).
 5. Embedding trả 200 nhưng lỗi nằm trong `base_resp` — kiểm `base_resp` trước khi đọc `vectors`.
+6. Prompt lỏng (không enum, không câu lệnh ép) làm kết luận buổi trưa sai — tắt thinking tưởng hỏng 1/2, đo 232 lời gọi với enum thì 0 lỗi. Đo hình dạng đầu ra phải đo với **đúng schema sẽ dùng**.
+7. Model bỏ qua yêu cầu độ dài `summary_ai` (§7.1) — đừng đặt độ dài làm điều kiện hợp lệ cứng.
+8. Model bịa mã cổ phiếu trông hợp lý (`VFM`) — không có bước đối chiếu danh sách niêm yết là mã bịa vào kho.
+9. Tập "30 bài mới nhất" trôi giữa các lượt đo khi `--loop` đang chạy — chốt danh sách `article_id` trước khi đo lặp.
