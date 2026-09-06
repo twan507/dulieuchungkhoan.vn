@@ -193,3 +193,28 @@ Nhầm nhóm nhiều nhất (adaptive): gold `x` → model `1` (9 bài: hướng
 **Test sau toàn bộ:** `875 passed, 2 skipped` (+6 so với 869: close(), móc `--classify`, hai luật prompt, `--ids-file`).
 
 **Sự cố vận hành đáng ghi:** lượt đo lại 400 bài mở lúc 21:03 **treo không ghi dòng nào** trong 13 phút dù tiến trình sống, quota còn 77 %, và một lời gọi thử riêng trả lời trong 0,6 giây ⇒ không phải model, không phải quota. Nhiều khả năng là bẫy **QuickEdit của console Windows** (bấm/chọn chữ trong cửa sổ `cmd` làm đóng băng tiến trình). Từ nay lượt đo dài mở bằng `Start-Process -WindowStyle Minimized` và đặt `PYTHONUNBUFFERED=1`.
+
+### 9.1 Đo lại hai luật prompt (160 bài đầu của gold, adaptive, 21:49–22:08)
+
+`pred-adaptive-v3-160-2026-09-06.jsonl` (chạy 4 khối × 40 bài ở tiền cảnh — xem sự cố §9.2). So trên **cùng 160 bài** với lượt trước:
+
+| | Prompt trước | **Sau hai luật** |
+|---|---|---|
+| Đúng nhóm · nhóm+sub | 92,5 % · 81,2 % | 92,5 % · 81,2 % (không đổi) |
+| **Ngành: precision** | 43 % | **56 %** |
+| Ngành: recall · khớp tập | 94 % · 49 % | 94 % · **62 %** |
+| Ngành gắn mỗi bài | 1,36 | **1,05** |
+| `1d` bị gán `1b` | 3/12 | **1/12** |
+| Mã (54 bài nhóm 3): P · R | — | **74 %** · 98 % (fp 17) |
+
+⇒ Cả hai luật trúng đích: "mặc định 1 ngành" nâng precision ngành **+13 điểm** mà không mất recall; vế "đầu tư công/hạ tầng vẫn là `1d`" giảm nhầm từ 3 xuống 1. Mã cũng lên P 74 % (từ 65 % ở lượt 400 bài trước). Nhóm và sub không đổi — đúng dự kiến vì hai luật không đụng tiêu chí phân nhóm. **Chốt giữ prompt hiện tại.**
+
+Còn lại (không sửa thêm trong lát này): `x` recall 65 % trên tập con này (model vẫn ngại loại tin), `1a`↔`1b` nhầm 4 ca, `1`→`3` nhầm 5 ca.
+
+### 9.2 Sự cố: mọi lượt chạy NỀN đều đóng băng, chạy tiền cảnh thì sạch
+
+Ba lượt liên tiếp mở kiểu tách rời (`Start-Process cmd`, cả cửa sổ thường lẫn `-WindowStyle Minimized`, và cả cơ chế chạy nền của phiên làm việc) **in đúng một dòng log rồi đứng im**: file kết quả 0 byte sau 12–13 phút, **CPU không nhúc nhích** (đo hai lần cách nhau 12 giây: 1,5 s → 1,5 s) ⇒ bị chặn ở syscall, không phải chạy chậm.
+
+Đã loại trừ bằng đo, không phải bằng suy đoán: quota còn 77 % (không phải hết quota) · một lời gọi thử riêng trả lời **0,6 s** và ba lời gọi cỡ thật 2,2–5,0 s (không phải model chậm hay bị tiết lưu) · `pg_stat_activity` cho thấy kết nối DB đã `ROLLBACK` và nhàn rỗi (không phải kẹt DB) · **cùng lệnh chạy ở tiền cảnh: 5 bài trong 64 giây, ghi file đủ** (không phải lỗi code).
+
+⇒ **Luật vận hành mới:** lượt đo dài của job gọi model chạy **tiền cảnh, chia khối** (`--ids-file` từng khối ~40 bài ≈ 9 phút) chứ không mở tách tiến trình. Ghi chú này **thay** phỏng đoán "QuickEdit" ở §9 — QuickEdit không giải thích được ca cửa sổ thu nhỏ và ca chạy nền không có console. Nguyên nhân gốc **chưa xác định**; chỉ ghi hiện tượng đã đo và đường vòng đã kiểm chứng. *(Nợ: nếu lát 13 đăng ký task Scheduler cho job gọi model, phải thử một lượt thật dưới Task Scheduler trước — CLAUDE.md §3.5.)*
