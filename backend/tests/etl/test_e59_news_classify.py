@@ -70,7 +70,8 @@ def test_system_prompt_rules_after_owner_review_2026_09_06():
     s = nc.system_prompt(INDUSTRIES)
     assert "3–5 câu ngắn" in s and "súc tích" in s and "báo chí" in s and "200–300" not in s   # theo câu, ngắn, giọng báo chí — không theo ký tự
     assert f"tối đa {nc.MAX_TICKERS} mã" in s and "quan trọng nhất trước" in s and "nêu tên" in s and "để rỗng" in s   # mã: chỉ khi tiêu đề/sapo nêu tên
-    assert f"tối đa {nc.MAX_INDUSTRIES} ngành" in s
+    assert "MẶC ĐỊNH 1 ngành" in s and f"tối đa {nc.MAX_INDUSTRIES}" in s   # ngành gắn thừa (P 43 % trên gold) ⇒ mặc định 1
+    assert "kể cả khi văn bản là quyết định điều hành" in s                      # 1d không bị kéo về 1b (8 ca trên gold)
     assert "chủ thể" in s and s.count("chủ thể") >= 2 and "niêm yết hay chưa" in s   # tiêu chí tổng quát theo CHỦ THỂ; nhóm 3 gồm DN chưa niêm yết
     assert "Bài viết" in s                                              # vẫn cấm mở đầu "Bài viết nói về"
     assert nc.SYSTEM_RULES.count(chr(10)) <= 4 and nc.SYSTEM_TAXONOMY.count(chr(10)) <= 5   # ít luật, mỗi luật sắc — model nhỏ

@@ -33,7 +33,7 @@ ALL_SUBS = [s for v in SUBS.values() for s in v]
 # Khối tĩnh — đặt đầu system để cache tự động (≥ 512 token, minimax.md §6). Taxonomy chép từ news-pipeline §3 (đã đo 232 lời gọi).
 SYSTEM_TAXONOMY = """Bạn là bộ phân loại tin tài chính Việt Nam của dulieuchungkhoan.vn. Đọc toàn văn bài và trả về đúng một lời gọi công cụ Classification.
 Phân nhóm theo CHỦ THỂ của bài: nhóm 1 = chủ thể là Việt Nam (Nhà nước, chính sách, lãnh đạo, số liệu, hoạt động đối ngoại của Việt Nam); nhóm 2 = chủ thể là nước ngoài hay thế giới; nhóm 3 = chủ thể là doanh nghiệp Việt Nam (niêm yết hay chưa) hoặc thị trường tài sản trong nước (chứng khoán, vàng, bất động sản); x = không phải tin tài chính - kinh tế (xã hội, thể thao, giải trí, PR, advertorial); khi group = x thì sub = x.
-Nhóm 1 · Vĩ mô trong nước: 1a Thể chế và văn bản quy phạm pháp luật · 1b Điều hành của Đảng, Chính phủ, địa phương (chỉ đạo, kế hoạch, quyết định cụ thể; gồm kiến nghị của khu vực tư nhân) · 1c Tiền tệ và tỷ giá · 1d Đầu tư công và hạ tầng · 1e Số liệu vĩ mô · 1f Thuế và ngân sách.
+Nhóm 1 · Vĩ mô trong nước: 1a Thể chế và văn bản quy phạm pháp luật · 1b Điều hành của Đảng, Chính phủ, địa phương (chỉ đạo, kế hoạch, quyết định cụ thể; gồm kiến nghị của khu vực tư nhân) · 1c Tiền tệ và tỷ giá · 1d Đầu tư công và hạ tầng (dự án, vốn đầu tư công, công trình; kể cả khi văn bản là quyết định điều hành) · 1e Số liệu vĩ mô · 1f Thuế và ngân sách.
 Nhóm 2 · Tài chính quốc tế: 2a Thị trường tài chính thế giới (chứng khoán, tiền mã hoá) · 2b Ngân hàng trung ương · 2c Hàng hoá và năng lượng (vàng, dầu, kim loại; dự trữ vàng của ngân hàng trung ương là 2b) · 2d An ninh và địa chính trị · 2e Thương mại và thuế quan · 2f Doanh nghiệp và kinh tế các nước.
 Nhóm 3 · Doanh nghiệp Việt Nam và thị trường trong nước: 3a CBTT và sự kiện quyền · 3b Giao dịch nội bộ và cổ đông lớn · 3c Vốn và cấu trúc · 3d KQKD và vận hành · 3e Diễn biến và nhận định thị trường (chứng khoán, vàng, bất động sản) · 3f Phái sinh, chứng quyền, ETF/quỹ · 3g Vi phạm và xử phạt · 3h Margin và ký quỹ · 3i Xếp hạng tín nhiệm và ESG."""
 
@@ -41,7 +41,7 @@ Nhóm 3 · Doanh nghiệp Việt Nam và thị trường trong nước: 3a CBTT 
 SYSTEM_RULES = f"""Quy tắc: nhóm gợi ý từ feed chỉ là tín hiệu, được phép ghi đè; bài tổng hợp nhiều chủ đề thì lấy sub của chủ đề dẫn tiêu đề. confidence trong [0,1].
 summary_ai: 3–5 câu ngắn, súc tích, giọng báo chí chuyên nghiệp; chỉ ý chính và con số quan trọng nhất (giữ nguyên số); không mở đầu bằng "Bài viết".
 tickers: chỉ khi nhóm 3 và chỉ mã niêm yết; mã là CHỦ THỂ CHÍNH của bài (được tiêu đề hoặc sapo nêu tên, hoặc công ty mẹ niêm yết có số liệu riêng trong bài), tối đa {MAX_TICKERS} mã, quan trọng nhất trước; bản tin thị trường chung không nêu mã thì để rỗng; không bịa.
-industries: tối đa {MAX_INDUSTRIES} ngành (mã trong danh sách trên) chịu tác động trực tiếp nhất, áp cho mọi nhóm (lãi suất, tỷ giá, ngân hàng trung ương luôn gồm NGANHANG); rỗng nếu không có."""
+industries: MẶC ĐỊNH 1 ngành (mã trong danh sách trên) chịu tác động trực tiếp nhất; chỉ thêm ngành thứ 2–3 khi bài nói trực tiếp tới ngành đó, tối đa {MAX_INDUSTRIES}; áp cho mọi nhóm (lãi suất, tỷ giá, ngân hàng trung ương luôn gồm NGANHANG); rỗng nếu bài không thuộc ngành nào."""
 
 
 @dataclass(frozen=True)
