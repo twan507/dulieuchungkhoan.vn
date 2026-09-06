@@ -104,3 +104,11 @@ Chủ dự án 15:53: "khảo sát qua xem như vậy đủ dữ kiện chưa th
 **AC6** ✅ run 422 chọn 48 bài **khác** run 414 (tổng `classified_from IS NOT NULL` = 230 = 182 + 48; 7.797 còn NULL; `title_only` 0); PK `article_industry`/`article_ticker` không sinh dòng trùng.
 
 **Tổng chi phí lát này (quy giá):** AC3 $0,02 + AC5 $0,13 + run 414 $0,35 + run 422 $0,09 ≈ **$0,59**; quota cửa sổ 5 giờ 97 % → 91 %, tuần 86 % → 85 %.
+
+### 2.4 Soi chất lượng tóm tắt / mã / nhãn — mẫu 17 bài phân tầng (16:10, chủ dự án hỏi; định tính, không phải số đúng/sai)
+
+- **`summary_ai`:** nội dung đúng bài, giữ số liệu tốt (PAP, Amy Grupo, KLB, Fed). Nhưng **độ dài không tuân**: p50 355, min 223, max 625 ký tự (yêu cầu 200–300); 3 bài mở đầu "Bài viết…"; bài `x` vẫn tóm tắt kèm câu bình luận thừa ("Đây là tin thể thao/lifestyle, không liên quan tài chính"). ⇒ 9b: cắt/kiểm hậu kỳ, bỏ tóm tắt cho `x`.
+- **Nhóm/sub:** đúng phần lớn; ranh giới yếu như đã đo — tin đối ngoại (Thủ tướng hội kiến Myanmar, Chủ tịch QH thăm Hàn Quốc) bị xếp `2d` thay vì `1b`; "bảng lương 27 ngân hàng" hint 1 → `3d` chấp nhận được. 5/5 bài `x` đúng (lũ Nepal, máy bay Air India, sao Chelsea…).
+- **Mã:** đúng với bài đơn chủ thể (PAP, KLB, NVL/KBC/PDR/AGG); **bài liệt kê** (bảng lương 17 mã, rổ FTSE 27 mã) gắn hết danh sách — đúng luật "một tin nhiều mã" nhưng làm ngành `ticker` thành nhiễu (FTSE ⇒ 8 ngành). Tầng 2 `lookup` có **false positive**: `USD` (mã niêm yết thật), `ACB` trong bài KLB (chỉ nhắc nơi làm cũ). Phân bố nhóm 3: 4 bài 0 mã · 3 bài 1–3 · 3 bài 4–9 · 2 bài ≥ 10.
+- **Ngành:** hợp lý ở tin ngành rõ (VANTAI, NGANHANG, DANDUNG/XAYDUNG); lỏng ở vĩ mô quốc tế (Fed ⇒ `NGANHANG`, Iran ⇒ `DAUKHI` chấp nhận được) — cần luật "ngành = ngành VN chịu tác động" trong prompt hoặc chấp nhận.
+- ⇒ Việc rẻ nên làm trước bộ gold (9b): (1) hậu kỳ `summary_ai` (cắt 300, bỏ "Bài viết", không tóm tắt `x`); (2) danh sách loại trừ tầng 2 (`USD`, `GDP`… có trong `market.security`) hoặc bỏ tầng 2 khi tầng 3 đã chạy; (3) đánh dấu bài liệt kê (≥ 5 mã) và không suy ngành từ mã cho chúng; (4) prompt: tin đối ngoại của lãnh đạo VN ⇒ nhóm 1.
