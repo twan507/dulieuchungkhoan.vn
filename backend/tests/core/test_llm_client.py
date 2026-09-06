@@ -152,3 +152,16 @@ def test_token_plan_remains_strips_exactly_one_known_suffix(base_url):
     c = LLMClient(LLMSettings(api_key=KEY, base_url=base_url), http_client=httpx2.Client(transport=httpx2.MockTransport(handler)), max_retries=0)
     c.token_plan_remains()
     assert str(seen[0].url) == "https://x.test/v1/token_plan/remains"
+
+
+def test_close_only_closes_the_client_it_created():
+    """Lát 10 (chatbot, tiến trình dài) phải trả kết nối; client bơm vào là của caller, không được đóng hộ."""
+    injected = httpx2.Client(transport=httpx2.MockTransport(lambda r: httpx2.Response(200, json={})))
+    c = LLMClient(SET, http_client=injected)
+    c.close()
+    assert injected.is_closed is False                 # của caller — giữ nguyên
+    own = LLMClient(SET)
+    inner = own._http
+    with own:
+        pass
+    assert inner.is_closed is True                     # tự tạo — đóng khi thoát context

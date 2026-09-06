@@ -53,9 +53,21 @@ def _json_from_text(txt: str):
 class LLMClient:
     def __init__(self, settings: LLMSettings, *, http_client: httpx2.Client | None = None, max_retries: int = 3):
         self.settings = settings
+        self._owns_http = http_client is None          # chỉ đóng client DO MÌNH tạo — client bơm vào là của caller (test, lát 10)
         self._http = http_client or httpx2.Client(timeout=settings.timeout_s)
         self.raw = anthropic.Anthropic(api_key=settings.api_key, base_url=settings.base_url, http_client=self._http,
                                        max_retries=max_retries, timeout=settings.timeout_s)
+
+    def close(self) -> None:
+        """Trả kết nối HTTP. Job lô thì tiến trình chết là xong, nhưng tiến trình dài (chatbot lát 10) phải gọi."""
+        if self._owns_http:
+            self._http.close()
+
+    def __enter__(self) -> "LLMClient":
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self.close()
 
     def structured(self, schema: type[T], *, system: str, user: str, thinking: str = "adaptive",
                    max_tokens: int = 4000, temperature: float | None = None) -> Structured[T]:

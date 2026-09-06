@@ -314,6 +314,7 @@ def classify_run(engine, client, rows: list[Row], *, run_id, schema, system: str
 
 def run(limit: int | None = None, per_group: int | None = None, thinking: str = "adaptive", dry_run: bool = False, out: str | None = None,
         max_minutes: float | None = None, cap: int = CAP_CHARS, client=None, clock=time.monotonic, ids: list[int] | None = None) -> int:
+    owns_client = False
     logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     logging.getLogger("httpx2").setLevel(logging.WARNING)
     logging.getLogger("anthropic").setLevel(logging.WARNING)
@@ -323,6 +324,7 @@ def run(limit: int | None = None, per_group: int | None = None, thinking: str = 
         engine = _engine()
         if client is None:
             client = LLMClient(LLMSettings.from_env())
+            owns_client = True
         with engine.connect() as c:
             inds = c.execute(sa.text("SELECT industry_id, code, name_vi FROM market.industry WHERE level = 2 ORDER BY sort_order, code")).all()
             if len(inds) != 24:
@@ -357,6 +359,8 @@ def run(limit: int | None = None, per_group: int | None = None, thinking: str = 
         finally:
             if out:
                 fh.close()
+            if owns_client:
+                client.close()
             engine.dispose()
     run_id = omo_store.open_run(engine, JOB)
     try:
@@ -381,4 +385,6 @@ def run(limit: int | None = None, per_group: int | None = None, thinking: str = 
         log.exception("classify thất bại")
         return 2
     finally:
+        if owns_client:
+            client.close()
         engine.dispose()
