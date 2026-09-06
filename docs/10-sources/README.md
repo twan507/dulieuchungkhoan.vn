@@ -143,7 +143,13 @@ Nhóm mới, lập 2026-08-15. **Lý do tách riêng:** chỉ số cổ phiếu 
 | [news/article-structure.md](news/article-structure.md) | **Cấu trúc trang bài** — selector container chính và luật bỏ boilerplate riêng từng nguồn, 61 selector kèm mức bằng chứng. Đo 2026-08-15 trên 33 bài; trang thô 94–527 KB | 8 báo |
 | [`news/feeds.json`](news/feeds.json) | Cùng nội dung ở dạng máy đọc — feed, taxonomy 20 sub, nhật ký loại bỏ | 47 feed |
 
-### 3.5 Tài liệu thiết kế dựng trên các nguồn này
+### 3.5 Mô hình ngôn ngữ — `llm/`
+
+| File | Nội dung | Đo |
+|---|---|---|
+| [minimax.md](llm/minimax.md) | **MiniMax M3** — nhà cung cấp LLM duy nhất của dự án (Token Plan, khoá `LLM_API`). Hai giao diện tương thích (OpenAI `/v1`, Anthropic `/anthropic`), 🔴 đầu ra có cấu trúc chỉ tin được bằng **ép công cụ + thinking adaptive** (`json_schema`/`output_config` không cưỡng chế), tiếng Việt **1,62 ký tự/token**, cache tự động ≥ 512 token, quota cửa sổ 5 giờ/tuần qua `token_plan/remains`, embedding `embo-01` bị chặn dưới gói và 1536 chiều | 2026-09-06, ≈45 lời gọi |
+
+### 3.6 Tài liệu thiết kế dựng trên các nguồn này
 
 Không nằm trong tầng tra cứu, nhưng đọc kèm:
 

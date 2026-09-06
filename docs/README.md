@@ -42,6 +42,7 @@ Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và m�
 | [macro/](10-sources/macro/) | WiChart (WiGroup) · **SBV** | 87 REST + **1 trang crawl OMO** | 2026-08-12, toàn bộ 87 key · OMO 2026-08-15 |
 | **[global/](10-sources/global/)** | **FRED · Frankfurter (ECB) · Yahoo · LBMA · Binance** | 15 series vĩ mô Mỹ · 6 cặp tiền + DXY dựng lại · 36 chỉ số/21 nước · vàng-bạc từ 1968 · 10 đồng crypto + PAXG | **2026-08-15**, ~400 lời gọi thật cả đợt |
 | [news/](10-sources/news/) | 8 báo điện tử | 47 RSS + 6 crawler | 2026-08-13, 307 URL · 1.408 tiêu đề · cấu trúc trang bài 2026-08-15, 33 bài |
+| **[llm/](10-sources/llm/)** | **MiniMax M3** — nhà cung cấp LLM duy nhất (Token Plan) | 1 model · 2 giao diện tương thích · endpoint quota | **2026-09-06**, ≈45 lời gọi thật |
 
 Mỗi nguồn tự chứa đủ đồ nghề: `macro/` có [`verify_wichart.py`](10-sources/macro/verify_wichart.py) — tự kiểm 509 khẳng định của tài liệu WiChart với API sống; `news/` có [`feeds.json`](10-sources/news/feeds.json) — 47 feed + taxonomy dạng máy đọc — và [`article-structure.md`](10-sources/news/article-structure.md) — selector container chính cùng luật bỏ boilerplate riêng từng nguồn.
 
