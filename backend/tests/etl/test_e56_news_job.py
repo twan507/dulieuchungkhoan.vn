@@ -1,5 +1,6 @@
 """Job news.collect trọn vòng trên Postgres thật: 53 danh sách từ fixture, bài tổng hợp nhỏ dựng theo RULES (nhanh),
 dedupe, ghi 4 bảng, domain state 8 báo, guard không chặn lượt, --dry-run/--sources, Ctrl+C, --loop."""
+import dataclasses
 import os
 import pathlib
 import re
@@ -10,6 +11,7 @@ import sqlalchemy as sa
 
 from etl import news_extract as ne
 from etl import news_job as nj
+from etl import news_store as ns
 from etl import news_parse as np_
 from etl import news_registry as nr
 
@@ -136,7 +138,9 @@ def test_full_cycle_writes_articles_sources_tickers_and_domain_state(clean):
     status, stats, _ = _last(clean)
     assert status == "success" and stats["lists_ok"] == 53 and stats["lists_failed"] == 0 and stats["cycle"] == 0
     assert stats["sources_total"] == 55                                       # 47 feed RSS + 8 crawl_html (seam spec §6)
-    assert stats["items"] > 300 and stats["new"] == stats["items"] and stats["articles_ok"] + stats["articles_failed"] + stats["refused"] == stats["new"]
+    # 9b-2: bài mới = items trừ phần bị gộp gần (pg_trgm 0,6) — fixture 8 báo có vài cặp cùng chuyện khác tít
+    assert stats["items"] > 300 and stats["new"] + stats["merged_near"] == stats["items"] and stats["merged_near"] >= 0
+    assert stats["articles_ok"] + stats["articles_failed"] + stats["refused"] == stats["new"]
     assert stats["articles_ok"] > 300 and stats["refused"] == 0 and stats["articles_failed"] == 0
     assert _n(clean, "SELECT count(*) FROM news.article") == stats["articles_ok"]
     assert _n(clean, "SELECT count(*) FROM news.article_revision") == stats["articles_ok"]
@@ -312,3 +316,24 @@ def test_loop_calls_classify_only_when_flag_set(clean, monkeypatch):
     ticks2 = iter([0.0, 0.0, 70.0])
     assert nj.run(loop=True, minutes=1, get=_fake_get(), sleep=lambda s: None, now=NOW, clock=lambda: next(ticks2), classify_per_cycle=7) == 0
     assert calls == [{"limit": 7}]
+
+
+def test_collect_merges_near_duplicate_from_another_paper(clean, monkeypatch):
+    """9b-2: bài mới mà trùng CHUYỆN với bài báo khác trong 48 giờ (pg_trgm >= 0,6) ⇒ chỉ thêm nguồn, KHÔNG tải bài,
+    KHÔNG tạo article thứ hai. Bài trùng tiêu đề lặp khác NGÀY vẫn là bài mới."""
+    monkeypatch.setattr("etl.http_fetch.Fetcher._throttle", lambda self: None)
+    with clean.begin() as c:
+        aid = c.execute(sa.text(
+            "INSERT INTO news.article (canonical_url, primary_source, published_at, published_at_src, fetched_at)"
+            " VALUES ('https://bnews.vn/no-cong-my/1.html', 'bnews', :p, 'feed', now()) RETURNING article_id"),
+            {"p": NOW}).scalar_one()
+        c.execute(sa.text("INSERT INTO news.article_revision (article_id, version, title, content, content_fetched_at)"
+                          " VALUES (:a, 1, 'Nợ công của Mỹ vượt mốc 40.000 tỷ USD', 'x', now())"), {"a": aid})
+    it_dup = _it("https://cafef.vn/no-cong-my-40000-ty.chn", 2, pub=NOW, psrc="feed")
+    it_dup = dataclasses.replace(it_dup, source="cafef", title="Nợ công Mỹ chính thức vượt mốc 40.000 tỷ USD")
+    with clean.connect() as c:
+        seen = ns.Seen.load(c, NOW)
+    assert seen.decide(it_dup, NOW)[0] == "new"          # ba khoá cũ không bắt được
+    with clean.connect() as c:
+        assert ns.find_near_duplicate(c, it_dup.title, NOW, it_dup.source) == aid
+        assert ns.find_near_duplicate(c, "Giá vàng hôm nay 24/8: Vàng SJC áp sát mốc 150 triệu đồng", NOW, "cafef") is None

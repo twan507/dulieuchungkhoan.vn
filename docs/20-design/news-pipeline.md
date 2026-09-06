@@ -290,6 +290,13 @@ Postgres tự nén cột `text` lớn qua TOAST nên con số thực tế còn t
 
 Lát 8 thực thi dedupe không-AI: URL canonical + tiêu đề chuẩn hoá trong 48 giờ; tải lại bài để bắt bản sửa chưa làm (xét ở lát 12).
 
+
+**Khoá thứ tư — tiêu đề GẦN GIỐNG** *(thêm 2026-09-06, lát 9b-2 phương án A; migration `0020`)*: bài đã qua ba khoá trên còn so `pg_trgm` với tiêu đề của các bài **báo khác** trong cửa sổ 48 giờ; `similarity >= 0,6` ⇒ gộp (chỉ thêm `article_source`, không tải lại bài), đếm ở `stats.merged_near`.
+
+- **Ngưỡng 0,6 là số đo, không phải số đoán** (7.444 bài / 30 ngày): 0,6 ⇒ 176 cặp (2,0 % bài) · 0,45 ⇒ 602 cặp (5,9 %) nhưng bắt đầu lẫn; khoá tiêu đề y hệt chỉ bắt 0,5 %.
+- **Một chốt chặn duy nhất:** hai tiêu đề đều có ngày mà **ngày khác nhau** ⇒ không gộp (tin lặp hằng ngày: "Giá vàng hôm nay 22/8" ↔ "… 24/8", sim 0,68). Đo: chặn đúng 1/176 cặp. **Không** chặn theo "bộ số phải trùng" — đã thử, chặn nhầm 27 cặp trùng thật.
+- Vì sao không dùng embedding cho việc này: [embedding-decision.md](../90-records/plans/2026-09-06-news-classify-llm/embedding-decision.md).
+
 ### 9.5 Tìm kiếm trên Postgres
 
 Ở quy mô 55.000–150.000 bản ghi mỗi năm, **Postgres một mình là đủ** — không cần vector DB riêng. Dùng ba lớp bổ sung nhau, không thay thế nhau:
@@ -389,12 +396,12 @@ Lưu tiêu đề + link để tham chiếu là một chuyện, lưu toàn văn l
 
 | Việc | Ghi chú |
 |---|---|
-| **Đo tỷ lệ dedupe thật** | ✅ đo 2026-09-06 (`--loop` lát 8, 91 vòng · 152.569 item · 1.860 mới): gộp theo **tiêu đề y hệt chỉ ≈ 0,5 % bài** (14 gộp tiêu đề, 0 gộp URL) — ước "3,5 lần" của §9.2 quá xa thực tế; tin "cùng chuyện, khác tít" chỉ đo được bằng embedding (lát 9b). Ngân sách phân loại vì thế tính trên **toàn bộ bài mới** (~170–315/ngày thường), không chia 3,5 |
+| **Đo tỷ lệ dedupe thật** | ✅ đo + đã dựng khoá thứ tư (`merged_near`, pg_trgm 0,6 — §9.4) 2026-09-06 (`--loop` lát 8, 91 vòng · 152.569 item · 1.860 mới): gộp theo **tiêu đề y hệt chỉ ≈ 0,5 % bài** (14 gộp tiêu đề, 0 gộp URL) — ước "3,5 lần" của §9.2 quá xa thực tế; tin "cùng chuyện, khác tít" chỉ đo được bằng embedding (lát 9b). Ngân sách phân loại vì thế tính trên **toàn bộ bài mới** (~170–315/ngày thường), không chia 3,5 |
 | **Danh sách mã niêm yết** | ✅ `market.security` `status='listed'` (job `etl refdata`, ~1.500 mã) — tầng 2 và tầng 3 cùng đối chiếu |
 | **Bảng tên thương mại → mã** | Chưa seed — lát 9a đo thấy model đã đổi tên → mã 17/19 đúng khi đọc toàn văn; mở lại khi thấy AI sót tên doanh nghiệp (§8 tầng 3) |
 | **Ngưỡng `confidence`** | Dưới bao nhiêu thì đưa vào hàng chờ rà tay — chốt từ phân bố trên bộ gán tay; lát 9a ghi `confidence` mọi bài nhưng chưa dùng làm ngưỡng |
 | **Bộ đánh giá gán tay + chốt thinking** | 100–150 bài gán tay, chạy 3 lượt mỗi cấu hình (nhãn tự lệch ~10 % giữa hai lượt kể cả `temperature 0` — [minimax.md §7.1](../10-sources/llm/minimax.md)); **điều kiện trước khi bật lưới chạy tự động** (lát 9a chỉ chạy lô có trần) |
-| **Chọn mô hình embedding** | 🟡 **Đề xuất DỜI sang lát 10** *(đo 2026-09-06)*: `pg_trgm` — đã cài, chi phí 0 — bắt **2,0 % bài** ở ngưỡng 0,6 và **5,9 %** ở 0,45 (khác báo, trong 48 giờ), gấp 4–12 lần khoá tiêu đề y hệt (0,5 %), kể cả cặp diễn đạt khác hẳn. Giá trị biên của embedding cho **dedupe** vì thế nhỏ; giá trị còn lại là **tìm kiếm khái niệm cho chatbot** ⇒ chọn mô hình khi biết chatbot hỏi gì. Hồ sơ ba phương án: [embedding-decision.md](../90-records/plans/2026-09-06-news-classify-llm/embedding-decision.md). Kích thước `halfvec(768)` vẫn là mặc định nếu tự host |
+| **Chọn mô hình embedding** | ✅ **Chủ dự án chốt phương án A 2026-09-06 tối: gộp bằng `pg_trgm`, DỜI chọn mô hình sang lát 10** *(đo 2026-09-06)*: `pg_trgm` — đã cài, chi phí 0 — bắt **2,0 % bài** ở ngưỡng 0,6 và **5,9 %** ở 0,45 (khác báo, trong 48 giờ), gấp 4–12 lần khoá tiêu đề y hệt (0,5 %), kể cả cặp diễn đạt khác hẳn. Giá trị biên của embedding cho **dedupe** vì thế nhỏ; giá trị còn lại là **tìm kiếm khái niệm cho chatbot** ⇒ chọn mô hình khi biết chatbot hỏi gì. Hồ sơ ba phương án: [embedding-decision.md](../90-records/plans/2026-09-06-news-classify-llm/embedding-decision.md). Kích thước `halfvec(768)` vẫn là mặc định nếu tự host |
 | **Tách từ tiếng Việt** | Chỉ làm khi có bằng chứng `simple` + `unaccent` không đủ chính xác |
 | **Luật bỏ boilerplate từng nguồn** | ✅ đã khảo sát 2026-08-15 — luật từng nguồn ở [article-structure.md](../10-sources/news/article-structure.md); còn ngỏ: dạng bài longform/video/bài cũ chưa phủ |
 | **Trần 3.000 hay 4.000 ký tự** | Chốt bằng cách đối chiếu `content_chars` với các ca phân loại sai sau vài tuần chạy. Đã có số nền: trên 33 bài mẫu, **17/33 dài ≥ 3.000 ký tự, 9/33 ≥ 4.000, trung vị 3.124** (đo 2026-08-15, [article-structure.md](../10-sources/news/article-structure.md) mục 3.5). Cả hai mức đều chạm trần đủ thường xuyên để `content_chars` đáng ghi lại, nhưng chưa có ca phân loại sai thật nên chưa chốt được mức nào |

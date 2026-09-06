@@ -4,6 +4,7 @@ bằng chứng danh sách khi hash đổi và HTML bài khi bóc từ chối, do
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
@@ -18,6 +19,39 @@ DOMAIN = "news"
 # 11 tiêu đề < 25 ký tự trong kho là dạng chung chung (vd "Thị trường tài chính 24h") — gộp theo khoá ngắn là gộp nhầm.
 TITLE_MIN_CHARS = 30
 REFUSED_TTL = timedelta(days=7)   # §4.6-VII: URL bị từ chối không tải lại / không ghi bằng chứng lại trong 7 ngày
+# Gộp "cùng chuyện, khác tít" bằng pg_trgm (lát 9b-2, phương án A — migration 0020). Ngưỡng và chốt chặn đều ĐO trên kho
+# 2026-09-06 (7.444 bài/30 ngày, cặp KHÁC BÁO trong 48 giờ): 0,6 ⇒ 176 cặp, soi tay dải 0,55–0,65 thấy phần lớn trùng thật;
+# 0,45 ⇒ 602 cặp nhưng bắt đầu lẫn. Một kiểu sai duy nhất còn lại: tiêu đề lặp hằng ngày khác NGÀY ("Giá vàng hôm nay 22/8"
+# ↔ "… 24/8", 0,68) ⇒ chặn khi hai tiêu đề đều có ngày mà ngày khác nhau (đo: chặn đúng 1/176 cặp, không chặn nhầm cặp nào).
+# KHÔNG chặn theo "bộ số phải trùng" — đã thử, chặn nhầm 27 cặp trùng thật (xuất khẩu gạo 2,91 tỷ USD, FDI 40 tỷ…).
+NEAR_DUP_MIN_SIM = 0.6
+DATE_IN_TITLE = re.compile(r"\b(\d{1,2})[/-](\d{1,2})\b")
+
+
+def _dates(title: str) -> set:
+    return set(DATE_IN_TITLE.findall(title or ""))
+
+
+def find_near_duplicate(conn, title: str, when: datetime, source: str) -> int | None:
+    """article_id của bài CÙNG CHUYỆN đã có (khác báo, trong 48 giờ, tiêu đề gần giống), hoặc None.
+    Chỉ gọi cho bài đã qua ba khoá dedupe rẻ hơn của lát 8 (URL thô · canonical · tiêu đề y hệt)."""
+    if not title or len(title) < TITLE_MIN_CHARS:
+        return None
+    rows = conn.execute(sa.text(
+        "SELECT a.article_id, r.title,"
+        " extensions.similarity(news.immutable_unaccent(lower(r.title)), news.immutable_unaccent(lower(:t))) AS sim"
+        " FROM news.article a JOIN news.article_revision r ON r.article_id = a.article_id AND r.version = 1"
+        " WHERE a.primary_source <> :src AND coalesce(a.published_at, a.fetched_at) BETWEEN :lo AND :hi"
+        " AND extensions.similarity(news.immutable_unaccent(lower(r.title)), news.immutable_unaccent(lower(:t))) >= :m"
+        " ORDER BY sim DESC LIMIT 5"),
+        {"t": title, "src": source, "lo": when - WINDOW, "hi": when + WINDOW, "m": NEAR_DUP_MIN_SIM}).all()
+    d = _dates(title)
+    for aid, other, _sim in rows:
+        od = _dates(other)
+        if d and od and d != od:          # tiêu đề lặp hằng ngày, khác ngày ⇒ hai tin khác nhau
+            continue
+        return aid
+    return None
 
 
 def load_listed(conn) -> dict[str, int]:

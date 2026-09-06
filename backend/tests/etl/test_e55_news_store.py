@@ -216,3 +216,45 @@ def test_load_listed_excludes_indexes(migrated_engine):
     finally:
         with migrated_engine.begin() as c:
             c.execute(sa.text("DELETE FROM market.security WHERE ticker IN ('ZZIDX','ZZETF')"))
+
+
+def _mk(engine, url, source, title, pub):
+    """Bài mồi cho test gộp gần: article + revision v1 (find_near_duplicate đọc revision v1)."""
+    with engine.begin() as c:
+        aid = c.execute(sa.text(
+            "INSERT INTO news.article (canonical_url, primary_source, published_at, published_at_src, fetched_at)"
+            " VALUES (:u, :s, :p, 'feed', now()) RETURNING article_id"), {"u": url, "s": source, "p": pub}).scalar_one()
+        c.execute(sa.text("INSERT INTO news.article_revision (article_id, version, title, content, content_fetched_at)"
+                          " VALUES (:a, 1, :t, 'noi dung', now())"), {"a": aid, "t": title})
+    return aid
+
+
+def test_find_near_duplicate_uses_measured_pairs(migrated_engine):
+    """Cặp thật đo 2026-09-06 bằng pg_trgm trên kho (ngưỡng 0,6): gộp tin cùng chuyện khác tít, KHÔNG gộp tin lặp
+    hằng ngày khác NGÀY. Literal lấy từ kho, không tính lại theo cách code tính."""
+    T0 = datetime(2026, 8, 24, 9, 0, tzinfo=timezone.utc)
+    with migrated_engine.begin() as c:
+        c.execute(sa.text("DELETE FROM news.article_revision WHERE article_id IN (SELECT article_id FROM news.article WHERE canonical_url LIKE 'https://zz.test/near-%')"))
+        c.execute(sa.text("DELETE FROM news.article WHERE canonical_url LIKE 'https://zz.test/near-%'"))
+    try:
+        a1 = _mk(migrated_engine, "https://zz.test/near-1", "bnews", "Nợ công của Mỹ vượt mốc 40.000 tỷ USD", T0)
+        _mk(migrated_engine, "https://zz.test/near-2", "tinnhanhck", "Giá vàng hôm nay ngày 22/8: Vàng nhẫn leo lên sát mốc 150 triệu", T0)
+        with migrated_engine.connect() as c:
+            # cùng chuyện, khác tít, khác báo ⇒ gộp (đo: sim 0,73)
+            assert ns.find_near_duplicate(c, "Nợ công Mỹ chính thức vượt mốc 40.000 tỷ USD", T0, "nguoiquansat") == a1
+            # cùng báo ⇒ không gộp (khoá này chỉ cho tin khác báo)
+            assert ns.find_near_duplicate(c, "Nợ công Mỹ chính thức vượt mốc 40.000 tỷ USD", T0, "bnews") is None
+            # ngoài cửa sổ 48 giờ ⇒ không gộp
+            assert ns.find_near_duplicate(c, "Nợ công Mỹ chính thức vượt mốc 40.000 tỷ USD", T0 + timedelta(hours=49), "cafef") is None
+            # tiêu đề lặp hằng ngày, KHÁC ngày ⇒ chặn (đo: sim 0,68 nhưng là hai tin khác nhau)
+            assert ns.find_near_duplicate(c, "Giá vàng hôm nay 24/8: Vàng SJC áp sát mốc 150 triệu đồng/lượng", T0, "bnews") is None
+            # cùng ngày, hai báo ⇒ vẫn gộp
+            assert ns.find_near_duplicate(c, "Giá vàng hôm nay 22/8: Vàng SJC áp sát mốc 150 triệu đồng/lượng", T0, "bnews") is not None
+            # khác chuyện hẳn ⇒ không gộp
+            assert ns.find_near_duplicate(c, "Chứng khoán phiên chiều: VN-Index giằng co quanh mốc tham chiếu", T0, "cafef") is None
+            # tiêu đề quá ngắn ⇒ bỏ qua (khuôn TITLE_MIN_CHARS của lát 8)
+            assert ns.find_near_duplicate(c, "Nợ công Mỹ", T0, "cafef") is None
+    finally:
+        with migrated_engine.begin() as c:
+            c.execute(sa.text("DELETE FROM news.article_revision WHERE article_id IN (SELECT article_id FROM news.article WHERE canonical_url LIKE 'https://zz.test/near-%')"))
+            c.execute(sa.text("DELETE FROM news.article WHERE canonical_url LIKE 'https://zz.test/near-%'"))

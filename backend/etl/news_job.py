@@ -1,6 +1,7 @@
 """`python -m etl news` — thu 47 feed + 6 crawl → news.* (spec lát 8 §5.2). Khuôn `series_job`: open_run ngay trước try,
 Ctrl+C ⇒ failed 'dừng tay (Ctrl+C)' exit 130; KHÔNG từ chối cả lượt (tin bỏ lỡ là mất thật) — tally + warnings.
 --loop: mỗi vòng một etl_run, nhịp 300 s, sitemap mỗi 3 vòng; --sources: lượt con không đụng domain state.
+9b-2: bài mới còn qua một khoá dedupe nữa — tiêu đề GẦN GIỐNG (pg_trgm 0,6, khác báo, 48 giờ) ⇒ merged_near.
 8b: `--backfill-sitemap --source`, kỳ tháng/ngày theo `SITEMAPS`, job `news.backfill_sitemap:<source>` (TinnhanhCK đọc thêm tên cũ)."""
 from __future__ import annotations
 
@@ -52,7 +53,7 @@ def _engine():
 
 def _empty_stats(now_vn, cycle):
     return {"sources_total": 0, "lists_ok": 0, "lists_failed": 0, "lists_stored": 0, "items": 0, "seen": 0, "merged_url": 0,
-            "merged_title": 0, "new": 0, "skipped_refused": 0, "stale_feeds": [], "warnings": [], "calls": 0, "retries": 0,
+            "merged_title": 0, "merged_near": 0, "new": 0, "skipped_refused": 0, "stale_feeds": [], "warnings": [], "calls": 0, "retries": 0,
             "run_date": now_vn.date().isoformat(), "cycle": cycle}
 
 
@@ -136,6 +137,15 @@ def collect(engine, registry, *, run_id, now, dry_run, subset, cycle, get, sleep
                         news_store.add_source(c, aid, it.source, it.url)
                     seen.urls.add(it.url)
                 continue
+            if not dry_run:                       # 9b-2: gộp "cùng chuyện, khác tít" (pg_trgm 0,6 — news_store.find_near_duplicate)
+                with engine.connect() as c:
+                    near = news_store.find_near_duplicate(c, it.title, it.published_at or now, it.source)
+                if near is not None:
+                    st["merged_near"] += 1
+                    with engine.begin() as c:
+                        news_store.add_source(c, near, it.source, it.url)
+                    seen.urls.add(it.url)
+                    continue
             st["new"] += 1
             if dry_run:
                 seen.remember(it, -1, now)
@@ -203,8 +213,8 @@ def _one_cycle(engine, registry, *, subset, dry_run, cycle, get, sleep, now, rng
         omo_store.close_run(engine, run_id, "success", st)
         if not subset and not dry_run:
             news_store.upsert_domain_state(engine, ok_sources, st["run_date"])
-        log.info("news cycle %s: items %s · new %s · merged %s/%s · seen %s · refused %s · warnings %s",
-                 cycle, st["items"], st["new"], st["merged_url"], st["merged_title"], st["seen"], st.get("refused", "-"), st["warnings"])
+        log.info("news cycle %s: items %s · new %s · merged %s/%s/%s · seen %s · refused %s · warnings %s",
+                 cycle, st["items"], st["new"], st["merged_url"], st["merged_title"], st["merged_near"], st["seen"], st.get("refused", "-"), st["warnings"])
         return 0
     except KeyboardInterrupt:
         omo_store.close_run(engine, run_id, "failed", error="dừng tay (Ctrl+C)")
