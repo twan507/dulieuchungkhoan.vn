@@ -111,7 +111,7 @@ Tin xã hội, thể thao, giáo dục, y tế thuần; PR và advertorial.
 
 **Vì sao đọc toàn văn thay vì tiêu đề + sapo:** phân loại chính xác hơn hẳn ở những ca nhảy nhóm 1↔3 mà tiêu đề gây hiểu nhầm (mục 7.2). Và một khi đã nạp toàn văn thì sinh `summary_ai` trong cùng lượt gọi gần như miễn phí — chỉ thêm ~100 token đầu ra.
 
-**Khuôn `summary_ai` phải cố định**, vì nhất quán chính là lý do sinh ra nó: **3–5 câu** *(đổi từ "2–3 câu, 200–300 ký tự" ngày 2026-09-06: MiniMax M3 không tuân số ký tự — p50 355, max 625 — nhưng theo được số câu 10/12; đổi lại câu dài hơn, ≈ 900 ký tự)*, không mở đầu bằng "Bài viết nói về…", **giữ nguyên mọi con số xuất hiện trong bản gốc**. Lưu song song với `summary` gốc, không ghi đè — bản gốc giữ được từ ngữ nguyên bản của toà soạn, đôi khi chính cách chọn chữ là thứ cần tìm. Nên embed cả hai và giữ riêng.
+**Khuôn `summary_ai` phải cố định**, vì nhất quán chính là lý do sinh ra nó: **3–5 câu ngắn, súc tích, giọng báo chí chuyên nghiệp** *(đổi từ "2–3 câu, 200–300 ký tự" ngày 2026-09-06: MiniMax M3 không tuân số ký tự — p50 355, max 625 — nhưng theo được số câu 11/12; với luật "ngắn, súc tích" trung vị ≈ 620 ký tự ≈ 130 từ, không có luật đó model kéo dài câu tới ≈ 900)*, không mở đầu bằng "Bài viết nói về…", **giữ nguyên mọi con số xuất hiện trong bản gốc**. Lưu song song với `summary` gốc, không ghi đè — bản gốc giữ được từ ngữ nguyên bản của toà soạn, đôi khi chính cách chọn chữ là thứ cần tìm. Nên embed cả hai và giữ riêng.
 
 ### 7.1b Đường lui khi không lấy được nội dung
 

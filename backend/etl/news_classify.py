@@ -39,7 +39,7 @@ Nhóm 3 · Doanh nghiệp niêm yết: 3a CBTT và sự kiện quyền · 3b Gia
 
 # Ít luật, mỗi luật sắc — model nhỏ không theo được nhiều luật vụn (chủ dự án 2026-09-06). Giới hạn ghi bằng CÂU và bằng SỐ, không bằng ký tự.
 SYSTEM_RULES = f"""Quy tắc: nhóm gợi ý từ feed chỉ là tín hiệu, được phép ghi đè. confidence trong [0,1].
-summary_ai: 3–5 câu, giữ nguyên mọi con số trong bản gốc, không mở đầu bằng "Bài viết".
+summary_ai: 3–5 câu ngắn, súc tích, giọng báo chí chuyên nghiệp; chỉ ý chính và con số quan trọng nhất (giữ nguyên số); không mở đầu bằng "Bài viết".
 tickers: chỉ khi nhóm 3; mã niêm yết là CHỦ THỂ CHÍNH của bài, tối đa {MAX_TICKERS} mã, quan trọng nhất trước; bài liệt kê nhiều mã thì chỉ chọn mã nổi bật nhất; không bịa.
 industries: tối đa {MAX_INDUSTRIES} ngành (mã trong danh sách trên) chịu tác động trực tiếp nhất, áp cho mọi nhóm; rỗng nếu không có."""
 
