@@ -128,3 +128,12 @@ Chủ dự án chốt: sửa ở prompt, không hậu kỳ; **tổng quát hoá,
 **Dry-run 12 bài với prompt mới (16:25):** 12/12 xanh; số câu 4·4·7·4·7·4·4·4·4·6·4·5 ⇒ **10/12 trong 3–5 câu**, nhưng câu dài hơn — tóm tắt trung bình ≈ **900 ký tự** (trước 355): model theo số câu bằng cách kéo dài câu. Trần mã chạy đúng (bài ETF 10.000 tỷ: 5 mã VIC/VHM/STB/FPT/HPG). Tổng thống Myanmar nhắc Viettel ⇒ `1/1b` (trước kiểu bài này bị `2d`). Tin Mỹ–Iran ⇒ `NGANHANG` (chấp nhận theo chủ dự án). **Chưa phân loại lại 230 bài đã chạy bằng prompt cũ** — chờ chủ dự án gọi tên (≈ 40 phút, $0,45).
 
 **Vòng 2 luật tóm tắt (16:35, chủ dự án: "900 ký tự là quá dài — 3–5 câu ngắn gọn súc tích, ngôn từ chuyên nghiệp chuẩn nhà báo"):** luật đổi thành "3–5 câu ngắn, súc tích, giọng báo chí chuyên nghiệp; chỉ ý chính và con số quan trọng nhất". Dry-run 12 bài: số câu 5·5·6·4·5·5·4·3·4·4·4·4 (11/12 trong 3–5); **trung vị 620 ký tự ≈ 130 từ, max 760** (vòng 1: ≈ 900; prompt gốc theo ký tự: 355 nhưng cắt ý). Trần 5 mã và nhóm theo chủ thể giữ nguyên kết quả vòng 1. Chấp nhận mức này; muốn ngắn hơn nữa thì hạ "3–5 câu" xuống "3–4 câu".
+
+## 7. Bộ gold — bản nháp (16:40–16:50, mở đầu lát 9b theo chủ dự án)
+
+150 bài mẫu (seed 20260906, `published_at ≥ 2026-08-20`, thân ≥ 300 ký tự, 38/38/38/36 theo nhóm gợi ý, 8 nguồn) chia 3 lô, ba subagent **Opus** gán nháp độc lập theo tiêu chí prompt production. Kết quả: 150/150 hợp lệ (sub đúng nhóm, mã ∈ niêm yết, ngành ∈ 24, trần 5/3); nhóm 1: 58 · 2: 37 · 3: 43 · x: 12; **63 bài Opus đánh "khó"**; 27 bài có mã, 79 bài có ngành. File cho chủ dự án rà: [`eval/gold-draft-2026-09-06.xlsx`](eval/gold-draft-2026-09-06.xlsx) (5 cột CHỐT điền sẵn = nháp, dropdown nhóm/sub, tô vàng bài khó, sheet hướng dẫn); dựng lại bằng `eval/build_xlsx.py`.
+
+**Ba lỗ hổng taxonomy mà cả ba annotator cùng vấp — cần chủ dự án quyết khi rà (ảnh hưởng đáp án hàng loạt):**
+1. **Nhóm 2 không có sub cho doanh nghiệp / chính sách kinh tế nội bộ nước ngoài** (Apple–Tim Cook, Amazon–Nvidia, Heineken, visa Nhật, Thái Lan siết data center, kỷ luật lãnh đạo DNNN Trung Quốc) — hiện dồn tạm vào `2a`/`2d`. Phương án: thêm `2f` "Doanh nghiệp và chính sách kinh tế nước ngoài", hoặc quy ước cứng.
+2. **Tin thị trường trong nước không phải Nhà nước, không phải DN niêm yết** (môi giới địa ốc, giá chung cư Hà Nội, giá vàng SJC, giá bạc) — không sub nào khớp; tạm `1e`/`1c`. Cần quy ước: vàng/bất động sản dân sinh thuộc `1c`/`1e` hay nhóm 3 (`3e`)?
+3. **Bài điểm tin tuần / văn bản pháp quy phi kinh tế** (Quốc ca, Luật Chứng khoán do UBTVQH cho ý kiến — nhóm 1 hay 3?).
