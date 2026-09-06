@@ -63,3 +63,16 @@ Mọi lượt dưới credential production (`ETL_DATABASE_URL`, role `dlck_etl`
 - `--loop` lát 8 vẫn chạy trong cửa sổ `dlck-news-loop` (vòng gần nhất 09:53); sơ bộ từ 04:13: 69 vòng, `items 115.349`, `new 62`, `merged_url 0`, `merged_title 2`, `refused 1`, `articles_failed 0`, `lists_failed 1` — cuối tuần, chưa dùng chốt AC7 lát 8 (chờ thứ 2 07/09).
 - **Nợ để lại:** AC4 bỏ (ruling 6); `Seen.load` quét toàn bảng (M1 lát 8) — kho 7.956 dòng, ngưỡng ~100k còn xa; minor để lại của review: `collect` ngầm coi sitemap không-backfill là theo tháng, `lastmod` naive → `astimezone`, `run_backfill` return sớm không `dispose`, `MONTH_KEY` lỏng hơn `MONTH`, `periods_desc` không cắt `today` cho nguồn tháng; 2 trang tĩnh TinnhanhCK (`lien-he-post83928`, `thong-tin-toa-soan-post83927`, giờ 2013) lọt qua trang chuyên mục — lát 9 lọc khi phân loại, lát 12 xét luật.
 - Không còn tiến trình backfill nào chạy. Workspace SDD (scratchpad) đã xoá; hồ sơ = thư mục này + git.
+
+## 6. Bổ sung sau merge (2026-09-06 ~10:30, nhánh `fix/news-8b-followups`)
+
+Chủ dự án: "nợ để lại có gì giải quyết được thì làm luôn". Controller tự sửa (nhỏ, 1–3 file, TDD đỏ→xanh), không subagent:
+
+- `collect` dựng khoá kỳ theo `SITEMAPS[...].period` (tháng/ngày) thay vì giả định tháng — test e56 với NQS bỏ cờ `backfill_only` ⇒ `lists_ok 54`, URL `sitemap-article-2026-09-06.xml`.
+- `parse_sitemap`: `lastmod` không múi giờ đọc là giờ VN qua `_vn()` (test e52; trên máy VN test này xanh sẵn vì giờ hệ thống = VN — giữ làm chốt cho VPS).
+- `run_backfill`: `dispose()` engine ở cả hai đường về sớm (hết kỳ / tham số sai) — test e57 bọc `_engine`.
+- `MONTH_KEY`/`DAY_KEY` siết tháng 01–12, ngày 01–31 (cùng luật `news_job.MONTH`).
+- `periods_desc`: cắt kỳ tương lai cho cả nguồn tháng (`bnews 2026-08..2026-12, today 06/09 ⇒ [2026-09, 2026-08]`).
+- **Trang tĩnh TinnhanhCK:** `parse_tnck_category` bỏ URL chứa `/lien-he-post`, `/thong-tin-toa-soan-post` (fixture 98 → 96 link); **xoá 2 dòng đã lọt** khỏi `news.article` + `article_revision` + `article_source` (+ `article_ticker` nếu có) trên kho production — hai bài `post83928`/`post83927`, `published_at` 2013.
+- Đo dedupe + ước ngân sách AI ghi vào roadmap "Điểm vào cho lát 9" (commit `f90a5c3`).
+- Còn để lại có chủ đích: `Seen.load` quét toàn bảng (ngưỡng ~100k dòng còn xa); dòng test > 150 ký tự; backfill không dedupe theo tiêu đề (30 nhóm trùng còn trong kho — lát 9 gộp bằng embedding); 3 cặp bài BNews cùng tiêu đề khác URL (báo tự đăng trùng).

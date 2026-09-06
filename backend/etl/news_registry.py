@@ -33,8 +33,8 @@ SITEMAPS: dict[str, SitemapSpec] = {
     "bnews": SitemapSpec("month", "https://bnews.vn/sitemap/news-{y}-{m}.xml", re.compile(r"/\d+\.html$")),
     "nguoiquansat": SitemapSpec("day", "https://nguoiquansat.vn/sitemap-article-{y:04d}-{m:02d}-{d:02d}.xml", re.compile(r"-\d+\.html$")),
 }
-MONTH_KEY = re.compile(r"^\d{4}-\d{2}$")
-DAY_KEY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+MONTH_KEY = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")                       # cùng luật với news_job.MONTH
+DAY_KEY = re.compile(r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$")
 
 
 @dataclass(frozen=True)

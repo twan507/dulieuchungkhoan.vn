@@ -278,3 +278,22 @@ def test_unknown_source_and_ctrl_c(clean, monkeypatch):
     monkeypatch.setattr(nj, "collect", boom)
     assert nj.run(get=_fake_get(), sleep=lambda s: None, now=NOW) == 130
     assert _last(clean)[2] == "dừng tay (Ctrl+C)"
+
+
+def test_collect_builds_day_key_for_a_day_sitemap_source_that_is_not_backfill_only(clean, monkeypatch):
+    # Minor để lại của lát 8b: collect dựng khoá kỳ bằng %Y-%m cho MỌI sitemap không backfill_only — nếu cờ chi_backfill của
+    # NguoiQuanSat (nguồn NGÀY) bị bỏ, sitemap_url ném ValueError và giết cả vòng. Khoá phải theo SITEMAPS[...].period.
+    import dataclasses
+    reg = [dataclasses.replace(s, backfill_only=False) if (s.name, s.kind) == ("nguoiquansat", "sitemap") else s for s in nr.build()]
+    monkeypatch.setattr(nr, "build", lambda *a, **k: reg)
+    calls = []
+
+    def get(u, timeout):
+        if "sitemap-article-" in u:
+            calls.append(u)
+            return 200, (FIX / "sitemap-nguoiquansat-2026-09-05.xml").read_text(encoding="utf-8"), {}
+        return _fake_get(calls)(u, timeout)
+    assert nj.run(get=get, sleep=lambda s: None, now=NOW) == 0
+    status, stats, _ = _last(clean)
+    assert status == "success" and stats["lists_ok"] == 54 and stats["lists_failed"] == 0
+    assert any(u.endswith("/sitemap-article-2026-09-06.xml") for u in calls)          # NOW = 2026-09-06 00:00 VN
