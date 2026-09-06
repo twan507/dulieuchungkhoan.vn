@@ -178,3 +178,18 @@ Nhầm nhóm nhiều nhất (adaptive): gold `x` → model `1` (9 bài: hướng
 2. **`1d` → `1b` nhầm 8 lần** (mới xuất hiện sau khi làm sắc `1b`): tin đầu tư công/hạ tầng bị kéo về "điều hành". Cần thêm vế cho phép thử: dự án, vốn đầu tư công, hạ tầng ⇒ `1d` dù văn bản là quyết định điều hành. `1a`→`1b` vẫn 8 lần.
 
 **Chốt vận hành cho lát 9b tiếp theo:** thinking **adaptive**; ngưỡng `confidence` **0,8** (dưới ngưỡng 31/400 = 8 % bài, đúng 61 %; từ 0,8 trở lên 369 bài, đúng 87 %) ⇒ bài dưới 0,8 vào hàng rà tay; trần cắt giữ 3.000 ký tự (chưa có bằng chứng cần 4.000). **Chưa bật chạy tự động**, chưa phân loại lại 230 bài đã chạy bằng prompt cũ.
+
+## 9. Lát 9b — làm hết phần thiết kế, KHÔNG bật live (chủ dự án 2026-09-06 tối: "làm hết từng phần, trừ bật dữ liệu live… thiết kế mọi thứ chạy ổn rồi dừng")
+
+| Việc | Trạng thái | Ghi chú |
+|---|---|---|
+| (1) Hai chỉnh sửa prompt đã đo | ✅ `9a44009` | ngành **mặc định 1**, chỉ thêm 2–3 khi bài nói trực tiếp (nhắm precision 43 %); `1d` giữ tin đầu tư công/hạ tầng "kể cả khi văn bản là quyết định điều hành" (nhắm 8 ca `1d`→`1b`). Đo lại: §9.1 |
+| (2) Móc lưới vào vòng `--loop` | ✅ `7f88008` — **mặc định TẮT** | `etl news --loop --classify N`: sau mỗi vòng thu thập gọi job `news.classify` với trần N (quota guard, `ops.llm_call` riêng); lỗi phân loại **không** giết vòng thu thập. Không truyền cờ ⇒ không gọi lần nào (test `test_loop_calls_classify_only_when_flag_set`). Chưa đăng ký task Scheduler |
+| (3) Chạy toàn kho | ⏸️ **để chủ dự án gọi tên** | 7.797 bài chưa phân loại + 230 bài chạy bằng prompt cũ ≈ 22 giờ ≈ $15 quy giá |
+| (4) Embedding (9b-2) | ✅ đo xong, **đề xuất dời sang lát 10** | `pg_trgm` (đã cài, chi phí 0) bắt **2,0 %** bài ở ngưỡng 0,6 và **5,9 %** ở 0,45 — gấp 4–12 lần khoá tiêu đề y hệt (0,5 %), kể cả cặp khác hẳn từ ngữ ("MSB chốt quyền chia cổ phiếu thưởng" ↔ "Một ngân hàng chốt quyền phát hành cổ phiếu thưởng", 0,52) ⇒ giá trị biên của embedding cho dedupe nhỏ; giá trị còn lại là tìm kiếm khái niệm cho chatbot. Ba phương án: [embedding-decision.md](embedding-decision.md) |
+| (5) Nợ kỹ thuật | ✅ `050a648` | `LLMClient.close()` + context manager (chỉ đóng client tự tạo, không đóng client caller bơm vào) — cần cho chatbot lát 10; `run()` gọi close ở mọi nhánh |
+| (5b) Ba ô thiếu trong cây ngành | ⏸️ **cần chủ dự án quyết** | ô tô/xe điện (VinFast phải mượn `THIETBI`), holding/đầu tư phi ngân hàng, dịch vụ dầu khí. Cây 6×24 do chủ dự án chốt từng vòng (industry-tree.md) và đổi cây kéo theo gán lại ngành cho ~1.500 mã ⇒ không tự sửa |
+
+**Test sau toàn bộ:** `875 passed, 2 skipped` (+6 so với 869: close(), móc `--classify`, hai luật prompt, `--ids-file`).
+
+**Sự cố vận hành đáng ghi:** lượt đo lại 400 bài mở lúc 21:03 **treo không ghi dòng nào** trong 13 phút dù tiến trình sống, quota còn 77 %, và một lời gọi thử riêng trả lời trong 0,6 giây ⇒ không phải model, không phải quota. Nhiều khả năng là bẫy **QuickEdit của console Windows** (bấm/chọn chữ trong cửa sổ `cmd` làm đóng băng tiến trình). Từ nay lượt đo dài mở bằng `Start-Process -WindowStyle Minimized` và đặt `PYTHONUNBUFFERED=1`.
