@@ -351,6 +351,27 @@ uv run python -m etl news --backfill-sitemap [--source tinnhanhck|bnews|nguoiqua
 
 Test sau lát 8 (2026-09-06): **791 passed, 2 skipped** (+53 so với lát 7b). Hồ sơ: [`docs/90-records/plans/2026-09-05-news-collect/`](../docs/90-records/plans/2026-09-05-news-collect/) (spec · plan · ledger · `measure-news-2026-09-05.txt`).
 
+## Chạy job classify (lưới AI phân loại tin — lát 9a, 2026-09-06)
+
+Gọi **MiniMax M3** qua [`core/llm`](core/llm/) (SDK `anthropic` trỏ `https://api.minimax.io/anthropic`, khoá `LLM_API` trong `.env` — [minimax.md](../docs/10-sources/llm/minimax.md)). **Mọi lượt phải có trần** — không có chế độ "chạy hết" (mỗi bài ≈ 3k token vào, ≈ 10 s; toàn kho 8k bài ≈ 22 giờ và ăn hết cửa sổ quota tuần).
+
+```bash
+uv run python -m etl classify --per-group 100                       # 100 bài CHƯA phân loại mới nhất của MỖI nhóm gợi ý feed (1 · 2 · 3 · không nhóm) ⇒ ≤ 400 bài
+uv run python -m etl classify --limit 50 [--max-minutes 10]          # 50 bài mới nhất bất kể nhóm; hạn giờ ⇒ budget_hit
+uv run python -m etl classify --dry-run --per-group 3 --out x.jsonl  # gọi model THẬT nhưng không ghi kho, không mở etl_run, không ghi llm_call — để đo; JSONL từng bài
+uv run python -m etl classify --limit 20 --thinking disabled         # tắt thinking (mặc định adaptive); --cap-chars 4000 đổi trần cắt thân bài (mặc định 3000)
+```
+
+Một bài = một giao dịch: `UPDATE news.article` (`group_no/sub/confidence/classified_from/content_chars/group_overridden/labels`; nhãn `x` ⇒ `group_no NULL` + `labels {x}`), `summary_ai` vào revision mới nhất, mã tầng 3 (`article_ticker via='ai'`, **lọc `market.security listed`** — model bịa `VFM`), tầng 1–2 chạy **bù** cho bài backfill được xếp nhóm 3, ngành hai đường vào `news.article_industry` (`via='ai'` từ model ≤ 3 ngành · `via='ticker'` suy từ mọi mã của bài qua `market.v_issuer_industry`), và một dòng **`ops.llm_call`** (token 4 loại, độ trễ, `ok/repaired/failed`). Bài lỗi giữ nguyên NULL, được chọn lại lượt sau; bài đã có `classified_from` **không bao giờ** chọn lại (chưa có `--force`).
+
+**Guard:** quota Token Plan (`GET /v1/token_plan/remains`) kiểm trước lượt và mỗi 25 bài — dừng (`quota_stop`, vẫn `success`) khi cửa sổ 5 giờ < 20 % hoặc tuần < 10 %; 5 lời gọi liên tiếp lỗi thử-lại-được ⇒ `ModelDown` (exit 1, `failed` kèm stats); lỗi `auth` ⇒ exit 2 ngay. Thiếu `LLM_API` ⇒ exit 2 trước khi mở `etl_run`.
+
+**Đọc `stats`** (`ops.etl_run` job `news.classify`): `selected / classified / failed / failed_schema / repaired / groups{1,2,3,x} / overridden / title_only / tickers_url|lookup|ai|ai_dropped / industries_ai|ticker / tokens{input,cache_read,output,thinking} / latency_s{p50,p90,max,total} / usd_estimate (quy giá pay-go để so, Token Plan tính theo quota) / quota{before,after} / quota_stop / budget_hit / warnings`. Ở `--dry-run` các bộ đếm `overridden`/`tickers_*`/`industries_*` luôn 0 (chỉ `apply` mới đếm) — đọc JSONL.
+
+**Số đo thật** (2026-09-06, [ledger](../docs/90-records/plans/2026-09-06-news-classify-llm/ledger.md) §2): xem ledger — token/độ trễ/chi phí của lượt ≈ 400 bài adaptive và 100 bài disabled.
+
+⚠️ Chạy lượt > 10 phút **tách tiến trình** (`Start-Process cmd`), theo dõi qua `ops.etl_run`. Chưa gắn vào `--loop`, chưa có task Scheduler — bật chạy tự động chỉ sau khi có bộ đánh giá gán tay ([news-pipeline §12](../docs/20-design/news-pipeline.md)).
+
 ## Lịch chạy (Windows Task Scheduler)
 
 ```bash

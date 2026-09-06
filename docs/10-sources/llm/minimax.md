@@ -57,11 +57,14 @@ Bộ đo: 30 bài thật (tập trôi nhẹ giữa các lượt vì `--loop` đa
 
 Phương pháp ép kiểu cho code (chưa viết, thiết kế ở [brainstorm §4.2](../../90-records/surveys/2026-09-06-llm-module-minimax/brainstorm.md)): schema Pydantic với enum → ép công cụ → kiểm → text JSON thì parse → sai thì gọi lại một lần → vẫn sai thì `failed`. Với số đo này đường sửa gần như không kích hoạt, nhưng phải có vì mẫu 232 chưa phải toàn kho.
 
+- 🔴 **Mảng rỗng bị bỏ hẳn** *(đo 2026-09-06 chiều, schema có HAI trường mảng `tickers` + `industries` đều `required`)*: 1/12 bài (tin `x`, không mã, không ngành) model trả `tool_use` **thiếu cả hai khoá** thay vì `[]`; lời gọi sửa lần hai vẫn thiếu ⇒ `failed_schema`. Đo 232 lời gọi trước không gặp vì chỉ có một mảng và model còn trả `tickers: []`. ⇒ Trường mảng có thể rỗng phải **tuỳ chọn, mặc định `[]`** trong schema; đừng đặt `required` cho chúng.
+
 ## 6. Prompt caching *(đo + tài liệu)*
 
 - **Tự động** cho M3: prefix ≥ 512 token, thứ tự `tools → system → messages`, ghi cache miễn phí, đọc giá $0,06/M *(tài liệu)*. Đo qua SDK với system ≈ 2,8k token: lượt 1 `input 3.030 / cache_read None`; lượt 2–3 **`input 214 / cache_read 2.816`** — cache ăn ngay lượt kế.
 - `cache_control` tường minh trên M3: **được nhận nhưng vô hiệu** (`cache_read` đứng ở 128, `cache_creation 0`) — tài liệu: tường minh chỉ cho M2.x. Không cần đặt.
 - Luôn thấy `cache_read_input_tokens: 128` / `cached_tokens: 128` ngay cả lời gọi đầu — khả năng là khuôn nội bộ của MiniMax; không tính là cache của mình.
+- 🔴 **Cache tự động không đều khi chạy lô** *(đo 2026-09-06 chiều, job `etl classify --dry-run`, 11 lời gọi tuần tự cách nhau 5–27 s, cùng system+tools ≈ 1,5k token)*: chỉ **4/11** lời gọi đọc cache (`cache_read 2.048`), 7/11 ở mức nền 128 dù prefix giống hệt. Ước "1,3k cache mỗi bài" của brainstorm là lạc quan — tính ngân sách theo **token vào đầy đủ** (≈ 3,0k/bài), coi cache là tiền thưởng.
 - Trường usage: Anthropic `cache_read_input_tokens`, `cache_creation_input_tokens`, `output_tokens_details.thinking_tokens` (khi có); OpenAI `prompt_tokens_details.cached_tokens`, `completion_tokens_details.reasoning_tokens`.
 
 ## 7. Chi phí và độ trễ một bài phân loại *(đo trên 2 bài thật, prompt taxonomy 20 sub + bài 3.000 ký tự, ép công cụ, giao diện Anthropic)*
@@ -97,6 +100,8 @@ Endpoint gốc trả **HTTP 200 kèm `base_resp.status_code`**: `1000` lỗi l�
 ## 10. SDK *(đo)*
 
 `anthropic` **1.4.0** (PyPI 2026-09-06) với `Anthropic(api_key=<LLM_API>, base_url="https://api.minimax.io/anthropic")`: `messages.create` (thinking + tools + `tool_choice`) chạy đúng; vòng tool 2 lượt echo `response.content` (gồm `thinking`) chạy đúng; **`client.beta.messages.tool_runner` với `@beta_tool` chạy đúng** trên MiniMax. SDK 1.x dùng `httpx2`, sống chung với `httpx` của repo. Chưa đo: streaming qua SDK, `messages.count_tokens` (khả năng không có — dùng tỷ lệ §4 để ước).
+
+*(đo 2026-09-06 chiều, lát 9a)* Test offline: `Anthropic(..., http_client=httpx2.Client(transport=httpx2.MockTransport(handler)), max_retries=0)` chạy đúng — phải là `httpx2.MockTransport`, không phải `httpx`. Phân cấp lỗi của SDK 1.4.0: `OverloadedError` (529) là **anh em** của `InternalServerError` (cùng cha `APIStatusError`), không phải con — map "5xx ⇒ thử lại được" phải kiểm `status_code >= 500`, không liệt kê lớp. Module dùng chung của dự án: [`backend/core/llm/`](../../../backend/core/llm/).
 
 ## 11. Bẫy đã gặp trong 40 phút đo
 

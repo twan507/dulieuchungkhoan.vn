@@ -107,7 +107,7 @@ Tin xã hội, thể thao, giáo dục, y tế thuần; PR và advertorial.
 
 **Vào:** tiêu đề · **toàn văn đã làm sạch và cắt trần** · sapo gốc · tên nguồn · slug feed · **nhóm gợi ý từ feed**
 
-**Ra:** `group` (1/2/3 hoặc `x`) · `sub` · `confidence` · `summary_ai` · `tickers[]` nếu group = 3
+**Ra:** `group` (1/2/3 hoặc `x`) · `sub` · `confidence` · `summary_ai` · `tickers[]` nếu group = 3 · **`industries[]`** (mã ngành level 2, mọi nhóm, tối đa 3 — §8b, thêm 2026-09-06)
 
 **Vì sao đọc toàn văn thay vì tiêu đề + sapo:** phân loại chính xác hơn hẳn ở những ca nhảy nhóm 1↔3 mà tiêu đề gây hiểu nhầm (mục 7.2). Và một khi đã nạp toàn văn thì sinh `summary_ai` trong cùng lượt gọi gần như miễn phí — chỉ thêm ~100 token đầu ra.
 
@@ -174,6 +174,23 @@ Cần bảng tên thương mại → mã: "Hoà Phát", "Thế Giới Di Động
 **Một tin có thể mang nhiều mã.** Ví dụ *"22/27 ngân hàng ghi nhận CASA giảm"* gắn cùng lúc CTG, EIB, STB, TCB, TPB. Lưu dạng mảng, kèm tầng nào sinh ra mã đó để về sau đo được độ chính xác từng tầng.
 
 **Mã rỗng là kết quả hợp lệ.** Tin *"Chuyên gia chỉ ra 3 sai lầm nhà đầu tư dễ mắc khi xuống tiền"* thuộc sub `3e` nhưng không nhắc mã nào. Trường `ticker_step_ran` phân biệt "không có mã" với "chưa chạy" — ép buộc phải có mã sẽ khiến AI bịa.
+
+**Tầng 3 như đã dựng (lát 9a, 2026-09-06):** model đọc toàn văn và trả `tickers[]`; **mọi mã bắt buộc lọc qua `market.security` `status='listed'`** trước khi ghi `via='ai'` — đo 2026-09-06: model bịa `VFM` cho VinFast (niêm yết Nasdaq `VFS`). Bảng `trade_name` chưa seed (chưa có nguồn tên thương mại; model đã đổi tên → mã 17/19 đúng) — mở lại khi đo thấy AI sót tên doanh nghiệp. Tầng 1–2 chạy **bù** cho bài không có nhóm gợi ý (backfill) khi model xếp nhóm 3.
+
+---
+
+## 8b. Gắn ngành — hai đường *(bổ sung 2026-09-06, chủ dự án)*
+
+Ngoài mã cổ phiếu, mỗi bài gắn **ngành** theo bộ 24 ngành level 2 của [industry-tree.md](industry-tree.md). Khác với mã (chỉ nhóm 3), ngành áp **cả ba nhóm**: nghị định về bất động sản dân dụng, giá điện, thuế phân bón (nhóm 1) hay giá dầu, thuế quan Mỹ lên dệt may/thuỷ sản (nhóm 2) đều là tin ngành mà thường không nêu mã nào.
+
+| Đường | `via` | Cách sinh | Độ tin cậy |
+|---|---|---|---|
+| Suy từ mã | `ticker` | mọi dòng `article_ticker` của bài (url/lookup/ai) → `market.security.issuer_id` → `market.v_issuer_industry.industry_id` | xác định, không `confidence`; quỹ/ETF không có ngành theo thiết kế ⇒ không sinh dòng |
+| Đọc hiểu | `ai` | model trả `industries[]` trong cùng lời gọi phân loại; danh sách 24 mã là **enum trong schema công cụ** (đo: enum là thứ cho 0 lỗi schema) | `confidence` của lời gọi; tối đa 3 ngành, xếp liên quan nhất trước; rỗng hợp lệ (vĩ mô thuần, tin `x`) |
+
+**Lưu ở bảng riêng `news.article_industry(article_id, industry_id, via, confidence)`, `via` trong khoá chính** — cùng khuôn `article_ticker`: cùng (bài, ngành) do hai đường tìm ra là hai dòng, để đo "AI trùng suy-từ-mã bao nhiêu" bằng SQL. Không dùng cột mảng trên `article`: mất khoá ngoại tới `market.industry`, mất `via`, mất `confidence`. Đường `ticker` **lưu vật lý** lúc phân loại (không phải view) — mã đổi ngành về sau không viết lại lịch sử.
+
+**Danh sách ngành nạp từ `market.industry` lúc chạy** (code — tên), không chép cứng vào prompt — industry-tree.md là chủ nội dung duy nhất, cùng nguyên tắc với [chatbot-semantic-layer §3.2](chatbot-semantic-layer.md).
 
 ---
 
@@ -356,10 +373,11 @@ Lưu tiêu đề + link để tham chiếu là một chuyện, lưu toàn văn l
 
 | Việc | Ghi chú |
 |---|---|
-| **Đo tỷ lệ dedupe thật** | Khối lượng thô đã đo (~570/ngày, mục 13). Còn lại là tỷ lệ trùng giữa 8 nguồn — ước tính ~3,5 lần nhưng chưa kiểm chứng. Đây là số quyết định ngân sách phân loại. 🟡 lát 8 đã có khung đo (`stats` mỗi vòng: `items/new/merged_url/merged_title`); số sau 1–2 ngày `--loop` ghi ở ledger lát 8 |
-| **Danh sách mã niêm yết** | Cần nguồn cập nhật ~1.600 mã HOSE/HNX/UPCoM cho tầng 2 |
-| **Bảng tên thương mại → mã** | Cho tầng 3. Dùng `pg_trgm` để khớp gần đúng |
-| **Ngưỡng `confidence`** | Dưới bao nhiêu thì đưa vào hàng chờ rà tay |
+| **Đo tỷ lệ dedupe thật** | ✅ đo 2026-09-06 (`--loop` lát 8, 91 vòng · 152.569 item · 1.860 mới): gộp theo **tiêu đề y hệt chỉ ≈ 0,5 % bài** (14 gộp tiêu đề, 0 gộp URL) — ước "3,5 lần" của §9.2 quá xa thực tế; tin "cùng chuyện, khác tít" chỉ đo được bằng embedding (lát 9b). Ngân sách phân loại vì thế tính trên **toàn bộ bài mới** (~170–315/ngày thường), không chia 3,5 |
+| **Danh sách mã niêm yết** | ✅ `market.security` `status='listed'` (job `etl refdata`, ~1.500 mã) — tầng 2 và tầng 3 cùng đối chiếu |
+| **Bảng tên thương mại → mã** | Chưa seed — lát 9a đo thấy model đã đổi tên → mã 17/19 đúng khi đọc toàn văn; mở lại khi thấy AI sót tên doanh nghiệp (§8 tầng 3) |
+| **Ngưỡng `confidence`** | Dưới bao nhiêu thì đưa vào hàng chờ rà tay — chốt từ phân bố trên bộ gán tay; lát 9a ghi `confidence` mọi bài nhưng chưa dùng làm ngưỡng |
+| **Bộ đánh giá gán tay + chốt thinking** | 100–150 bài gán tay, chạy 3 lượt mỗi cấu hình (nhãn tự lệch ~10 % giữa hai lượt kể cả `temperature 0` — [minimax.md §7.1](../10-sources/llm/minimax.md)); **điều kiện trước khi bật lưới chạy tự động** (lát 9a chỉ chạy lô có trần) |
 | **Chọn mô hình embedding** | 🟡 **Kích thước + kiểu lưu đã chốt 2026-08-26: `halfvec(768)`** (§9.5) — còn ngỏ: mô hình cụ thể, chọn bằng cách đo khả năng tách tin trùng trên tin đã crawl. Nhớ embed cả `summary` và `summary_ai`, giữ riêng |
 | **Tách từ tiếng Việt** | Chỉ làm khi có bằng chứng `simple` + `unaccent` không đủ chính xác |
 | **Luật bỏ boilerplate từng nguồn** | ✅ đã khảo sát 2026-08-15 — luật từng nguồn ở [article-structure.md](../10-sources/news/article-structure.md); còn ngỏ: dạng bài longform/video/bài cũ chưa phủ |
@@ -398,10 +416,10 @@ Lưu tiêu đề + link để tham chiếu là một chuyện, lưu toàn văn l
 Theo thứ tự phụ thuộc:
 
 1. ✅ **Đã khảo sát cấu trúc trang bài của cả 8 nguồn** (2026-08-15) — luật bỏ boilerplate từng nguồn (mục 6.5 tầng 2) nằm ở [cấu trúc trang bài](../10-sources/news/article-structure.md). Còn ngỏ: dạng bài longform/video/bài cũ chưa phủ.
-2. **Chốt nguồn danh sách mã niêm yết** và bảng tên thương mại → mã.
-3. **Chốt mô hình embedding** trước khi bắt đầu nạp dữ liệu.
+2. **Chốt nguồn danh sách mã niêm yết** ✅ *(`market.security`, lát 8)* và bảng tên thương mại → mã *(chưa seed — §12)*.
+3. **Chốt mô hình embedding** trước khi bắt đầu nạp dữ liệu — dời sang **lát 9b** (`embo-01` của MiniMax bị chặn dưới Token Plan và 1536 chiều ≠ `halfvec(768)`).
 4. **Dựng khung thu thập + chuẩn hoá**, chạy không có AI trong 1 tuần để đo tỷ lệ dedupe thật. ✅ *(lát 8, 2026-09-06 — không AI, `--loop`)*
-5. Có số dedupe rồi mới chốt ngân sách và bật lưới phân loại.
+5. Có số dedupe rồi mới chốt ngân sách và bật lưới phân loại. ✅ *(lát 9a, 2026-09-06 — dedupe 0,5 % ⇒ ngân sách trên toàn bộ bài mới; lưới dựng xong trên MiniMax M3, gồm `summary_ai`, tầng 3 và gắn ngành §8b; **chưa bật chạy tự động** — chạy lô có trần `etl classify`, bật tự động sau bộ gán tay — hồ sơ [plans/2026-09-06-news-classify-llm/](../90-records/plans/2026-09-06-news-classify-llm/))*
 6. **Backfill lịch sử** từ sitemap TinnhanhCK / BNews / NguoiQuanSat — làm càng sớm càng tốt, dữ liệu đó chỉ còn chừng nào họ còn giữ sitemap. ✅ *(TinnhanhCK lát 8; BNews/NguoiQuanSat lát 8b 2026-09-06 — cùng job `--backfill-sitemap --source`; tháng 2026-08 mỗi nguồn đang nghiệm thu, số ghi ở ledger lát 8b)*
 
 ### Cảnh báo cho người triển khai

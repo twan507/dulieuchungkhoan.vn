@@ -116,6 +116,7 @@ Tách tiến trình kéo theo vài ràng buộc không được quên:
 ```
 backend/
 ├── core/            thư viện lõi dùng chung (db, clients, ratelimit, config, dictionary)
+│   └── llm/         gọi MiniMax M3 — SDK anthropic trỏ api.minimax.io/anthropic: structured() ép công cụ + Pydantic, quota, đếm token (lát 9a, 2026-09-06)
 ├── ingester/        entrypoint daemon realtime
 ├── etl/             entrypoint job theo lịch + các crawler
 ├── api/             entrypoint FastAPI

@@ -8,4 +8,4 @@
 | [measure-minimax-2026-09-06.md](measure-minimax-2026-09-06.md) | Nhật ký ≈45 lời gọi thật: endpoint, thinking, đầu ra có cấu trúc, tokenizer 1,62 ký tự/token, cache, SDK, embedding, quota |
 | [reliability/](reliability/) | **Đo độ tin cậy đầu ra có cấu trúc**: script `mm_reliability.py` (dùng lại làm khung bộ đánh giá lát 9) + 8 file JSONL (8 lượt × 30 bài, 232 lời gọi trên 29 bài chung): 0 lỗi schema, nhất quán nhóm 86–100%, `summary_ai` vượt độ dài, mã bịa `VFM` |
 
-Tri thức vận hành đã chuyển vào tài liệu sống: [`docs/10-sources/llm/minimax.md`](../../../10-sources/llm/minimax.md) (tầng reference) và [roadmap — Điểm vào cho lát 9](../../../00-overview/roadmap.md).
+Thiết kế ở `brainstorm.md` đã thành code cùng ngày: [plans/2026-09-06-news-classify-llm/](../../plans/2026-09-06-news-classify-llm/) (spec · plan · ledger). Tri thức vận hành đã chuyển vào tài liệu sống: [`docs/10-sources/llm/minimax.md`](../../../10-sources/llm/minimax.md) (tầng reference) và [roadmap — Điểm vào cho lát 9](../../../00-overview/roadmap.md).
