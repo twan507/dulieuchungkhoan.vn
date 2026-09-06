@@ -32,7 +32,7 @@ Mọi thông tin đều được **kiểm chứng bằng lời gọi thật**. K
 
 ## 2. Phạm vi
 
-Mục này nói về phạm vi **tám nguồn API và crawl** (thị trường Việt Nam, vĩ mô Việt Nam, quốc tế). Phạm vi nguồn tin tức có bảng riêng ở [`news/README.md`](news/README.md).
+Mục này nói về phạm vi **tám nguồn API và crawl** (thị trường Việt Nam, vĩ mô Việt Nam, quốc tế). Phạm vi nguồn tin tức có bảng riêng ở [`news/README.md`](news/README.md). Nhà cung cấp mô hình ngôn ngữ của dự án (MiniMax M3 — không phải nguồn dữ liệu, là dịch vụ tính toán) ghi ở [`llm/minimax.md`](llm/minimax.md).
 
 ### Trong phạm vi
 
