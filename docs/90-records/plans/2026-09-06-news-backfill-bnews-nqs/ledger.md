@@ -28,12 +28,16 @@ Mọi lượt dưới credential production (`ETL_DATABASE_URL`, role `dlck_etl`
   - BNews `run_id 319`: `articles_ok 1.150`, `articles_failed 0`, `refused 7` (`too_short`), `periods_failed []`, `budget_hit true`, `cursor null` (tháng chưa trọn), lùi từ 31/08 tới ~24/08 — **≈ 19 bài/phút**, đúng ước 3,2 s/bài.
   - NguoiQuanSat `run_id 320`: `articles_ok 1.145`, `articles_failed 0`, `refused 4` (`too_short`), `periods_failed []`, `budget_hit true`, `cursor 2026-08-26` (6 ngày trọn 31→26/08). **0 lỗi 403 sau retry** trong 1.145 bài + 6 file ngày ⇒ A1 đứng vững ở tải này. 0 bài `no_title` ⇒ tháng 8/2026 toàn template mới.
   - Đối chiếu 3 bài mỗi nguồn (chọn ngẫu nhiên, seed 6): BNews `434743`/`434987`/`434786` — `published_at` DB (UTC) = `lastmod` sitemap 2026-8 (`18:01:30`, `10:01:49`, `21:39:36 +07`) 3/3, tiêu đề và 60 ký tự đầu đúng bài; NQS `313246`/`313499`/`313614` — `published_at` = ld+json `datePublished` trên trang tải lại 3/3 (`21:04:01`, `22:06:01`, `21:23:01 +07`). `feed='sitemap'`, `group_from_feed NULL`, `published_at_src='feed'` ✅
-- **AC3 lượt 2+** (code đã sửa, nối con trỏ): `run_id 333` (BNews) · `334` (NQS) mở 08:55 — số ghi khi đóng sổ (dưới).
+- **AC3 lượt 2** (code đã sửa `1e3845f`, nối con trỏ):
+  - BNews `run_id 333` (08:53–09:53, `success`): `articles_ok 1.166`, `articles_failed 0`, `refused 1`, `skipped_seen 1.165`, `periods_failed []`, `budget_hit True`, `cursor None`, `periods_done` 0 kỳ, `calls 1.168`, `retries 0`.
+  - NguoiQuanSat `run_id 334` (08:53–09:53, `success`): `articles_ok 1.148`, `articles_failed 0`, `refused 3`, `skipped_seen 150`, `periods_failed []`, `budget_hit True`, `cursor 2026-08-20`, `periods_done` 6 kỳ, `calls 1.158`, `retries 0`. Con trỏ lượt 2 nối đúng sau `2026-08-26` của lượt 1 (kỳ đầu lượt 2 = 2026-08-25).
+  - **Dừng tại đây theo ruling 6** — không mở lượt 3. Kho sau hai lượt: BNews 2.316 bài sitemap (từ 2026-08-13), NguoiQuanSat 2.293 (từ 2026-08-19).
+  - A1 (403 NQS): tổng hai lượt `articles_failed 0`, `periods_failed []` ⇒ retry sẵn có đủ ở tải 1 lời gọi / 1–5 s liên tục 2 giờ, chạy song song `--loop`. A4 đứng vững (BNews `articles_failed 0`).
+- **AC7** ✅ `git grep "tnck_sitemap|months_desc|JOB_BACKFILL|months_done|months_failed"` ngoài `90-records/`: chỉ còn khối "Điểm vào lát 8b" đã gạch trong roadmap (giữ làm ngữ cảnh) và `price_store.JOB_BACKFILL` (miền giá). Tài liệu §8 spec: news/README §5.4–5.6, article-structure §2.6–2.7, news-pipeline §9.6/§14, backend README, feeds.json, roadmap, 90-records README, market-data-store — xong.
 - **AC5** ✅ `load_cursor` trên kho thật sau lượt 1: `tinnhanhck → '2026-08'` (đọc từ tên job cũ `news.backfill_sitemap` của lát 8 — fallback đúng), `bnews → None`, `nguoiquansat → '2026-08-26'` — ba con trỏ độc lập. Lượt 2 NQS mở với `--from 2026-08` nối từ 25/08 (kiểm ở log lượt 334).
 - **AC6** ✅ 08:55: mọi bài `feed='sitemap'` có `article_source.source_name` = `primary_source` (lệch 0/1.157 BNews, 0/1.152 NQS, 0/1.699 TNCK).
 - **AC1** ✅ toàn bộ **806 passed, 2 skipped** (1 warning starlette có sẵn) sau đợt sửa.
 - **AC4** — **bỏ theo ruling 6** (chủ dự án: backfill chỉ để test). Bằng chứng template cũ: test `test_nguoiquansat_old_template_2024_title_time_and_body` trên fixture thật + 3 bài 2021/2022/2024 bóc được lúc đo (file đo §NQS).
-- **AC7** (tài liệu, `git grep`): ghi ở §5.
 
 ## 3. Review hai trục
 
@@ -53,3 +57,9 @@ Mọi lượt dưới credential production (`ETL_DATABASE_URL`, role `dlck_etl`
 1. Plan lệch spec §3.1 một điểm: `backfill_sitemap` nhận `periods` đã cắt theo con trỏ (run_backfill tính), không nhận `from/to` — giữ cấu trúc lát 8, test qua `run_backfill`.
 
 ## 5. Trạng thái bàn giao
+
+- Nhánh `feat/news-backfill-sitemaps` gộp `main` bằng `--no-ff` (xem commit merge); **806 passed, 2 skipped** (1 warning starlette có sẵn); không migration (`0017` head).
+- Kho `news.article` lúc chốt: **7.956 bài** (6.312 từ sitemap, `group_from_feed NULL`) — nguoiquansat 2.466 (sitemap 2.293, từ 2026-08-19) · bnews 2.401 (sitemap 2.316, từ 2026-08-13) · tinnhanhck 1.904 (sitemap 1.703, từ 2026-07-31) · vneconomy 395 · vietstock 364 · cafef 179 · vietnambiz 143 · baochinhphu 104. `article_source` 7.970. `article_ticker`: lookup 436, url 24. Mọi trường AI NULL, `trade_name` 0 dòng.
+- `--loop` lát 8 vẫn chạy trong cửa sổ `dlck-news-loop` (vòng gần nhất 09:53); sơ bộ từ 04:13: 69 vòng, `items 115.349`, `new 62`, `merged_url 0`, `merged_title 2`, `refused 1`, `articles_failed 0`, `lists_failed 1` — cuối tuần, chưa dùng chốt AC7 lát 8 (chờ thứ 2 07/09).
+- **Nợ để lại:** AC4 bỏ (ruling 6); `Seen.load` quét toàn bảng (M1 lát 8) — kho 7.956 dòng, ngưỡng ~100k còn xa; minor để lại của review: `collect` ngầm coi sitemap không-backfill là theo tháng, `lastmod` naive → `astimezone`, `run_backfill` return sớm không `dispose`, `MONTH_KEY` lỏng hơn `MONTH`, `periods_desc` không cắt `today` cho nguồn tháng; 2 trang tĩnh TinnhanhCK (`lien-he-post83928`, `thong-tin-toa-soan-post83927`, giờ 2013) lọt qua trang chuyên mục — lát 9 lọc khi phân loại, lát 12 xét luật.
+- Không còn tiến trình backfill nào chạy. Workspace SDD (scratchpad) đã xoá; hồ sơ = thư mục này + git.
