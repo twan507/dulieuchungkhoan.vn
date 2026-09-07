@@ -110,6 +110,18 @@ Vòng `--loop` đang sống trong cửa sổ `dlck-news-loop` chạy **301 vòng
 🔴 **Hai cảnh báo phải đọc kèm, đừng chép số mà bỏ hai dòng này:**
 
 1. **Số này đo code TRƯỚC lát 9b.** Tiến trình đang chạy khởi động 2026-09-06 11:48, trước khi lát 9b merge; `stats` của **cả 399 lượt** trong kho **không có khoá `merged_near`** ⇒ khoá dedupe thứ tư (`pg_trgm` 0,6, migration `0020`) **chưa từng chạy một vòng nào trong thực tế**. Tỷ lệ 1,26 % là của **ba khoá**, không phải của code đang nằm trên `main`. **Đã khởi động lại 2026-09-07 13:21 (chủ dự án chốt):** tiến trình cũ (PID 17888/12140, chạy từ 06/09 11:48) dừng ngay sau khi vòng 306 đóng sổ — chọn đúng khe nghỉ giữa hai vòng nên **không để lại dòng `running` treo nào** (kiểm: 0). Tiến trình mới bật 13:21:28 bằng code trên `main`, cùng cửa sổ `dlck-news-loop`, cùng log. Từ vòng này `stats` mới có `merged_near` ⇒ số dedupe **bốn khoá** đo được sau ≥ 24 giờ nữa; con số 1,26 % ở trên **không được chép sang** làm số của bốn khoá.
+
+**Và không phải chờ 24 giờ mới biết khoá thứ tư bắt được gì — phát lại trên kho, đo 2026-09-07 13:55.** Chạy đúng vị từ của `news_store.find_near_duplicate` (khác báo · trong 48 giờ · `similarity(unaccent(lower(title))) ≥ 0,6` · tiêu đề ≥ 30 ký tự) trên **chính 485 bài** của cửa sổ 25 giờ ở trên, chỉ ghép về **bài có trước**, rồi áp nốt chốt chặn ngày bằng **chính hàm `_dates`** của đường chạy thật:
+
+| | Số |
+|---|---|
+| Cặp thô `sim ≥ 0,6` | **26** |
+| Bài sẽ bị gộp | **22 / 485 = 4,5 %** |
+| Bị chốt chặn ngày loại | **1** |
+
+⇒ Khoá thứ tư gộp thêm ~**4,5 %** trên nền **1,26 %** của ba khoá — tổng ≈ **5,7 %**, tức **gấp ~4,5 lần**. Khớp hướng với số offline của lát 9b (trigram bắt 2,0–5,9 %, gấp 4–12 lần khoá tiêu đề y hệt).
+
+⚠️ **Hai điều phải nói kèm.** (1) Đây là **phát lại offline**, không phải số của vòng chạy thật: đường thật gộp ngay khi phát hiện nên tập bài sau đó lệch đi chút ít. Số của vòng thật vẫn đang tự tích luỹ, đọc được từ **13:30 ngày 08/09**. (2) Chốt chặn ngày **cắt nhầm 1 cặp trùng thật** trong cửa sổ này: *"Lịch chốt quyền trả cổ tức trong tuần từ ngày 7/9-11/9…"* ↔ *"Lịch chốt quyền trả cổ tức bằng tiền tuần tới (từ 7-11/9)…"* (`sim 0,658`) — `_dates` đọc `7/9-11/9` khác `7-11/9` nên coi là hai ngày khác nhau. Giá phải trả của chốt chặn đó là **1 bỏ sót / 26 cặp** ở đây; lát 9b đo *"chặn đúng 1/176 cặp, không chặn nhầm cặp nào"* — nay đã có ca chặn nhầm đầu tiên, ghi lại để lát sau cân lại luật, **không sửa vội**.
 2. **Hai feed Vietstock đóng băng > 7 ngày** — `vietstock/741/chung-khoan/niem-yet` và `vietstock/742/hang-hoa/kim-loai` xuất hiện trong `warnings` của **mọi vòng**. Đúng cạm bẫy "feed sống mà nội dung đóng băng" đã ghi ở [news/README](../../../10-sources/news/README.md); cảnh báo đang chạy đúng việc của nó, chưa ai xử.
 
 **Kho lúc chốt:** `news.article` **8.440 bài**, trong đó **8.210 chưa phân loại** (`classified_from IS NULL`). Ngày làm việc 07/09 có bài từ **cả 8 nguồn**: cafef 154 · nguoiquansat 41 · tinnhanhck 38 · vneconomy 19 · vietstock 17 · bnews 16 · vietnambiz 15 · baochinhphu 7.
