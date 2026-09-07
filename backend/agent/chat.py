@@ -125,8 +125,24 @@ def run_turn(llm, read_eng, ops_eng, history: list, cau_hoi: str) -> tuple[str, 
     return tra_loi, messages
 
 
+LENH_MOI = {"/moi", "/mới"}
+"""Lệnh xoá lịch sử.
+
+Có vì phiên tràn cửa sổ ngữ cảnh vốn là ngõ cụt: lượt tràn bị bỏ và lịch sử giữ nguyên
+(đúng, để phiên không chết cứng), nhưng lịch sử vẫn quá dài nên lượt sau lại tràn — lối
+thoát duy nhất trước đây là Ctrl+C rồi chạy lại (review-chuan-v4 §G3).
+
+KHÔNG tự cắt lịch sử khi gần trần: cắt tự động là đoán xem người dùng còn cần gì trong
+đoạn hội thoại của họ, đắt hơn phần lợi.
+"""
+
+
+def la_lenh_moi(cau: str) -> bool:
+    return cau.strip().lower() in LENH_MOI
+
+
 def repl(llm, read_eng, ops_eng) -> None:
-    print("Hỏi về chứng khoán, tài chính, kinh tế. Ctrl+C để thoát.\n")
+    print("Hỏi về chứng khoán, tài chính, kinh tế. /moi để xoá lịch sử, Ctrl+C để thoát.\n")
     history: list = []
     while True:
         try:
@@ -135,6 +151,10 @@ def repl(llm, read_eng, ops_eng) -> None:
             print("\nTạm biệt.")
             return
         if not cau:
+            continue
+        if la_lenh_moi(cau):
+            history = []
+            print("\n[đã xoá lịch sử — bắt đầu phiên mới]\n")
             continue
         t0 = time.monotonic()
         try:

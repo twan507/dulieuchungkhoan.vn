@@ -86,8 +86,12 @@ cd backend && uv run pytest tests/schema -v
 Cả bộ trong một lệnh — 877 test, 2 skipped *(đo 2026-09-06 chiều sau lát 9a lưới AI phân loại: +52 test — `tests/core/test_llm_*` 13, `test_s15` 4, `test_e59`–`e61` 34, và +1 test dispose; migration head `0018`; 809 trưa cùng ngày sau lát 8b + trả nợ nhỏ; 791 sáng sau lát 8 thu thập tin: +53 test `test_e52`–`e58`; 729 tối 2026-09-05 sau lát 7b cập nhật trong phiên: +20 test `test_e50`–`e51` và test mới ở e41/e43–e49; 709 sau lát 7 ETL quốc tế và đợt sửa review toàn nhánh; 650 chiều cùng ngày sau nợ Ctrl+C `test_e42`; 640 sáng sau lát 6 `etl wichart`; không migration mới, head vẫn `0017`)*, gồm cả `tests/clickhouse` và `tests/ingester` *(hai bộ này tự dựng container ClickHouse riêng ở cổng riêng, không đụng CH production)*:
 
 ```bash
-cd backend && uv run pytest tests -q
+cd backend && uv run --env-file ../.env pytest tests -q
 ```
+
+🔴 **`--env-file ../.env` là bắt buộc nếu shell chưa export sẵn biến** *(đo 2026-09-07)*: `uv` **không** tự nạp `.env` (không có `[tool.uv] env-file` trong `backend/pyproject.toml`), nên chạy trần trong một shell sạch cho **425 error** ở bước fixture — `KeyError: 'TEST_DATABASE_URL'` tại `tests/conftest.py:23` — chứ không phải test hỏng. Cùng lệnh kèm `--env-file` cho **1.029 passed, 2 skipped** *(2026-09-07 sau lát 11)*.
+
+🔴 **Đừng chạy hai phiên `pytest` cùng lúc.** Cả bộ dùng **một** DB test `dulieu_test`; hai phiên song song giẫm dữ liệu của nhau và cho ra hàng chục fail/error rải rác ở `tests/etl` — mỗi file chạy riêng lại pass, nên rất dễ tưởng là nợ kỹ thuật có sẵn *(đã gặp thật 2026-09-07: một phiên review chạy song song ⇒ 11 failed + 7 error; chạy lại một mình ⇒ 1.029 passed hai lượt liên tiếp)*.
 
 *(Lịch sử fixture: trước `ff4d0ca` — 2026-08-28 — lệnh gộp chết ở bước collection vì `tests/schema/conftest.py` và `tests/etl/conftest.py` cùng nạp dưới tên module `conftest`; sửa bằng import đủ đường dẫn. Cách đó lại tạo **hai fixturedef `migrated_engine`** session-scope ⇒ full suite dựng + migrate `dulieu_test` **hai lần**, và lần dựng lại thứ hai từng che va chạm dữ liệu giữa test job và test schema (review lát 6). **Từ 2026-09-05 chỉ còn một `backend/tests/conftest.py`** giữ `migrated_engine` · `db` · `expect_violation`; hai conftest con đã xoá; test schema dùng literal `ZZ*`/`zz_test` để không đụng dòng mà test job đã commit.)*
 

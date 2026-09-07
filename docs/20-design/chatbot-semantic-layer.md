@@ -24,6 +24,19 @@ Hệ thống có bốn thứ có thể "quyết định" nội dung câu trả l
 | 3 | **Skill L2** `vn-stock-knowledge` | **Nội dung** chấm được đúng/sai: công thức, quy trình, định nghĩa | Nhận định thị trường, tỷ trọng |
 | 4 | **Function calling** | **Dữ kiện thật**: giá, BCTC, chỉ tiêu, tin | Cách diễn giải dữ kiện |
 
+**System prompt gồm bốn block, thứ tự có chủ đích** *(lát 11, 2026-09-07)*:
+
+| # | Block | Đổi theo ngày? | Vai |
+|---|---|---|---|
+| 1 | `SCOPE_GUARD` | không | Có trả lời hay không |
+| 2 | **L1** (`build_system_blocks` nạp trọn) | không | Hình dạng câu trả lời |
+| 3 | `ANSWER_RULES` | không | **Luật trình bày của tầng sản phẩm**: số dẫn xuất phải kèm phép tính bằng số · phân biệt số tra được với giả định của đề · cấm nêu tỷ trọng, điểm mua/bán, vùng giá cụ thể |
+| 4 | `TOOL_RULES` | **có** — mang ngày hôm nay | Cách dùng công cụ, neo thời gian |
+
+Hai lý do `ANSWER_RULES` **không** nhập vào `TOOL_RULES`: tên khối kia tự khai *"chỉ nói cách dùng công cụ"* nên nhét luật trình bày vào là làm chú thích nói dối; và khối kia **đổi mỗi ngày**, gói luật ổn định vào đó là tự huỷ tiền tố cache MiniMax mỗi ngày một lần mà không được gì. Ba block đầu bất biến ⇒ tiền tố cache dài ra.
+
+⚠️ `ANSWER_RULES` là **tầng sản phẩm, không phải nội dung skill** — nó nói *cách trình bày*, không nói *phân tích thế nào*. Ranh giới bốn tầng ở bảng trên giữ nguyên.
+
 Ba luật đã được test và phải giữ nguyên:
 
 - **L2 cấp nội dung, L1 quyết định hình dạng** khi câu hỏi cần cả hai tầng.
@@ -121,6 +134,26 @@ Nhánh thị trường và nhánh tin gặp nhau ở `ticker`. Ba hệ quả:
 - Tin có thể mang **nhiều mã**, và **mã rỗng là kết quả hợp lệ**. Câu trả lời của bot phải chịu được cả hai — ép phải có mã sẽ khiến AI bịa.
 - Mã đã **huỷ niêm yết** vẫn nằm trong `getListOrganization`. Lọc chéo với `getAllQuotes` trước khi dùng.
 
+## 3b. 🔴 Giới hạn đã biết — số model tự tính, hệ thống không kiểm được (2026-09-07, lát 11)
+
+**Triệu chứng.** Câu định giá A4 của bộ hồi quy trượt cổng *"số dẫn xuất phải kèm phép tính"* **ba vòng liên tiếp, ba kiểu khác nhau**:
+
+| Vòng | Kiểu hỏng |
+|---|---|
+| 7 | **Bịa**: nêu dải nhạy `23.500–32.500`, đúng phải `24.643–30.962` |
+| 8 | **Đúng số nhưng giấu phép tính** — đọc vào không phân biệt được với ca bịa |
+| 9 | **Sai công thức**: bỏ mất `(1+g)` của Gordon |
+
+**Đã thử và KHÔNG ăn:** ra luật ở tầng prompt, hai lần, mỗi lần một cách diễn đạt. Đây là bằng chứng cho một điều rộng hơn: **luật trong prompt không diệt được họ lỗi "số hệ thống không tự xác nhận được"** — nó chỉ giảm tần suất.
+
+**Đã làm, và ăn:** bỏ hẳn **số kịch bản tự phát**. Model tự thêm dải nhạy vì L1 dạy kết luận phải có điều kiện — ý định đúng, chỗ xuất ra sai. Luật hiện tại: không tự nêu số kịch bản khi không ai hỏi; cảnh báo mong manh bằng lời và bằng số **đã có trên trang**; được hỏi thì phải viết phép tính từng đầu.
+
+**Còn lại, chưa đóng:** mọi con số model tự tính vẫn **không có cơ chế nào kiểm lúc chạy**. Cổng 6 chỉ là luật lúc chấm bài.
+
+**Đường đóng thật, để dành:** thêm nhóm **function tính** (trả cả kết quả lẫn chuỗi phép tính đã thay số), rồi dựng **hàng rào lúc chạy** — mỗi số trong câu trả lời phải truy được về đề bài, về kết quả tool đọc kho, hoặc về kết quả tool tính. Hôm nay chưa dựng được vì **số dẫn xuất hợp lệ không nằm trong kết quả tool nào**, không có gì để đối chiếu. Bước rẻ nhất trước tiên là một bộ **dò** chạy trên transcript đã lưu để biết họ lỗi này to cỡ nào. Chi tiết: [ledger lát 11 §5](../90-records/plans/2026-09-07-semantic-layer-closeout/ledger.md).
+
+⚠️ **Đọc kèm:** bộ hồi quy **có nhiễu ở cả hai lớp** — cùng câu, cùng prompt, ba lượt ra ba kết quả khác nhau (cả về hình dạng lẫn về công thức). Đừng kết luận một thay đổi là tốt hay xấu từ **một** lượt chạy; luật đọc kết quả ở [rubric v2 §3](../90-records/plans/2026-09-07-semantic-layer-closeout/rubric-v2.md).
+
 ## 4. Điều chưa biết
 
 Ghi thẳng để không ai tưởng phần này đã chắc:
@@ -139,5 +172,5 @@ Ghi thẳng để không ai tưởng phần này đã chắc:
 Đo thật lúc chạy bộ hồi quy vòng 7. Cả ba đều **hỏng im lặng**: không exception, không cờ lỗi — đúng họ bẫy CLAUDE.md §3.4 đã ghi. Ghi ra để người sau không lặp lại.
 
 1. **`max_tokens` quá nhỏ cắt câu trả lời thành rỗng im lặng.** Đặt `max_tokens=4000`: 3/40 request có `stop_reason=max_tokens`, một request tiêu **3.999 token chỉ cho phần thinking** rồi hết chỗ cho chữ ⇒ ba câu (A2, A4, B9) trả về **rỗng**. Sửa: nâng lên `32000`; vòng chat không bao giờ được trả rỗng im lặng mà phải nói rõ model dừng vì lý do gì.
-2. **Model từ chối tra dữ liệu vì tưởng mốc thời gian nằm ngoài tri thức của nó.** Hỏi CPI tháng 8/2026 — model trả lời *"mốc cập nhật gần nhất của tôi là tháng 1/2026"* và **không gọi function nào**, trong khi kho có sẵn đúng số 4,45%. Sửa: thêm block `system` thứ ba neo ngày hôm nay, kèm yêu cầu bắt buộc gọi công cụ trước khi nói "không có dữ liệu".
+2. **Model từ chối tra dữ liệu vì tưởng mốc thời gian nằm ngoài tri thức của nó.** Hỏi CPI tháng 8/2026 — model trả lời *"mốc cập nhật gần nhất của tôi là tháng 1/2026"* và **không gọi function nào**, trong khi kho có sẵn đúng số 4,45%. Sửa: thêm block `system` riêng neo ngày hôm nay (**từ lát 11 là block thứ tư**), kèm yêu cầu bắt buộc gọi công cụ trước khi nói "không có dữ liệu".
 3. **Cache MiniMax trúng trong cùng cuộc hội thoại nhưng không trúng giữa hai câu hỏi khác nhau.** Lượt gọi function thứ hai của cùng một câu: vào 409 token, đọc cache 36.886 — trúng gần như tuyệt đối. Nhưng **mọi request đầu của một câu mới** đều `cache_read = 128` (mức nền), dù tiền tố `system + tools` giống hệt câu trước và cách nhau vài giây. ⇒ ngân sách chi phí phải tính **mỗi câu mới trả đủ ~36,7k token "lạnh"**, phần cache chỉ cứu được các lượt gọi function tiếp theo trong cùng câu đó — không cứu được giữa các câu.
