@@ -148,7 +148,7 @@ lát 9b  tin tức — gold + dedupe   ✅ XONG 2026-09-06 — bộ gold 400 bà
                                    dựng sẵn nhưng MẶC ĐỊNH TẮT; 877 test. TIẾP: lát 10
 lát 10  tầng ngữ nghĩa           ✅ XONG 2026-09-07 — `backend/agent/` (9 function đọc kho dưới role dlck_api + vòng chat terminal
                                    `python -m agent`); L1 nạp trọn vào system (61.377 ký tự), L2 nạp theo nhu cầu qua function;
-                                   vá lỗ hổng phạm vi bằng system prompt (4/4 câu ngoài lĩnh vực bị từ chối). KHÔNG migration nào,
+                                   vá lỗ hổng phạm vi bằng system prompt (2/4 câu ngoài lĩnh vực có transcript lưu lại, cả hai bị từ chối gọn; hai câu kia chạy mà quên lưu). KHÔNG migration nào,
                                    KHÔNG job tự động nào. 976 test (877 → +99). Bộ hồi quy VÒNG 7 dựng lại 15 câu và LƯU VÀO REPO
                                    (bộ vòng 6 đã mất khỏi repo, không tái lập được): **số 15/15 đúng, hình dạng L1 13/15** ⇒ AC7
                                    KHÔNG đạt ngưỡng 14, báo nguyên trạng. Chi phí thật ≈ $0,016/câu, p50 6,9 s · p90 34,5 s.
