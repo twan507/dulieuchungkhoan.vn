@@ -155,12 +155,15 @@ lát 10  tầng ngữ nghĩa           ✅ XONG 2026-09-07 — `backend/agent/` 
                                    Ba lỗi hỏng-im-lặng đã sửa: max_tokens 4000 cắt câu trả lời thành rỗng · model từ chối tra vì
                                    tưởng mốc thời gian ngoài tri thức · sổ ghi mọi lượt gọi công cụ thành failed.
                                    Hồ sơ: [plans/2026-09-07-semantic-layer/](../90-records/plans/2026-09-07-semantic-layer/). TIẾP: lát 12
-lát 11  đóng hợp đồng + trả nợ  🔜 TIẾP THEO — **việc của lát 11 đã chạy trong lát 10, mục tiêu thì CHƯA đạt.** Bộ vòng 6 mất
-                                   khỏi repo nên lát 10 phải tự dựng bộ vòng 7 (15 câu, lưu trong repo) để nghiệm thu chính nó;
-                                   chạy ra **số 15/15 đúng nhưng hình dạng L1 13/15**, ngưỡng 14 ⇒ **AC7 không đạt**. Lát 11 làm nốt
-                                   phần đó: kéo hình dạng lên ngưỡng, và **trả hết 7 nợ lát 10** trước khi sang lát 12 (chủ dự án
-                                   chốt 2026-09-07). Điểm vào bên dưới. *(Bản roadmap 2026-09-07 từng ghi "gộp vào lát 10" — sai:
-                                   gộp được VIỆC, không gộp được MỤC TIÊU chưa đạt.)*
+lát 11  đóng hợp đồng + trả nợ  ✅ XONG 2026-09-07 — hai luật xuống tầng prompt thành block `ANSWER_RULES` (số dẫn xuất phải kèm
+                                   phép tính · phân biệt nguồn số · không nêu tỷ trọng/điểm mua cho một mã), lệnh `/moi` thoát phiên
+                                   tràn, test canh đường khởi động dưới role production, payload chuỗi giá −21,2%. Bộ hồi quy VÒNG 9:
+                                   hình dạng **14/15 ĐẠT** (vòng 7: 13/15). Ba phát hiện lớn hơn bảng chấm: bộ hồi quy **có nhiễu ở
+                                   cả hai lớp** (cùng câu, cùng prompt, 3 lượt ra 3 kết quả) · luật ở tầng prompt **không diệt được**
+                                   họ lỗi "số không kiểm được" (A4 trượt 3 vòng liên tiếp, 3 kiểu khác nhau) nên phải BỎ hẳn dải nhạy
+                                   tự phát · chậm chiều 07/09 là do nhà cung cấp (43 token/s so với 98), không do kiến trúc.
+                                   Nợ #7 tách ba: cắt payload xong; `ops.llm_call` role sai đẩy sang lát API; `news.trade_name` sang
+                                   ETL tin. Hồ sơ: [plans/2026-09-07-semantic-layer-closeout/](../90-records/plans/2026-09-07-semantic-layer-closeout/). TIẾP: lát 12
 lát 12  giám sát hợp đồng        contract_snapshot + source_build + series_health (market-data-store §7.1) — phủ MỌI nguồn một lần,
                                    ngay trước khi cả hệ chạy tự động; dời từ vị trí 6 xuống 2026-09-05 sáng (lý do dưới bảng ánh xạ)
 lát 13  scheduler trong etl      thay 11 task Windows bằng một bảng lịch trong code, chạy bù, bật lại [4d] — xem "Lát 13" dưới;
@@ -436,6 +439,28 @@ Năm job `python -m etl fred|fx|lbma|yahoo|binance` (spec [`2026-09-05-global-et
 
 **Điểm brainstorm phải chốt (chưa có chủ):** (1) nạp registry `indicator`/`asset` từ khối §9 mỗi lượt (tiền lệ từ điển lát 5) hay migration seed (tiền lệ ngành `0013`); (2) một job `etl wichart` ghi cả hai miền hay tách `macro`/`asset`; (3) guard từ chối lượt: dải giá trị sau `scale` (bảng `BANDS` của `verify_wichart.py`), số series/tên series đổi, tỷ lệ key hỏng; (4) luật bỏ điểm carry-forward cuối tuần cho chuỗi `trading_days`; (5) ghi khi đổi qua ETag hay UPSERT trọn mỗi lượt (66 key × ≤ 730 điểm, rẻ); (6) `raw_payload` mỗi lượt hay khi đổi.
 
+### ~~Điểm vào cho lát 11~~ — ĐÃ DÙNG XONG 2026-09-07, giữ làm ngữ cảnh
+
+**Kết quả bảy nợ** *(hồ sơ: [plans/2026-09-07-semantic-layer-closeout/](../90-records/plans/2026-09-07-semantic-layer-closeout/))*:
+
+| # | Nợ | Kết quả |
+|---|---|---|
+| 1 | Hình dạng 13/15 | ✅ **14/15 ở vòng 9** — luật xuống prompt thành block `ANSWER_RULES` |
+| 2 | Trôi sát ranh giới khuyến nghị | ✅ có luật cấm (phạm vi **một mã**). Chủ dự án chốt **không** làm tuyệt đối: *"ngôn ngữ chung chung lọt thì không sao"* |
+| 3 | `REMINDER` chưa đo được | ✅ A/B 15 câu: **hoà 14/15–14/15** ⇒ **giữ**, kèm điều kiện đảo ngược |
+| 4 | Tràn cửa sổ không có đường ra | ✅ lệnh `/moi` |
+| 5 | Đường khởi động không có test | ✅ `test_a14_startup.py`, chứng minh đỏ trước |
+| 6 | Bốn commit chưa review độc lập | ✅ review hai trục (Sonnet) trong lát |
+| 7 | Ba nợ nhỏ | payload **−21,2%** ✅ · `ops.llm_call` → lát API · `news.trade_name` → ETL tin |
+
+🔴 **Ba thứ đo được, quan trọng hơn bảng chấm** — chi tiết ở [ledger §3](../90-records/plans/2026-09-07-semantic-layer-closeout/ledger.md):
+
+1. **Bộ hồi quy có nhiễu ở cả hai lớp.** Cùng câu, cùng prompt: B1 ra 3 hình dạng khác nhau trong 3 lượt; A4 sai công thức 1/3 lượt. Con số *"lớp 1: 15/15"* của ba vòng trước đọc là *"đúng ở lượt được chấm"*, không phải *"luôn đúng"*.
+2. **Luật ở tầng prompt không diệt được họ lỗi "số không kiểm được".** A4 trượt cổng 6 **ba vòng, ba kiểu**: bịa dải nhạy → đúng số nhưng giấu phép tính → sai công thức. Chỉ khi **bỏ hẳn** dải nhạy tự phát mới sạch.
+3. **Việc để dành — hàng rào số** *(chủ dự án nêu)*: model chỉ viết chữ, số do tool tính điền. Khả thi, nhưng phải có **tool tính** trước thì hàng rào mới có nguồn đối chiếu; bước rẻ nhất là bộ **dò** chạy trên transcript đã lưu. Xem [ledger §5](../90-records/plans/2026-09-07-semantic-layer-closeout/ledger.md).
+
+*(Nguyên văn điểm vào, giữ làm ngữ cảnh:)*
+
 ### Điểm vào cho lát 11 — đóng hợp đồng tầng ngữ nghĩa và trả hết nợ, đọc trước khi bắt đầu
 
 *(viết 2026-09-07 tối, ngay sau khi merge lát 10)*
@@ -484,7 +509,9 @@ Năm job `python -m etl fred|fx|lbma|yahoo|binance` (spec [`2026-09-05-global-et
 **Điểm chủ dự án phải chốt ở phiên sau:** (1) **nợ #2** — có cấm model nêu tỷ trọng và điểm mua cụ thể cho một mã không (đây là chốt chặn: nợ #1 và #2 cùng sửa một khối prompt, làm lệch pha sẽ phải chạy lại bộ hồi quy hai lần, mỗi lượt ≈ $0,25 và ~15 phút tiền cảnh); (2) nếu chạy lại bộ vòng 7 mà hình dạng **vẫn** dưới 14/15 thì dừng ở đâu — sửa tiếp, hay chấp nhận và ghi thành giới hạn đã biết. Quy trình như lát 10: đọc → đo → brainstorm → spec → plan → subagent Sonnet → **review hai trục** → verify → merge.
 
 ### Điểm vào cho lát 12 — giám sát hợp đồng, đọc khi tới lát 12
-**Trạng thái bàn giao 2026-09-04 ~23:00:** `main` = lát 5 + fix mốc nước lát 4 + roadmap 14 lát · **593 test xanh, 2 skipped** (`pytest tests -q`) *(sáng 05/09 sau hai fix dưới: **596**)* · migration head `0017` · `financial_statement` **27,3 triệu dòng / 1.523 mã / 3,4 GB**, `financial_report_file` 114.629 dòng, mốc nước `2026-09-04` · `metric_dictionary` 729 dòng · **không đăng ký task Scheduler** (lịch thuộc lát 13: `fundamentals` chạy **sau `events` 18:10 và sau `snapshot`**).
+**Trạng thái bàn giao MỚI NHẤT — 2026-09-07 sau lát 11:** `main` = lát 11 · **1.026 passed, 2 skipped** *(`cd backend && uv run --env-file ../.env pytest tests -q` — **thiếu `--env-file` là 425 error**, không phải test hỏng)* · migration head **`0020`** (lát 11 không thêm migration) · `backend/agent/` có **bốn** block system (`SCOPE_GUARD` · L1 · `ANSWER_RULES` · luật công cụ mang ngày) và lệnh `/moi` trong REPL · **không job nào chạy tự động** · 11 task Scheduler vẫn `Disabled` theo [4d]. Hai thứ lát 12 phải biết trước: **bộ hồi quy có nhiễu** (đọc [rubric v2 §3](../90-records/plans/2026-09-07-semantic-layer-closeout/rubric-v2.md) trước khi kết luận một thay đổi là tốt hay xấu) và **ngưỡng cảnh báo feed 7 ngày quá chặt** với chuyên mục thưa tin ([news/README §13.5](../10-sources/news/README.md)) — hai đường sửa đã ghi, chọn đường nào là việc của lát 12.
+
+*(Bàn giao cũ, giữ làm ngữ cảnh:)* **Trạng thái bàn giao 2026-09-04 ~23:00:** `main` = lát 5 + fix mốc nước lát 4 + roadmap 14 lát · **593 test xanh, 2 skipped** (`pytest tests -q`) *(sáng 05/09 sau hai fix dưới: **596**)* · migration head `0017` · `financial_statement` **27,3 triệu dòng / 1.523 mã / 3,4 GB**, `financial_report_file` 114.629 dòng, mốc nước `2026-09-04` · `metric_dictionary` 729 dòng · **không đăng ký task Scheduler** (lịch thuộc lát 13: `fundamentals` chạy **sau `events` 18:10 và sau `snapshot`**).
 
 | Cần biết trước | Ở đâu |
 |---|---|
