@@ -59,6 +59,12 @@ def test_ngay_kieu_viet():
     assert format_date_vi(dt.date(2026, 9, 3)) == "03/09/2026"
 
 
+def test_ngay_none_thi_none():
+    """Mục 1 (review vòng 4): published_at NULLABLE có chủ đích (migration 0007) — cột NULL đưa
+    thẳng vào đây (vd ngày suy từ published_at khi cột đó rỗng) không được ném AttributeError."""
+    assert format_date_vi(None) is None
+
+
 def test_bang_nhan_tach_duoc_hai_ma_trung_ten():
     """isa20 và isa22 trong nguồn CÙNG tên 'LỢI NHUẬN THUẦN' — bảng nhãn phải tách được."""
     assert label_for("isa22") == "Lợi nhuận sau thuế của cổ đông công ty mẹ"

@@ -201,4 +201,25 @@ def kho(db):
         {"a": aid_hai_ban})
     ids["tin:hai_ban"] = aid_hai_ban
 
+    # Mục 1 (review vòng 4) — bài THIẾU published_at. NULLABLE có chủ đích (migration 0007
+    # dòng 32-39): nguồn như VietnamBiz để pubDate trống; quy ước đọc đã ghi ngay trong migration
+    # là "sắp xếp tầng đọc dùng coalesce(published_at, fetched_at)" (khuôn đã dùng ở
+    # etl/news_store.py). Đo kho thật 2026-09-07: 47/8.220 bài published_at NULL — ORDER BY
+    # ... DESC mặc định NULLS FIRST đưa chúng lên đầu, format_date_vi(None) ném AttributeError
+    # ngay ở get_news() không tham số. fetched_at cố định SAU mọi bài khác trong kho test để bài
+    # này đứng ĐẦU kết quả mặc định (không lọc gì) một khi sửa dùng coalesce — bài không đứng đầu
+    # thì phép thử không thật sự đụng nhánh vừa sửa.
+    aid_khong_ngay = db.execute(sa.text(
+        "INSERT INTO news.article (canonical_url, primary_source, published_at, published_at_src,"
+        " fetched_at, group_no, sub, classified_from, content_chars)"
+        " VALUES ('https://vi.du/vietnambiz/khong-ro-ngay-dang', 'vietnambiz',"
+        " NULL, 'unknown', CAST('2026-10-01 09:00:00+07' AS timestamptz), NULL, NULL, NULL, 60)"
+        " RETURNING article_id")).scalar_one()
+    db.execute(sa.text(
+        "INSERT INTO news.article_revision (article_id, version, title, content, content_fetched_at)"
+        " VALUES (:a, 1, 'Bản tin không rõ ngày đăng gốc',"
+        " 'Nội dung này không có published_at, dùng để kiểm hàm không nổ khi thiếu ngày.', now())"),
+        {"a": aid_khong_ngay})
+    ids["tin:khong_ngay"] = aid_khong_ngay
+
     return ids

@@ -35,7 +35,14 @@ GROUP_NO_HOP_LE = [1, 2, 3]
 # CLAUDE.md §3.1: published_at là timestamptz, phiên Postgres chạy Etc/UTC — so/hiển thị "ngày"
 # PHẢI ép sang Asia/Ho_Chi_Minh trước khi lấy ::date, không được để mặc định so theo ngày UTC
 # (khuôn đã có ở fundamentals_store.py:121, snapshot_store.py:125).
-_NGAY_VN = "(a.published_at AT TIME ZONE 'Asia/Ho_Chi_Minh')::date"
+#
+# Mục 1 (review vòng 4): published_at NULLABLE có chủ đích (migration 0007 dòng 32-39 — nguồn
+# như VietnamBiz để pubDate trống); đo kho thật 2026-09-07: 47/8.220 bài NULL. coalesce với
+# fetched_at (NOT NULL) — ĐÚNG quy ước đọc mà chính migration 0007 đã ghi ("sắp xếp tầng đọc
+# dùng coalesce(published_at, fetched_at)") và etl/news_store.py đã dùng — không phải hành vi
+# tự bịa mới. Không coalesce thì ngay_vn ra NULL, format_date_vi(None) ném AttributeError
+# (get_news() không tham số luôn nổ nếu kho có bất kỳ bài nào thiếu published_at).
+_NGAY_VN = "(coalesce(a.published_at, a.fetched_at) AT TIME ZONE 'Asia/Ho_Chi_Minh')::date"
 
 # CAST(:x AS type) — KHÔNG viết :x::type, SQLAlchemy lặng lẽ bỏ tham số (CLAUDE.md §3 lát 10).
 _DIEU_KIEN_NHAN = [
@@ -147,7 +154,7 @@ def tim_tin(conn: sa.Connection, query: str | None = None, ticker: str | None = 
             FROM news.article a {_REV_MOI_NHAT}
             WHERE r.tsv @@ {ham}('simple', news.immutable_unaccent(:q))
               AND {where} AND {_REV_LA_MOI_NHAT}
-            ORDER BY diem DESC, a.published_at DESC LIMIT :lim"""
+            ORDER BY diem DESC, coalesce(a.published_at, a.fetched_at) DESC LIMIT :lim"""
     else:
         tong = conn.execute(sa.text(
             f"SELECT count(*) FROM news.article a WHERE {where}"), p).scalar()
@@ -156,7 +163,7 @@ def tim_tin(conn: sa.Connection, query: str | None = None, ticker: str | None = 
                    a.classified_from IS NOT NULL AS da_phan_loai, r.title, r.sapo, r.summary_ai
             FROM news.article a {_REV_MOI_NHAT}
             WHERE {where} AND {_REV_LA_MOI_NHAT}
-            ORDER BY a.published_at DESC LIMIT :lim"""
+            ORDER BY coalesce(a.published_at, a.fetched_at) DESC LIMIT :lim"""
 
     rows = conn.execute(sa.text(sql), p).all()
     du_lieu = [{"tieu_de": r.title, "ngay": str(r.ngay_vn),

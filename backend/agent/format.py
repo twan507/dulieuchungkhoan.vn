@@ -66,5 +66,10 @@ def display_series_value(value, unit: str | None) -> str | None:
     return f"{_group(n, 2)} {unit}"
 
 
-def format_date_vi(d: dt.date | dt.datetime) -> str:
+def format_date_vi(d: dt.date | dt.datetime | None) -> str | None:
+    """None đi thẳng qua — cột NULL do model không lọc trước khi đưa vào đây (đầu file CLAUDE.md:
+    input luôn coi là không tin được). Ca thật: get_news.tim_tin khi published_at NULL (migration
+    0007, NULLABLE có chủ đích) — review vòng 4, mục 1."""
+    if d is None:
+        return None
     return d.strftime("%d/%m/%Y")

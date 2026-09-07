@@ -184,3 +184,25 @@ def test_join_revision_khoa_ban_moi_nhat_khong_nhan_doi(db, kho):
     out = json.loads(tim_tin(db, sub="2a", limit=5))
     assert out["so_dong"] == 1
     assert out["du_lieu"][0]["tieu_de"] == "Doanh nghiệp dệt may khởi công nhà máy mới tại Thái Bình"
+
+
+def test_khong_tham_so_khong_no_khi_kho_co_bai_thieu_ngay(db, kho):
+    """Mục 1 (review vòng 4): get_news() không tham số là lời gọi tự nhiên nhất cho 'tin mới
+    nhất'. Đo kho thật 2026-09-07: 47/8.220 bài có published_at IS NULL (NULLABLE có chủ đích,
+    migration 0007) — ORDER BY ... DESC mặc định của Postgres là NULLS FIRST nên các bài đó
+    luôn đứng đầu, rồi format_date_vi(None) ném AttributeError, thoát khỏi thân hàm trước khi
+    tới bất kỳ khuôn lỗi nào của tầng ngữ nghĩa. Test không tham số nào (kể cả limit) — đúng
+    hệt câu gọi nổ trên kho thật.
+
+    Sửa dùng coalesce(published_at, fetched_at) cho cả ORDER BY lẫn ngày hiển thị — ĐÚNG quy
+    ước đọc đã ghi sẵn trong migration 0007 (dòng 38-39: "sắp xếp tầng đọc dùng coalesce(...)")
+    và đã dùng ở etl/news_store.py, không phải hành vi tự bịa mới. Bài 'khong_ngay' có
+    fetched_at SAU mọi bài khác trong kho test nên phải đứng ĐẦU danh sách mặc định."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(tim_tin(db))
+    assert out["so_dong"] == 6
+    bai = out["du_lieu"][0]
+    assert bai["tieu_de"] == "Bản tin không rõ ngày đăng gốc"
+    assert bai["ngay"] == "2026-10-01"          # rơi về fetched_at (VN) vì published_at NULL
+    assert bai["ngay_hien_thi"] == "01/10/2026"
+    assert bai["da_phan_loai"] is False

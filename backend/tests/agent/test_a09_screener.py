@@ -68,19 +68,78 @@ def test_ma_ton_tai_nhung_khong_co_phien_khac_ma_khong_ton_tai(db, kho):
     assert [c["ma"] for c in out["du_lieu"]] == ["HPG"]
 
 
-def test_qua_tran_ma_bi_cat_va_bao_da_cat(db, kho):
-    """N4: xin so sánh nhiều hơn TRAN_MA mã, danh sách bị hạ về TRAN_MA mã đầu — phải báo
-    da_cat=True, không được câm lặng cắt rồi trả lời như thể đã so đủ.
-
-    Dùng chính hằng số TRAN_MA của module (không mã hoá cứng số mã) — trần đã nới 10 -> 25
-    (chủ dự án chốt 2026-09-07), khoá cứng "11 mã" như bản cũ sẽ không còn vượt trần mới và
-    làm test hoá xanh giả (§4.4.4: tiêu chí phải bất biến, không phải số thời điểm)."""
-    from agent.tools.compare_peers import TRAN_MA
+# Mục 2 (review vòng 4): da_cat phải phản ánh CẮT THẬT trên danh sách mã ĐÃ TRA ĐƯỢC
+# (ma_hop_le_full), không phải độ dài mas_xin (mã người hỏi, có thể lẫn mã bịa không tốn một
+# suất TRAN_MA nào). Bản trước dời điểm cắt SQL sang ma_hop_le_full[:TRAN_MA] (F2, đúng) nhưng
+# cờ vẫn tính theo len(mas_xin) (sai từ đúng commit đó) kèm một comment khẳng định "cỡ cắt thật
+# duy nhất là len(mas_xin) > TRAN_MA" — sai. Đo được: hỏi 2 mã thật + 30 mã bịa (TRAN_MA=25,
+# tổng mas_xin=32>25) ra da_cat=True dù ma_hop_le_full chỉ có 2, không cắt gì. Sáu ca dưới đây
+# (dưới trần · đúng bằng trần · trên trần thuần mã thật · lẫn mã bịa · chỉ industry_code · vừa
+# mã vừa ngành) chốt cờ đúng trên CẢ SÁU hình dạng gọi.
+def test_da_cat_duoi_tran_thi_false(db, kho):
+    """Ca 1/6 — dưới trần: 2 mã thật, TRAN_MA mặc định 25. Không cắt gì."""
     db.execute(sa.text("SET LOCAL ROLE dlck_api"))
-    mas = ["HPG", "VCB", "TIN", "HDB", "LPB", "FPT"] + [f"ZZ{i}" for i in range(TRAN_MA - 5)]
-    assert len(mas) > TRAN_MA
-    out = json.loads(so_sanh_cung_nganh(db, tickers=mas, metric_codes=["rtd21"]))
+    out = json.loads(so_sanh_cung_nganh(db, tickers=["HPG", "VCB"], metric_codes=["rtd21"]))
+    assert out["da_cat"] is False
+
+
+def test_da_cat_dung_bang_tran_thi_false(db, kho, monkeypatch):
+    """Ca 2/6 — đúng bằng trần: hỏi ĐÚNG TRAN_MA mã hợp lệ (không hơn), tất cả đều có phiên
+    screener — kết quả bị chặn bởi chính danh sách mas_xin, không phải bởi LIMIT, nên KHÔNG
+    được báo da_cat=True (B2, review lát 10 — chốt chặn hồi quy cùng ca này)."""
+    import agent.tools.compare_peers as compare_peers_mod
+    monkeypatch.setattr(compare_peers_mod, "TRAN_MA", 3)
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(so_sanh_cung_nganh(db, tickers=["HPG", "VCB", "TIN"], metric_codes=["rtd21"]))
+    assert out["so_dong"] == 3
+    assert out["da_cat"] is False
+
+
+def test_da_cat_tren_tran_thuan_ma_that_thi_true(db, kho, monkeypatch):
+    """Ca 3/6 — trên trần, THUẦN mã thật (không lẫn mã bịa): 4 mã thật đều tra được, hạ
+    TRAN_MA xuống 3 — ma_hop_le_full (4) > TRAN_MA (3) ⇒ CẮT THẬT, phải báo da_cat=True."""
+    import agent.tools.compare_peers as compare_peers_mod
+    monkeypatch.setattr(compare_peers_mod, "TRAN_MA", 3)
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(so_sanh_cung_nganh(db, tickers=["HPG", "VCB", "TIN", "HDB"], metric_codes=["rtd21"]))
     assert out["da_cat"] is True
+    assert out["so_dong"] == 3
+
+
+def test_da_cat_lan_ma_bia_vuot_tong_nhung_khong_cat_ma_that_thi_false(db, kho):
+    """Ca 4/6 — lẫn mã bịa: ĐÚNG ví dụ đo được trong review (2 mã thật + 30 mã bịa, TRAN_MA=25
+    mặc định) — mas_xin dài 32 > TRAN_MA nhưng ma_hop_le_full chỉ có 2, không mã nào bị cắt.
+    Bug cũ: len(mas_xin) > TRAN_MA (32>25) ⇒ da_cat=True SAI. Phải là False."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    mas = ["HPG", "VCB"] + [f"ZZBIA{i:02d}" for i in range(30)]
+    out = json.loads(so_sanh_cung_nganh(db, tickers=mas, metric_codes=["rtd21"]))
+    assert [c["ma"] for c in out["du_lieu"]] == ["HPG", "VCB"]
+    assert len(out["khong_tim_thay"]) == 30
+    assert out["da_cat"] is False
+
+
+def test_da_cat_chi_industry_code_tren_tran_thi_true(db, kho, monkeypatch):
+    """Ca 5/6 — chỉ industry_code (không tickers): nhánh `not mas_xin` vẫn phải xét cắt qua
+    len(rows) >= TRAN_MA. NGANHANG có 4 mã thật trong kho (VCB, TIN, HDB, LPB) — hạ TRAN_MA
+    xuống 2 để LIMIT thật sự cắt bớt."""
+    import agent.tools.compare_peers as compare_peers_mod
+    monkeypatch.setattr(compare_peers_mod, "TRAN_MA", 2)
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(so_sanh_cung_nganh(db, industry_code="NGANHANG", metric_codes=["rtd21"]))
+    assert out["so_dong"] == 2
+    assert out["da_cat"] is True
+
+
+def test_da_cat_vua_ma_vua_nganh_lan_ma_bia_thi_false(db, kho):
+    """Ca 6/6 — vừa tickers vừa industry_code, LẪN mã bịa: 2 mã thật thuộc NGANHANG (VCB, TIN)
+    + 30 mã bịa, industry_code='NGANHANG', TRAN_MA=25 mặc định. Cùng bệnh ca 4/6 nhưng qua
+    nhánh có CẢ HAI bộ lọc cùng lúc — ma_hop_le_full vẫn chỉ 2, không được báo da_cat=True."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    mas = ["VCB", "TIN"] + [f"ZZBIA{i:02d}" for i in range(30)]
+    out = json.loads(so_sanh_cung_nganh(db, tickers=mas, industry_code="NGANHANG", metric_codes=["rtd21"]))
+    assert {c["ma"] for c in out["du_lieu"]} == {"VCB", "TIN"}
+    assert len(out["khong_tim_thay"]) == 30
+    assert out["da_cat"] is False
 
 
 def test_luon_kem_ngay_du_lieu(db, kho):
@@ -239,6 +298,47 @@ def test_screen_exchange_la_bi_tu_choi(db, kho):
     out = json.loads(loc_co_phieu(db, exchange="NYSE"))
     assert out["loi"] is True
     assert out["exchange_hop_le"] == ["HOSE", "HNX", "UPCOM"]
+
+
+# Mục 3 (review vòng 4): trước sửa KHÔNG có trần nào trên SỐ MÃ NHẬN VÀO (tickers) — mỗi mã
+# tốn một truy vấn resolve_ticker (mã trượt +1 truy vấn gợi ý), tuyến tính và DO MODEL ĐIỀU
+# KHIỂN. Đo trên kho thật 2026-09-07: 25 mã thật = 28 SQL/29ms, 25 mã bịa = 50 SQL/139ms,
+# 500 mã = 1.000 round-trip/2,9s.
+def test_tran_dau_vao_cat_truoc_khi_tra_ma_va_bao_ro(db, kho, monkeypatch):
+    """Hạ TRAN_MA_VAO xuống 3 để test nhanh: hỏi 5 mã thật (HPG, VCB, TIN, HDB, LPB) — chỉ 3 mã
+    ĐẦU được cắt vào để xét tồn tại; HDB/LPB (mã thật, đứng sau điểm cắt) không được nhắc tới ở
+    BẤT KỲ trường nào (không du_lieu, không khong_tim_thay) — coi như chưa từng được hỏi.
+    Phải báo rõ qua da_cat_dau_vao, không được câm lặng cắt."""
+    import agent.tools.compare_peers as compare_peers_mod
+    monkeypatch.setattr(compare_peers_mod, "TRAN_MA_VAO", 3)
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(so_sanh_cung_nganh(db, tickers=["HPG", "VCB", "TIN", "HDB", "LPB"],
+                                        metric_codes=["rtd21"]))
+    assert out["da_cat_dau_vao"] is True
+    assert out["so_ma_nhan"] == 5
+    ma_nhac_toi = {c["ma"] for c in out.get("du_lieu", [])} | set(out.get("khong_tim_thay", []))
+    assert ma_nhac_toi == {"HPG", "VCB", "TIN"}
+
+
+def test_tran_dau_vao_khong_bao_khi_duoi_tran(db, kho):
+    """2 mã, TRAN_MA_VAO mặc định 100 — không cắt gì thì không có cờ da_cat_dau_vao (tối giản,
+    không thêm khoá vào hình dạng khi không liên quan)."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(so_sanh_cung_nganh(db, tickers=["HPG", "VCB"], metric_codes=["rtd21"]))
+    assert "da_cat_dau_vao" not in out
+
+
+def test_tran_dau_vao_cat_ca_khi_khong_ma_nao_ton_tai(db, kho, monkeypatch):
+    """Cờ da_cat_dau_vao phải có mặt cả ở hình dạng #1 (không mã nào trong danh sách ĐÃ CẮT
+    tồn tại), không chỉ ở hình dạng #4 (có kết quả)."""
+    import agent.tools.compare_peers as compare_peers_mod
+    monkeypatch.setattr(compare_peers_mod, "TRAN_MA_VAO", 2)
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(so_sanh_cung_nganh(db, tickers=["ZZBIA1", "ZZBIA2", "HPG"], metric_codes=["rtd21"]))
+    assert out["tim_thay"] is False
+    assert out["da_cat_dau_vao"] is True
+    assert out["so_ma_nhan"] == 3
+    assert out["khong_tim_thay"] == ["ZZBIA1", "ZZBIA2"]      # HPG (vi tri thu 3) bi cat mat
 
 
 def test_compare_industry_code_la_bi_tu_choi_khong_ra_0_dong_cam(db, kho):
