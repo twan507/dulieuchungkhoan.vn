@@ -168,3 +168,25 @@ Cả hai đều là **sửa đúng triệu chứng, sai phạm vi**: một cái 
 - **N5** — `get_price_series` là công cụ **duy nhất còn cắt câm**: `BT6` có 5.764 phiên, tool trả 400 mà không cờ; 356 mã hơn 400 phiên.
 - **F6** `value: true` lọt guard vì `bool` là con của `int` · **F7** `get_industry_tree` chưa chuẩn hoá hình dạng · **N7** import rác.
 - Reviewer xác nhận **sạch**: `Literal[_TOPICS]` sinh enum đủ 9 khoá trong `input_schema` thật · `resolve_ticker` thêm vào `get_news` không đổi hành vi mã hợp lệ (+5,7 ms) · `v_issuer_industry` 1-1 nên không nhân dòng · test mới không tautological · `ket_sach` không sót giá trị kết-thúc-bình-thường nào của SDK.
+
+### Nới trần token: 4.000 → 32.000 (chủ dự án chốt 2026-09-07)
+
+*"maxtoken bạn nhả rộng rãi dư dả ra, không sợ đâu, quan trọng nhất vẫn là chất lượng câu trả lời, không phải độ dài hay ngắn."*
+
+`max_tokens` là **trần, không phải mục tiêu**: model chỉ sinh đúng thứ nó cần, nên để rộng gần như không tốn gì, còn cắt mất câu trả lời thì mất cả lượt (và mọi kết quả tra cứu lượt đó đã trả tiền). Kiểm thật chứ không đoán — MiniMax **nhận** `max_tokens=32000`; một câu hỏi định giá cần **8 lượt gọi công cụ** chạy trọn trong 54 giây:
+
+```
+status | vào    | đọc cache | ra    | thinking | ms
+ok     | 21.884 |    42.416 | 3.589 |    2.064 | 37.267
+ok     |  4.933 |    37.483 | 1.697 |    1.488 | 11.172
+ok     | 37.355 |       128 |   460 |       75 |  5.474
+ok     | 37.360 |       128 | 3.493 |    2.690 | 29.990
+```
+
+Token ra đỉnh **3.589** — còn xa trần, và không request nào chạm trần nữa. Ngân sách ở [round7-results §3](round7-results-2026-09-07.md) **không đổi** vì nó tính theo token *thực dùng*, không theo trần.
+
+### 🟡 Quan sát chưa xử lý: nới trần làm câu trả lời trôi sát ranh giới khuyến nghị
+
+Cùng lượt kiểm trên, model viết *"gom dần ở vùng này, tỷ trọng vừa phải"* và *"chỉ mua thêm khi giá về rồi uốn lên ở vùng hỗ trợ gần (khoảng 20.000–21.000)"* — gần như một lệnh mua có điểm vào, dù vẫn kèm disclaimer. Bảng chấm vòng 7 cũng đã đánh dấu B7 là "sát ranh giới" ở mục 4 (*không khuyến nghị*).
+
+Đây **không phải lỗi kỹ thuật** mà là quyết định về giọng sản phẩm, nên **không tự sửa**. Cấu trúc của vấn đề giống hệt lỗ hổng phạm vi mà `SCOPE_GUARD` phải vá: L1 có cấm lệnh mua/bán cụ thể, nhưng L1 chỉ có tiếng nói *sau khi* skill tải và *trong* mạch trả lời, còn ranh giới này cần một luật ở tầng sản phẩm. Hai đường: để nguyên, hoặc thêm một dòng vào khối luật system prompt cấm nêu tỷ trọng và điểm mua cụ thể cho một mã. **Chờ chủ dự án quyết.**
