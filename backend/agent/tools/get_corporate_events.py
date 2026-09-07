@@ -48,7 +48,13 @@ def su_kien_doanh_nghiep(conn: sa.Connection, ticker: str, event_type: str | Non
     rows = conn.execute(_SQL_SU_KIEN, {"iid": ma["issuer_id"], "loai": event_type,
                                        "tu": from_date, "den": to_date, "lim": lim}).all()
     if not rows:
-        return to_json({**rong(), "ma": ma["ticker"]})
+        # Hình dạng #3 kèm khoảng có dữ liệu (spec §4.6) — xem ghi chú cùng loại ở get_financials.
+        tu, den = conn.execute(sa.text(
+            "SELECT min(public_date), max(public_date) FROM market.corporate_event"
+            " WHERE issuer_id = :iid AND (CAST(:loai AS text) IS NULL OR event_type = :loai)"),
+            {"iid": ma["issuer_id"], "loai": event_type}).one()
+        khoang = {"tu": str(tu), "den": str(den)} if tu is not None else None
+        return to_json({**rong(khoang), "ma": ma["ticker"]})
     du_lieu = []
     for r in rows:
         e = {"loai": r.event_type, "ngay_cong_bo": str(r.public_date) if r.public_date else None}

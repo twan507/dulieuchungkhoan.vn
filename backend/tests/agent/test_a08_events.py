@@ -42,3 +42,11 @@ def test_chi_so_khong_co_su_kien_la_hinh_dang_2_khong_phai_rong(db, kho):
     assert out["co_du_lieu"] is False
     assert out["loai"] == "index"
     assert "so_dong" not in out
+
+
+def test_khoang_ngay_rong_thi_bao_kho_co_tu_ngay_nao(db, kho):
+    """Hình dạng #3 phải kèm khoảng có dữ liệu (spec §4.6). Fixture: FPT có sự kiện 2025."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(su_kien_doanh_nghiep(db, "FPT", None, "2019-01-01", "2019-12-31"))
+    assert out["co_du_lieu"] is True and out["so_dong"] == 0
+    assert out["khoang_co_du_lieu"] == {"tu": "2025-03-10", "den": "2025-11-19"}

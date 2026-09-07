@@ -62,7 +62,14 @@ def bao_cao_tai_chinh(conn: sa.Connection, ticker: str, statement_type: str = "I
     rows = conn.execute(_SQL_BCTC, {"iid": ma["issuer_id"], "st": statement_type, "lens": lengths,
                                     "codes": codes, "tu": from_year, "den": to_year}).all()
     if not rows:
-        return to_json({**rong(), "ma": ma["ticker"]})
+        # Hình dạng #3 phải nói kho CÓ những kỳ nào (spec §4.6) — 0 dòng mà không kèm khoảng
+        # thì model rất dễ đọc thành "doanh nghiệp chưa tồn tại" thay vì "kho chưa có năm đó".
+        tu, den = conn.execute(sa.text(
+            "SELECT min(year_report), max(year_report) FROM market.financial_statement"
+            " WHERE issuer_id = :iid AND statement_type = :st"),
+            {"iid": ma["issuer_id"], "st": statement_type}).one()
+        khoang = {"tu_nam": tu, "den_nam": den} if tu is not None else None
+        return to_json({**rong(khoang), "ma": ma["ticker"]})
 
     ky: dict[tuple[int, int], list[dict]] = {}
     for r in rows:

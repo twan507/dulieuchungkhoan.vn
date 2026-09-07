@@ -75,3 +75,15 @@ def test_tran_tam_nam(db, kho):
     out = json.loads(bao_cao_tai_chinh(db, "FPT", "IS", 2000, 2024))
     assert len(out["du_lieu"]) <= 8
     assert out["da_cat"] is True
+
+
+def test_khoang_nam_rong_thi_bao_kho_co_nhung_nam_nao(db, kho):
+    """Hình dạng #3 phải kèm khoảng có dữ liệu (spec §4.6), như get_price_series đã làm.
+
+    Không có nó, model hỏi FPT năm 2020 thấy 0 dòng rất dễ kết luận "doanh nghiệp chưa tồn
+    tại" thay vì "kho chưa có năm đó". Fixture chỉ seed năm 2024 cho FPT.
+    """
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(bao_cao_tai_chinh(db, "FPT", "IS", 2010, 2012))
+    assert out["co_du_lieu"] is True and out["so_dong"] == 0
+    assert out["khoang_co_du_lieu"] == {"tu_nam": 2024, "den_nam": 2024}
