@@ -288,7 +288,7 @@ Postgres tự nén cột `text` lớn qua TOAST nên con số thực tế còn t
 
 **Ghi `content_fetched_at`** để biết bản text ứng với thời điểm nào.
 
-Lát 8 thực thi dedupe không-AI: URL canonical + tiêu đề chuẩn hoá trong 48 giờ; tải lại bài để bắt bản sửa chưa làm (xét ở lát 12).
+Lát 8 thực thi dedupe không-AI: URL canonical + tiêu đề chuẩn hoá trong 48 giờ; tải lại bài để bắt bản sửa chưa làm (xét ở lát 14 — giám sát hợp đồng, số cũ là 12).
 
 
 **Khoá thứ tư — tiêu đề GẦN GIỐNG** *(thêm 2026-09-06, lát 9b-2 phương án A; migration `0020`)*: bài đã qua ba khoá trên còn so `pg_trgm` với tiêu đề của các bài **báo khác** trong cửa sổ 48 giờ; `similarity >= 0,6` ⇒ gộp (chỉ thêm `article_source`, không tải lại bài), đếm ở `stats.merged_near`.

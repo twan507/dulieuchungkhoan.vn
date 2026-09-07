@@ -381,7 +381,7 @@ Cảnh báo `feed im > 7 ngày` của `etl news` xuất hiện ở **mọi vòng
 
 **Kết luận: không phải feed hỏng, cũng không phải Vietstock chết.** Feed đối chứng cùng nguồn có bài trong ngày ⇒ nguồn sống, đường tải đúng. Hai chuyên mục kia đơn giản là **ra tin thưa** — kim loại và niêm yết mới vốn không có tin mỗi ngày.
 
-⇒ Ngưỡng cảnh báo **7 ngày dùng chung cho mọi feed là quá chặt** với chuyên mục thưa tin: nó kêu đúng sự thật ("feed này im") nhưng sự thật đó **không phải sự cố**, nên báo động mỗi vòng sẽ dạy người vận hành bỏ qua cảnh báo — đúng cái giá của báo động giả. Sửa thì có hai đường (ngưỡng riêng từng feed, hoặc chỉ cảnh báo khi feed im **và** feed đối chứng cùng nguồn vẫn ra tin); **chưa chọn** — quyết định của chủ dự án, thuộc lát giám sát (lát 12), không tự đổi.
+⇒ Ngưỡng cảnh báo **7 ngày dùng chung cho mọi feed là quá chặt** với chuyên mục thưa tin: nó kêu đúng sự thật ("feed này im") nhưng sự thật đó **không phải sự cố**, nên báo động mỗi vòng sẽ dạy người vận hành bỏ qua cảnh báo — đúng cái giá của báo động giả. Sửa thì có hai đường (ngưỡng riêng từng feed, hoặc chỉ cảnh báo khi feed im **và** feed đối chứng cùng nguồn vẫn ra tin); **chưa chọn** — quyết định của chủ dự án, thuộc lát giám sát (**lát 14**, số cũ là 12), không tự đổi.
 
 ⚠️ Đừng suy ngược thành *"feed im là bình thường"*: bẫy VietnamFinance ở §12 là feed im **trong khi trang vẫn xuất bản**. Phép phân biệt là **feed đối chứng cùng nguồn**, không phải cảm giác.
 

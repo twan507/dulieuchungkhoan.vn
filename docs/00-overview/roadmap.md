@@ -18,7 +18,7 @@ Ba khối vốn có ba danh sách việc riêng, mỗi danh sách tự cho mình
 | Thiết kế kho dữ liệu thị trường | ✅ Đã duyệt · **phần realtime đã có code chạy** (2026-08-26) | schema `rt` + ingester đã dựng; phần REST: lát 1–5 đã chạy thật vào kho (screener · events · price · snapshot · fundamentals, 2026-09-03/04) |
 | Thiết kế pipeline tin | ✅ Đã duyệt | chưa viết dòng code nào |
 | Hai skill chứng khoán | ✅ Xong, test 6 vòng, **dự án đã đóng 2026-08-14** | 3.046 dòng · [bảo trì skill](../30-skills/maintenance.md) |
-| Tầng ngữ nghĩa nối dữ liệu ↔ skill | ✅ **Đã dựng và kiểm chứng 2026-09-07** — 9 function + vòng chat terminal; bộ hồi quy vòng 7: số 15/15, hình dạng L1 13/15 | [chatbot-semantic-layer.md](../20-design/chatbot-semantic-layer.md) · [hồ sơ lát 10](../90-records/plans/2026-09-07-semantic-layer/) |
+| Tầng ngữ nghĩa nối dữ liệu ↔ skill | ✅ **Dựng lát 10, đóng hợp đồng ở lát 11 (2026-09-07)** — 9 function + vòng chat terminal + khối luật `ANSWER_RULES`; bộ hồi quy vòng 9: số 15/15, **hình dạng 14/15 đạt ngưỡng** (vòng 7: 13/15). ⚠️ Bộ hồi quy **có nhiễu ở cả hai lớp** — một lượt chạy không đủ để kết luận | [chatbot-semantic-layer.md](../20-design/chatbot-semantic-layer.md) · [hồ sơ lát 10](../90-records/plans/2026-09-07-semantic-layer/) |
 | **Từ điển mã trường FiinGroup** | ✅ 729 mã · tên VI/EN 98,5% · đơn vị 99,7% | [field-dictionary.json](../10-sources/market/field-dictionary.json) |
 | **Chọn nguồn chuẩn cho từng chỉ tiêu** | ✅ Đã chốt | [chọn trường cho ETL thị trường](../20-design/market-field-selection.md) |
 | **Giấy phép WiFeed với WiGroup** | ✅ **Đã chốt 2026-08-15** — mở khoá 87 endpoint vĩ mô/hàng hoá | chủ dự án xác nhận |
@@ -164,12 +164,23 @@ lát 11  đóng hợp đồng + trả nợ  ✅ XONG 2026-09-07 — hai luật x
                                    tự phát · chậm chiều 07/09 là do nhà cung cấp (43 token/s so với 98), không do kiến trúc.
                                    Nợ #7 tách ba: cắt payload xong; `ops.llm_call` role sai đẩy sang lát API; `news.trade_name` sang
                                    ETL tin. Hồ sơ: [plans/2026-09-07-semantic-layer-closeout/](../90-records/plans/2026-09-07-semantic-layer-closeout/). TIẾP: lát 12
-lát 12  giám sát hợp đồng        contract_snapshot + source_build + series_health (market-data-store §7.1) — phủ MỌI nguồn một lần,
-                                   ngay trước khi cả hệ chạy tự động; dời từ vị trí 6 xuống 2026-09-05 sáng (lý do dưới bảng ánh xạ)
-lát 13  scheduler trong etl      thay 11 task Windows bằng một bảng lịch trong code, chạy bù, bật lại [4d] — xem "Lát 13" dưới;
-                                   rồi CẢ HỆ chạy thử trên máy dev vài ngày liền bằng chính bảng lịch này
-lát 14  lên VPS                  chỉ khi lát 13 đã ổn vài ngày — hồ sơ docker-compose.vps.yml (service-topology §7b), chuyển hai kho,
-                                   ingester active/standby
+lát 12  chạy được trong container  🔜 TIẾP THEO — **lát MỚI, chèn 2026-09-07 (chủ dự án gọi tên).** Đưa MỌI job vào container và chốt
+                                   MỘT hình dạng cấu hình chạy được cả native lẫn trong container, để lát VPS chỉ còn là đổi biến
+                                   môi trường. Bốn thứ đã khảo sát và biết trước sẽ vỡ: **9 biến env trỏ `127.0.0.1`** (trong container
+                                   là chính nó; compose mới chỉ đặt POSTGRES_HOST/REDIS_HOST mà code lại dùng URL đầy đủ) · thư mục
+                                   runtime của ingester (log/measure/spill, trần spill 10 GiB) phải thành volume · container mặc định
+                                   **UTC** trong khi dự án đã trả giá vì ngày VN · đồ Windows về hưu (`DLCK_LOCK_CONSOLE`,
+                                   `register-tasks.ps1`, 11 task). Nghiệm thu: **cả 15 họ job chạy thật trong container, ghi vào kho
+                                   thật, `down` rồi `up` không mất gì.** Chưa có scheduler. Điểm vào bên dưới
+lát 13  scheduler trong container  bảng lịch trong code + chạy bù + chặn chạy chồng + thứ tự phụ thuộc (`fundamentals` sau `events`
+                                   18:10 và sau `snapshot`; `snapshot` KHÔNG trước ~15:20 — số đo lát 11), thay 11 task Windows, bật
+                                   lại [4d]; `classify` chạy ĐỘC LẬP với `news` kiểu quét sàn (chủ dự án chốt 2026-09-07 — xem điểm
+                                   vào lát 12 §4); rồi CẢ HỆ chạy thử trên máy dev vài ngày
+lát 14  giám sát hợp đồng        contract_snapshot + source_build + series_health (market-data-store §7.1) — phủ MỌI nguồn một lần.
+                                   **Số cũ là "lát 12"; dời xuống SAU scheduler ngày 2026-09-07** — lý do ở bảng ánh xạ
+lát 15  lên VPS                  **số cũ là "lát 14"**; chỉ khi lát 13 đã ổn vài ngày — hồ sơ docker-compose.vps.yml
+                                   (service-topology §7b), chuyển hai kho, ingester active/standby. Sau lát 12 thì lát này gần như
+                                   chỉ còn đổi biến môi trường
 ```
 
 **Bảng ánh xạ tên cũ → lát chuẩn** *(tên trong ngoặc vuông là nhãn của cây phụ thuộc phía trên, viết 2026-08-14; "lát 7/8" cũ là cách gọi từ 2026-09-03 tới 2026-09-04 chiều — tài liệu lịch sử trong `90-records/` vẫn dùng tên cũ, đúng luật không viết lại quá khứ)*:
@@ -186,11 +197,23 @@ lát 14  lên VPS                  chỉ khi lát 13 đã ổn vài ngày — h�
 | *(lưu ý tra cứu)* "lát 7" và "lát 8" | hai nghĩa theo thời gian viết: trước 2026-09-04 tối = scheduler/VPS (nay 13/14), sau = WiChart/quốc tế | hồ sơ trong `90-records/` giữ nghĩa cũ |
 | [9b] "lát 7" scheduler trong etl | **lát 13** — chuẩn hoá cách chạy sau cùng, kèm vài ngày chạy thử trên dev | |
 | [9c] "lát 8" lên VPS | **lát 14** — sau cùng | |
+| *(đảo số 2026-09-07)* giám sát hợp đồng | **lát 12 → lát 14** | dời xuống SAU scheduler, lý do dưới bảng |
+| *(đảo số 2026-09-07)* lên VPS | **lát 14 → lát 15** | đẩy xuống vì chèn lát container |
+| *(lát MỚI 2026-09-07)* chạy được trong container | **lát 12** | chủ dự án gọi tên; xem điểm vào |
 
 **Vì sao bộ giám sát hợp đồng dời từ 6 xuống 12 (chủ dự án chốt 2026-09-05 sáng, sau khi rà điểm vào):** (a) hiện **không có gì để bảo vệ** — 10/11 task `Disabled` theo [4d], không job nào chạy hằng ngày cho tới lát 13; ba bảng `ops.contract_snapshot`/`series_health`/`source_build` đã nằm im 0 dòng từ 25/08 và sẽ tiếp tục nằm im nếu dựng bây giờ; (b) bộ giám sát **phủ mọi nguồn**, mà mới có 5/9 — `series_health` sinh ra cho WiChart/FRED (lát 6–7), làm ở vị trí 6 thì phải nới nó hai lần nữa; (c) từng job đã có lưới riêng (guard từ chối cả lượt, bằng chứng ở `staging.raw_payload`, số đếm ở `etl_run.stats`) — lớp cảnh báo sớm xuyên nguồn chỉ có giá trị khi cả hệ chạy tự động. Đặt ở 12, ngay trước scheduler, vì đây là job vận hành và bảng lịch của lát 13 phải có nó. Cái mất khi dời: vài tuần không có báo động sớm nếu BVSC/FiinTrade đổi bundle — nhưng trong vài tuần đó cũng không có lượt tự động nào để bị ảnh hưởng, và mỗi lát mới vẫn đo lại nguồn trước khi viết code. **Hai việc không đợi lát 12** vì là lỗi sống chứ không phải giám sát, đã làm ngay sáng 05/09: vá `status == "Success"` ở hai fetch (`7c3b481`) và mốc ngày VN của `recrawl_codes` (`3a57c51`). Giữ nguyên ý: **không trích chung khuôn `Fetcher`** cho tới khi bộ giám sát thật sự cần.
 
 
-🔴 **Luật thứ tự (chốt 2026-09-04):** đi từ trên xuống, **không nhảy lát**; mỗi lát một session mới, bắt đầu từ mục *"Điểm vào cho lát N"* của lát trước và khép bằng cách viết *"Điểm vào cho lát N+1"*. **Làm lần lượt, không song song** *(chủ dự án chốt 2026-09-04 tối, thay cho ý "nhánh tin chạy song song" của bản chiều)*: gom hết nguồn (lát 6–7) và tin (lát 8–9) về kho, nối tầng ngữ nghĩa (lát 10) rồi đóng hợp đồng và trả hết nợ (lát 11), dựng bộ giám sát hợp đồng phủ mọi nguồn (lát 12, dời từ 6 xuống 2026-09-05), **rồi mới chuẩn hoá cách chạy** (lát 13, scheduler) và **cả hệ chạy thử trên máy dev vài ngày**, cuối cùng mới lên VPS (lát 14). Việc cắt ngang (bật lại [4d], spec tự ngắt ngày lễ, mở rộng danh mục phái sinh) chỉ làm khi chủ dự án gọi tên, không tự chen; ETL vĩ mô/quốc tế đã được gọi tên và thành lát 6–7 *(số 7–8 trong bản 2026-09-04 tối)*.
+🔴 **Thứ tự sau lát 11 — chốt lại 2026-09-07 (chủ dự án):** **12 (container) → 13 (scheduler) → 14 (giám sát) → 15 (VPS)**.
+
+Hai thay đổi so với bản 2026-09-05, và lý do:
+
+1. **Chèn lát 12 "chạy được trong container".** Mục tiêu chủ dự án nêu nguyên văn: *"chuẩn hoá tất cả tác vụ, thiết kế cho chạy trong Docker để sau này dùng được trên VPS luôn không phải làm lại."* Tách khỏi scheduler vì **không thể hẹn giờ một job chưa chạy nổi trong container** — 13 không kiểm được khi 12 chưa xong, mà 12 tự nó đã là sản phẩm trọn vẹn.
+2. **Giám sát hợp đồng dời từ 12 xuống 14, tức SAU khi hệ tự chạy.** Đây chính là lập luận đã dùng để dời nó từ vị trí 6 xuống 12 ngày 2026-09-05 — *"hiện không có gì để bảo vệ, ba bảng nằm im 0 dòng"* — và lập luận đó **vẫn đúng cho tới khi lát 13 xong**. Bộ giám sát chỉ có nghĩa khi có thứ để giám sát. Cái mất: mấy ngày chạy thử không có báo động sớm xuyên nguồn; cái đỡ: **từng job đã có chốt chặn riêng, từ chối cả lượt khi vượt ngưỡng**, bằng chứng ở `staging.raw_payload`, số đếm ở `ops.etl_run.stats`. Chi phí ghép nối khi đảo: đúng **một dòng** — thêm job giám sát vào bảng lịch lúc lát 14 xong.
+
+**Điều kiện đảo ngược:** nếu trong mấy ngày chạy thử của lát 13 có **một nguồn đổi hình dạng mà không job nào bắt được** (dữ liệu sai lọt vào kho, phát hiện muộn hơn một ngày), thì dừng, làm giám sát trước rồi mới chạy tiếp.
+
+🔴 **Luật thứ tự (chốt 2026-09-04, phần dưới đây giữ nguyên làm ngữ cảnh):** đi từ trên xuống, **không nhảy lát**; mỗi lát một session mới, bắt đầu từ mục *"Điểm vào cho lát N"* của lát trước và khép bằng cách viết *"Điểm vào cho lát N+1"*. **Làm lần lượt, không song song** *(chủ dự án chốt 2026-09-04 tối, thay cho ý "nhánh tin chạy song song" của bản chiều)*: gom hết nguồn (lát 6–7) và tin (lát 8–9) về kho, nối tầng ngữ nghĩa (lát 10) rồi đóng hợp đồng và trả hết nợ (lát 11), dựng bộ giám sát hợp đồng phủ mọi nguồn (lát 12, dời từ 6 xuống 2026-09-05), **rồi mới chuẩn hoá cách chạy** (lát 13, scheduler) và **cả hệ chạy thử trên máy dev vài ngày**, cuối cùng mới lên VPS (lát 14). Việc cắt ngang (bật lại [4d], spec tự ngắt ngày lễ, mở rộng danh mục phái sinh) chỉ làm khi chủ dự án gọi tên, không tự chen; ETL vĩ mô/quốc tế đã được gọi tên và thành lát 6–7 *(số 7–8 trong bản 2026-09-04 tối)*.
 
 **Lát 13 — scheduler trong `etl` (thêm 2026-09-04 với tên "lát 7", đổi số 2026-09-04 tối; sinh ra sau khi đăng ký task admin lộ ra là mệt và khó quản).** Container `etl` của `deploy/app` hiện chỉ có heartbeat walking-skeleton; [service-topology §1–2](../20-design/service-topology.md) đã định nghĩa `etl` là *"job theo lịch, scheduler kích hoạt"*. Lát này thay 11 task Windows bằng **một bảng lịch trong code** (refdata 08:00 · screener 15:20 · price 15:40 · events 18:10 · OMO 4 mốc · price-backfill thứ 7 · quét sàn của lát 4, giờ VN), một vòng lặp spawn `python -m etl <job>` làm tiến trình con (lỗi job này không kéo đổ job kia, log tách riêng), chặn chạy chồng, và **tự chạy bù** mốc đã qua trong ngày mà `ops.etl_run` chưa có lượt success (mọi job đều idempotent). Cùng một code chạy **native trên dev** (`uv run python -m etl`, một cửa sổ thay 11 — không admin, không Docker Desktop trong session) và **trong container trên VPS** (`restart: unless-stopped`, sống qua reboot). `ingester` là daemon, không đi qua bảng này — service riêng có `restart`. Xong lát này thì `scripts/register-tasks.ps1` về hưu. Đứng **sau** lát 6–12 (chưa đau: 11 task đang `Disabled` theo [4d]; chủ dự án muốn xong hết nguồn, tin và tầng ngữ nghĩa rồi mới chuẩn hoá cách chạy một lần) và **ngay trước** lát 14 vì VPS không có Task Scheduler — chính bảng lịch này là thứ chạy thử vài ngày trên dev trước khi lên VPS. Bảng lịch lúc đó gồm cả job vĩ mô/quốc tế/tin của lát 6–9 *(số 7–10 trong bản 2026-09-04 tối)* và job giám sát hợp đồng của lát 12.
 
@@ -508,7 +531,58 @@ Năm job `python -m etl fred|fx|lbma|yahoo|binance` (spec [`2026-09-05-global-et
 
 **Điểm chủ dự án phải chốt ở phiên sau:** (1) **nợ #2** — có cấm model nêu tỷ trọng và điểm mua cụ thể cho một mã không (đây là chốt chặn: nợ #1 và #2 cùng sửa một khối prompt, làm lệch pha sẽ phải chạy lại bộ hồi quy hai lần, mỗi lượt ≈ $0,25 và ~15 phút tiền cảnh); (2) nếu chạy lại bộ vòng 7 mà hình dạng **vẫn** dưới 14/15 thì dừng ở đâu — sửa tiếp, hay chấp nhận và ghi thành giới hạn đã biết. Quy trình như lát 10: đọc → đo → brainstorm → spec → plan → subagent Sonnet → **review hai trục** → verify → merge.
 
-### Điểm vào cho lát 12 — giám sát hợp đồng, đọc khi tới lát 12
+### Điểm vào cho lát 12 — chạy được trong container, đọc trước khi bắt đầu
+
+*(viết 2026-09-07 tối, sau khi đóng lát 11; khảo sát đã làm, CHƯA viết dòng code nào)*
+
+**Mục tiêu chủ dự án nêu:** *"chuẩn hoá tất cả tác vụ, thiết kế cho chạy trong Docker để sau này dùng được trên VPS luôn không phải làm lại."*
+
+#### 1. Vỏ đã có sẵn — đừng dựng lại
+
+| Có gì | Trạng thái |
+|---|---|
+| [`deploy/backend.Dockerfile`](../../deploy/backend.Dockerfile) | `uv sync --frozen --no-dev`, non-root `appuser`, `PYTHONUNBUFFERED` — dùng được ngay |
+| [`deploy/app/docker-compose.yml`](../../deploy/app/docker-compose.yml) | hai service `api` + `etl`, `restart: unless-stopped`, `env_file: ../../.env`, mạng ngoài `dlck-net` |
+| [`deploy/infra/docker-compose.vps.yml`](../../deploy/infra/docker-compose.vps.yml) | overlay hồ sơ VPS **đã đo thật**: trần RAM từng service, tổng ~5,6/6 GiB, cấm swap, ClickHouse có trần mềm riêng |
+| [service-topology §7b](../20-design/service-topology.md) | ngân sách RAM/đĩa theo số đo phiên 27/08 |
+
+⇒ **Chưa một job sản phẩm nào từng chạy bên trong nó.** Service `etl` hiện là `command: ["python", "-m", "etl"]` — gọi CLI không tham số, walking skeleton.
+
+#### 2. Bốn thứ sẽ vỡ ngay lần chạy đầu — đọc code 2026-09-07, không phải đoán
+
+1. 🔴 **9 biến env trỏ `127.0.0.1`/`localhost`**: `ETL_DATABASE_URL` · `AGENT_DATABASE_URL` · `DATA_DATABASE_URL` · `TEST_DATABASE_URL` · `CLICKHOUSE_URL` · `CLICKHOUSE_INGESTER_URL` · `REDIS_URL`… Trong container `127.0.0.1` là **chính container đó**. Compose có đặt `POSTGRES_HOST: postgres` / `REDIS_HOST: redis`, nhưng các đường code dùng **URL đầy đủ** không đọc hai biến ấy. **Đây là việc lớn nhất của lát này** — và là quyết định khó đảo (hình dạng cấu hình), nên phải đi qua **§4.8** (nhiều phương án độc lập) trước khi chốt.
+2. **Thư mục runtime của ingester** — `<repo>/../dlck-runtime/{logs,measure,spill}`, đè được bằng `INGESTER_LOG_DIR` · `INGESTER_MEASURE_DIR` · `INGESTER_SPILL_DIR` ([`ingester/config.py:29-33`](../../backend/ingester/config.py)). Trong container phải là **volume**; trần spill là **10 GiB** (`SPILL_CAP_BYTES`) — đáng kể trên VPS 60 GB.
+3. **Múi giờ**: container mặc định **UTC**. Dự án đã trả giá đúng chỗ này (`recrawl_codes` lấy `current_date` theo session Postgres ⇒ hai test đỏ mỗi ngày 00:00–07:00 giờ VN). Phải chốt `TZ` và có phép kiểm.
+4. **Đồ Windows về hưu**: `DLCK_LOCK_CONSOLE` ([`core/console.py`](../../backend/core/console.py)), `scripts/register-tasks.ps1`, 11 task Scheduler. Riêng [`ingester/spill.py`](../../backend/ingester/spill.py) đã có sẵn cả nhánh `msvcrt` lẫn `fcntl` — phần khoá file portable rồi.
+
+#### 3. Nghiệm thu đề xuất
+
+**Cả 15 họ job chạy thật trong container, ghi vào kho thật, `docker compose down` rồi `up` không mất gì.** 15 họ: `refdata` · `screener` · `events` · `price` · `snapshot` · `fundamentals` · `omo` · `wichart` · `fred` · `fx` · `lbma` · `yahoo` · `binance` · `news` · `classify`. Cộng `ingester` (daemon, service riêng, `restart: unless-stopped`).
+
+⚠️ **Chỉ 6/15 họ hiện có task Windows** (`refdata` · `screener` · `events` · `price` · `omo` · và `price-backfill`); 9 họ còn lại **chưa từng có lịch nào** — chúng ra đời ở lát 6–9, sau khi 11 task được đăng ký.
+
+#### 4. `classify` chạy độc lập kiểu quét sàn — chủ dự án chốt 2026-09-07
+
+Code **đã là quét sàn**: `WHERE classified_from IS NULL ORDER BY published_at DESC LIMIT :n` ([`etl/news_classify.py:107-113`](../../backend/etl/news_classify.py)), có sổ `ops.etl_run` riêng và chốt chặn quota. Thiếu đúng **một mốc lịch và chính sách trần** — thuộc lát 13.
+
+Số thật để đặt trần, đo từ **230 lượt** đã chạy (`ops.llm_call`, `purpose = 'news.classify'`):
+
+| | |
+|---|---|
+| Mỗi bài | **2.788 token vào · 842 token ra · 9,96 giây** |
+| Tồn đọng 2026-09-07 | **8.531** bài chưa phân loại / 8.761 tổng |
+| Dọn hết tồn đọng | ≈ **23,8 triệu token vào** · **~23,6 giờ chạy tuần tự** |
+| Dòng mới | ~558 bài/ngày ⇒ **~1,5 giờ/ngày**, ~1,56 triệu token/ngày |
+
+⇒ Dòng mới thì một mốc đêm là thừa sức; **tồn đọng không dọn trong một lượt được** — hoặc rải ~2 tuần có trần mỗi đêm, hoặc chốt *"chỉ phân loại từ ngày X trở đi"*. **Chủ dự án chưa chọn.**
+
+#### 5. Trạng thái lúc bàn giao
+
+`main` = lát 11 · **1.029 passed, 2 skipped** · migration head `0020` · **11 task đều `Disabled`** trừ `dlck-price-backfill` `Ready` · vòng lặp tin **đã tắt 2026-09-07 17:54** (55 vòng, 326 bài, `merged_near` bắt 3) · kho tick ClickHouse có **đúng ba phiên**: 27/08 · 28/08 · 03/09 (tới 08:55).
+
+🔴 **Đồng hồ đang chạy:** mỗi phiên giao dịch không bật `dlck-ingester` là **một ngày nến 1 phút mất vĩnh viễn** — thứ duy nhất trong dự án không backfill lại được. Ingester là daemon, **không phụ thuộc lát 12 hay 13**; bật lại là quyết định độc lập, chủ dự án chưa chốt.
+
+### Điểm vào cho lát 14 — giám sát hợp đồng, đọc khi tới lát 14 *(số cũ: lát 12)*
 **Trạng thái bàn giao MỚI NHẤT — 2026-09-07 sau lát 11:** `main` = lát 11 · **1.026 passed, 2 skipped** *(`cd backend && uv run --env-file ../.env pytest tests -q` — **thiếu `--env-file` là 425 error**, không phải test hỏng)* · migration head **`0020`** (lát 11 không thêm migration) · `backend/agent/` có **bốn** block system (`SCOPE_GUARD` · L1 · `ANSWER_RULES` · luật công cụ mang ngày) và lệnh `/moi` trong REPL · **không job nào chạy tự động** · 11 task Scheduler vẫn `Disabled` theo [4d]. Hai thứ lát 12 phải biết trước: **bộ hồi quy có nhiễu** (đọc [rubric v2 §3](../90-records/plans/2026-09-07-semantic-layer-closeout/rubric-v2.md) trước khi kết luận một thay đổi là tốt hay xấu) và **ngưỡng cảnh báo feed 7 ngày quá chặt** với chuyên mục thưa tin ([news/README §13.5](../10-sources/news/README.md)) — hai đường sửa đã ghi, chọn đường nào là việc của lát 12.
 
 *(Bàn giao cũ, giữ làm ngữ cảnh:)* **Trạng thái bàn giao 2026-09-04 ~23:00:** `main` = lát 5 + fix mốc nước lát 4 + roadmap 14 lát · **593 test xanh, 2 skipped** (`pytest tests -q`) *(sáng 05/09 sau hai fix dưới: **596**)* · migration head `0017` · `financial_statement` **27,3 triệu dòng / 1.523 mã / 3,4 GB**, `financial_report_file` 114.629 dòng, mốc nước `2026-09-04` · `metric_dictionary` 729 dòng · **không đăng ký task Scheduler** (lịch thuộc lát 13: `fundamentals` chạy **sau `events` 18:10 và sau `snapshot`**).
