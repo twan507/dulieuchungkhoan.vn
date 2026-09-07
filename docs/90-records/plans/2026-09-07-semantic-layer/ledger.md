@@ -255,3 +255,14 @@ Hồ sơ: [Chuẩn v4](review-chuan-v4-2026-09-07.md) · [Spec v4](review-spec-v
 **Hai lỗi trong chính đợt sửa vòng 3, do vòng 4 bắt:** cờ `da_cat` của `compare_peers` tính theo `len(mas_xin)` trong khi điểm cắt đã dời sang `ma_hop_le_full` ⇒ 2 mã thật + 30 mã bịa báo "đã cắt" dù không cắt gì (sai 4/6 ca đo); và bản sửa "xét tồn tại trên toàn bộ danh sách" **bỏ trần đầu vào mà không thay bằng gì** ⇒ 500 mã = 1.000 round-trip / 2,9 giây, do model điều khiển. Nay có `TRAN_MA_VAO = 100`, đo lại: 500 mã → 200 SQL / 572 ms.
 
 **Số cuối cùng: 1.025 passed, 2 skipped** (`main` 877 → **+148**).
+
+
+## Đóng lát 10 và mở lát 11 (2026-09-07 tối)
+
+Merge `a7a79de` vào `main` theo khuôn dự án (`Merge: …`, no-ff). **1.025 test xanh, 2 skipped** — chạy lại **trên `main` sau merge**, không phải trên nhánh.
+
+🔴 **Đảo một quyết định của chính lát này.** Bản roadmap ban đầu ghi *"lát 11 ⛔ gộp vào lát 10"* với lý do: bộ vòng 6 đã mất nên lát 10 phải tự dựng bộ hồi quy để nghiệm thu, không còn gì tách riêng. **Chủ dự án chỉ ra chỗ sai** (2026-09-07 tối): gộp được **việc**, không gộp được **mục tiêu chưa đạt** — bộ vòng 7 chạy ra hình dạng 13/15 dưới ngưỡng 14, tức mục tiêu *"hợp đồng đứng vững cả về hình dạng"* của lát 11 chưa hoàn thành.
+
+⇒ Lát 11 **mở lại** với nội dung đúng: kéo hình dạng lên ngưỡng và **trả hết 7 nợ** trước khi sang lát 12. Điểm vào đã viết trong `roadmap.md`. Số hiệu các lát sau vẫn **giữ nguyên** (12, 13, 14).
+
+Bài học cho chính tôi: khi một lát *"không còn gì để làm"*, phải hỏi thêm một câu — *không còn việc, hay không còn mục tiêu?* Hai thứ đó khác nhau, và tôi đã nhầm cái thứ nhất thành cái thứ hai.
