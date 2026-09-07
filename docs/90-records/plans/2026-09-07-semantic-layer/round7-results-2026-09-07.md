@@ -74,6 +74,7 @@ Chi phí thật **$0,016/câu** thấp hơn ước lượng $0,022–0,048 của
 | **AC7** bộ hồi quy | ❌ **không đạt** — số 15/15, hình dạng **13/15** sau khi sửa rubric (ngưỡng 14). Hai câu trượt là lỗi thật: một ca bịa số dẫn xuất, một ca tra cứu không diễn giải |
 | **AC8** đo chi phí | ✅ — §3 |
 | **AC9** không rò kết nối | ✅ — output nguyên văn ở §7 |
+| **AC10** tài liệu không còn chỗ đá nhau | ✅ — kết quả `git grep` nguyên văn ở §8 |
 
 ## 5. Ba lỗi code mà lượt chạy thật lộ ra
 
@@ -128,3 +129,22 @@ AC9 — ket noi ro ri cua agent_reader:
 main:                877 passed, 2 skipped in 79.77s
 feat/semantic-layer: 976 passed, 2 skipped in 79.32s
 ```
+
+
+## 8. AC10 — phép kiểm `git grep` (§1.7), kết quả nguyên văn
+
+```
+--- icb_level trong tài liệu sống ---
+docs/20-design/chatbot-semantic-layer.md:51: 🔴 get_industry_tree KHÔNG có tham số icb_level …
+--- "8 function" / "5 function cho chatbot" ---
+docs/00-overview/roadmap.md:321: (nằm trong khối "~~Điểm vào cho lát 10~~ — ĐÃ DÙNG XONG")
+--- "DỜI sang lát 10" ---
+  không còn
+--- "chưa duyệt" trong docs/20-design và architecture.md ---
+  không còn
+```
+
+Hai hit còn lại **đều đúng, không phải rác**:
+
+- `chatbot-semantic-layer.md:51` nhắc `icb_level` để **nói rằng nó không tồn tại** — đây chính là chỗ ngăn người sau chép lại chữ ký cũ.
+- `roadmap.md:321` nằm trong khối *"~~Điểm vào cho lát 10~~ — ĐÃ DÙNG XONG 2026-09-07, giữ làm ngữ cảnh"*. Điểm vào đã dùng được **giữ nguyên văn** theo đúng quy ước các lát 6, 7, 8 — nó là ảnh chụp trạng thái lúc mở lát, sửa nó là viết lại quá khứ (§1.7). Lần quét AC10 sau gặp lại hit này thì **bỏ qua**, đừng sửa.
