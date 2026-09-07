@@ -72,3 +72,27 @@ def test_ma_khong_ton_tai_thi_goi_y(db, kho):
     out = json.loads(chuoi_vi_mo(db, code="vn.cpixxx"))
     assert out["tim_thay"] is False
     assert out["goi_y"]
+
+
+def test_danh_muc_bao_ro_tong_khop_va_khong_cat_bao_sai(db, kho):
+    """N3: danh mục là cửa DUY NHẤT để model tìm mã — trước đây cắt câm ở 40 mục, không trường
+    nào báo đã cắt hay còn bao nhiêu. Kho test chỉ có 3 mục (cpi, wti, btc) nên phải KHỚP HẾT,
+    không được báo da_cat=True khi thực ra chưa cắt gì."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(chuoi_vi_mo(db))
+    assert out["kieu"] == "danh_muc"
+    assert out["tong_khop"] == len(out["danh_muc"]) == 3
+    assert out["da_cat"] is False
+
+
+def test_danh_muc_dem_dung_tong_khong_phu_thuoc_tran(db, kho):
+    """N3: hàm đếm tổng phải ĐỘC LẬP với LIMIT hiển thị — mô phỏng cắt bằng cách tự hạ trần
+    xuống 2 (nội bộ), tổng đếm được vẫn phải là 3, để lộ đúng phần bị cắt."""
+    from agent.tools.get_macro_series import _danh_muc, _dem_danh_muc
+
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    rows = _danh_muc(db, None, tran=2)
+    tong = _dem_danh_muc(db, None)
+    assert len(rows) == 2
+    assert tong == 3
+    assert tong > len(rows)

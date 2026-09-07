@@ -156,4 +156,42 @@ def kho(db):
             " VALUES (:a, 1, :t, :c, now())"), {"a": aid, "t": tieu_de, "c": than_bai})
         ids[f"tin:{ngay}"] = aid
 
+    # C1 — bài đăng sát nửa đêm UTC: 2026-08-19 23:30+00 = 2026-08-20 06:30 giờ VN. Dùng để bắt
+    # lỗi lệch múi giờ (CLAUDE.md §3.1): ngày UTC và ngày VN của đúng một thời điểm phải KHÁC
+    # nhau, nếu không phép thử không bắt được gì. group_no/sub riêng ('2b') để không lẫn với
+    # ba bài TIN_TUC ở trên khi lọc theo nhãn.
+    aid_nua_dem = db.execute(sa.text(
+        "INSERT INTO news.article (canonical_url, primary_source, published_at, published_at_src,"
+        " fetched_at, group_no, sub, classified_from, content_chars)"
+        " VALUES ('https://vi.du/tinnhanhck/qua-nua-dem', 'tinnhanhck',"
+        " CAST('2026-08-19 23:30:00+00' AS timestamptz), 'feed', now(), 2, '2b', 'content', 70)"
+        " RETURNING article_id")).scalar_one()
+    db.execute(sa.text(
+        "INSERT INTO news.article_revision (article_id, version, title, content, content_fetched_at)"
+        " VALUES (:a, 1, 'Bản tin thử múi giờ đăng sát nửa đêm',"
+        " 'Nội dung này chỉ để kiểm tra hiển thị ngày theo giờ Việt Nam, không liên quan thị trường.', now())"),
+        {"a": aid_nua_dem})
+    ids["tin:qua_nua_dem"] = aid_nua_dem
+
+    # N1 — một bài có HAI revision: news_store.add_revision chèn version+1 khi nội dung đổi
+    # trong phiên (lát 7b). group_no/sub riêng ('2a') để phép lọc theo nhãn chỉ trúng đúng bài
+    # này — nếu JOIN không khoá version, bài sẽ hiện ra 2 LẦN (một lần mỗi revision).
+    aid_hai_ban = db.execute(sa.text(
+        "INSERT INTO news.article (canonical_url, primary_source, published_at, published_at_src,"
+        " fetched_at, group_no, sub, classified_from, content_chars)"
+        " VALUES ('https://vi.du/cafef/hai-ban', 'cafef',"
+        " CAST('2026-08-15 08:00+07' AS timestamptz), 'feed', now(), 2, '2a', 'content', 90)"
+        " RETURNING article_id")).scalar_one()
+    db.execute(sa.text(
+        "INSERT INTO news.article_revision (article_id, version, title, content, content_fetched_at)"
+        " VALUES (:a, 1, 'Doanh nghiệp dệt may mở rộng nhà máy tại Thái Bình',"
+        " 'Một doanh nghiệp dệt may vừa công bố kế hoạch xây thêm nhà máy mới tại Thái Bình.', now())"),
+        {"a": aid_hai_ban})
+    db.execute(sa.text(
+        "INSERT INTO news.article_revision (article_id, version, title, content, content_fetched_at)"
+        " VALUES (:a, 2, 'Doanh nghiệp dệt may khởi công nhà máy mới tại Thái Bình',"
+        " 'Doanh nghiệp dệt may đã chính thức khởi công nhà máy mới tại Thái Bình, dự kiến hoàn thành cuối năm sau.', now())"),
+        {"a": aid_hai_ban})
+    ids["tin:hai_ban"] = aid_hai_ban
+
     return ids

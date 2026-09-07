@@ -35,7 +35,7 @@ def su_kien_doanh_nghiep(conn: sa.Connection, ticker: str, event_type: str | Non
     ma = resolve_ticker(conn, ticker)
     if not ma["tim_thay"]:
         return to_json(ma)
-    lim, da_cat = cap_limit(limit, 20, 50)
+    lim = cap_limit(limit, 20, 50)
     rows = conn.execute(_SQL_SU_KIEN, {"iid": ma["issuer_id"], "loai": event_type,
                                        "tu": from_date, "den": to_date, "lim": lim}).all()
     if not rows:
@@ -51,5 +51,5 @@ def su_kien_doanh_nghiep(conn: sa.Connection, ticker: str, event_type: str | Non
         if r.year_report:
             e["ky"] = f"{r.year_report}" + (f" quý {r.length_report}" if r.length_report and r.length_report < 5 else "")
         du_lieu.append(e)
-    return to_json(co_du_lieu(du_lieu, ma=ma["ticker"], da_cat=da_cat,
+    return to_json(co_du_lieu(du_lieu, ma=ma["ticker"], da_cat=len(rows) >= lim,
                               ghi_chu="kho không lưu tỷ lệ chi trả của các đợt cổ tức"))

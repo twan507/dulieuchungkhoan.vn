@@ -16,13 +16,20 @@ def to_json(payload: dict) -> str:
     return json.dumps(payload, ensure_ascii=False, default=str)
 
 
-def cap_limit(limit: int | None, mac_dinh: int, tran: int) -> tuple[int, bool]:
-    """Trả (giới hạn thật, có bị cắt không)."""
+def cap_limit(limit: int | None, mac_dinh: int, tran: int) -> int:
+    """Trả giới hạn thật để dùng cho LIMIT.
+
+    KHÔNG trả kèm cờ "đã cắt": hàm này chạy TRƯỚC khi truy vấn, nên không biết kết quả THẬT
+    có đủ dòng để bị cắt hay không — xin 500 dòng trên một bảng chỉ có 3 dòng thì bị hạ về
+    trần nhưng chẳng có gì bị cắt cả. Bên gọi tự tính cờ sau khi có kết quả thật, ví dụ
+    `da_cat = len(rows) >= lim`, hoặc so với tổng đã đếm riêng (như get_news.tim_tin dùng
+    tong_khop) nếu có sẵn con số đó.
+    """
     if limit is None:
-        return mac_dinh, False
+        return mac_dinh
     if limit > tran:
-        return tran, True
-    return max(1, limit), False
+        return tran
+    return max(1, limit)
 
 
 def khong_tim_thay(ma: str, goi_y: list[str]) -> dict:

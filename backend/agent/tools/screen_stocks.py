@@ -5,8 +5,13 @@ chấp nhận mã nằm trong BẢNG NHÃN ĐÓNG — mã ngoài bảng bị t�
 tên hiển thị không suy được và đơn vị có thể sai (prf/rev: tên nói "tỉ đồng", unit nói VND).
 
 Join market.metric_dictionary PHẢI khoá dictionary='field_dictionary': PK là (dictionary,
-code), cùng một code có thể tồn tại song song ở 'screener_params' — không khoá sẽ nhân đôi
-dòng trên kho thật (CLAUDE.md §3 lát 10).
+code), schema CHO PHÉP cùng một code tồn tại song song ở 'screener_params' — khoá dictionary
+là phòng thủ cho khả năng đó, không phải vì đã xảy ra: đo kho thật 2026-09-07 chỉ có
+'field_dictionary' (729 dòng), 0 dòng 'screener_params' (CLAUDE.md §3 lát 10).
+
+`criteria` do MODEL sinh (không qua schema kiểm sâu từng phần tử) nên có thể thiếu khoá hay
+sai kiểu — mọi hình dạng lạ phải ra {"loi": True, ...} có cấu trúc, không được ném exception
+làm hỏng vòng chat (N6, review CHUẨN lát 10).
 """
 from __future__ import annotations
 
@@ -18,6 +23,7 @@ from agent.tools._shared import cap_limit, co_du_lieu, rong, to_json
 
 TOAN_TU = {">": ">", "<": "<", ">=": ">=", "<=": "<=", "=": "="}
 _KEY = "payload->'stockScreenerItem'->>"
+_KHOA_CAN = {"metric_code", "operator", "value"}
 
 
 def _don_vi(conn: sa.Connection) -> dict[str, str | None]:
@@ -31,19 +37,29 @@ def loc_co_phieu(conn: sa.Connection, criteria: list[dict] | None = None,
                  industry_code: str | None = None, exchange: str | None = None,
                  sort_by: str | None = None, limit: int | None = None) -> str:
     criteria = list(criteria or [])
-    xin = [c.get("metric_code") for c in criteria] + ([sort_by] if sort_by else [])
-    la = [c for c in xin if c and c not in LABELS]
+    # N6: criteria do model sinh, có thể thiếu khoá hoặc không phải object — kiểm HÌNH DẠNG
+    # trước khi đụng vào bất kỳ khoá nào, để không ném KeyError/AttributeError giữa vòng chat.
+    sai_dang = [c for c in criteria if not isinstance(c, dict) or not _KHOA_CAN <= c.keys()]
+    if sai_dang:
+        return to_json({"loi": True, "tieu_chi_loi": [repr(c) for c in sai_dang],
+                        "ly_do": "moi tieu chi phai la object co du ba khoa metric_code/operator/value"})
+    xin = [c["metric_code"] for c in criteria] + ([sort_by] if sort_by else [])
+    # Whitelist theo isinstance, KHÔNG theo truthiness — `if c and ...` từng bỏ lọt None/''/0
+    # (giá trị falsy) qua vòng kiểm, dù chúng vẫn được nội suy vào f-string SQL bên dưới.
+    la = [c for c in xin if not isinstance(c, str) or c not in LABELS]
     if la:
         return to_json({"loi": True, "ly_do": f"ma chi tieu ngoai bang nhan: {la}", "ma_hop_le": sorted(LABELS)})
     for c in criteria:
-        if c.get("operator") not in TOAN_TU:
-            return to_json({"loi": True, "ly_do": f"toan tu la: {c.get('operator')}",
+        if c["operator"] not in TOAN_TU:
+            return to_json({"loi": True, "ly_do": f"toan tu la: {c['operator']}",
                             "toan_tu_hop_le": sorted(TOAN_TU)})
+        if not isinstance(c["value"], (int, float)):
+            return to_json({"loi": True, "ly_do": f"value phai la so, nhan duoc: {c['value']!r}"})
 
     ngay = conn.execute(sa.text("SELECT max(trading_date) FROM market.screener_daily")).scalar()
     if ngay is None:
         return to_json(rong())
-    lim, da_cat = cap_limit(limit, 20, 50)
+    lim = cap_limit(limit, 20, 50)
     sort = sort_by or "rtd11"
     dieu_kien, params = [], {"ngay": ngay, "nganh": industry_code, "san": exchange, "lim": lim}
     for i, c in enumerate(criteria):
@@ -80,4 +96,4 @@ def loc_co_phieu(conn: sa.Connection, criteria: list[dict] | None = None,
             if s is not None:
                 ct[LABELS[code]] = s
         du_lieu.append({"ma": r.ticker, "san": r.exchange, "nganh": r.nganh, "chi_tieu": ct})
-    return to_json(co_du_lieu(du_lieu, ngay_du_lieu=str(ngay), da_cat=da_cat))
+    return to_json(co_du_lieu(du_lieu, ngay_du_lieu=str(ngay), da_cat=len(rows) >= lim))

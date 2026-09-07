@@ -16,10 +16,13 @@ def test_to_json_giu_dau_tieng_viet():
     assert to_json({"ten": "Ngân hàng"}) == '{"ten": "Ngân hàng"}'
 
 
-def test_cap_limit_cat_va_bao():
-    assert cap_limit(None, 20, 50) == (20, False)
-    assert cap_limit(10, 20, 50) == (10, False)
-    assert cap_limit(500, 20, 50) == (50, True)
+def test_cap_limit_tra_gioi_han_thuc_dung():
+    """N2: cap_limit không còn trả cờ da_cat — chạy TRƯỚC truy vấn nên không biết kết quả thật
+    có bị cắt hay không (xin 500 dòng trên bảng có 3 dòng thì hạ về trần chứ không cắt gì cả).
+    Cờ da_cat nay do bên gọi tự tính từ SỐ DÒNG THẬT trả về, xem test_a08/a09/a10."""
+    assert cap_limit(None, 20, 50) == 20
+    assert cap_limit(10, 20, 50) == 10
+    assert cap_limit(500, 20, 50) == 50
 
 
 def test_resolve_ticker_ma_that(db, kho):

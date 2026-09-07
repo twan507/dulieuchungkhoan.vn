@@ -5,10 +5,11 @@ mã chỉ tiêu; trần 8 kỳ. length_report: 1..4 = quý, 5 = CẢ NĂM (khôn
 canonical_code NULL toàn bộ nên đừng dùng nó. Tên hiển thị lấy từ bảng nhãn đóng, KHÔNG tra
 name_vi (tên không duy nhất — isa20/isa22 cùng name_vi "LỢI NHUẬN THUẦN" trong nguồn).
 
-Join metric_dictionary CHỈ trên dictionary='field_dictionary': cùng một code có thể tồn tại
-ở CẢ HAI dictionary song song (PK là (dictionary, code) — xem test_metric_dictionary_two_dicts,
-backend/tests/schema/test_s03_market_data.py). Không khoá dictionary sẽ nhân đôi dòng nếu
-code đó cũng có mặt bên 'screener_params'.
+Join metric_dictionary CHỈ trên dictionary='field_dictionary': PK là (dictionary, code) —
+schema CHO PHÉP cùng một code tồn tại song song ở 'screener_params' (xem
+test_metric_dictionary_two_dicts, backend/tests/schema/test_s03_market_data.py), khoá
+dictionary là phòng thủ cho khả năng đó. Đo kho thật 2026-09-07: chỉ có 'field_dictionary'
+(729 dòng), 0 dòng 'screener_params' — chưa từng nhân đôi trên kho thật, chỉ là phòng khi có.
 """
 from __future__ import annotations
 
