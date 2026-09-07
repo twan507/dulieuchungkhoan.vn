@@ -53,6 +53,13 @@ MAX_TOKENS = 32000          # Trần, KHÔNG phải mục tiêu: model chỉ sin
                             # `__main__.py` dựng client với `CHAT_TIMEOUT_S` = 600 s để 32k thật sự
                             # sinh được (32.000 / 84 ≈ 381 s < 600 s).
 
+TRAN_GIAY_MOT_LUOT = 300.0  # Hạn cho CẢ lượt, tính bằng đồng hồ — khác `MAX_ITERATIONS` (đếm vòng)
+                            # và khác timeout của một request (`CHAT_TIMEOUT_S`). Không có nó thì
+                            # ca xấu nhất là 16 vòng × 600 s = 2,7 giờ, và 10,7 giờ nếu tính
+                            # `max_retries=3` — người dùng ngồi chờ mà không biết chuyện gì
+                            # (review vòng 4, N3: nới hai trần kia mà quên đặt hạn cho cả lượt).
+                            # 300 s là ~9 lần độ trễ p90 đo được (34,5 s), rộng cho ca thật.
+
 # `stop_reason` KHÔNG dùng lại được cho lượt sau, dù lượt đó không còn `tool_use` treo:
 #   · model_context_window_exceeded — lịch sử ĐÃ tràn cửa sổ; nhận nó rồi nối tiếp chính nó thì
 #     mọi lượt sau đều tràn, phiên chết cứng. Giữ lịch sử cũ là trạng thái duy nhất hồi phục được.
@@ -70,6 +77,7 @@ def run_turn(llm, read_eng, ops_eng, history: list, cau_hoi: str) -> tuple[str, 
         thinking={"type": "adaptive"}, max_iterations=MAX_ITERATIONS,
     )
     tra_loi, cuoi, t0 = "", None, time.monotonic()
+    bat_dau, qua_han = time.monotonic(), False
     for message in runner:
         cuoi = message
         if ops_eng is not None:
@@ -83,6 +91,9 @@ def run_turn(llm, read_eng, ops_eng, history: list, cau_hoi: str) -> tuple[str, 
                 response["content"] = [*response["content"], {"type": "text", "text": REMINDER}]
                 messages = [*messages, response]
             # KHÔNG append_messages ở đây — xem ghi chú (2) đầu file.
+            if time.monotonic() - bat_dau > TRAN_GIAY_MOT_LUOT:
+                qua_han = True
+                break            # dừng TRƯỚC khi gọi model lần nữa
         else:
             tra_loi = "".join(b.text for b in message.content if b.type == "text")
 
@@ -99,6 +110,9 @@ def run_turn(llm, read_eng, ops_eng, history: list, cau_hoi: str) -> tuple[str, 
     ket_sach = (cuoi is not None
                 and not any(b.type == "tool_use" for b in cuoi.content)
                 and cuoi.stop_reason not in STOP_KHONG_DUNG_LAI_DUOC)
+    if qua_han:
+        return (f"[lượt này quá hạn {TRAN_GIAY_MOT_LUOT:.0f} giây — bỏ lượt, lịch sử giữ nguyên như trước. "
+                f"Thử hỏi hẹp hơn, hoặc tách thành vài câu nhỏ.]", history)
     if not ket_sach:
         ly_do = cuoi.stop_reason if cuoi is not None else "không nhận được lượt nào"
         return (f"[lượt này dừng giữa chừng ({ly_do}) — bỏ lượt, lịch sử giữ nguyên như trước. "

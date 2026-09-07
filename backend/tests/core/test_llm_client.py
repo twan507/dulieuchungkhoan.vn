@@ -165,3 +165,29 @@ def test_close_only_closes_the_client_it_created():
     with own:
         pass
     assert inner.is_closed is True                     # tự tạo — đóng khi thoát context
+
+
+def test_token_plan_remains_khong_thua_huong_timeout_dai_cua_client():
+    """Thăm dò quota là một GET nhỏ, không được chờ theo timeout của lượt sinh chữ.
+
+    Vòng chat lát 10 dựng client với timeout 600 s để trần 32k token chạm tới được. Nếu lời gọi
+    quota dùng chung timeout đó thì một endpoint quota treo sẽ bắt người dùng chờ 10 phút sau
+    MỖI lượt chat (review vòng 4, N4). httpx ghi timeout của từng request vào `extensions`.
+    """
+    ghi = {}
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        ghi["timeout"] = request.extensions.get("timeout")
+        return httpx2.Response(200, json={
+            "base_resp": {"status_code": 0},
+            "model_remains": [{"model_name": "general",
+                               "current_interval_remaining_percent": 90,
+                               "current_weekly_remaining_percent": 80}]})
+
+    s = LLMSettings(api_key="x", base_url="https://api.minimax.io/anthropic", model="MiniMax-M3", timeout_s=600.0)
+    with LLMClient(s, http_client=httpx2.Client(transport=httpx2.MockTransport(handler), timeout=600.0)) as llm:
+        llm.token_plan_remains()
+
+    doc = (ghi["timeout"] or {}).get("read")
+    assert doc == LLMClient.QUOTA_TIMEOUT_S, f"quota dùng timeout {doc}, phải là {LLMClient.QUOTA_TIMEOUT_S}"
+    assert LLMClient.QUOTA_TIMEOUT_S <= 30

@@ -254,3 +254,28 @@ def test_model_tu_choi_thi_bo_luot_khong_giu_vao_lich_su(tool_dem):
         llm.close()
     assert moi == []
     assert "refusal" in tra_loi
+
+
+def test_mot_luot_co_han_chot_khong_cho_vo_han(tool_dem, monkeypatch):
+    """Review vòng 4, N3: nới `MAX_TOKENS` và `MAX_ITERATIONS` mà quên đặt hạn cho CẢ LƯỢT.
+
+    16 vòng × timeout 600 s ⇒ một lượt bệnh chờ tối đa 2,7 giờ (10,7 giờ nếu tính `max_retries`).
+    Trần vòng lặp chặn số lượt, không chặn thời gian. Phải có hạn theo đồng hồ, và khi chạm hạn
+    thì bỏ lượt như mọi kết thúc dở dang khác — lịch sử giữ nguyên, người dùng hỏi lại được.
+    """
+    monkeypatch.setattr(chat_mod, "TRAN_GIAY_MOT_LUOT", 0.0)      # hạn 0 giây: chạm ngay lượt đầu
+
+    def handler(request):
+        return httpx2.Response(200, json=_msg(
+            [{"type": "tool_use", "id": "tu_z", "name": "get_price_series",
+              "input": {"ticker": "HPG"}}], "tool_use"))
+
+    llm = _llm_gia(handler)
+    try:
+        cu = [{"role": "user", "content": "câu trước"}, {"role": "assistant", "content": "đáp trước"}]
+        tra_loi, moi = run_turn(llm, None, None, cu, "câu hỏi nặng?")
+    finally:
+        llm.close()
+    assert moi == cu, "chạm hạn thì lịch sử phải giữ nguyên"
+    assert "quá hạn" in tra_loi
+    assert tool_dem["n"] <= 1, "phải dừng ngay khi chạm hạn, không chạy tiếp vòng nữa"

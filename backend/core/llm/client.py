@@ -51,6 +51,13 @@ def _json_from_text(txt: str):
 
 
 class LLMClient:
+    QUOTA_TIMEOUT_S = 15.0
+    """Thăm dò quota là một GET nhỏ — không dùng chung timeout với lượt sinh chữ.
+
+    Vòng chat lát 10 đặt timeout 600 s để trần 32k token chạm tới được; nếu lời gọi quota
+    thừa hưởng con số đó thì một endpoint quota treo bắt người dùng chờ 10 phút sau MỖI lượt.
+    """
+
     def __init__(self, settings: LLMSettings, *, http_client: httpx2.Client | None = None, max_retries: int = 3):
         self.settings = settings
         self._owns_http = http_client is None          # chỉ đóng client DO MÌNH tạo — client bơm vào là của caller (test, lát 10)
@@ -114,7 +121,8 @@ class LLMClient:
                 host = host[: -len(suffix)]
                 break                                            # M9: chỉ bóc MỘT hậu tố — tránh bóc chồng '/anthropic/v1'
         try:
-            r = self._http.get(host + "/v1/token_plan/remains", headers={"Authorization": f"Bearer {self.settings.api_key}"})
+            r = self._http.get(host + "/v1/token_plan/remains", timeout=self.QUOTA_TIMEOUT_S,
+                               headers={"Authorization": f"Bearer {self.settings.api_key}"})
         except Exception as e:                                   # noqa: BLE001 — chỉ giữ tên lớp
             raise LLMError("transport", retryable=True, detail=type(e).__name__) from None
         if r.status_code != 200:
