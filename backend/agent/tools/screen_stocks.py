@@ -53,7 +53,11 @@ def loc_co_phieu(conn: sa.Connection, criteria: list[dict] | None = None,
         if c["operator"] not in TOAN_TU:
             return to_json({"loi": True, "ly_do": f"toan tu la: {c['operator']}",
                             "toan_tu_hop_le": sorted(TOAN_TU)})
-        if not isinstance(c["value"], (int, float)):
+        # F6 (review CHUẨN lát 10, vòng 2): Python coi bool LÀ con của int nên
+        # isinstance(True, (int, float)) == True — phải chặn bool tường minh trước, không thì
+        # value: true lọt qua vòng kiểm rồi chết ở tầng SQL (ProgrammingError, không phải lỗi
+        # có cấu trúc mà file này trả cho mọi ca khác).
+        if isinstance(c["value"], bool) or not isinstance(c["value"], (int, float)):
             return to_json({"loi": True, "ly_do": f"value phai la so, nhan duoc: {c['value']!r}"})
 
     ngay = conn.execute(sa.text("SELECT max(trading_date) FROM market.screener_daily")).scalar()

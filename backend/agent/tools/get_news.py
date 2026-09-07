@@ -49,9 +49,25 @@ _DIEU_KIEN_NGANH = (
 )
 # N1: khoá bản mới nhất — khuôn giống news_classify.py:110,119. Không khoá version thì một bài
 # có 2 revision (news_store.add_revision chèn version+1 khi nội dung đổi) sẽ nhân đôi trong kết quả.
-_REV_MOI_NHAT = (
-    "JOIN LATERAL (SELECT title, sapo, summary_ai, tsv FROM news.article_revision r"
-    " WHERE r.article_id = a.article_id ORDER BY version DESC LIMIT 1) r ON true"
+#
+# F4 (review CHUẨN lát 10, vòng 2): bản N1 ban đầu viết bằng JOIN LATERAL (...ORDER BY version
+# DESC LIMIT 1) — cách này đẩy vị từ `r.tsv @@ ...` ra NGOÀI subquery nên Postgres không còn
+# đường nào dùng GIN article_revision_tsv_idx, ép quét backward-index TỪNG bài một (nested
+# loop, N vòng lặp = N bài). Viết lại bằng JOIN thẳng + NOT EXISTS (anti-join) để vị từ tsv nằm
+# ngay trên bảng article_revision — đo lại trên kho thật 2026-09-07, câu đếm cho query 'lãi
+# suất điều hành' (8.179 revision, trung bình 3 lần chạy mỗi bản):
+#   JOIN LATERAL (bản cũ) : cost=68.307  buffers=51.489  ~28-35 ms
+#   JOIN + NOT EXISTS      : cost=2.062   buffers=28.994  ~22-23 ms  (mặc định planner)
+# Ép SET LOCAL enable_seqscan=off cho bản LATERAL KHÔNG đổi được kế hoạch (vẫn nested loop —
+# chặn cấu trúc, không phải chuyện thống kê); cùng lệnh đó cho bản JOIN+NOT EXISTS chuyển hẳn
+# sang Bitmap Index Scan trên article_revision_tsv_idx, còn ~6 ms — planner mặc định vẫn chọn
+# Seq Scan cho bảng 8k dòng này vì content bị TOAST hoá nặng khiến ước lượng chi phí seq scan
+# thấp hơn ước lượng bitmap dù thực đo chậm hơn; không ép enable_seqscan trong code (rủi ro
+# cho câu lệnh khác cùng phiên), chỉ sửa cấu trúc để planner CÓ ĐƯỜNG dùng GIN khi kho lớn lên.
+_REV_MOI_NHAT = "JOIN news.article_revision r ON r.article_id = a.article_id"
+_REV_LA_MOI_NHAT = (
+    "NOT EXISTS (SELECT 1 FROM news.article_revision r2"
+    " WHERE r2.article_id = r.article_id AND r2.version > r.version)"
 )
 
 
@@ -81,7 +97,8 @@ def tim_tin(conn: sa.Connection, query: str | None = None, ticker: str | None = 
         for kieu_thu, ham in (("cum", "phraseto_tsquery"), ("tu_khoa", "plainto_tsquery")):
             sql_dem = f"""
                 SELECT count(*) FROM news.article a {_REV_MOI_NHAT}
-                WHERE r.tsv @@ {ham}('simple', news.immutable_unaccent(:q)) AND {where}"""
+                WHERE r.tsv @@ {ham}('simple', news.immutable_unaccent(:q))
+                  AND {where} AND {_REV_LA_MOI_NHAT}"""
             tong = conn.execute(sa.text(sql_dem), p).scalar()
             if tong:
                 kieu = kieu_thu
@@ -94,7 +111,8 @@ def tim_tin(conn: sa.Connection, query: str | None = None, ticker: str | None = 
                    a.classified_from IS NOT NULL AS da_phan_loai, r.title, r.sapo, r.summary_ai,
                    ts_rank(r.tsv, {ham}('simple', news.immutable_unaccent(:q))) AS diem
             FROM news.article a {_REV_MOI_NHAT}
-            WHERE r.tsv @@ {ham}('simple', news.immutable_unaccent(:q)) AND {where}
+            WHERE r.tsv @@ {ham}('simple', news.immutable_unaccent(:q))
+              AND {where} AND {_REV_LA_MOI_NHAT}
             ORDER BY diem DESC, a.published_at DESC LIMIT :lim"""
     else:
         tong = conn.execute(sa.text(
@@ -103,7 +121,7 @@ def tim_tin(conn: sa.Connection, query: str | None = None, ticker: str | None = 
             SELECT a.article_id, {_NGAY_VN} AS ngay_vn, a.primary_source, a.group_no, a.sub,
                    a.classified_from IS NOT NULL AS da_phan_loai, r.title, r.sapo, r.summary_ai
             FROM news.article a {_REV_MOI_NHAT}
-            WHERE {where}
+            WHERE {where} AND {_REV_LA_MOI_NHAT}
             ORDER BY a.published_at DESC LIMIT :lim"""
 
     rows = conn.execute(sa.text(sql), p).all()

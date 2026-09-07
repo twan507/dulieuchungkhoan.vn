@@ -24,6 +24,12 @@ def test_cay_du_sau_nhom_hai_bon_nganh(db, kho):
     out = json.loads(cay_nganh(db))
     assert len(out["nhom"]) == 6
     assert sum(len(n["nganh"]) for n in out["nhom"]) == 24
+    # F7 (review CHUẨN lát 10, vòng 2): nhánh trả cây phải cùng khuôn tim_thay/co_du_lieu/
+    # so_dong với 7 hàm anh em (_shared.py: phân biệt bằng TRƯỜNG TƯỜNG MINH, không bằng độ
+    # dài mảng) — trước sửa, nhánh này trả trần {"nhom": [...]}, không có ba khoá đó.
+    assert out["tim_thay"] is True
+    assert out["co_du_lieu"] is True
+    assert out["so_dong"] == 24
 
 
 def test_nganh_cua_vcb(db, kho):
@@ -44,3 +50,14 @@ def test_khong_bao_gio_lo_icb(db, kho):
 def test_ma_khong_ton_tai(db, kho):
     db.execute(sa.text("SET LOCAL ROLE dlck_api"))
     assert json.loads(cay_nganh(db, ticker="ZZZZ"))["tim_thay"] is False
+
+
+def test_industry_code_khong_ton_tai_van_dong_bo_hinh_dang(db, kho):
+    """F7: industry_code lạ không khớp mã nhóm/mã ngành nào ra 0 dòng — phải vẫn nói tường
+    minh co_du_lieu=False, so_dong=0, không được trả trần {"nhom": []} như trước sửa."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(cay_nganh(db, industry_code="KHONGCO"))
+    assert out["tim_thay"] is True
+    assert out["co_du_lieu"] is False
+    assert out["so_dong"] == 0
+    assert out["nhom"] == []

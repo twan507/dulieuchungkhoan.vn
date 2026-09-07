@@ -3,6 +3,15 @@
 Kho có 110.804 dòng (đo 2026-09-07), 6 loại — đúng danh sách CHECK constraint của
 market.corporate_event.event_type. payload jsonb nhiều trường rỗng — chỉ phơi những trường có
 nghĩa và ĐỪNG suy ra tỷ lệ chi trả khi kho không có (payload không lưu tỷ lệ chi trả cổ tức).
+
+Sự kiện doanh nghiệp gắn theo issuer_id trong market.corporate_event, KHÔNG theo
+security_type — suy ra "loại X không bao giờ có sự kiện" từ tên loại là kết luận phủ định
+suy từ quan sát hẹp (CLAUDE.md §3.6), và ĐÃ SAI khi thử: đo kho thật 2026-09-07,
+market.security theo (security_type, issuer_id IS NULL): stock 439/1.965, etf 10/31,
+fund_cert 0/3, index 18/18. ETF và fund_cert CÓ sự kiện thật (market.corporate_event: etf
+18 mã/104 sự kiện, fund_cert 3 mã/10 sự kiện; riêng FUCVREIT — etf — có 14 sự kiện gồm 2
+CashDividend). Chỉ mã KHÔNG có issuer_id (mọi index, một phần etf/stock) mới chắc chắn
+không thể có sự kiện — nhánh dưới đây kiểm đúng điều đã đo đó, không kiểm security_type.
 """
 from __future__ import annotations
 
@@ -13,11 +22,8 @@ from agent.tools._shared import cap_limit, co_du_lieu, khong_co_du_lieu, resolve
 
 LOAI = ["Earning", "AGM", "CashDividend", "ShareIssuance", "StockDividend", "IPO"]
 
-# hình dạng #2 (spec §4.6): sự kiện doanh nghiệp gắn với issuer, nên chỉ số và ETF/chứng chỉ
-# quỹ không bao giờ có — khác hẳn "mã cổ phiếu đúng nhưng khoảng ngày rỗng".
-_LY_DO = {"index": "kho không có sự kiện doanh nghiệp cho chỉ số",
-          "etf": "kho không có sự kiện doanh nghiệp cho chứng chỉ quỹ ETF",
-          "fund_cert": "kho không có sự kiện doanh nghiệp cho chứng chỉ quỹ"}
+_LY_DO_KHONG_ISSUER = ("mã này không có issuer_id trong kho — sự kiện doanh nghiệp gắn theo"
+                       " issuer, không suy được nếu thiếu liên kết")
 
 # CAST(:x AS type) — KHÔNG viết :x::type, SQLAlchemy lặng lẽ bỏ tham số (CLAUDE.md §3 lát 10).
 _SQL_SU_KIEN = sa.text("""
@@ -41,9 +47,8 @@ def su_kien_doanh_nghiep(conn: sa.Connection, ticker: str, event_type: str | Non
     ma = resolve_ticker(conn, ticker)
     if not ma["tim_thay"]:
         return to_json(ma)
-    if ma["loai"] != "stock":
-        return to_json({**khong_co_du_lieu(ma["loai"], _LY_DO.get(ma["loai"], "kho không có sự kiện doanh nghiệp cho loại này")),
-                        "ma": ma["ticker"]})
+    if ma["issuer_id"] is None:
+        return to_json({**khong_co_du_lieu(ma["loai"], _LY_DO_KHONG_ISSUER), "ma": ma["ticker"]})
     lim = cap_limit(limit, 20, 50)
     rows = conn.execute(_SQL_SU_KIEN, {"iid": ma["issuer_id"], "loai": event_type,
                                        "tu": from_date, "den": to_date, "lim": lim}).all()

@@ -50,3 +50,16 @@ def test_khoang_ngay_rong_thi_bao_kho_co_tu_ngay_nao(db, kho):
     out = json.loads(su_kien_doanh_nghiep(db, "FPT", None, "2019-01-01", "2019-12-31"))
     assert out["co_du_lieu"] is True and out["so_dong"] == 0
     assert out["khoang_co_du_lieu"] == {"tu": "2025-03-10", "den": "2025-11-19"}
+
+
+def test_etf_co_issuer_van_tra_su_kien_that_khong_phai_hinh_dang_2(db, kho):
+    """F2 (review CHUẨN lát 10, vòng 2): bản sửa vòng 1 chặn nhầm MỌI loại khác 'stock' bằng
+    khong_co_du_lieu — sai với ETF/fund_cert đo trên kho thật (etf 18 mã/104 sự kiện,
+    2026-09-07). Sự kiện gắn theo issuer_id: QUYTN (etf) có issuer_id thật trong fixture nên
+    phải nhận đúng sự kiện của nó, không được khẳng định 'kho không có sự kiện cho ETF'."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(su_kien_doanh_nghiep(db, "QUYTN", "CashDividend"))
+    assert out["tim_thay"] is True
+    assert out["co_du_lieu"] is True
+    assert out["so_dong"] == 1
+    assert out["du_lieu"][0]["ngay_gdkhq"] == "2026-03-05"

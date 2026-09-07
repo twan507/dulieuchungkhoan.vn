@@ -21,8 +21,12 @@ from agent.tools._shared import khong_co_du_lieu, resolve_ticker, rong, to_json
 
 TRAN_KY = 8
 
-# hình dạng #2 (spec §4.6): kho chỉ có báo cáo tài chính của DOANH NGHIỆP (issuer), nên chỉ số
-# và ETF/chứng chỉ quỹ không bao giờ có — khác hẳn "mã cổ phiếu đúng nhưng khoảng năm rỗng".
+# hình dạng #2 (spec §4.6): đo kho thật 2026-09-07 — TOÀN BỘ market.financial_statement (27,3
+# triệu dòng) chỉ thuộc issuer của mã 'stock' (1.523 issuer, khớp docstring đầu file); 0 issuer
+# non-stock có báo cáo tài chính, kể cả những issuer etf/fund_cert CÓ issuer_id. Đây là phạm
+# vi thu thập THỰC TẾ của riêng bảng này — không suy rộng lý do "gắn theo issuer nên non-stock
+# không bao giờ có" sang bảng khác: ở get_corporate_events lý luận đó đã SAI (etf/fund_cert có
+# issuer_id thật vẫn có sự kiện, CLAUDE.md §3.6). Khác hẳn "mã cổ phiếu đúng nhưng khoảng năm rỗng".
 _LY_DO = {"index": "kho không có báo cáo tài chính cho chỉ số",
           "etf": "kho không có báo cáo tài chính cho chứng chỉ quỹ ETF",
           "fund_cert": "kho không có báo cáo tài chính cho chứng chỉ quỹ"}

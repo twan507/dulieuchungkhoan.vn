@@ -138,6 +138,15 @@ def test_criteria_value_khong_phai_so_bi_tu_choi_co_cau_truc(db, kho):
     assert out["loi"] is True
 
 
+def test_criteria_value_bool_bi_tu_choi_khong_lot_qua_isinstance_int(db, kho):
+    """F6 (review CHUẨN lát 10, vòng 2): Python coi bool là con của int nên
+    isinstance(True, (int, float)) == True — value: true lọt qua vòng kiểm rồi chết ở tầng SQL
+    (ProgrammingError: operator does not exist: numeric < boolean) thay vì trả lỗi có cấu trúc."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(loc_co_phieu(db, criteria=[{"metric_code": "rtd21", "operator": "<", "value": True}]))
+    assert out["loi"] is True
+
+
 def test_hoi_toan_ma_khong_ton_tai_thi_khong_tra_ma_bat_ky(db, kho):
     """Hồi quy — review vòng 2, mục CHẶN.
 

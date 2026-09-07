@@ -44,6 +44,10 @@ DOANH_NGHIEP = [
     ("LPB", "Ngân hàng Bưu Điện", "NGANHANG", "stock", "listed"),
     ("CUOI", "Doanh nghiệp đã rời sàn", "KIMLOAI", "stock", "delisted"),
     ("VNINDEX", None, None, "index", "listed"),
+    # F2 (review CHUẨN lát 10, vòng 2): ETF CÓ issuer_id trong kho thật (đo 2026-09-07: 21/31
+    # etf có issuer_id) và CÓ sự kiện doanh nghiệp thật (etf 18 mã/104 sự kiện) — bắt hồi quy
+    # "mọi loại khác stock đều không có sự kiện" đã từng chặn nhầm cả ETF.
+    ("QUYTN", "Quỹ ETF Thử Nghiệm", None, "etf", "listed"),
 ]
 
 GIA_HPG = [("2026-09-01", 21200), ("2026-09-02", 21400), ("2026-09-03", 21600)]
@@ -118,7 +122,10 @@ def kho(db):
         " VALUES (:e, :i, CAST(:p AS date), CAST(:x AS date), '{}'::jsonb)"),
         [{"e": "CashDividend", "i": ids["issuer:FPT"], "p": "2025-06-06", "x": "2025-06-12"},
          {"e": "CashDividend", "i": ids["issuer:FPT"], "p": "2025-11-19", "x": "2025-12-01"},
-         {"e": "AGM", "i": ids["issuer:FPT"], "p": "2025-03-10", "x": None}])
+         {"e": "AGM", "i": ids["issuer:FPT"], "p": "2025-03-10", "x": None},
+         # F2: ETF QUYTN có issuer_id thật — phải nhận đúng sự kiện của nó, không rơi vào
+         # nhánh "loại chứng khoán này không có sự kiện doanh nghiệp".
+         {"e": "CashDividend", "i": ids["issuer:QUYTN"], "p": "2026-02-26", "x": "2026-03-05"}])
 
     ids["cpi"] = db.execute(sa.text(
         "INSERT INTO macro.indicator (code, name_vi, unit, freq, region, role)"

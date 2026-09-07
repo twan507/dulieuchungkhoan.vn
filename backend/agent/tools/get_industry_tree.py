@@ -48,4 +48,9 @@ def cay_nganh(conn: sa.Connection, industry_code: str | None = None, ticker: str
     for r in rows:
         nhom.setdefault(r.nhom_ma, {"ma": r.nhom_ma, "ten": r.nhom_ten, "nganh": []})
         nhom[r.nhom_ma]["nganh"].append({"ma": r.code, "ten": r.name_vi})
-    return to_json({"nhom": list(nhom.values())})
+    # F7 (review CHUẨN lát 10, vòng 2): trước sửa nhánh này trả trần {"nhom": [...]}, là ngoại
+    # lệ duy nhất không có tim_thay/co_du_lieu/so_dong như bảy hàm anh em — thêm ba khoá đó,
+    # KHÔNG đổi nội dung "nhom". industry_code lạ (không khớp mã nhóm/mã ngành nào) ra 0 dòng,
+    # nên co_du_lieu=False đúng khuôn khong_co_du_lieu/rong ở _shared.py.
+    return to_json({"tim_thay": True, "co_du_lieu": len(rows) > 0, "so_dong": len(rows),
+                    "nhom": list(nhom.values())})

@@ -4,6 +4,13 @@ Kho CHỈ có giá cổ phiếu đang niêm yết — đo trên kho dev 2026-09-
 **0 dòng** cho `security_type='index'` (18 chỉ số có danh tính nhưng không một điểm giá nào),
 0 dòng cho `etf`, và **0/442** mã `delisted`. Vì vậy mọi loại khác 'stock' và mọi mã đã huỷ
 niêm yết ra hình dạng "có mã, không có dữ liệu" — nói thẳng còn hơn để model đoán.
+
+N5/G1 (review CHUẨN lát 10, vòng 2): TRAN_PHIEN=400 cắt câm — đo kho thật 2026-09-07, mã BT6
+có 5.764 phiên (2002-04-18..2026-09-04) nhưng hàm chỉ trả 400 phiên, không cờ nào báo đã cắt;
+356 mã đang niêm yết có >400 phiên. `ORDER BY trading_date DESC LIMIT 400` giữ 400 phiên GẦN
+NHẤT trong khoảng hỏi (không phải 400 phiên đầu khoảng) — hành vi này giữ nguyên vì hợp lý hơn
+cho câu hỏi thường gặp ("giá gần đây"), nhưng giờ báo tường minh qua `da_cat`/`tong_khop`
+(cùng khuôn get_news.tim_tin) và `ghi_chu` nói rõ đây là phiên gần nhất, không phải phiên đầu.
 """
 from __future__ import annotations
 
@@ -34,6 +41,13 @@ def gia_theo_ngay(conn: sa.Connection, ticker: str, from_date: str | None = None
                         "ma": ma["ticker"], "trang_thai": "delisted"})
 
     cot = "close_adj" if adjusted else "close_raw"
+    params = {"sid": ma["security_id"], "tu": from_date, "den": to_date}
+    # N5/G1: đếm tổng số phiên KHỚP khoảng hỏi (trước LIMIT) để tính da_cat từ kết quả thật,
+    # cùng khuôn get_news.tim_tin — không suy từ TRAN_PHIEN có bị vượt hay không (_shared.cap_limit).
+    tong = conn.execute(sa.text(
+        "SELECT count(*) FROM market.price_daily WHERE security_id = :sid"
+        " AND (CAST(:tu AS date) IS NULL OR trading_date >= CAST(:tu AS date))"
+        " AND (CAST(:den AS date) IS NULL OR trading_date <= CAST(:den AS date))"), params).scalar()
     # CAST(:x AS date) — KHÔNG viết :x::date, SQLAlchemy lặng lẽ bỏ tham số (CLAUDE.md §3 lát 10).
     rows = conn.execute(sa.text(f"""
         SELECT trading_date, {cot} AS dong_cua, open_value, highest_value, lowest_value
@@ -43,7 +57,7 @@ def gia_theo_ngay(conn: sa.Connection, ticker: str, from_date: str | None = None
           AND (CAST(:den AS date) IS NULL OR trading_date <= CAST(:den AS date))
         ORDER BY trading_date DESC
         LIMIT :lim
-    """), {"sid": ma["security_id"], "tu": from_date, "den": to_date, "lim": TRAN_PHIEN}).all()
+    """), {**params, "lim": TRAN_PHIEN}).all()
 
     if not rows:
         tu, den = conn.execute(_SQL_KHOANG, {"sid": ma["security_id"]}).one()
@@ -54,5 +68,10 @@ def gia_theo_ngay(conn: sa.Connection, ticker: str, from_date: str | None = None
                 "mo_cua": display_metric(r.open_value, "VND"),
                 "cao_nhat": display_metric(r.highest_value, "VND"),
                 "thap_nhat": display_metric(r.lowest_value, "VND")} for r in reversed(rows)]
+    da_cat = tong > len(rows)
+    ghi_chu = "kho chưa có khối lượng giao dịch theo ngày"
+    if da_cat:
+        ghi_chu += (f"; đã cắt còn {len(rows)}/{tong} phiên GẦN NHẤT trong khoảng hỏi"
+                    " (không phải phiên đầu khoảng)")
     return to_json(co_du_lieu(du_lieu, ma=ma["ticker"], gia_dieu_chinh=adjusted,
-                              ghi_chu="kho chưa có khối lượng giao dịch theo ngày"))
+                              da_cat=da_cat, tong_khop=tong, ghi_chu=ghi_chu))

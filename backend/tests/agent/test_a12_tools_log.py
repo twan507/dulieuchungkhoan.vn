@@ -7,7 +7,6 @@ ops.llm_call ràng buộc thật: status ∈ ok|repaired|failed, thinking ∈ ad
 """
 import sqlalchemy as sa
 
-from agent.db import ops_engine
 from agent.llm_log import log_llm_call
 from agent.skills import L2_TOPICS
 from agent.tools import build_tools
