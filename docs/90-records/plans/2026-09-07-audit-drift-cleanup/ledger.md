@@ -469,7 +469,7 @@ Cộng `npm test` → **7/7** *(bộ node lần đầu có script chạy)*.
 
 ## §5 — Kết cục của 47 phát hiện (AC3)
 
-**42 đã sửa · 3 cố ý giữ nguyên · 1 làm khác cách · 1 làm một nửa.**
+**44 đã sửa · 3 cố ý giữ nguyên.** *(Cập nhật 2026-09-07 sau khi merge: D12 đóng trọn, và "việc treo" CRLF bị rút vì chẩn đoán sai — xem đính chính ở Task 5.)* Trong 44 mục sửa có **A13 làm khác plan**: annotate thay vì đổi số, vì dòng đó là bản ghi lúc đóng lát 7.
 
 | Nhóm | Mục | Kết cục |
 |---|---|---|
@@ -481,16 +481,34 @@ Cộng `npm test` → **7/7** *(bộ node lần đầu có script chạy)*.
 | | **D2** | ⚪ **cố ý giữ** — `POSTGRES_PORT`/`REDIS_PORT`/`LOG_LEVEL` chưa ai đọc, nhưng `.env.example` là hồ sơ cấu hình cho người dựng máy, không phải danh sách biến code đọc; lát 12 sẽ động đúng vùng này. Chỉ thêm chú thích *(plan §6.2)* |
 | | **D4** | ⚪ **cố ý giữ** — `flush_once` = `manage_once()` + `write_once(budget rộng hơn)`, khác production đúng **một tham số ngân sách**, có docstring khai. Audit nói *"đi đường khác production"* là nặng hơn sự thật |
 | | **D5** | ⚪ **cố ý giữ** — `label_for` là `LABELS.get()` một dòng; 5 assertion của nó ghi lại ngữ nghĩa `LABELS`. Xoá là mất 5 assertion mà không được gì *(§4.4.3)* |
-| | **D12** | 🟡 **một nửa** — xoá **15 nhánh local**; **2 nhánh remote để lại**: xoá nhánh remote là đẩy ra ngoài và khó lấy lại, cần chủ dự án đồng ý |
+| | **D12** | ✅ **đã sửa trọn** — 15 nhánh local xoá lúc thực thi; **2 nhánh remote xoá 2026-09-07 sau khi chủ dự án đồng ý** (đo trước: cả hai `0 commit` chưa có trong `origin/main`) |
 
 ### Ba việc mới phát sinh, để lại cho chủ dự án
 
 | # | Việc | Vì sao không gộp vào đây |
 |---|---|---|
 | 1 | ~~211 file lưu CRLF trong git~~ — **rút lại 2026-09-07: chẩn đoán sai, không có việc gì để làm.** `git ls-files --eol` cho 738/738 file `i/lf w/lf`; `git diff` ở bước gây hiểu nhầm là **rỗng**. Chi tiết ở đính chính mục Task 5 | — |
-| 2 | **2 nhánh remote** `origin/feat/intraday-refresh` · `origin/feat/news-collect` | `git push origin --delete …` — hành động ra ngoài |
+| 2 | ~~2 nhánh remote~~ — ✅ **đã xoá 2026-09-07**, chủ dự án đồng ý. `origin` nay chỉ còn `main` | — |
 | 3 | **`ruff` chưa vào `pyproject.toml`** | Lát này chạy `uvx ruff` tạm. Thêm vào `dependency-groups.dev` + một bước lint là **quyết định quy trình**, thuộc lát 12/13 |
 
 ### Điều kiện đảo ngược
 
 Nếu bộ kiểm `tests/docs` bắt đầu đỏ vì **lý do cách diễn đạt** (ai đó sửa câu chữ hợp lệ mà regex không khớp) nhiều hơn vì **lệch thật**, thì nó đang tính phí nhiều hơn giá trị — lúc đó nới regex hoặc bỏ phép kiểm đó, đừng sửa tài liệu cho vừa regex.
+
+
+---
+
+## Đóng lát — merge và đẩy 2026-09-07
+
+```
+git push origin --delete feat/intraday-refresh feat/news-collect   -> deleted x2
+git merge --no-ff fix/audit-drift-cleanup                          -> a92462b
+git diff fix/audit-drift-cleanup main --stat                       -> rỗng (cây y hệt)
+pytest tests -q   CHẠY LẠI TRÊN `main` SAU MERGE                   -> 1.038 passed, 2 skipped
+git push origin main                                               -> 46c3d41..a92462b
+git branch -d fix/audit-drift-cleanup                              -> đã xoá
+```
+
+Chạy lại cả bộ **sau** merge chứ không tin lượt chạy trên nhánh: `main` không dịch chuyển trong lúc làm (`main..origin/main = 0`) nên merge không thể đổi nội dung — nhưng §3.5 của repo nói kiểm cái nó **thực sự** chạy, không kiểm cái mình suy ra.
+
+**Còn treo đúng một việc:** đưa `ruff` vào `pyproject.toml` + chọn bộ luật. Số đo để quyết: `--select F` cho **0 lỗi**, bộ mặc định của ruff cho **321**, thêm `E,F,I,UP` cho **4.738** riêng `E501`. Chủ dự án chốt **hoãn 2026-09-07** — không chặn gì.
