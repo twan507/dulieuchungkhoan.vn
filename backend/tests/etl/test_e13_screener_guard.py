@@ -1,4 +1,4 @@
-import json, pathlib
+import pathlib
 
 from etl import screener_guard as sg
 from etl import screener_normalize as sn

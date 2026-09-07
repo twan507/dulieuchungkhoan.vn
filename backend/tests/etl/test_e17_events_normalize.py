@@ -1,5 +1,4 @@
 # backend/tests/etl/test_e17_events_normalize.py
-import json
 import pathlib
 from datetime import date
 

@@ -283,3 +283,61 @@ pytest tests/docs -q  ->  7 passed in 0,41 s        ← AC1 ĐẠT
 **Từ 6 đỏ / 1 xanh (Task 1) → 7 xanh.** Bộ kiểm nay là lưới thật, không phải trang trí.
 
 **Commit:** `docs: three orphan files, one index entry pointing at nothing, three broken hrefs`
+
+---
+
+## Task 7 — code, config, vệ sinh ✅
+
+**Nhịp K:** `gen_industry_mapping.py:627-628` ghi bằng `open(...).write(...)` không `newline=` và **không đóng handle** · `.gitattributes` chỉ ghim `market-field-selection.*` · `[DEBUG-VPS]` còn 2 dòng · `package.json` không có script `test` · 15 nhánh đã merge, 0 nhánh chưa merge.
+
+**Nhịp S:**
+
+| Mục | Làm gì |
+|---|---|
+| D3 | Hai lệnh ghi → `with open(..., newline='\n')`, khớp khuôn `gen_field_selection.py:928-930`; thêm 2 dòng `eol=lf` cho `industry-mapping.*` vào `.gitattributes` |
+| D9 | `ruff check --select F --fix` → **9 import thừa** tự sửa; 2 biến còn lại sửa TAY (xem dưới) |
+| D10 | `[DEBUG-VPS]` → `[probe-vps]` |
+| D11 | `package.json` thêm `"test": "node --test scripts/stack.test.mjs"` |
+| D12 | Xoá **15 nhánh local** đã merge |
+
+### 🔴 Một trong hai biến "thừa" KHÔNG được xoá — ruff sẽ xoá sai
+
+`tests/ingester/test_i13_spill_store.py:237` — `s = _store(tmp_path)`, ruff báo *"Remove assignment to unused variable `s`"*. **Nghe theo là hỏng test.** Đọc code trước khi sửa cho thấy: `_store()` gọi `try_acquire()` giành **file lock**, và lock đó sống theo **vòng đời object** (handle `msvcrt`/`fcntl` giữ trên `SpillStore`). Bỏ tên `s` ⇒ GC có thể đóng handle ⇒ tiến trình con **giành được** lock ⇒ `assert r.returncode == 0` vẫn xanh **vì lý do sai hoàn toàn**. Một test **xanh giả**, đúng họ lỗi §4.5 của repo.
+
+Sửa đúng: **giữ tên**, và thêm `assert s.owned` — vừa hết cảnh báo, vừa canh chính tiền đề mà test dựa vào (trước đó tiền đề đó không được kiểm ở đâu cả). Kèm 2 dòng comment nói vì sao không được xoá, để lượt `ruff --fix` sau không xoá lại.
+
+> Đây là lý do ruff xếp F841 vào nhóm **unsafe fix**. Chạy `--unsafe-fixes` cho cả bộ là đã hỏng test này rồi.
+
+Biến còn lại (`test_e34:69` `a = _issuer(...)`) thì an toàn — chỉ cần **side effect** tạo dòng DB, assertion đối chiếu bằng chuỗi `"ZZA"`. Bỏ phép gán, giữ lời gọi, thêm comment nói vì sao dòng đó tồn tại.
+
+### D3 — nghiệm thu bằng phép thử, không bằng đọc code
+
+```
+sinh lại cả 4 file trong scratchpad:
+  industry-mapping.md/.json · market-field-selection.md/.json   -> đều LF
+cmp byte-by-byte với bản trong repo                             -> KHỚP 100% cả 4
+copy bản sinh lại đè vào repo rồi git status docs/20-design/    -> chỉ generator "M"
+                                                                   (4 file sinh: KHÔNG diff)
+```
+
+Vế cuối mới là điều D3 nhắm tới: **chạy generator không còn làm bẩn working tree**.
+
+### Không làm — có lý do
+
+**Hai nhánh remote** `origin/feat/intraday-refresh` và `origin/feat/news-collect` vẫn còn. Xoá nhánh remote là **đẩy thay đổi ra ngoài** và khó lấy lại — không tự quyết. Lệnh khi chủ dự án đồng ý:
+
+```bash
+git push origin --delete feat/intraday-refresh feat/news-collect
+```
+
+**Nhịp X:**
+
+```
+ruff check . --select F --exclude .venv        -> All checks passed!
+git grep "\[DEBUG-" backend                    -> 0            ← AC7 ĐẠT
+npm test                                       -> 7/7 pass
+pytest test_e34 + test_i13 + test_c99 -q       -> 33 passed, 1 skipped
+git branch                                     -> chỉ còn main + nhánh đang làm
+```
+
+**Commit:** `chore: retire the leftovers the audit turned up`

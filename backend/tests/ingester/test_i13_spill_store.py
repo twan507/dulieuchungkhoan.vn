@@ -235,6 +235,9 @@ def _run_concurrent_write_check(tmp_path):
 
 def test_lock_excludes_second_process(tmp_path):
     s = _store(tmp_path)
+    assert s.owned, "tien trinh cha phai dang giu lock thi phep kiem nay moi co nghia"
+    # 🔴 Giu ten `s` song toi cuoi ham: lock la file handle theo VONG DOI object — bo ten thi
+    # GC co the dong handle, tien trinh con gianh duoc lock, va test xanh GIA.
     # lock là CỦA TIẾN TRÌNH — phải kiểm bằng tiến trình con thật, không phải store thứ hai in-process
     code = ("import sys; from pathlib import Path; from ingester.spill import SpillStore; "
             "s = SpillStore(Path(sys.argv[1]), cap_bytes=10**9); "
