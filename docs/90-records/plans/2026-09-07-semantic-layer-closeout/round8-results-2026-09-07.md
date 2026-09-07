@@ -73,6 +73,22 @@ Chấm bằng **đúng thước vòng 7**: mục 1–5 tính điểm, đạt khi
 
 Thời gian thật: 15 câu trong **~13 phút** (16:12 − 15:59). Ba câu đắt nhất: B8 **202 s**, A2 127 s, B9 98 s. Vòng 7 đo p50 6,9 s · p90 34,5 s ⇒ **vòng 8 chậm hơn hẳn**; chưa rõ do khối prompt dài thêm hay do nguồn — **chưa đo, không suy đoán**.
 
+## 5b. 🔴 Phép đo có nhiễu — đo ngay sau khi chấm (2026-09-07 16:20)
+
+Chạy lại **đúng câu B1** ba lượt liên tiếp, cùng prompt, cùng code:
+
+| Lượt | Hình dạng |
+|---|---|
+| 1 | Diễn giải đầy đủ (nến mở cao đóng thấp, điều kiện đổi nhận định) — ước 5/5 |
+| 2 | Có diễn giải, nói rõ kho thiếu khối lượng — ước 4–5/5 |
+| 3 | **Một câu trần**, y hệt lượt vòng 8 — 3/5 |
+
+⇒ **B1 trượt là nhiễu lượt chạy, không phải hệ quả của `ANSWER_RULES`.** Hệ quả cho cách đọc mọi con số ở trên:
+
+1. Chênh **12/15 với 13/15 không phải bằng chứng "vòng 8 tệ hơn vòng 7"** — một câu biên đổi kết quả là đủ lật con số đó. Câu *"tệ hơn vòng 7"* ở §1 là **nói quá**, giữ nguyên ở đây làm bản ghi tại-thời-điểm nhưng phải đọc kèm mục này.
+2. Thứ đáng sửa là lỗi **lặp lại được**: A4 trượt cổng 6 ở **cả hai vòng** (vòng 7 bịa số, vòng 8 đúng số nhưng giấu phép tính) ⇒ lỗi cấu trúc. B8 mới trượt một lần, chưa biết là cấu trúc hay nhiễu.
+3. Ngưỡng "≥ 14/15 trên **một** lượt" vì thế là thước yếu. Cách rẻ: câu nào trượt ở **mục tính điểm** (không phải cổng) thì chạy lại hai lượt trước khi kết luận; câu trượt **cổng** thì tính ngay, vì cổng bắt lỗi bản chất chứ không bắt văn phong.
+
 ## 6. Kết luận
 
 **AC2 không đạt: 12/15, thấp hơn cả vòng 7 (13/15).** Theo plan Task 4, đây là **cổng dừng** — báo nguyên trạng cho chủ dự án, không tự sửa tiếp rồi chạy lại.
