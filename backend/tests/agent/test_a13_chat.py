@@ -282,3 +282,42 @@ def test_mot_luot_co_han_chot_khong_cho_vo_han(tool_dem, monkeypatch):
     assert moi == cu, "chạm hạn thì lịch sử phải giữ nguyên"
     assert "quá hạn" in tra_loi
     assert tool_dem["n"] <= 1, "phải dừng ngay khi chạm hạn, không chạy tiếp vòng nữa"
+
+
+# --- Lệnh /moi: đường ra khỏi phiên tràn cửa sổ ngữ cảnh (review-chuan-v4 §G3) ---
+
+
+def test_la_lenh_moi_nhan_dung_bien_the():
+    assert chat_mod.la_lenh_moi("/moi")
+    assert chat_mod.la_lenh_moi("  /MOI  ")
+    assert chat_mod.la_lenh_moi("/mới")
+    assert not chat_mod.la_lenh_moi("/moi gi do")
+    assert not chat_mod.la_lenh_moi("moi")
+    assert not chat_mod.la_lenh_moi("")
+
+
+def test_repl_xoa_lich_su_khi_go_lenh_moi(monkeypatch, model_gia, tool_dem):
+    """Lượt sau /moi phải gửi đi lịch sử RỖNG — nếu không thì phiên tràn vẫn tràn."""
+    llm, _ = model_gia
+    cau = iter(["Giá HPG?", "/moi", "Giá HPG?"])
+
+    def gia_input(_prompt=""):
+        try:
+            return next(cau)
+        except StopIteration:
+            raise EOFError
+
+    monkeypatch.setattr("builtins.input", gia_input)
+    da_gui = []
+    that = chat_mod.run_turn
+
+    def ghi_lai(llm_, read_eng, ops_eng, history, cau_hoi):
+        da_gui.append(list(history))
+        return that(llm_, read_eng, ops_eng, history, cau_hoi)
+
+    monkeypatch.setattr(chat_mod, "run_turn", ghi_lai)
+    chat_mod.repl(llm, None, None)
+
+    assert len(da_gui) == 2                    # "/moi" không được tính là một lượt hỏi
+    assert da_gui[0] == []
+    assert da_gui[1] == []                     # đỏ trước khi có lệnh: lượt hai mang lịch sử lượt một
