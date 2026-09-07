@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import sqlalchemy as sa
 
-from agent.format import display_metric, format_date_vi
+from agent.format import display_metric
 from agent.tools._shared import co_du_lieu, khong_co_du_lieu, kiem_ngay, resolve_ticker, rong, to_json
 
 _LY_DO = {"index": "kho chưa có dữ liệu giá cho chỉ số",
@@ -71,7 +71,7 @@ def gia_theo_ngay(conn: sa.Connection, ticker: str, from_date: str | None = None
         tu, den = conn.execute(_SQL_KHOANG, {"sid": ma["security_id"]}).one()
         return to_json({**rong({"tu": str(tu), "den": str(den)} if tu else None), "ma": ma["ticker"]})
 
-    du_lieu = [{"ngay": str(r.trading_date), "ngay_hien_thi": format_date_vi(r.trading_date),
+    du_lieu = [{"ngay": str(r.trading_date),
                 "dong_cua": display_metric(r.dong_cua, "VND"),
                 "mo_cua": display_metric(r.open_value, "VND"),
                 "cao_nhat": display_metric(r.highest_value, "VND"),

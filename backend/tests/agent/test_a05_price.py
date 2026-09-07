@@ -24,8 +24,10 @@ def test_gia_dong_cua_hpg_phien_2026_09_03(db, kho):
     phien = out["du_lieu"][0]
     assert phien["dong_cua"] == "21.600 đ"
     assert phien["ngay"] == "2026-09-03"
-    assert phien["ngay_hien_thi"] == "03/09/2026"
     assert "khoi_luong" not in phien
+    # `ngay_hien_thi` bỏ ở lát 11: nó lặp lại chính `ngay` và chiếm 19,9% payload ở trần 2.000
+    # phiên (đo 2026-09-07: 58.000/292.009 ký tự cho một lời gọi). Model tự đổi ISO sang dd/mm.
+    assert "ngay_hien_thi" not in phien
 
 
 def test_chi_so_co_ma_nhung_khong_co_gia(db, kho):
