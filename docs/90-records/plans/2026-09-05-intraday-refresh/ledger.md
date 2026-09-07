@@ -43,8 +43,8 @@ Mọi lượt dưới `ETL_DATABASE_URL` (role `dlck_etl`), kho production, 2026
 | AC2 | `yahoo --intraday --dry-run`: tally 54/54 ok, 54 lời gọi, **272 nến** (≈5/mã), `intraday: true` · `binance --intraday --dry-run`: 11/11, **33 nến** (3/mã) · `wichart --intraday --dry-run`: 47 key, 61 series ok, 31.725 điểm | ✅ |
 | AC3 Binance | `binance --intraday` 18:47:43 ⇒ `inserted 11`; lượt 2 18:54:10 ⇒ `inserted 0 · changed 11`; `btc` 09-05 close **79.608 → 79.666,06**, `ingested_at` 11:48:20 → 11:54:46 UTC; nến 09-04 `ingested_at` 07:16:55 UTC không tiến | ✅ |
 | AC3 WiChart (nửa) | `wichart --intraday` 18:50 (sau lượt trọn 08:11 cùng ngày): `inserted 17 · changed 29 · payloads_stored 0` — điểm 09-05 của `gold.sjc_buy/sell` (144,6/147,6 triệu), `coffee_robusta_vn`, `natgas_hh`, `phosphorus_cn`, `galv_sheet_color_hoasen` đổi; 22 điểm tháng 8 `cotton_us` vá hồi tố; `data_domain_state` wichart giữ mốc lượt trọn | ✅ bằng chứng thứ 7; xác nhận giờ làm việc 07/09 (nợ) |
-| AC3 Yahoo chỉ số | không có sàn mở thứ 7 — **nợ 07/09** (`yahoo --intraday --keys ^N225`, 07:00–13:00 VN, hai lần cách 15 phút) | ⏳ |
-| AC4 | lượt thường ngay sau: `yahoo` **`changed 0`** (`inserted 4.743` = lịch sử 400 ngày của 17 FX mới) · `binance` `inserted 0 · changed 11`, dòng ingested chỉ ngày 09-05 (11) · `wichart` `0/0`, `payloads_stored 23` (lượt intraday không lưu body nên hash lệch — đúng ruling) | ✅ (thứ 7); đủ ba nguồn có phiên: nợ 07/09 |
+| AC3 Yahoo chỉ số | không có sàn mở thứ 7 — **nợ 07/09** (`yahoo --intraday --keys ^N225`, 07:00–13:00 VN, hai lần cách 15 phút) | ⏳ → ✅ **trả 2026-09-07, số ở §6** |
+| AC4 | lượt thường ngay sau: `yahoo` **`changed 0`** (`inserted 4.743` = lịch sử 400 ngày của 17 FX mới) · `binance` `inserted 0 · changed 11`, dòng ingested chỉ ngày 09-05 (11) · `wichart` `0/0`, `payloads_stored 23` (lượt intraday không lưu body nên hash lệch — đúng ruling) | ✅ (thứ 7); đủ ba nguồn có phiên: ✅ **trả 2026-09-07, số ở §6** |
 | AC5 | 17 mã `fx.usd_*.market` có dòng mới nhất (09-04 hoặc 09-05); so ECB fixing 04/09: EUR 0,8605/0,86044 **+0,007 %** · GBP 0,73981/0,7391 +0,10 % · JPY 156,221/156,25 −0,02 % · CHF 0,8090/0,80924 −0,03 % · SEK 9,5655/9,5513 +0,15 % · CAD (nến 09-04) 1,37895/1,38 −0,08 % · CNY 6,7108/6,7109 −0,001 % — đều < 1 %, đúng chiều. Cut-over CNY: **DELETE 11.397 dòng FRED** (role ETL, được phép) → `etl fx` `registry asset 7 · inserted 6.819` → `fx.usd_cny` min 2000-01-13, max 2026-09-04, 6.819 dòng, ánh xạ chỉ `(ecb, CNY)` → `etl fred` `registry 11+3 · removed 1`, `DEXCHUS` 0 | ✅ |
 | AC6 | bọc `httpx.Client.get` ghi `monotonic`: `yahoo --intraday --keys` 6 mã ⇒ 5 khoảng **4,06 · 2,06 · 4,55 · 2,35 · 3,23 s**; `lbma` 2 lời gọi ⇒ 4,82 s; tất cả ∈ [1, 5,5] (gồm ~0,1 s phản hồi), không trùng tới 0,01 s | ✅ |
 | AC7 | A2 216 lời gọi/16 phút, A4 296/19 phút — 0 lỗi (spec §2.2); ghi vào yahoo.md §7 / wichart.md §2.5 ở Task 8 | ✅ |
@@ -68,7 +68,7 @@ Mọi lượt dưới `ETL_DATABASE_URL` (role `dlck_etl`), kho production, 2026
 
 - Nhánh `feat/intraday-refresh` gộp vào `main` bằng `--no-ff` (**`4f18e6d`**, 2026-09-05 ~20:10); **729 passed, 2 skipped**; migration head `0017` (không migration mới).
 - Kho production: `asset.asset_external_id` yahoo 54 · ecb 7 · fred 3 (+11 indicator); `ohlc_daily` có nến ngày 09-05 đang chạy cho 11 coin, 17 FX `.market` với 400 ngày lịch sử (close lịch sử = giá đầu ngày, Bẫy 4); `fx.usd_cny` thuần ECB 6.819 dòng từ 2000-01-13.
-- **Nợ đầu tuần 07/09:** AC3 nửa Yahoo chỉ số (`etl yahoo --intraday --keys ^N225` hai lần 07:00–13:00 VN) và WiChart giờ làm việc; AC4 đủ ba nguồn; **kiểm dự đoán Bẫy 4** (`fx.usd_eur.market` 09-04 lùi 0,8605 → 0,85997 sau lượt intraday đầu khi London mở).
+- **Nợ đầu tuần 07/09:** AC3 nửa Yahoo chỉ số (`etl yahoo --intraday --keys ^N225` hai lần 07:00–13:00 VN) và WiChart giờ làm việc; AC4 đủ ba nguồn; **kiểm dự đoán Bẫy 4** (`fx.usd_eur.market` 09-04 lùi 0,8605 → 0,85997 sau lượt intraday đầu khi London mở). ✅ **Đã trả 2026-09-07 — §6 dưới đây.**
 - Lịch chạy vẫn thuộc lát 13 (D6); bảng nhịp ở spec §5.7 (Yahoo 10 phút · Binance 5 · WiChart 5, 24/7).
 - Backfill giá (`dlck-price-backfill`): ngắt 18:22 vì 10 mã liên tiếp timeout phía FiinTrade, khởi động lại 20:00:47 từ con trỏ `CTR` (còn 1.257 mã), tự dừng trước 08:45 thứ 2.
 
@@ -81,3 +81,30 @@ Mọi lượt dưới `ETL_DATABASE_URL` (role `dlck_etl`), kho production, 2026
 5. Task 7: không backfill FX Yahoo về 2003 (ngoài AC) — chủ dự án chạy `etl yahoo --backfill` khi cần (~3 phút).
 6. Review toàn nhánh: Minor để lại — `_rng.seen` ở e50 · `noqa F401` rộng · `clock` chết · `--keys`+`--intraday` ở `wichart_job` ném sau `open_run` · e37 assert dải · `INTRADAY_KEYS` cùng predicate — nếu sai: chi phí dọn dẹp nhỏ, không ảnh hưởng dữ liệu.
 7. **C1 (chủ dự án chốt):** phương án 1 — chấp nhận close lịch sử `.market` = giá đầu ngày, ghi thành Bẫy 4, lịch sử FX dùng ECB; không đổi code — nếu sai: tầng đọc phải nhớ một luật đọc; đảo ngược = phương án 2 khi lát 10 cần.
+
+## 6. Trả nợ đầu tuần (2026-09-07, thứ 2)
+
+Mọi lượt dưới `ETL_DATABASE_URL` — user `etl_worker` **∈ role `dlck_etl`** (kiểm bằng `pg_auth_members`), kho production. Log ở scratchpad ngoài repo.
+
+🔴 **Câu lệnh của chính nợ này không chạy được.** §2 và roadmap ghi `wichart --intraday --keys vang_the_gioi,dhtg`, nhưng CLI chặn hai cờ đó (`--keys và --intraday loại trừ nhau` — `backend/etl/__main__.py:79`), đúng cái Minor đã ghi ở §3. Chạy thay bằng `etl wichart --intraday` trọn 47 key rồi soi riêng hai key trong kho.
+
+| AC | Lượt | Bằng chứng | Kết quả |
+|---|---|---|---|
+| AC3 Yahoo | `yahoo --intraday --keys ^N225` 10:47:45 (`run_id 649`) rồi 11:06:01 | lượt 1 `calls 1 · bars 4 · inserted 1 · changed 0`; lượt 2 `inserted 0 · changed 1`. `idx.nikkei225` 09-07 `close` **66.246,15625 → 66.191,796875**, `ingested_at` 03:47:45 → **04:06:01 UTC**; nến 09-04 không tiến (giữ `2026-09-05 07:17:34 UTC`) | ✅ |
+| AC3 WiChart | `wichart --intraday` 10:48:02–10:50:23 (`run_id 650`) rồi 11:06:01–11:08:22 | lượt 1 47 key 0 lỗi, `inserted 52 · changed 4 · payloads_stored 0`; lượt 2 `inserted 0 · changed 5` — 5 điểm 09-07 đổi lúc 04:08:21 UTC: `gold.intl` **4.404,34 → 4.419**, `copper` 6,59 · `silver` 65,69 · `wti` 92,08 · `palm_oil_my` 4.665. `macro.observation` **0 dòng** ⇒ cả 5 nằm ở `asset.price_daily` | ✅ nửa `vang_the_gioi` |
+| AC3 WiChart — `dhtg` | cùng hai lượt trên | 5 series `fx.usd_vnd.*` vào kho ở lượt 1 (điểm 09-07: central 25.611 · floor 24.330,45 · ceiling 26.891,55 · bank_sell 26.250 · free_sell 25.810) rồi **đứng yên** ở lượt 2 | ⚪ không chứng minh được "đổi trong ngày" — tỷ giá công bố một lần/ngày; là hành vi dữ liệu, không phải lỗi code |
+| AC4 — lượt đầu | `yahoo` → `binance` → `wichart` thường, 11:09:06–11:15:54 | `yahoo` `inserted 33 · changed 7` · `binance` `inserted 22 · changed 11` · `wichart` `inserted 0 · changed 0 · payloads_stored 47`. `ohlc_daily` dòng trước hôm nay 371.405 → **371.416**, `max(ingested_at)` 2026-09-05 11:59:00 → **2026-09-07 04:12:16** | ❌ theo đúng chữ |
+| AC4 — chạy lại đúng điều kiện | `yahoo --intraday` (54 mã) → `yahoo` thường; `binance --intraday` → `binance` thường, 11:17:07–11:24:14 | `yahoo` `0/25` → **`inserted 0 · changed 23`**; `binance` `0/11` → **`inserted 0 · changed 10`**. Truy vấn: dòng `obs_date < 2026-09-07` bị đụng sau 04:19 UTC = **0**; `ohlc_daily` trước hôm nay giữ nguyên 371.416 dòng và `max(ingested_at)` **đứng ở 04:12:16.696132**; 39 dòng hôm nay bị đụng | ✅ |
+
+**Vì sao lượt AC4 đầu không đạt — điều kiện đầu vào, không phải code.** AC4 giả định lượt thường chạy **ngay sau lượt intraday trên cùng tập mã**. Nợ AC3 lại chỉ cho phép `--keys ^N225`, nên 53 mã Yahoo còn lại chưa có dòng 09-07 và Binance chưa chạy từ thứ 7 ⇒ 33 + 22 dòng buộc phải là `inserted`. Chạy lại đúng điều kiện thì bất biến của AC4 đứng vững (bảng trên).
+
+**Hai thứ lượt đầu lộ ra, giữ lại vì là sự thật đo được:**
+
+1. **Bẫy 4 xảy ra thật, đúng số, sai cơ chế.** `fx.usd_eur.market` 09-04 `close` **0,8605 → 0,859969973564148** lúc 11:11:47 VN (04:11:47 UTC) — đúng con số dự đoán ghi thứ 7. Nhưng nó đến từ **lượt thường**, không phải lượt `--intraday`, và **trước** giờ London mở (07:00 UTC). Cùng lượt còn sửa `usd_gbp` `usd_jpy` `usd_chf` `usd_sek` và **`idx.nzx50`** — mã cuối không phải FX, **chưa kiểm** có cùng cơ chế không. Đã ghi vào [yahoo.md Bẫy 4](../../../10-sources/global/yahoo.md).
+2. **Nến đang chạy chỉ được chốt ở lượt sau.** 11 dòng 09-05 của Binance đổi ở lượt thường 11:11 — đó là nến đang chạy lưu hôm thứ 7, tới hôm nay mới nhận giá đóng thật. Đúng thiết kế, nhưng nghĩa là **`ingested_at` của một dòng "đã chốt" vẫn tiến một lần sau ngày của nó**.
+
+**Ba điều rút ra cho lát sau:**
+
+1. **AC treo qua ngày phải ghi kèm điều kiện đầu vào, không chỉ ghi câu lệnh.** "AC4: `inserted = 0`" chỉ đúng nếu lượt intraday ngay trước phủ cùng tập mã — điều kiện đó nằm trong đầu người viết, không nằm trong AC, nên người trả nợ chạy đúng câu lệnh mà vẫn ra số đỏ.
+2. **Câu lệnh ghi trong nợ phải là câu lệnh chạy được.** `wichart --intraday --keys …` bị chính CLI chặn; Minor ghi ở §3 biết điều đó mà câu nợ vẫn viết ra như vậy.
+3. **Dự đoán trong tài liệu nên tách rời phần *số* và phần *cơ chế*.** Bẫy 4 đúng số nhưng sai cả hai vế cơ chế (lượt nào, khi nào); nếu chỉ kiểm số rồi đóng thì cái sai còn nguyên trong tài liệu sống.

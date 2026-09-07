@@ -128,7 +128,7 @@ lát 7   quốc tế                  ✅ XONG 2026-09-05 — 5 job etl fred|fx|
 lát 7b  cập nhật trong phiên      ✅ XONG 2026-09-05 — chèn 2026-09-05 tối (chủ dự án gọi tên): nến đang chạy vào ohlc_daily, lượt
                                    --intraday cửa sổ ngắn (Yahoo 10 phút, Binance/WiChart 5 phút, 24/7), giãn cách ngẫu nhiên 1–5 s
                                    giữa lời gọi cùng nguồn, 17 cặp FX Yahoo trong ngày (ECB giữ làm mốc chuẩn), CNY chuyển hẳn về ECB
-                                   (FRED DEXCHUS thôi nạp), 729 test; nợ đầu tuần 07/09: nửa Yahoo + WiChart của AC3/AC4 (Binance đã
+                                   (FRED DEXCHUS thôi nạp), 729 test; nợ đầu tuần 07/09 ✅ TRẢ XONG 2026-09-07 (ledger §6): nửa Yahoo + WiChart của AC3/AC4 (Binance đã
                                    xong) — hồ sơ: 90-records/plans/2026-09-05-intraday-refresh/. TIẾP: lát 8
 lát 8   tin tức — thu thập       ✅ XONG 2026-09-06 — khung thu thập + chuẩn hoá + lưu toàn văn (news-pipeline §9.1),
                                    chạy KHÔNG có AI, dedupe URL + tiêu đề 48 giờ, gắn mã tầng 1–2, `--loop`, 791 test
@@ -261,7 +261,7 @@ Năm job `python -m etl fred|fx|lbma|yahoo|binance` (spec [`2026-09-05-global-et
 
 **Kết quả:** ba job `yahoo`/`binance`/`wichart` thêm cờ `--intraday`, giãn cách ngẫu nhiên 1–5 s ở cả 6 nguồn, 17 cặp FX Yahoo mới, CNY chuyển hẳn về ECB (FRED `DEXCHUS` thôi nạp), 729 test. Chi tiết: [spec](../90-records/plans/2026-09-05-intraday-refresh/spec.md) · [ledger](../90-records/plans/2026-09-05-intraday-refresh/ledger.md).
 
-**Nợ đầu tuần 07/09 (chủ dự án chốt):** AC3 nửa Yahoo (`etl yahoo --intraday --keys ^N225` hai lần trong 07:00–13:00 VN) và WiChart (`etl wichart --intraday --keys vang_the_gioi,dhtg` hai lần trong giờ làm việc) — Binance đã xong trong lát; AC4 xác nhận đủ ba nguồn khi có phiên (`changed` chỉ ở nến/điểm ngày hiện tại, không đụng nến đã chốt).
+**Nợ đầu tuần 07/09 — ✅ TRẢ XONG 2026-09-07, bằng chứng ở [ledger §6](../90-records/plans/2026-09-05-intraday-refresh/ledger.md).** AC3 Yahoo đạt (nến 09-07 của `idx.nikkei225` đổi 66.246,15625 → 66.191,796875 giữa hai lượt cách 18 phút, nến 09-04 không tiến); AC3 WiChart đạt ở nửa `vang_the_gioi` (`gold.intl` 4.404,34 → 4.419), nửa `dhtg` **không đổi trong ngày** vì tỷ giá công bố một lần/ngày; AC4 đạt khi chạy đúng điều kiện của nó (lượt thường ngay sau lượt intraday **cùng tập mã**): `yahoo` và `binance` đều `inserted 0`, **0 dòng trước hôm nay bị đụng**. Bẫy 4 kiểm xong: đúng số (`fx.usd_eur.market` 09-04 lùi 0,8605 → 0,859969973564148) nhưng **sai cơ chế** — nó đến từ lượt **thường** và **trước** giờ London mở; đã ghi lại ở [yahoo.md Bẫy 4](../10-sources/global/yahoo.md). 🔴 Câu lệnh của chính nợ này viết sai: `wichart --intraday --keys …` bị CLI chặn (`__main__.py:79`).
 
 **Bảng nhịp gợi ý cho lát 13** (chưa đăng ký task): `yahoo --intraday` 10 phút · `binance --intraday` 5 phút · `wichart --intraday` 5 phút — cả ba **24/7**; `fred` 2 lượt/ngày 05:00 + 20:00 VN; `fx` (ECB) và `lbma` 22:30 VN. Ruling "xếp `yahoo` sau 11:00 VN vì DXY" của lát 7 **hết hiệu lực** — nến DXY vào kho ngay trong lượt `--intraday`.
 
@@ -470,7 +470,7 @@ Năm job `python -m etl fred|fx|lbma|yahoo|binance` (spec [`2026-09-05-global-et
 
 ⚠️ **Hai mục KHÔNG thuộc lát 11 — thuộc tầng ETL, đã có đường khác** *(§1.4: ghi rõ loại để người sau khỏi mở lại)*: `prf`/`rev` có `name_vi` nói *"tỉ đồng"* nhưng `unit='VND'` (phải đối chiếu giá trị thật với BCTC mới kết luận được) · **83 chỉ tiêu `GetScreenerParameters` chưa nạp** vào `metric_dictionary`. Cả hai là việc của một lát ETL, không phải của tầng đọc. Chúng đang bị **loại khỏi mọi đường hiển thị** nên không sinh dữ liệu sai.
 
-⚠️ **Một nợ chéo lát, KHÔNG nằm trong bảy nợ trên:** AC3 nửa Yahoo + WiChart và AC4 của **lát 7b** *(chủ sở hữu: [điểm vào lát 7b](#điểm-vào-cho-lát-7b--đã-dùng-xong-2026-09-05-giữ-làm-ngữ-cảnh) và [ledger lát 7b](../90-records/plans/2026-09-05-intraday-refresh/ledger.md))* — ràng buộc **theo phiên**, chỉ chạy được trong giờ có sàn mở, nên không đợi được lát 11. Ghi ở đây vì luật thứ tự bắt mỗi lát bắt đầu từ điểm vào của lát trước, mà điểm vào lát 10 không nhắc nó.
+✅ **Nợ chéo lát đã trả xong 2026-09-07 (không nằm trong bảy nợ trên):** AC3/AC4 của **lát 7b** — ràng buộc theo phiên nên không đợi được lát 11, đã chạy thật trong cửa sổ 10:47–11:24 giờ VN. Số ở [ledger lát 7b §6](../90-records/plans/2026-09-05-intraday-refresh/ledger.md); lát 11 **không còn việc gì** từ mục này.
 
 | Cần biết trước | Ở đâu |
 |---|---|
