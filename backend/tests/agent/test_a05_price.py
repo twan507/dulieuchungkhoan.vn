@@ -25,8 +25,9 @@ def test_gia_dong_cua_hpg_phien_2026_09_03(db, kho):
     assert phien["dong_cua"] == "21.600 đ"
     assert phien["ngay"] == "2026-09-03"
     assert "khoi_luong" not in phien
-    # `ngay_hien_thi` bỏ ở lát 11: nó lặp lại chính `ngay` và chiếm 19,9% payload ở trần 2.000
-    # phiên (đo 2026-09-07: 58.000/292.009 ký tự cho một lời gọi). Model tự đổi ISO sang dd/mm.
+    # `ngay_hien_thi` bỏ ở lát 11: nó lặp lại chính `ngay`. ĐO THẬT hai đầu trên cùng một lời
+    # gọi trần 2.000 phiên (2026-09-07): 292.009 -> 230.009 ký tự, tức 62.000 = 21,2%. Ước
+    # lượng cũ trong review là 19,9% vì bỏ sót dấu tách JSON. Model tự đổi ISO sang dd/mm.
     assert "ngay_hien_thi" not in phien
 
 
