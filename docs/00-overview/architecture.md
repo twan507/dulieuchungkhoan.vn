@@ -137,13 +137,15 @@ Ba nguồn thị trường chồng lấn nhau nhiều: Screener 193 trường *(
 
 Đầy đủ tới từng mã trường — lấy/bỏ, nguồn chuẩn, lý do tại chỗ: [chọn trường cho ETL thị trường](../20-design/market-field-selection.md).
 
-## 4. Một lỗ hổng kiến trúc đã biết, chưa vá
+## 4. Một lỗ hổng kiến trúc đã biết — ✅ ĐÃ VÁ ở lát 10 (2026-09-07)
 
 Skill **không thể tự gác cổng phạm vi của chính nó.** Luật *"chỉ trả lời chứng khoán, tài chính, kinh tế"* nằm trong thân `SKILL.md` chỉ đọc được **sau khi skill đã tải** — mà câu ngoài phạm vi thì không kích hoạt skill nào, nên luật không bao giờ tới đúng lúc. Đo được ở vòng test 5: **3/4 câu ngoài phạm vi vẫn được trả lời đầy đủ**, kể cả viết trọn một đoạn code Python.
 
-Cách vá duy nhất: dán đoạn giới hạn phạm vi vào **system prompt của sản phẩm**, không nhét thêm vào skill. Nguyên văn đoạn cần dán nằm ở [`maintenance.md` §5](../30-skills/maintenance.md).
+Cách vá duy nhất: dán đoạn giới hạn phạm vi vào **system prompt của sản phẩm**, không nhét thêm vào skill. Nguyên văn đoạn cần dán nằm ở [`maintenance.md` §7](../30-skills/maintenance.md).
 
-**Đây là việc của tầng sản phẩm, không phải tầng skill.** Ghi ở đây để nó không rơi mất khi dựng backend.
+✅ **Đã làm, 2026-09-07:** đoạn đó nay là khối `SCOPE_GUARD` trong [`backend/agent/system_prompt.py`](../../backend/agent/system_prompt.py) — **block đầu tiên** của `build_system_blocks()`, đứng trước cả L1, nên nó tới trước mọi câu hỏi chứ không chờ skill tải. Ba block còn lại: L1 · `ANSWER_RULES` · luật công cụ mang ngày hôm nay. Nội dung `SCOPE_GUARD` trong code **khớp nguyên văn** đoạn ở `maintenance.md` §7 *(đối chiếu 2026-09-07: 587 ký tự, bằng nhau sau khi bỏ tiền tố blockquote)*.
+
+**Bài học giữ lại:** đây là việc của **tầng sản phẩm**, không phải tầng skill. Skill 3, 4 sau này cũng sẽ không tự gác cổng được — cửa duy nhất vẫn là system prompt.
 
 ## 5. Rủi ro pháp lý — không đồng đều giữa các nguồn
 

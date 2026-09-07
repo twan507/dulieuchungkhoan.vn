@@ -46,7 +46,7 @@ Mục này nói về phạm vi **tám nguồn API và crawl** (thị trường V
 | Realtime — Socket.IO BVSC | 1 kênh / 5 topic |
 | Crawl HTML — SBV (`sbv.gov.vn`) | 1 trang, **không có API** *(đo 2026-08-15)* |
 | REST — FRED (`api.stlouisfed.org`) | 8 nhóm endpoint đã gọi thật / **15 series** *(đo 2026-08-15)* |
-| REST — Frankfurter (`api.frankfurter.app`) | 3 dạng đường dẫn / **6 cặp tiền** dựng DXY *(đo 2026-08-15)* |
+| REST — Frankfurter (`api.frankfurter.dev/v1`) | 3 dạng đường dẫn / **6 cặp tiền** dựng DXY *(đo 2026-08-15)* |
 | REST — Yahoo Finance | 3 đường dẫn (`v8/finance/chart` · `v7/quote` · `v1/test/getcrumb`) *(đo 2026-08-15)* |
 | REST — LBMA (`prices.lbma.org.uk`) | 2 *(đo 2026-08-15)* |
 | REST — Binance (`api.binance.com`) | `/api/v3/klines` + WebSocket *(đo 2026-08-15)* |

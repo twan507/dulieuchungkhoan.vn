@@ -15,7 +15,7 @@ Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và m�
 
 ## Đọc gì trước
 
-**Muốn hiểu toàn cảnh** → [kiến trúc tổng thể](00-overview/architecture.md). Bốn tầng hệ thống, ba mắt xích nối ba khối, một lỗ hổng đã biết chưa vá.
+**Muốn hiểu toàn cảnh** → [kiến trúc tổng thể](00-overview/architecture.md). Bốn tầng hệ thống, ba mắt xích nối ba khối, và lỗ hổng gác cổng phạm vi — đã vá ở lát 10.
 
 **Sắp bắt tay làm** → [lộ trình hợp nhất](00-overview/roadmap.md). Việc nào chặn việc nào, việc nào gấp vì mất dữ liệu theo thời gian, việc nào tưởng để ngỏ mà đã có đáp án.
 
@@ -29,7 +29,7 @@ Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và m�
 
 | File | Nội dung |
 |---|---|
-| [architecture.md](00-overview/architecture.md) | Bốn tầng L0–L4 · ranh giới tài liệu · ba mắt xích nối ba khối · lỗ hổng gác cổng phạm vi · rủi ro pháp lý theo nguồn |
+| [architecture.md](00-overview/architecture.md) | Bốn tầng L0–L4 · ranh giới tài liệu · ba mắt xích nối ba khối · lỗ hổng gác cổng phạm vi *(đã vá lát 10)* · rủi ro pháp lý theo nguồn |
 | [roadmap.md](00-overview/roadmap.md) | Trạng thái từng khối · việc chặn nhiều nhất · việc gấp vì mất dữ liệu · cây phụ thuộc · việc còn để ngỏ · ba bẫy ngày đầu |
 | [reference-repos.md](00-overview/reference-repos.md) | Sổ đăng ký repo GitHub tham chiếu — đã dùng · kho nguồn · đã loại kèm lý do |
 | [decisions/](00-overview/decisions/) | Kho lịch sử quyết định kiến trúc. **Danh sách ADR do [`decisions/README.md`](00-overview/decisions/README.md) sở hữu** — không chép lại ở đây, hai bản sẽ trôi lệch (§1.6); bản chép cũ đã dừng ở 0006 trong khi 0007 đã tồn tại |

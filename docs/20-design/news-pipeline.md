@@ -2,7 +2,7 @@
 
 **Loại tài liệu:** thiết kế (explanation) · **Phiên bản** v3 · **Chốt ngày** 13/08/2026 · **Trạng thái** đã duyệt · **đã cài đặt lát 8 (2026-09-06, phần không AI)**
 
-Tài liệu này ghi **lựa chọn của dulieuchungkhoan.vn**: kiến trúc xử lý, taxonomy 20 sub, quy tắc phân loại, cách gắn mã cổ phiếu, lược đồ kho. Phần *nguồn tin có gì và cư xử thế nào* — 47 feed, 6 crawler, encoding, khối lượng đo được — nằm ở [danh mục nguồn tin](../10-sources/news/README.md).
+Tài liệu này ghi **lựa chọn của dulieuchungkhoan.vn**: kiến trúc xử lý, taxonomy 21 sub, quy tắc phân loại, cách gắn mã cổ phiếu, lược đồ kho. Phần *nguồn tin có gì và cư xử thế nào* — 47 feed, 6 crawler, encoding, khối lượng đo được — nằm ở [danh mục nguồn tin](../10-sources/news/README.md).
 
 > **Đánh số mục kế thừa tài liệu gốc v3** và cố ý không đánh lại, vì hàng chục tham chiếu chéo dạng *"xem mục 6.5"* nằm rải trong cả hai file. Mục 4, 5, 6, 11.1–11.3 và 13 nằm ở [danh mục nguồn tin](../10-sources/news/README.md); các mục còn lại ở file này.
 
@@ -18,7 +18,7 @@ Tài liệu này ghi **lựa chọn của dulieuchungkhoan.vn**: kiến trúc x�
 | Feed RSS | **47** |
 | Nguồn crawl HTML | **6** |
 | Nhóm mặc định | Vĩ mô 14 · Quốc tế 12 · DN niêm yết 21 |
-| Phân loại | 3 nhóm × **20 sub** + nhãn `x` loại bỏ |
+| Phân loại | 3 nhóm × **21 sub** + nhãn `x` loại bỏ |
 | Khối lượng | 1.620 bài mỗi vòng quét (tổng nội dung feed, **chưa phải** tin mới) |
 | Chu kỳ quét | 5–7 phút · riêng CafeF CBTT ≤ 15 phút |
 
@@ -52,7 +52,7 @@ Ba nhóm đích:
 
 ---
 
-## 3. Taxonomy — 20 sub
+## 3. Taxonomy — 21 sub
 
 ### Nhóm 1 · Vĩ mô trong nước (6 sub)
 
@@ -67,7 +67,7 @@ Ba nhóm đích:
 
 > Tỷ trọng đo trên 457 tiêu đề. Sub `1a` ban đầu gom cả bốn thứ (văn bản, điều hành, thuế, cải cách) và chiếm ~33% — gấp ba mọi sub khác, nên đã tách. Sub `1g` (môi trường KD và khu vực tư nhân) chỉ đạt 3,1% nên đã gộp vào `1b`.
 
-### Nhóm 2 · Tài chính quốc tế (5 sub)
+### Nhóm 2 · Tài chính quốc tế (6 sub)
 
 | Mã | Sub |
 |---|---|
@@ -253,7 +253,7 @@ Postgres tự nén cột `text` lớn qua TOAST nên con số thực tế còn t
   "source_urls"      : [ "…", "…" ], // mọi báo đã đưa tin này — xem 9.4
   "title"            : "…",
   "summary"          : "…",          // sapo GỐC đã làm sạch — xem 6.6
-  "summary_ai"       : "…",          // AI sinh, 200–300 ký tự, khuôn cố định — xem 7.1
+  "summary_ai"       : "…",          // AI sinh, 3–5 câu ngắn súc tích — xem 7.1
   "content"          : "…",          // TEXT THUẦN toàn văn, không cắt, không HTML
   "content_fetched_at": "2026-08-13T09:26:10+07:00",
   "version"          : 1,            // tăng khi báo sửa bài — xem 9.4
@@ -415,7 +415,7 @@ Lưu tiêu đề + link để tham chiếu là một chuyện, lưu toàn văn l
 ### Đã chốt
 
 - 8 nguồn báo · 47 feed RSS · 6 nguồn crawl HTML trong lượt thường *(đếm lại theo host thật ngày 15/08/2026; bản 13/08 ghi nhầm 10 — số feed và số crawler không đổi)* · +2 sitemap chỉ dùng backfill (BNews, NguoiQuanSat — lát 8b, 2026-09-06)
-- Taxonomy 3 nhóm / 20 sub / nhãn `x`
+- Taxonomy 3 nhóm / 21 sub / nhãn `x`
 - Mọi tin qua lưới AI, không có đường tắt
 - Nhóm từ feed là gợi ý, classifier được ghi đè, phải ghi log
 - Classifier đọc toàn văn đã làm sạch và cắt trần

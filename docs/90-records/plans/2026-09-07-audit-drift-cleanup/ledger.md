@@ -171,3 +171,44 @@ pytest tests/docs -q  ->  3 failed, 4 passed   (từ 5 failed, 2 passed)
 ```
 
 **Commit:** `docs: bring the roadmap and database README back to the real counts`
+
+---
+
+## Task 5 — `20-design/` và `architecture.md` ✅
+
+**Nhịp K** — đọc cả hai vế của 10 mục, tất cả còn đúng:
+
+```
+A3  news-pipeline "20 sub" ×4 + "(5 sub)"     | code SUBS {'1':6,'2':6,'3':9,'x':1}
+A4  architecture:140 "chưa vá"                | system_prompt.py:23 SCOPE_GUARD tồn tại
+A5  architecture:144 "maintenance.md §5"      | maintenance.md §5 = "Lỗi của nguồn đã sửa"; §7 = "Lỗ hổng phạm vi"
+A6  market-data-store:577 "code text PRIMARY KEY" | 0004:101-110 PRIMARY KEY (dictionary, code)
+A7  market-data-store:615 5 view              | grep CREATE VIEW = 3 view KHÁC hẳn
+A8  news-pipeline:256 "200–300 ký tự"         | news_classify.py:42 "3–5 câu ngắn"
+A9  chatbot-semantic-layer:5 "chưa ai viết"   | dòng 3 nói "đã dựng 2026-09-07"
+A10 test-strategy:9 pytest-asyncio + respx    | uv.lock grep = 0
+A11 service-topology:123 "agent/skills/"      | backend/agent có 8 module + tools/ 10 file
+A12 10-sources/README:49 api.frankfurter.app  | fx_fetch.py:11 api.frankfurter.dev/v1
+```
+
+**Nhịp S — thêm hai chỗ ngoài danh sách, phát sinh từ chính A4:** `docs/README.md:18` và `:32` quảng cáo `architecture.md` bằng cụm *"một lỗ hổng đã biết chưa vá"*. Sửa A4 mà bỏ hai dòng này là để tài liệu tự đá nhau ngay trong cùng lượt — đúng thứ §1.7 cấm. Đã sửa cả hai.
+
+**Ba mục viết lại chứ không vá chữ**, vì vá chữ sẽ để lại một tài liệu vô nghĩa:
+
+- **A4** — không chỉ đổi tiêu đề. Giữ nguyên phần mô tả lỗ hổng (nó giải thích *vì sao* phải vá ở tầng sản phẩm, còn giá trị cho skill 3, 4 sau này), thêm khối ✅ nói `SCOPE_GUARD` là **block đầu tiên** của `build_system_blocks()` nên tới trước mọi câu hỏi, kèm bằng chứng đối chiếu nguyên văn 587 ký tự.
+- **A6** — không chỉ thêm cột. Câu *"Nạp từ Screener — 83 tiêu chí"* cũng sai từ lát 5: bảng nay nạp **hai** bộ (83 tiêu chí Screener + 729 mã BCTC), và **đó chính là lý do khoá chính phải có cột `dictionary`** — không tách thì mã trùng tên giữa hai bộ đè nhau im lặng. Viết cả lý do vào.
+- **A7** — không xoá dòng 5 view. Ghi rõ **chưa bao giờ dựng và nay hết cần**, kèm lý do đọc được: function calling (§6.3 ngay dưới) thay đúng vai trò đó, 9 công cụ tự đặt nhãn người-đọc-được trong payload (`agent/labels.py`) nên đổi nhãn không phải chạy migration. Liệt 3 view thật đang có. Xoá trơn thì ba tháng nữa có người đề xuất lại đúng 5 view đó.
+
+**A8 — một chỗ CỐ Ý không sửa:** `news-pipeline.md:128` vẫn còn cụm *"200–300 ký tự"*. Đó là §7.1 ghi lại **chính lần đổi luật** (*"đổi từ 2–3 câu, 200–300 ký tự ngày 2026-09-06"*) — bản ghi at-the-time, xoá là mất lý do. Chỉ sửa §9.3 (dòng 256) vốn đang **mô tả luật hiện hành sai**.
+
+**Nhịp X:**
+
+```
+"20 sub"/"(5 sub)" còn 0    "Bộ view tối thiểu" còn 0     "chưa ai viết" còn 0
+respx/pytest-asyncio còn 0  api.frankfurter.app còn 0     PRIMARY KEY (dictionary, code) ✓
+"200–300 ký tự" còn 1  <- đúng, là ghi chú lịch sử §7.1
+pytest tests/docs -q  ->  2 failed, 5 passed   (từ 3 failed, 4 passed)
+    còn lại: dead_links + orphan  ← Task 6
+```
+
+**Commit:** `docs: the design layer said things the code stopped doing`
