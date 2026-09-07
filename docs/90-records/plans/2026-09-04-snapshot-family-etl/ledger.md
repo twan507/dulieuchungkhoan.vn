@@ -255,3 +255,24 @@ Cùng lúc `PriceData/GetPriceData` (`PageSize=60`) trả AAA phiên mới nhấ
 🔴 **AC5 KHÔNG đóng bằng lượt này, và có lẽ không đóng được bằng ngưỡng của chính nó.** `changed_floor = 0` giả định các trường giữ lại không nhúc nhích giữa hai lượt, nhưng `valuation` mang P/E · P/B · vốn hoá của **cả nhóm ngành** — thị trường mở là chúng đổi thật, không phải nhiễu. Đo hôm nay 4/4 mã đổi `valuation` trong lúc phiên đang chạy là **hành vi đúng của dữ liệu**, không phải lỗi. Muốn đóng thì phải sửa **phép thử** (ví dụ: chỉ áp `changed_floor = 0` cho các kind không bám thị trường, hoặc chạy AC5 ngoài giờ giao dịch trên hai lượt cách nhau vài phút) — đây là **quyết định của chủ dự án**, không tự đổi ngưỡng guard.
 
 **Chủ dự án chốt 2026-09-07: sửa **thời điểm đo**, không sửa code và không sửa ngưỡng** — chạy AC5 **ngoài giờ giao dịch**, hai lượt cách nhau vài phút. Hẹn sẵn trong ngày: `etl snapshot --codes AAA,ABB,AAM,AAT` lúc **15:10** và **15:16** giờ VN (tiến trình tách rời, log `D:\twan_projects\dlck-runtime\logs\ac5-2026-09-07.log`, bằng chứng cuối cùng ở `ops.etl_run`). Đọc `changed_floor` của **lượt thứ hai**: bằng 0 là AC5 đóng; khác 0 thì so hai bản ghi liền nhau để tìm trường jitter thật (điều kiện đảo ngược ở [spec §4.3](spec.md)), **không nới ngưỡng guard**.
+
+## 7. AC5 — ĐẠT 2026-09-07, đo ngoài giờ giao dịch
+
+Bốn lượt `etl snapshot --codes AAA,ABB,AAM,AAT` dưới `ETL_DATABASE_URL` (role `dlck_etl`), sau khi phiên đóng:
+
+| Lượt | Giờ VN | `floor_compared` / `changed_floor` | Dòng ghi |
+|---|---|---|---|
+| 1 | 15:10:09 | 16 / **3** | AAM · AAT · ABB `ownership` |
+| 2 | 15:16:17 | 16 / **1** | ABB `ownership` |
+| 3 | 15:18:06 | 16 / **0** | — |
+| 4 | 15:23:52 *(cách lượt 3 đúng 6 phút)* | 16 / **0** | — |
+
+**✅ AC5 ĐẠT.** Hai lượt liên tiếp `changed_floor = 0` trên toàn bộ 16 cặp, lượt cuối cách 6 phút đúng như phép thử đòi.
+
+**Ba thứ lượt đo này làm sáng ra:**
+
+1. **Ngưỡng của AC5 không sai — thời điểm đo mới sai.** Cùng bộ 4 mã, lúc 12:56 (phiên đang chạy) có **4/4 mã đổi `valuation`**; sau khi đóng cửa, `valuation` **không đổi lượt nào** trong cả bốn lượt. Đúng chẩn đoán ở §6: `valuation` mang P/E · P/B · vốn hoá nhóm ngành nên nó **bám thị trường**, không phải nhiễu. Chủ dự án chốt sửa thời điểm thay vì sửa ngưỡng là đúng — code và guard giữ nguyên.
+2. **`ownership` làm mới ngay sau phiên, lệch nhau vài phút giữa các mã.** AAM và AAT vào lúc 15:10, ABB muộn hơn tới 15:16. Đây là **cập nhật thật một lần**, không phải nhiễu qua lại: so payload đã lưu lúc 15:16 với một lời gọi mới lúc 15:22 thì **cả bốn trường giữ lại đều bằng nhau** (`boardOfDirectors` · `majorShareHolders` · `majorOwnershipsChartData` · `overviewChartData`).
+3. **Hệ quả cho lịch của lát 13:** job `snapshot` **không được xếp trước ~15:20**, nếu không mỗi lượt sẽ bắt đúng lúc `ownership` đang lệch pha và ghi thừa một bản ghi cho mỗi mã. Ghi vào đây để lát 13 khỏi phải đo lại.
+
+*(Nửa giá của họ Snapshot vẫn trễ ≥ 1 phiên — xem §6, không liên quan tới AC5.)*
