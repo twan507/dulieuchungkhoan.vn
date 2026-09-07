@@ -86,6 +86,22 @@ _SQL_OHLC = sa.text("""
     ORDER BY obs_date DESC LIMIT :lim
 """)
 
+# Hình dạng #3 (spec §4.6) phải nói khoảng kho THẬT SỰ có, cùng nguyên tắc đã vá ở
+# get_price_series/get_financials/get_corporate_events (review SPEC lát 10, vòng 3, N2) — nhánh
+# macro/asset của tool này trước đó thiếu hẳn khoang_co_du_lieu khi khoảng hỏi rỗng.
+_SQL_KHOANG_MACRO = sa.text(
+    "SELECT min(obs_date), max(obs_date) FROM macro.observation_spliced WHERE indicator_id = :id")
+
+# asset nằm ở HAI bảng (xem docstring đầu file) — khoảng "kho có dữ liệu" phải gộp cả hai,
+# KHÔNG chỉ bảng vừa tra ra 0 dòng, vì asset có thể có dữ liệu ở bảng còn lại.
+_SQL_KHOANG_ASSET = sa.text("""
+    SELECT min(d), max(d) FROM (
+        SELECT obs_date AS d FROM asset.price_daily WHERE asset_id = :id
+        UNION ALL
+        SELECT obs_date FROM asset.ohlc_daily WHERE asset_id = :id
+    ) t
+""")
+
 
 def _danh_muc(conn: sa.Connection, keyword: str | None, tran: int = TRAN_DANH_MUC) -> list[dict]:
     return [dict(r._mapping) for r in conn.execute(_SQL_DANH_MUC, {"kw": keyword, "tran": tran})]
@@ -110,7 +126,9 @@ def chuoi_vi_mo(conn: sa.Connection, code: str | None = None, keyword: str | Non
         rows = conn.execute(_SQL_MACRO_OBS, {"id": ind.indicator_id, "tu": from_date,
                                              "den": to_date, "lim": lim}).all()
         if not rows:
-            return to_json({**rong(), "ma": code})
+            tu, den = conn.execute(_SQL_KHOANG_MACRO, {"id": ind.indicator_id}).one()
+            khoang = {"tu": str(tu), "den": str(den)} if tu is not None else None
+            return to_json({**rong(khoang), "ma": code})
         du_lieu = []
         for r in reversed(rows):
             d = {"ngay": str(r.obs_date), "ngay_hien_thi": format_date_vi(r.obs_date),
@@ -142,7 +160,9 @@ def chuoi_vi_mo(conn: sa.Connection, code: str | None = None, keyword: str | Non
 
     rows = conn.execute(_SQL_OHLC, {"id": tai_san.asset_id, "tu": from_date, "den": to_date, "lim": lim}).all()
     if not rows:
-        return to_json({**rong(), "ma": code})
+        tu, den = conn.execute(_SQL_KHOANG_ASSET, {"id": tai_san.asset_id}).one()
+        khoang = {"tu": str(tu), "den": str(den)} if tu is not None else None
+        return to_json({**rong(khoang), "ma": code})
     du_lieu = [{"ngay": str(r.obs_date), "ngay_hien_thi": format_date_vi(r.obs_date),
                 "gia_tri": display_series_value(r.gia, tai_san.unit)} for r in reversed(rows)]
     return to_json(co_du_lieu(du_lieu, ma=code, ten=tai_san.name_vi, don_vi=tai_san.unit,

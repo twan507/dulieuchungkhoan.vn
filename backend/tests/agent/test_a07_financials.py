@@ -87,3 +87,17 @@ def test_khoang_nam_rong_thi_bao_kho_co_nhung_nam_nao(db, kho):
     out = json.loads(bao_cao_tai_chinh(db, "FPT", "IS", 2010, 2012))
     assert out["co_du_lieu"] is True and out["so_dong"] == 0
     assert out["khoang_co_du_lieu"] == {"tu_nam": 2024, "den_nam": 2024}
+
+
+def test_khoang_rong_loc_dung_period_khong_muon_khoang_cua_ky_khac(db, kho):
+    """F4 (review CHUẨN lát 10, vòng 3): câu khoang_co_du_lieu cũ chỉ lọc issuer_id +
+    statement_type, BỎ QUÊN length_report và metric_code — trong khi câu chính (_SQL_BCTC) lọc
+    cả bốn. Fixture chỉ seed FPT báo cáo NĂM (length_report=5, BCTC_FPT_2024 trong conftest),
+    không có báo cáo QUÝ nào. Hỏi period='quy' (length_report in [1,2,3,4]) ra 0 dòng — câu
+    khoảng cũ (không lọc length_report) sẽ tìm thấy khoảng của báo cáo NĂM (2024..2024) rồi trả
+    nhầm cho câu hỏi QUÝ, khiến model tưởng "kho có kỳ quý ở khoảng 2024, chỉ là hỏi sai năm".
+    Đúng ra kho không có kỳ quý nào cho FPT/IS ⇒ không được có khoang_co_du_lieu."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(bao_cao_tai_chinh(db, "FPT", "IS", 2010, 2030, period="quy"))
+    assert out["co_du_lieu"] is True and out["so_dong"] == 0
+    assert "khoang_co_du_lieu" not in out

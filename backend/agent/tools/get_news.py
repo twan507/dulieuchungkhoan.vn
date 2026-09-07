@@ -92,6 +92,18 @@ def tim_tin(conn: sa.Connection, query: str | None = None, ticker: str | None = 
         dk.append(_DIEU_KIEN_NGANH)
     where = " AND ".join(dk)
 
+    # N2 (review SPEC lát 10, vòng 3): khi khoảng hỏi (from_date/to_date) làm 0 dòng khớp,
+    # phải nói kho THẬT SỰ có bài khớp các bộ lọc còn lại (nhãn/từ khoá) ở khoảng nào — cùng
+    # nguyên tắc khoang_co_du_lieu đã vá ở get_price_series/get_financials/get_corporate_events.
+    # Bỏ vị từ ngày (tu/den ép về None, _DIEU_KIEN_NHAN tự IS NULL) nhưng GIỮ NGUYÊN mọi bộ
+    # lọc khác (nhãn, và vị từ tsv nếu có) để không lẫn "hỏi sai ngày" với "chủ đề kho không có".
+    def _khoang_khop(dieu_kien_tsv: str | None) -> dict | None:
+        dk_tsv = f"{dieu_kien_tsv} AND " if dieu_kien_tsv else ""
+        tu, den = conn.execute(sa.text(
+            f"SELECT min({_NGAY_VN}), max({_NGAY_VN}) FROM news.article a {_REV_MOI_NHAT}"
+            f" WHERE {dk_tsv}{where} AND {_REV_LA_MOI_NHAT}"), {**p, "tu": None, "den": None}).one()
+        return {"tu": str(tu), "den": str(den)} if tu is not None else None
+
     kieu = None
     if query:
         for kieu_thu, ham in (("cum", "phraseto_tsquery"), ("tu_khoa", "plainto_tsquery")):
@@ -104,8 +116,14 @@ def tim_tin(conn: sa.Connection, query: str | None = None, ticker: str | None = 
                 kieu = kieu_thu
                 break
         else:
-            return to_json({"tim_thay": True, "co_du_lieu": True, "so_dong": 0, "tong_khop": 0,
-                            "kieu_tim": "cum", "du_lieu": []})
+            out_rong = {"tim_thay": True, "co_du_lieu": True, "so_dong": 0, "tong_khop": 0,
+                        "kieu_tim": "cum", "du_lieu": []}
+            if from_date or to_date:
+                khoang = _khoang_khop(
+                    "r.tsv @@ plainto_tsquery('simple', news.immutable_unaccent(:q))")
+                if khoang:
+                    out_rong["khoang_co_du_lieu"] = khoang
+            return to_json(out_rong)
         sql = f"""
             SELECT a.article_id, {_NGAY_VN} AS ngay_vn, a.primary_source, a.group_no, a.sub,
                    a.classified_from IS NOT NULL AS da_phan_loai, r.title, r.sapo, r.summary_ai,
@@ -134,6 +152,13 @@ def tim_tin(conn: sa.Connection, query: str | None = None, ticker: str | None = 
     out = co_du_lieu(du_lieu, tong_khop=tong, da_cat=tong > len(du_lieu))
     if kieu:
         out["kieu_tim"] = kieu
+    if not du_lieu and not query and (from_date or to_date):
+        # N2: nhánh lọc THEO NHÃN (không kèm query) — khoảng hỏi rỗng cũng phải nói khoảng
+        # kho thật sự có bài khớp CÙNG các bộ lọc nhãn, không chỉ nói "còn N bài chưa phân
+        # loại" (lý do đó không liên quan khi sub/ticker/... đã khớp nhãn nhưng sai khoảng ngày).
+        khoang = _khoang_khop(None)
+        if khoang:
+            out["khoang_co_du_lieu"] = khoang
     if not du_lieu and (group_no or sub or industry_code or ticker):
         chua = conn.execute(sa.text(
             "SELECT count(*) FROM news.article a WHERE a.classified_from IS NULL"

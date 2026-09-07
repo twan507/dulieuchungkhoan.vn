@@ -156,12 +156,31 @@ def test_hoi_toan_ma_khong_ton_tai_thi_khong_tra_ma_bat_ky(db, kho):
     toang truy vấn và trả 10 mã bất kỳ của thị trường kèm `co_du_lieu: true`. Trước khi sửa
     nó trả rỗng (sai im lặng); sau khi sửa nó trả **dữ liệu sai một cách tự tin** — nặng hơn.
     Đo trên kho thật 2026-09-07: `so_sanh_cung_nganh(["ABCDE"])` → A32, AAA, AAH, AAM, AAN…
+
+    F1 (review CHUẨN lát 10, vòng 3): hình dạng "không mã nào tồn tại" trước đây tự dựng tay,
+    mang `so_dong`/`du_lieu` (mượn của hình dạng #4) và VỨT ĐI `goi_y` mà resolve_ticker đã
+    tính sẵn. Test này giờ canh đúng hình dạng #1 (tim_thay/goi_y), không có so_dong/du_lieu.
     """
     db.execute(sa.text("SET LOCAL ROLE dlck_api"))
     out = json.loads(so_sanh_cung_nganh(db, tickers=["ABCDE"], metric_codes=["rtd21"]))
-    assert out.get("du_lieu", []) == [], "không được trả mã nào khi mọi mã hỏi đều không tồn tại"
-    assert out["so_dong"] == 0
+    assert out["tim_thay"] is False
+    assert "du_lieu" not in out
+    assert "so_dong" not in out
     assert out["khong_tim_thay"] == ["ABCDE"]
+    assert out["goi_y"] == {"ABCDE": []}, "ABCDE không gần giống mã nào trong kho fixture"
+
+
+def test_hoi_qua_tran_ma_nhung_mot_vai_ma_sau_co_that_van_duoc_nhan_ra(db, kho):
+    """F2 (review CHUẨN lát 10, vòng 3): chốt "không mã nào tồn tại" trước đây chỉ xét
+    `mas_xin[:TRAN_MA]` — 10 mã đầu bịa còn mã thứ 11-12 có thật (HPG, VCB) thì bị khẳng định
+    sai là "không mã nào trong danh sách tồn tại trong danh bạ" mà không hề tra tới chúng.
+    Chốt phải soi TOÀN BỘ danh sách người hỏi, TRAN_MA chỉ giới hạn số mã đưa vào kết quả."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    mas = [f"ZZ{i:02d}" for i in range(10)] + ["HPG", "VCB"]          # 12 mã, 10 mã đầu bịa
+    out = json.loads(so_sanh_cung_nganh(db, tickers=mas, metric_codes=["rtd21"]))
+    assert out["tim_thay"] is True
+    assert {c["ma"] for c in out["du_lieu"]} == {"HPG", "VCB"}
+    assert set(out["khong_tim_thay"]) == {f"ZZ{i:02d}" for i in range(10)}
 
 
 def test_hoi_nganh_khong_kem_ma_van_loc_theo_nganh(db, kho):

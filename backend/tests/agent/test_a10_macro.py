@@ -85,6 +85,26 @@ def test_danh_muc_bao_ro_tong_khop_va_khong_cat_bao_sai(db, kho):
     assert out["da_cat"] is False
 
 
+def test_khoang_ngay_rong_macro_thi_bao_khoang_that_co(db, kho):
+    """N2 (review SPEC lát 10, vòng 3): nhánh macro thiếu khoang_co_du_lieu khi khoảng hỏi
+    rỗng — cùng bệnh đã vá ở get_price_series/get_financials/get_corporate_events (spec §4.6
+    hình dạng #3). Fixture chỉ seed vn.cpi từ 2026-06-01 tới 2026-08-01."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(chuoi_vi_mo(db, code="vn.cpi", from_date="1990-01-01", to_date="1990-12-31"))
+    assert out["co_du_lieu"] is True and out["so_dong"] == 0
+    assert out["khoang_co_du_lieu"] == {"tu": "2026-06-01", "den": "2026-08-01"}
+
+
+def test_khoang_ngay_rong_asset_thi_bao_khoang_that_co(db, kho):
+    """Cùng nguyên tắc N2 cho nhánh asset — wti chỉ có giá futures ở price_daily (09-04,
+    09-05 trong fixture), không có dòng nào ở ohlc_daily. Khoảng báo về phải GỘP CẢ HAI bảng,
+    không chỉ bảng vừa tra ra 0 dòng (ohlc_daily), vì asset có dữ liệu ở bảng còn lại."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(chuoi_vi_mo(db, code="wti", from_date="1990-01-01", to_date="1990-12-31"))
+    assert out["co_du_lieu"] is True and out["so_dong"] == 0
+    assert out["khoang_co_du_lieu"] == {"tu": "2026-09-04", "den": "2026-09-05"}
+
+
 def test_danh_muc_dem_dung_tong_khong_phu_thuoc_tran(db, kho):
     """N3: hàm đếm tổng phải ĐỘC LẬP với LIMIT hiển thị — mô phỏng cắt bằng cách tự hạ trần
     xuống 2 (nội bộ), tổng đếm được vẫn phải là 3, để lộ đúng phần bị cắt."""

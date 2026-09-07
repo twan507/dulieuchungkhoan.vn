@@ -11,6 +11,14 @@ trong kết quả không được âm thầm biến mất (N4, review CHUẨN l�
 (khong_tim_thay, hình dạng #1) khác hẳn mã CÓ danh tính nhưng phiên screener gần nhất không có
 dòng cho nó — không phải cổ phiếu, hoặc chưa 'listed' (khong_co_du_lieu_phien). Trộn hai lý do
 vào một trường mời model kết luận sai (ví dụ tưởng một mã có thật là gõ nhầm).
+
+Hình dạng khi KHÔNG mã nào trong `tickers` tồn tại (F1/F2/mục 6, review lát 10 vòng 3):
+`{"tim_thay": False, "khong_tim_thay": [...], "goi_y": {ma: [...]}, "ly_do": "..."}` — cùng
+họ hình dạng #1 của tám hàm anh em (tim_thay/goi_y), khác ở chỗ nhận DANH SÁCH nên khong_tim_thay
+là một mảng và goi_y là một DICT (mã hỏi -> gợi ý của riêng mã đó, vì resolve_ticker tính gợi ý
+theo TỪNG mã, không gộp chung). KHÔNG mang so_dong/du_lieu — hai khoá đó chỉ có ở hình dạng #4
+(có kết quả). Chốt xét trên TOÀN BỘ danh sách người hỏi (`mas_xin`), không phải phần đã cắt còn
+TRAN_MA mã đầu — 10 mã đầu bịa mà mã 11 có thật vẫn phải nhận đúng mã 11 (F2).
 """
 from __future__ import annotations
 
@@ -32,25 +40,35 @@ def so_sanh_cung_nganh(conn: sa.Connection, tickers: list[str] | None = None,
         return to_json({"loi": True, "ly_do": f"ma chi tieu ngoai bang nhan: {la}", "ma_hop_le": sorted(LABELS)})
     codes = codes[:TRAN_CHI_TIEU]
     mas_xin = [t.upper() for t in (tickers or [])]
-    mas = mas_xin[:TRAN_MA]
-    if not mas and not industry_code:
+    if not mas_xin and not industry_code:
         return to_json({"loi": True, "ly_do": "phai cho tickers hoac industry_code"})
 
-    # resolve_ticker TỪNG mã trước khi truy vấn screener: tách "hoàn toàn không tồn tại"
-    # (khong_tim_thay, hình dạng #1) khỏi "có danh tính nhưng phiên này không có dòng screener"
-    # (khong_co_du_lieu_phien) — trộn chung là đúng lỗi spec §4.6 cấm (#1 gộp vào #3).
-    khong_ton_tai: list[str] = []
-    ma_hop_le: list[str] = []
-    for t in mas:
-        (ma_hop_le if resolve_ticker(conn, t)["tim_thay"] else khong_ton_tai).append(t)
+    # resolve_ticker TỪNG mã trong TOÀN BỘ danh sách người hỏi (mas_xin, KHÔNG cắt về TRAN_MA
+    # trước) để tách "hoàn toàn không tồn tại" (khong_tim_thay, hình dạng #1) khỏi "có danh
+    # tính nhưng phiên này không có dòng screener" (khong_co_du_lieu_phien) — trộn chung là
+    # đúng lỗi spec §4.6 cấm (#1 gộp vào #3). F2 (review CHUẨN lát 10, vòng 3): cắt trước rồi
+    # mới xét khiến "10 mã đầu đều bịa, mã 11 có thật" bị khẳng định sai là "không mã nào tồn
+    # tại" — TRAN_MA chỉ được giới hạn số mã ĐƯA VÀO truy vấn/kết quả, không giới hạn phạm vi
+    # xét tồn tại.
+    tra = {t: resolve_ticker(conn, t) for t in mas_xin}
+    ma_hop_le_full = [t for t in mas_xin if tra[t]["tim_thay"]]
+    khong_ton_tai = [t for t in mas_xin if not tra[t]["tim_thay"]]
 
     # 🔴 Người hỏi có cho mã mà KHÔNG mã nào tra được ⇒ dừng tại đây. Không được rơi xuống
     # truy vấn bên dưới: mệnh đề `cardinality(:mas) = 0` ở đó nghĩa là "không lọc theo mã",
     # nên danh sách rỗng sẽ mở toang cả thị trường và trả 10 mã bất kỳ kèm cờ "có dữ liệu" —
     # dữ liệu sai một cách tự tin, nặng hơn hẳn ca trả rỗng (review vòng 2, mục CHẶN).
-    if mas and not ma_hop_le:
-        return to_json({"tim_thay": False, "khong_tim_thay": khong_ton_tai, "so_dong": 0,
-                        "du_lieu": [], "ly_do": "không mã nào trong danh sách tồn tại trong danh bạ"})
+    #
+    # F1 (review CHUẨN lát 10, vòng 3): resolve_ticker ĐÃ tính goi_y bằng extensions.similarity
+    # cho từng mã trượt — trả thẳng ra thay vì vứt đi, để ca thường gặp nhất (gõ nhầm MỘT mã)
+    # có đường tự sửa, giống tám hàm anh em. goi_y là DICT mã->gợi ý (không gộp phẳng) vì mỗi
+    # mã trượt có gợi ý riêng, gộp phẳng sẽ mất thông tin gợi ý nào ứng với mã nào (mục 6).
+    if mas_xin and not ma_hop_le_full:
+        goi_y = {t: tra[t]["goi_y"] for t in khong_ton_tai}
+        return to_json({"tim_thay": False, "khong_tim_thay": khong_ton_tai, "goi_y": goi_y,
+                        "ly_do": "không mã nào trong danh sách tồn tại trong danh bạ"})
+
+    ma_hop_le = ma_hop_le_full[:TRAN_MA]
 
     ngay = conn.execute(sa.text("SELECT max(trading_date) FROM market.screener_daily")).scalar()
     if ngay is None:

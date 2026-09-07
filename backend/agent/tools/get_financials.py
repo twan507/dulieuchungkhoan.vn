@@ -68,10 +68,16 @@ def bao_cao_tai_chinh(conn: sa.Connection, ticker: str, statement_type: str = "I
     if not rows:
         # Hình dạng #3 phải nói kho CÓ những kỳ nào (spec §4.6) — 0 dòng mà không kèm khoảng
         # thì model rất dễ đọc thành "doanh nghiệp chưa tồn tại" thay vì "kho chưa có năm đó".
+        # F4 (review CHUẨN lát 10, vòng 3): câu khoảng PHẢI lọc CÙNG bốn vị từ với _SQL_BCTC
+        # (issuer_id, statement_type, length_report, metric_code) — bản trước chỉ lọc hai vị
+        # từ đầu, nên khi 0 dòng là vì hỏi sai `period` (quý/năm) hoặc `metric_codes`, hàm vẫn
+        # báo một khoảng năm RỘNG HƠN sự thật (khoảng của statement_type, không phải của đúng
+        # length_report/metric_code vừa hỏi) — model đọc thành "kho có kỳ này, mình hỏi sai năm".
         tu, den = conn.execute(sa.text(
             "SELECT min(year_report), max(year_report) FROM market.financial_statement"
-            " WHERE issuer_id = :iid AND statement_type = :st"),
-            {"iid": ma["issuer_id"], "st": statement_type}).one()
+            " WHERE issuer_id = :iid AND statement_type = :st"
+            " AND length_report = ANY(:lens) AND metric_code = ANY(:codes)"),
+            {"iid": ma["issuer_id"], "st": statement_type, "lens": lengths, "codes": codes}).one()
         khoang = {"tu_nam": tu, "den_nam": den} if tu is not None else None
         return to_json({**rong(khoang), "ma": ma["ticker"]})
 

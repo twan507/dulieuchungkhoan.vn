@@ -52,12 +52,14 @@ def test_ma_khong_ton_tai(db, kho):
     assert json.loads(cay_nganh(db, ticker="ZZZZ"))["tim_thay"] is False
 
 
-def test_industry_code_khong_ton_tai_van_dong_bo_hinh_dang(db, kho):
-    """F7: industry_code lạ không khớp mã nhóm/mã ngành nào ra 0 dòng — phải vẫn nói tường
-    minh co_du_lieu=False, so_dong=0, không được trả trần {"nhom": []} như trước sửa."""
+def test_industry_code_khong_ton_tai_thi_khong_khang_dinh_co_that(db, kho):
+    """F5 (review CHUẨN lát 10, vòng 3): bản sửa F7 (vòng 2) từng khoá industry_code lạ vào
+    {"tim_thay": True, "co_du_lieu": False, "so_dong": 0, "nhom": []} — khẳng định một mã
+    ngành BỊA là có thật (tim_thay: true nghĩa là "mã có tồn tại"), và không có ly_do/goi_y
+    nào để model tự sửa. Đây là test cũ đã khoá chết hình dạng sai đó thành hợp đồng — sửa lại
+    để canh đúng hình dạng #1 (không tìm thấy), cùng khuôn với ticker bịa."""
     db.execute(sa.text("SET LOCAL ROLE dlck_api"))
     out = json.loads(cay_nganh(db, industry_code="KHONGCO"))
-    assert out["tim_thay"] is True
-    assert out["co_du_lieu"] is False
-    assert out["so_dong"] == 0
-    assert out["nhom"] == []
+    assert out["tim_thay"] is False
+    assert out["ma_da_tra"] == "KHONGCO"
+    assert out["goi_y"] == []

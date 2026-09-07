@@ -123,6 +123,29 @@ def test_bo_loc_ngay_theo_gio_vn_khong_lot_luoi(db, kho):
     assert trong["so_dong"] == 1
 
 
+def test_tim_khong_khop_trong_khoang_hoi_thi_bao_khoang_that_co(db, kho):
+    """N2 (review SPEC lát 10, vòng 3): 'lãi suất điều hành' không khớp bài nào trong khoảng
+    hỏi (tháng 1/2026, cả phraseto lẫn plainto đều 0) — trước sửa, hàm trả 0 dòng mà không nói
+    kho THẬT SỰ có bài khớp chủ đề này ở khoảng nào, mời model kết luận sai "chủ đề này kho
+    không có" thay vì "hỏi sai khoảng ngày". Cùng bệnh đã vá ở get_price_series/get_financials/
+    get_corporate_events, ở đây thiếu hoàn toàn. Cả hai bài 2026-08-10 và 2026-08-20 đều khớp
+    plainto_tsquery('lãi suất điều hành') (đủ bốn từ, không cần liền cụm)."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(tim_tin(db, query="lãi suất điều hành", from_date="2026-01-01", to_date="2026-01-31"))
+    assert out["so_dong"] == 0
+    assert out["khoang_co_du_lieu"] == {"tu": "2026-08-10", "den": "2026-08-20"}
+
+
+def test_loc_nhan_rong_ngoai_khoang_thi_bao_khoang_that_co(db, kho):
+    """Cùng nguyên tắc N2 cho nhánh lọc THEO NHÃN (không kèm query): sub='1b' chỉ có đúng bài
+    2026-08-10 trong kho — hỏi ngoài khoảng đó (tháng 1/2026) phải nói khoảng thật, không chỉ
+    nói "còn N bài chưa phân loại" (không liên quan vì sub='1b' đã được phân loại)."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(tim_tin(db, sub="1b", from_date="2026-01-01", to_date="2026-01-31"))
+    assert out["so_dong"] == 0
+    assert out["khoang_co_du_lieu"] == {"tu": "2026-08-10", "den": "2026-08-10"}
+
+
 def test_join_revision_khoa_ban_moi_nhat_khong_nhan_doi(db, kho):
     """N1: bài 'hai_ban' có 2 revision. JOIN news.article_revision không khoá version (bug cũ)
     sẽ nhân đôi — mỗi revision ra một dòng. Phải chỉ trả ĐÚNG 1 dòng, đúng bản MỚI NHẤT."""
