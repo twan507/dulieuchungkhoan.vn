@@ -126,3 +126,48 @@ pytest tests/docs -q -> 5 failed, 2 passed  (từ 6 failed, 1 passed)
 ```
 
 **Commit:** `docs: the root README was two days and eleven slices behind`
+
+---
+
+## Task 4 — `roadmap.md` §0 và `database/README.md` ✅
+
+**Nhịp K** — đo lại toàn bộ số sẽ ghi:
+
+```
+migration                 20
+schema test: file 15 · func 65
+registry build():  fred 14 | fx 7 | lbma 2 | yahoo 54 | binance 11
+roadmap:19   "chưa viết dòng code nào"
+roadmap:29   "18 migration"
+roadmap:124  "15 + 6 + 2 + 37 + 11 series"
+roadmap:586  "11 task Scheduler vẫn Disabled"
+```
+
+**Nhịp S:** B8 · B9 · B10 · B11 · B12 · B13 sửa theo plan.
+
+### A13 — làm KHÁC plan, có lý do
+
+Plan viết *"`15 + 6` → `14 + 7`"*. **Không làm vậy.** Nhịp K lộ ra hai điều plan chưa biết:
+
+1. Dòng 124 là **bản ghi lúc đóng lát 7** (`✅ XONG 2026-09-05`), không phải trạng thái hôm nay. `DEXCHUS` bị bỏ ở **lát 7b**, tức lúc lát 7 đóng thì FRED **thật sự có 15** — sửa thành 14 là **viết lại quá khứ cho sai đi**, đúng thứ §1.7 cấm.
+2. Yahoo nay là **54** chứ không phải 37 (lát 7b thêm 17 cặp FX) — plan cũng không biết.
+3. `6` của fx là số **cặp tiền**, không phải số series; series có thêm DXY dựng lại ⇒ 7. Đây là lệch **đơn vị đếm**, không phải lệch số.
+
+Nên: **giữ nguyên dòng số cũ**, thêm 4 dòng chú thích ngay dưới ghi registry hôm nay (`build()`, đo 2026-09-07) và nói rõ hai chỗ lát 7b làm đổi. Bản ghi at-the-time còn nguyên, người đọc không bị dẫn sai.
+
+### B13 — cũng làm khác plan một chút
+
+Plan định bỏ hẳn số ở `database/README.md:86`. Nhưng dòng đó mang **chuỗi lịch sử tăng trưởng** (877 → 809 → 791 → 729 → …) — dữ liệu có giá trị, không phải bản sao rác. Giữ chuỗi, chỉ đổi cách mở đầu để không ai đọc nhầm nó là số hôm nay: *"số hiện hành ở ngay dưới — mục này chỉ giữ lịch sử tăng trưởng"*.
+
+**Nhịp X:**
+
+```
+grep -c "18 migration" roadmap.md              -> 0
+grep "chưa viết dòng code nào" roadmap.md      -> không còn
+roadmap:590  "**10/11** task Scheduler Disabled ... ngoại lệ dlck-price-backfill Ready"
+grep "64 test|14 file|877 test, 2 skipped" database/README.md -> không còn
+pytest tests/docs -q  ->  3 failed, 4 passed   (từ 5 failed, 2 passed)
+    còn lại: dead_links + orphan (Task 6) · sub_count (Task 5)
+```
+
+**Commit:** `docs: bring the roadmap and database README back to the real counts`
