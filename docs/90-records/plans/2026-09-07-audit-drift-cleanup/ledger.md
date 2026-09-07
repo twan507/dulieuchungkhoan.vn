@@ -220,7 +220,7 @@ Script sửa hàng loạt của tôi dùng `pathlib.write_text(...)` **không tr
 Chuỗi việc:
 
 1. Commit Task 5 đi qua bình thường — `git add` chuẩn hoá về LF nhờ `.gitattributes` `* text=auto eol=lf`, nên **nội dung trong repo đúng**. Nhưng working copy 5 file thành CRLF, và `git status` vẫn sạch nên **không có gì báo**.
-2. Tôi viết script quét toàn repo đổi CRLF → LF. Nó báo **211 file** — tức phần lớn không phải do tôi, mà là file **vốn được lưu CRLF trong git** từ trước khi có `.gitattributes`.
+2. Tôi viết script quét toàn repo đổi CRLF → LF. Nó báo **211 file** — phần lớn không phải do tôi, mà là **bản trên đĩa** của những file được checkout ra CRLF ở đâu đó trước phiên này. *(Lúc đó tôi kết luận nhầm là chúng "được lưu CRLF trong git" — xem đính chính cuối mục.)*
 3. `git status` sau đó: **211 file `M`**. Đây là thay đổi nội dung **thật**, hoàn toàn **ngoài phạm vi** lát này (§4.4.3: *"không tiện tay cải thiện code lân cận"*).
 4. 🔴 Script đó còn đọc-ghi **cả file nhị phân** (`.xlsx`) — nếu một file Excel chứa chuỗi byte `0D 0A` thì đã hỏng. May là `git status` không liệt file `.xlsx` nào.
 5. `git checkout -- .` hoàn nguyên sạch. Kiểm lại: 5 sửa đổi Task 5 **còn nguyên** (5 phép grep đều ra 0), file nay là LF, `pytest tests/docs` vẫn 2 failed / 5 passed.
@@ -231,7 +231,32 @@ Chuỗi việc:
 - **Đừng bao giờ đọc-ghi byte hàng loạt trên `git ls-files`** — danh sách đó có cả nhị phân. Lọc theo phần mở rộng, hoặc dùng `git add --renormalize` để git tự lo.
 - **"211 file thay đổi" là tín hiệu dừng, không phải tín hiệu tiến.** Một lát dọn 47 mục mà chạm 211 file thì đã đi lạc. Việc chuẩn hoá CRLF toàn repo là một quyết định riêng, cần chủ dự án chốt — **không gộp vào đây**.
 
-⚠️ **Ghi thành việc còn treo:** repo hiện có **211 file lưu CRLF trong git** dù `.gitattributes` khai `* text=auto eol=lf` (chúng vào repo trước khi có dòng đó). Muốn dọn thì đường đúng là `git add --renormalize .` thành **một commit riêng**, không lẫn với lát nào — chủ dự án quyết.
+### 🔴 Đính chính chính mục này — đo lại 2026-09-07 sau khi chủ dự án hỏi "211 file CRLF là gì"
+
+Câu *"211 file lưu CRLF trong git"* ở trên **SAI**, và tôi đã suýt để lại một việc treo không tồn tại. Đo lại bằng đúng công cụ:
+
+```
+git ls-files --eol | awk '{print $1,$2}' | sort | uniq -c
+    738 i/lf w/lf          <- KHONG file nao luu CRLF, KHONG file nao tren dia con CRLF
+     50 i/none w/none      <- nhi phan
+      6 i/-text w/-text
+git cat-file blob <blob cua mot trong 211 file> | dem byte 0x0d   ->  0
+```
+
+**Sự thật là gì.** Dựng lại đúng trình tự trên một file thật (`frontend/README.md`), mỗi bước một phép đo:
+
+| Bước | Trạng thái | `git status` | `git diff` |
+|---|---|---|---|
+| Đĩa CRLF, blob LF | `i/lf w/crlf` | ` M` | — |
+| `git add` | blob vẫn **0 byte CR** | *sạch* | — |
+| Đĩa đổi về LF | `i/lf w/lf` | ` M` | **rỗng** |
+
+Dòng cuối là chỗ tôi đọc nhầm: `git status` báo `M` nhưng `git diff` và `git diff HEAD` đều **rỗng** — **không có một dòng nội dung nào đổi**. Đó là sổ ghi `stat` của index lệch (git `add` lúc file còn CRLF nên nhớ kích thước bản CRLF), không phải khác nội dung. Tôi thấy "211 file M" rồi suy ra "211 file lưu CRLF trong git" — **suy từ một triệu chứng ra một nguyên nhân, không đo**, đúng họ lỗi §3.6 của repo.
+
+**Hệ quả:** không còn việc gì để làm. `git add --renormalize .` mà tôi định đề xuất sẽ **không đổi một byte nào** vì không có gì để chuẩn hoá. Cả hai vế đều đã sạch: 0 file CRLF trong git, 0 file CRLF trên đĩa, `git status` rỗng.
+
+**Phần vẫn đúng của mục này:** ba bài học về công cụ sửa hàng loạt (`newline="
+"`, đừng đọc-ghi byte trên `git ls-files` vì có nhị phân, "211 file đổi" là tín hiệu dừng) — cả ba giữ nguyên.
 
 ---
 
@@ -462,7 +487,7 @@ Cộng `npm test` → **7/7** *(bộ node lần đầu có script chạy)*.
 
 | # | Việc | Vì sao không gộp vào đây |
 |---|---|---|
-| 1 | **211 file lưu CRLF trong git** dù `.gitattributes` khai `* text=auto eol=lf` (vào repo trước khi có dòng đó) | Đường đúng là `git add --renormalize .` thành **một commit riêng**. Chạm 211 file trong một lát dọn 47 mục là đã đi lạc |
+| 1 | ~~211 file lưu CRLF trong git~~ — **rút lại 2026-09-07: chẩn đoán sai, không có việc gì để làm.** `git ls-files --eol` cho 738/738 file `i/lf w/lf`; `git diff` ở bước gây hiểu nhầm là **rỗng**. Chi tiết ở đính chính mục Task 5 | — |
 | 2 | **2 nhánh remote** `origin/feat/intraday-refresh` · `origin/feat/news-collect` | `git push origin --delete …` — hành động ra ngoài |
 | 3 | **`ruff` chưa vào `pyproject.toml`** | Lát này chạy `uvx ruff` tạm. Thêm vào `dependency-groups.dev` + một bước lint là **quyết định quy trình**, thuộc lát 12/13 |
 
