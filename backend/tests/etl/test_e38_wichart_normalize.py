@@ -59,6 +59,40 @@ def test_asset_scale_and_unit_gold_cotton_fuel():
     assert e5.value == Decimal("22480") and e5.code == "gasoline_e5_vn"
 
 
+def test_phan_ure_two_series_share_one_key_and_both_land_with_scale_one():
+    """Hai series hàng hoá trong CÙNG một key — `phan_ure` idx 0/1 (§9: scale 1, VND/kg).
+
+    Tới 2026-09-07 chưa test nào chạm hai series này dù chúng chạy vào kho mỗi lượt, và
+    fixture thật đã nằm sẵn từ lát 6. Literal đọc tay từ `phan_ure.json`; 28/08/2026 là
+    THỨ SÁU nên điểm chép lại của nó không rơi vào luật bỏ điểm cuối tuần.
+    """
+    phumy = wn.series_points(REG[("phan_ure", 0)], _series("phan_ure"))
+    camau = wn.series_points(REG[("phan_ure", 1)], _series("phan_ure"))
+    raw = len(_series("phan_ure")[0]["data"])
+    assert raw == 588                       # đếm tay trong fixture
+    assert 0 < len(phumy) < raw             # luật bỏ điểm cuối tuần chép lại PHẢI cắt bớt
+    assert _last(phumy).obs_date == date(2026, 8, 28) and _last(phumy).value == Decimal("11700")
+    assert _last(camau).obs_date == date(2026, 8, 28) and _last(camau).value == Decimal("12150")
+    assert _last(phumy).code == "urea_phumy" and _last(camau).code == "urea_camau"
+    assert {p.domain for p in phumy} == {"asset"} and _last(phumy).price_type == "spot"
+    # điểm cũ nhất: 05/09/2024, hai series khác giá nhau -> không phải một series bị chép đôi
+    oldest = {p.obs_date: p.value for p in phumy}[date(2024, 9, 5)]
+    assert oldest == Decimal("9850") and {p.obs_date: p.value for p in camau}[date(2024, 9, 5)] == Decimal("10250")
+
+
+def test_quarterly_percent_series_on_real_capture_anchors_to_quarter_start():
+    """`tn` (thất nghiệp, freq q, scale 1, %) trên BẢN THU THẬT.
+
+    Test âm của `tn` ở dưới dùng đầu vào bịa (quý neo tháng 5) — đúng thiết kế, nó phải bịa.
+    Nhưng vì thế bản thu thật `tn.json` chưa từng được khẳng định. Nguồn neo 01/06 = Q2 ⇒
+    chuẩn hoá về 01/04, cùng luật đã kiểm ở `gdp` nhưng đây là chuỗi KHÔNG scale, đơn vị %.
+    """
+    pts = wn.series_points(REG[("tn", 0)], _series("tn"))
+    last = _last(pts)
+    assert len(pts) == 46 and last.obs_date == date(2026, 4, 1) and last.value == Decimal("2.23")
+    assert last.domain == "macro" and last.code == "vn.unemployment" and last.price_type is None
+
+
 def test_weekend_point_equal_to_previous_is_dropped_but_a_different_one_is_kept():
     by_date = {p.obs_date: p.value for p in wn.series_points(REG[("lua", 0)], _series("lua"))}
     assert date(2024, 10, 5) not in by_date and by_date[date(2024, 10, 4)] == Decimal("8458")   # T7 chép lại T6

@@ -574,17 +574,21 @@ Kho là tài sản — không đặt retention drop. Nén cột của TimescaleD
 ### 6.1 Từ điển chỉ tiêu
 
 ```sql
-CREATE TABLE metric_dictionary (
-  code       text PRIMARY KEY,   -- chuẩn hoá chữ thường: rtq12
+CREATE TABLE market.metric_dictionary (
+  dictionary text NOT NULL CHECK (dictionary IN ('screener_params','field_dictionary')),
+  code       text NOT NULL,      -- chuẩn hoá chữ thường: rtq12
   name_vi    text,
   name_en    text,
-  unit       text,               -- VND | Percentage | ThousandUnit | Unit
+  unit       text,               -- don_vi_du_lieu — KHÔNG phải nhãn unit của API
   value_min  numeric,            -- valueRange[0] toàn thị trường
-  value_max  numeric
+  value_max  numeric,
+  PRIMARY KEY (dictionary, code)
 );
 ```
 
-Nạp từ `Screener/GetScreenerParameters` — 83 tiêu chí, kèm tên tiếng Việt và đơn vị.
+*(DDL thật, migration [`0004_market_data.py`](../../database/migrations/versions/0004_market_data.py) — cập nhật 2026-09-07 sau khi audit bắt bản cũ ghi khoá chính chỉ có `code`.)*
+
+**Nạp từ hai nguồn, và đó là lý do khoá chính có cột `dictionary`:** `Screener/GetScreenerParameters` **83 tiêu chí** (`dictionary='screener_params'`) và từ điển mã trường FiinGroup **729 mã** (`dictionary='field_dictionary'`, nạp ở lát 5). Hai bộ **dùng chung không gian mã** — không tách bằng cột này thì mã trùng tên ở hai bộ sẽ đè nhau im lặng.
 
 ⚠️ Endpoint trả mã viết hoa chữ đầu (`Rtq12`), dữ liệu trả về viết thường (`rtq12`). **Chuẩn hoá về chữ thường khi nạp.**
 
@@ -612,7 +616,9 @@ GROUP BY 1,2,3;
 
 ⚠️ Ví dụ trên dùng tên bảng `organization`/`organ_code` — đây là **lược đồ cũ, trước [spec 2026-08-25](../90-records/plans/2026-08-25-postgres-data-schema/)**; tên thật hiện nay là `market.issuer` / `market.security` (xem banner đầu trang và §5.1). Giữ nguyên ví dụ làm minh hoạ ý tưởng view, không phải DDL hiện hành.
 
-Bộ view tối thiểu: `v_financial_ratios` · `v_price_adjusted` · `v_company_profile` · `v_corporate_calendar` · `v_money_flow`.
+🔴 **Bộ view này chưa bao giờ được dựng, và nay không cần nữa** *(rà 2026-09-07)*. Năm cái tên đề xuất ban đầu — `v_financial_ratios` · `v_price_adjusted` · `v_company_profile` · `v_corporate_calendar` · `v_money_flow` — **không có cái nào trong migration**. Lý do chúng hết cần thiết nằm ngay ở §6.3: **function calling thay đúng vai trò đó**. Chín công cụ ở `backend/agent/tools/` đọc thẳng `market.financial_statement` / `price_daily` / `screener_daily` rồi tự đặt tên người-đọc-được **trong payload trả về** (bảng nhãn ở `backend/agent/labels.py`) — làm ở tầng ứng dụng thì đổi nhãn không phải chạy migration.
+
+View thật đang có trong kho chỉ có ba, và cả ba sinh ra vì lý do khác: `market.price_factor` (hệ số điều chỉnh giá) · `macro.observation_spliced` (chuỗi đã nối) · `market.v_issuer_industry` (`COALESCE` ngành lớp 2 lên lớp 1).
 
 ### 6.3 Function calling thay vì SQL tự do
 

@@ -2,12 +2,12 @@
 
 **Ngày:** 2026-08-14 · **Trạng thái:** ✅ **đã dựng và kiểm chứng thực tế 2026-09-07** — xem hồ sơ [`90-records/plans/2026-09-07-semantic-layer/`](../90-records/plans/2026-09-07-semantic-layer/)
 
-Hai đầu của hợp đồng này đã tồn tại và đều đã được test riêng. Phần ở giữa thì chưa ai viết:
+Hai đầu của hợp đồng này đã tồn tại và đều đã được test riêng. Phần ở giữa **nay đã dựng — lát 10, 2026-09-07**; bảng dưới là hai đầu đó:
 
 | Đầu | Đã có gì | Ở đâu |
 |---|---|---|
 | **Dữ liệu** | 9 function, từ điển chỉ tiêu, bộ view người-đọc-được | [kho dữ liệu §6](market-data-store.md) |
-| **Tri thức** | Kiến trúc phân tầng L1/L2, đã test 6 vòng | [`backend/agent/skills/`](../../backend/agent/skills/) |
+| **Tri thức** | Kiến trúc phân tầng L1/L2; bộ hồi quy hiện hành là **vòng 7** (bộ vòng 6 đã mất khỏi repo) | [`backend/agent/skills/`](../../backend/agent/skills/) |
 
 Tài liệu này viết phần ở giữa. Nó **không lặp lại** §6 của kho dữ liệu — đọc file đó trước.
 

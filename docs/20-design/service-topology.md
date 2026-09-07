@@ -118,9 +118,12 @@ backend/
 ├── core/            thư viện lõi dùng chung (db, clients, ratelimit, config, dictionary)
 │   └── llm/         gọi MiniMax M3 — SDK anthropic trỏ api.minimax.io/anthropic: structured() ép công cụ + Pydantic, quota, đếm token (lát 9a, 2026-09-06)
 ├── ingester/        entrypoint daemon realtime
-├── etl/             entrypoint job theo lịch + các crawler
+├── etl/             entrypoint job theo lịch + các crawler — 15 họ job
 ├── api/             entrypoint FastAPI
-└── agent/skills/    hai skill chứng khoán (đã có, sản phẩm chạy được)
+└── agent/           tầng ngữ nghĩa (lát 10, 2026-09-07) — entrypoint `python -m agent`
+    ├── tools/       9 function đọc kho dưới role dlck_api (user agent_reader)
+    ├── skills/      hai skill chứng khoán (đã có, sản phẩm chạy được)
+    └── *.py         chat REPL · system_prompt 4 block · db · format · labels · llm_log
 ```
 
 | Tiến trình | Cổng (dev) | Ghi chú |

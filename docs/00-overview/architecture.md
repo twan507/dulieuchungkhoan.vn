@@ -11,7 +11,7 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
 ```
 ┌─ L0 · NGUỒN NGOÀI ─────────────────────────────────────────────────┐
 │  BVSC + FiinTrade        WiChart · SBV          8 báo điện tử      │
-│  44 REST + 5 topic RT    87 REST + 1 crawl      47 RSS + 6 crawler │
+│  44 REST + 5 topic RT    87 REST + 1 crawl      47 RSS + 8 crawl   │
 │  phái sinh · ETF/quỹ     FRED · ECB · Yahoo                        │
 │                          LBMA · Binance                            │
 └───────┬────────────────────────┬─────────────────────┬─────────────┘
@@ -50,7 +50,7 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
 | Thị trường Việt Nam | **BVSC + FiinTrade** — cổ phiếu, chỉ số, **phái sinh 14 hợp đồng**, **ETF/quỹ 31 mã**, BCTC, realtime | ETL + Ingester | [`market/`](../10-sources/market/) |
 | Vĩ mô Việt Nam | **WiChart** 87 key · **SBV** — OMO, crawl HTML *(mới 2026-08-15)* | ETL | [`macro/`](../10-sources/macro/) |
 | Bối cảnh quốc tế *(khối mới 2026-08-15)* | **FRED** 15 series vĩ mô Mỹ · **Frankfurter (ECB)** 6 cặp tiền + DXY dựng lại · **Yahoo** 36 chỉ số/21 nước · **LBMA** vàng-bạc từ 1968 · **Binance** PAXG + 10 đồng crypto | ETL | [`global/`](../10-sources/global/) |
-| Tin tức | **8 báo điện tử** — 47 RSS + 6 crawler | Gom tin · Lưới AI | [`news/`](../10-sources/news/) |
+| Tin tức | **8 báo điện tử** — 47 RSS + 8 nguồn crawl *(6 lượt thường + 2 sitemap backfill)* | Gom tin · Lưới AI | [`news/`](../10-sources/news/) |
 
 🔴 **Hai nguồn có ràng buộc thời gian mà thiết kế phải chịu, không thể vá về sau:**
 
@@ -137,13 +137,15 @@ Ba nguồn thị trường chồng lấn nhau nhiều: Screener 193 trường *(
 
 Đầy đủ tới từng mã trường — lấy/bỏ, nguồn chuẩn, lý do tại chỗ: [chọn trường cho ETL thị trường](../20-design/market-field-selection.md).
 
-## 4. Một lỗ hổng kiến trúc đã biết, chưa vá
+## 4. Một lỗ hổng kiến trúc đã biết — ✅ ĐÃ VÁ ở lát 10 (2026-09-07)
 
 Skill **không thể tự gác cổng phạm vi của chính nó.** Luật *"chỉ trả lời chứng khoán, tài chính, kinh tế"* nằm trong thân `SKILL.md` chỉ đọc được **sau khi skill đã tải** — mà câu ngoài phạm vi thì không kích hoạt skill nào, nên luật không bao giờ tới đúng lúc. Đo được ở vòng test 5: **3/4 câu ngoài phạm vi vẫn được trả lời đầy đủ**, kể cả viết trọn một đoạn code Python.
 
-Cách vá duy nhất: dán đoạn giới hạn phạm vi vào **system prompt của sản phẩm**, không nhét thêm vào skill. Nguyên văn đoạn cần dán nằm ở [`maintenance.md` §5](../30-skills/maintenance.md).
+Cách vá duy nhất: dán đoạn giới hạn phạm vi vào **system prompt của sản phẩm**, không nhét thêm vào skill. Nguyên văn đoạn cần dán nằm ở [`maintenance.md` §7](../30-skills/maintenance.md).
 
-**Đây là việc của tầng sản phẩm, không phải tầng skill.** Ghi ở đây để nó không rơi mất khi dựng backend.
+✅ **Đã làm, 2026-09-07:** đoạn đó nay là khối `SCOPE_GUARD` trong [`backend/agent/system_prompt.py`](../../backend/agent/system_prompt.py) — **block đầu tiên** của `build_system_blocks()`, đứng trước cả L1, nên nó tới trước mọi câu hỏi chứ không chờ skill tải. Ba block còn lại: L1 · `ANSWER_RULES` · luật công cụ mang ngày hôm nay. Nội dung `SCOPE_GUARD` trong code **khớp nguyên văn** đoạn ở `maintenance.md` §7 *(đối chiếu 2026-09-07: 587 ký tự, bằng nhau sau khi bỏ tiền tố blockquote)*.
+
+**Bài học giữ lại:** đây là việc của **tầng sản phẩm**, không phải tầng skill. Skill 3, 4 sau này cũng sẽ không tự gác cổng được — cửa duy nhất vẫn là system prompt.
 
 ## 5. Rủi ro pháp lý — không đồng đều giữa các nguồn
 

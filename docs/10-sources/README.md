@@ -22,7 +22,7 @@ Chín nguồn độc lập:
 | **Yahoo Finance** *(mới)* | [`global/yahoo.md`](global/yahoo.md) | Chỉ số quốc tế, lợi suất TPCP Mỹ, họ biến động, ETF quốc gia | 2026-08-15, 58 lời gọi, `200` trên 44/44 · đo lại 2026-09-05 (`quoteType` → `instrumentType`, cửa sổ ngắn trả 1 nến) · 2026-09-05 (lát 7b: Yahoo FX, tải) |
 | **LBMA** *(mới)* | [`global/commodities.md`](global/commodities.md) | Fixing vàng và bạc chính thức, lịch sử từ 1968 | 2026-08-15, 2 endpoint · đo lại 2026-09-05 (lược đồ JSON `{d, v:[USD,GBP,EUR]}`) |
 | **Binance** *(mới)* | [`global/crypto.md`](global/crypto.md) | Vàng token hoá 24/7 (PAXG) + 10 đồng crypto | 2026-08-15, 46/60 lời gọi · đo lại 2026-09-05 (nến cuối đang chạy) · 2026-09-05 (lát 7b: Yahoo FX, tải) |
-| 8 báo điện tử | [`news/README.md`](news/README.md) + [`news/article-structure.md`](news/article-structure.md) | 47 feed RSS + 6 crawler HTML, encoding, khối lượng, cấu trúc trang bài | 2026-08-13, 307 URL · 1.408 tiêu đề · cấu trúc trang bài 2026-08-15, 33 bài |
+| 8 báo điện tử | [`news/README.md`](news/README.md) + [`news/article-structure.md`](news/article-structure.md) | 47 feed RSS + 8 nguồn crawl HTML *(6 lượt thường + 2 sitemap backfill)*, encoding, khối lượng, cấu trúc trang bài | 2026-08-13, 307 URL · 1.408 tiêu đề · cấu trúc trang bài 2026-08-15, 33 bài |
 
 Mọi thông tin đều được **kiểm chứng bằng lời gọi thật**. Không có nội dung nào suy đoán từ tên endpoint. Riêng WiChart còn kèm **bộ tự kiểm chứng chạy được** ([`verify_wichart.py`](macro/verify_wichart.py)) đối chiếu từng khẳng định với API sống.
 
@@ -46,7 +46,7 @@ Mục này nói về phạm vi **tám nguồn API và crawl** (thị trường V
 | Realtime — Socket.IO BVSC | 1 kênh / 5 topic |
 | Crawl HTML — SBV (`sbv.gov.vn`) | 1 trang, **không có API** *(đo 2026-08-15)* |
 | REST — FRED (`api.stlouisfed.org`) | 8 nhóm endpoint đã gọi thật / **15 series** *(đo 2026-08-15)* |
-| REST — Frankfurter (`api.frankfurter.app`) | 3 dạng đường dẫn / **6 cặp tiền** dựng DXY *(đo 2026-08-15)* |
+| REST — Frankfurter (`api.frankfurter.dev/v1`) | 3 dạng đường dẫn / **6 cặp tiền** dựng DXY *(đo 2026-08-15)* |
 | REST — Yahoo Finance | 3 đường dẫn (`v8/finance/chart` · `v7/quote` · `v1/test/getcrumb`) *(đo 2026-08-15)* |
 | REST — LBMA (`prices.lbma.org.uk`) | 2 *(đo 2026-08-15)* |
 | REST — Binance (`api.binance.com`) | `/api/v3/klines` + WebSocket *(đo 2026-08-15)* |
@@ -84,6 +84,7 @@ Quyết định của chủ dự án, ghi ngày **2026-08-15**. Cả ba mục đ
 | Mục | Đi đường nào thay thế |
 |---|---|
 | **Realtime FiinTrade (SignalR)** | Dùng realtime của **BVSC** — [`market/11-bvsc-realtime.md`](market/11-bvsc-realtime.md). Đã chốt: không dựng hai kênh realtime song song |
+| **`DEXCHUS` của FRED** (CNY/USD) | Dùng **ECB** qua Frankfurter — một mốc fixing, chuỗi từ 2000-01-13. Bỏ khỏi registry FRED ở lát 7b *(2026-09-05, [`global/fred.md`](global/fred.md) §9)*; FRED nay nạp 14/15 series đã đo |
 
 #### (c) Đã kiểm — không nguồn nào có
 
@@ -139,7 +140,7 @@ Nhóm mới, lập 2026-08-15. **Lý do tách riêng:** chỉ số cổ phiếu 
 
 | File | Nội dung | Số nguồn |
 |---|---|---|
-| [news/README.md](news/README.md) | 47 feed RSS, 6 crawler HTML, quy tắc chuẩn hoá encoding và thời gian đăng, khối lượng đo được, nguồn đã loại | 8 báo |
+| [news/README.md](news/README.md) | 47 feed RSS, 8 nguồn crawl HTML (6 lượt thường + 2 sitemap backfill), quy tắc chuẩn hoá encoding và thời gian đăng, khối lượng đo được, nguồn đã loại | 8 báo |
 | [news/article-structure.md](news/article-structure.md) | **Cấu trúc trang bài** — selector container chính và luật bỏ boilerplate riêng từng nguồn, 61 selector kèm mức bằng chứng. Đo 2026-08-15 trên 33 bài; trang thô 94–527 KB | 8 báo |
 | [`news/feeds.json`](news/feeds.json) | Cùng nội dung ở dạng máy đọc — feed, taxonomy 20 sub, nhật ký loại bỏ | 47 feed |
 

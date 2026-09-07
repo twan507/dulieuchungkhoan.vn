@@ -217,7 +217,6 @@ def test_plan_delist_counts(db):
     _as_etl(db)
     t = _target()
     refdata_store.apply(db, t, [])
-    from dataclasses import replace
     t_no_acv = type(t)(securities=[s for s in t.securities if s.ticker != "ACV"],
                        issuers=t.issuers, icb=t.icb, counters=t.counters)
     delist, flips, listed = refdata_store.plan_delist(db, t_no_acv)

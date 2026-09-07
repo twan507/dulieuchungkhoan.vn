@@ -99,9 +99,16 @@ ngày đó, không đẻ dòng mới.
 | `2` | lỗi thật (thiếu `ETL_DATABASE_URL`, nguồn hỏng sau retry, DB lỗi) — `etl_run.status = failed`, không ghi kho |
 
 🔴 **Nguồn đóng dấu `tradingDate` = hôm nay ngay từ trước mở cửa, với `closePrice = 0`** (đo 2026-09-03).
-Chốt chặn vế (i) đòi **≥ 50 % số mã gom được có `closePrice > 0`**; không có vế này thì mỗi ngày nghỉ đẻ
+Chốt chặn vế (i) đòi **≥ 20 % số mã gom được có `closePrice > 0`**; không có vế này thì mỗi ngày nghỉ đẻ
 ~1.545 dòng ma. Ba vế còn lại: đủ trang · tỷ lệ không ghép được `security_id` ≤ 2 % · tỷ lệ `comGroupCode`
 lạ ≤ 2 %.
+
+🔴 **Vì sao 20 % chứ không phải 50 %** *(hạ 0.5 → 0.2 lúc 2026-09-03 13:38, sau lượt chạy thật đầu tiên)*:
+ngưỡng 0,5 đặt từ số đo **trang 1** (30/30 sau phiên vs 0/30 trước mở cửa), nhưng toàn thị trường **giữa
+phiên** chỉ đạt **831/1.545 = 53,8 %** — nhiều mã UPCoM chưa khớp lệnh — tức chỉ hơn ngưỡng 3,8 điểm. Hai
+hậu quả lệch hẳn nhau: từ chối nhầm một phiên thật là **mất vĩnh viễn** ảnh chụp ngày đó (Screener không có
+backfill), còn nhận nhầm một ngày nghỉ chỉ là vài dòng ma xoá được. Nên ngưỡng phải nằm **xa vùng phiên
+thật**: 0,2 ở giữa 0 % (ngày không phiên, đo 2 lần) và 53,8 % (phiên thật tệ nhất đo được).
 
 ## Chạy job events (lịch sự kiện doanh nghiệp)
 
@@ -311,7 +318,7 @@ uv run python -m etl binance --intraday          # limit=3 (thay 40), 11 mã, đ
 uv run python -m etl wichart --intraday          # 47 key tần suất ngày (freq='d', bỏ vĩ mô tháng/quý/năm), guard tỷ lệ; KHÔNG đẩy watermark, KHÔNG lưu body raw_payload trừ khi từ chối
 ```
 
-`--intraday` chỉ có ở `yahoo`/`binance`/`wichart` (FRED/ECB/LBMA nhận cờ rồi bỏ qua, không có nến/điểm trong ngày để cập nhật); **loại trừ với `--backfill`** và với `--keys` của `wichart` — dùng cùng lúc là `exit 2` trước khi mở lượt. Nến/điểm của Yahoo và Binance nay **là nến đang chạy, ghi đè liên tục tới khi phiên đóng** (luật cũ "bỏ nến chưa đóng"/`currentTradingPeriod`, `closeTime > now` đã gỡ hẳn — cả lượt trọn lẫn `--intraday`); dedupe theo ngày sàn, nến sau ghi đè nến trước. `stats["intraday"] = True` mỗi lượt; `stats.changed > 0` của Yahoo/Binance/WiChart-hàng-hoá ở **mọi** lượt `--intraday` là **hành vi mong đợi**, không phải bất thường. Mọi lời gọi HTTP của cả 6 nguồn (kể cả lượt trọn) nay giãn cách **ngẫu nhiên đều 1–5 s** qua `http_fetch` chung (thay `MIN_INTERVAL` cố định theo nguồn).
+`--intraday` chỉ có ở `yahoo`/`binance`/`wichart`. FRED/ECB/LBMA **không có cờ này** — không có nến/điểm trong ngày để cập nhật — nên truyền vào là `exit 2` (`unrecognized arguments`), không phải "nhận rồi bỏ qua". `--backfill` cũng vậy: chỉ `yahoo`/`binance` có ([`__main__.py:150-152`](etl/__main__.py)). Với `yahoo`/`binance`, `--intraday` **loại trừ với `--backfill`** và với `--keys` của `wichart` — dùng cùng lúc là `exit 2` trước khi mở lượt. Nến/điểm của Yahoo và Binance nay **là nến đang chạy, ghi đè liên tục tới khi phiên đóng** (luật cũ "bỏ nến chưa đóng"/`currentTradingPeriod`, `closeTime > now` đã gỡ hẳn — cả lượt trọn lẫn `--intraday`); dedupe theo ngày sàn, nến sau ghi đè nến trước. `stats["intraday"] = True` mỗi lượt; `stats.changed > 0` của Yahoo/Binance/WiChart-hàng-hoá ở **mọi** lượt `--intraday` là **hành vi mong đợi**, không phải bất thường. Mọi lời gọi HTTP của cả 6 nguồn (kể cả lượt trọn) nay giãn cách **ngẫu nhiên đều 1–5 s** qua `http_fetch` chung (thay `MIN_INTERVAL` cố định theo nguồn).
 
 Đo 2026-09-05: cả 5 lượt hằng ngày **66 lời gọi ≈ 2 phút**, 0 retry; backfill Yahoo 37 lời gọi / 335.601 nến, Binance 39 lời gọi / 30.951 nến. Tải `--intraday` (17:20–17:39 VN): Yahoo 216 lời gọi/16 phút, WiChart 296 lời gọi/19 phút, cả hai **0 lỗi** — mức đó an toàn cho nhịp kế hoạch. Test sau lát 7b: **729 passed, 2 skipped** (+20 so với lát 7). Hồ sơ: [`docs/90-records/plans/2026-09-05-global-etl/`](../docs/90-records/plans/2026-09-05-global-etl/) (spec §5 luật từng nguồn, 6 file đo, ledger nghiệm thu) · [`docs/90-records/plans/2026-09-05-intraday-refresh/`](../docs/90-records/plans/2026-09-05-intraday-refresh/) (lát 7b: `--intraday`, 17 cặp FX Yahoo, CNY về ECB).
 

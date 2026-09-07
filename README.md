@@ -2,7 +2,7 @@
 
 Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập dữ liệu thị trường và tin tức từ nhiều nguồn, lưu vào kho riêng, phân phối lại qua REST và SSE, và một chatbot AI trả lời bằng phương pháp phân tích đã được hệ thống hoá thành skill.
 
-**Trạng thái — 2026-09-05:** thiết kế hoàn chỉnh, và **phần lõi thu thập dữ liệu đã chạy thật trong production** (6 job ETL — 5 REST FiinTrade + WiChart vĩ mô/hàng hoá — cộng ingester và OMO; roadmap chuẩn hoá thành 14 lát, lát 1–6 xong) — nhưng ⏸️ **mọi job ghi đang tạm tắt để ưu tiên dev** ([lộ trình §2 mục 4d](docs/00-overview/roadmap.md)). Mới nhất: **lát 5 `etl fundamentals` xong 2026-09-04 tối** — 27,3 triệu dòng BCTC cho 1.523 mã, roadmap chuẩn hoá 14 lát, tiếp theo lát 6 giám sát hợp đồng. Trước đó cùng ngày `etl price` (91.165 dòng, 38 phút tuần tự; `closePrice` là giá thô nên `close_raw` điền được cả 12,5 năm) và `etl snapshot` (234 lời gọi/ngày, ghi khi đổi); trước nữa `etl events` 2026-09-03 (sáu họ lịch sự kiện, **110.695 dòng**, 9 lời gọi) và `etl screener` (1.541 dòng/ngày, 52 trang). Ingester bắt tick realtime mỗi phiên *(phiên 28/08: **4.722.406 dòng** vào kho, đối chứng sổ sách **dư = 0** trên cả 5 bảng)*; hai kho đã có schema và dữ liệu thật; **596 test** xanh *(2026-09-05 sáng)* chạy trên Postgres/ClickHouse/Redis thật; 11 task chạy theo lịch Windows Scheduler. `api` và `frontend` **chưa bắt đầu**. Hai skill chứng khoán đã xong và đã test 6 vòng. **Không còn việc chặn nào phụ thuộc bên ngoài** — giấy phép WiFeed đã chốt và rate limit FiinGroup đã kiểm, cùng ngày 2026-08-15. Cùng ngày, một **đợt khảo sát nguồn 9 nguồn / ~400 lời gọi thật** đã khép độ rộng dữ liệu: thêm **6 nguồn mới** và mở **5 khối dữ liệu** trước nay bỏ trống.
+**Trạng thái — 2026-09-07:** thiết kế hoàn chỉnh, và **phần thu thập dữ liệu đã chạy thật trong production** (**15 họ job ETL** — 6 REST FiinTrade + OMO + WiChart + 5 nguồn quốc tế + tin + lưới AI phân loại — cộng ingester realtime; roadmap chuẩn hoá thành 15 lát, **lát 1–11 xong**) — nhưng ⏸️ **mọi job ghi đang tạm tắt để ưu tiên dev** ([lộ trình §2 mục 4d](docs/00-overview/roadmap.md)). Mới nhất: **lát 11 đóng hợp đồng tầng ngữ nghĩa, xong 2026-09-07** — chatbot gọi 9 function đọc kho dưới role chỉ-đọc, khối luật `ANSWER_RULES`, bộ hồi quy 15 câu đạt ngưỡng hình dạng 14/15; **tiếp theo lát 12 — đưa mọi job chạy được trong container**. Trước đó: lát 10 tầng ngữ nghĩa, lát 9a/9b lưới AI phân loại tin (MiniMax M3), lát 8/8b thu thập tin, lát 7/7b ETL quốc tế, lát 6 vĩ mô WiChart. Và trước nữa `etl fundamentals` 2026-09-04 (27,3 triệu dòng BCTC cho 1.523 mã), `etl price` (91.165 dòng, 38 phút tuần tự; `closePrice` là giá thô nên `close_raw` điền được cả 12,5 năm) và `etl snapshot` (234 lời gọi/ngày, ghi khi đổi); trước nữa `etl events` 2026-09-03 (sáu họ lịch sự kiện, **110.695 dòng**, 9 lời gọi) và `etl screener` (1.541 dòng/ngày, 52 trang). Ingester bắt tick realtime mỗi phiên *(phiên 28/08: **4.722.406 dòng** vào kho, đối chứng sổ sách **dư = 0** trên cả 5 bảng)*; hai kho đã có schema và dữ liệu thật; bộ test chạy trên Postgres/ClickHouse/Redis thật — **số test và cách chạy do [`database/README.md`](database/README.md) sở hữu**, không chép lại ở đây; 11 task Windows Scheduler đã đăng ký, **10 đang tắt** theo [4d]. `api` và `frontend` **chưa bắt đầu**. Hai skill chứng khoán đã xong; bộ hồi quy hiện hành là **vòng 7** dựng lại ở lát 10 *(bộ 10 câu vòng 6 đã mất khỏi repo — [bảo trì skill §6](docs/30-skills/maintenance.md))*. **Không còn việc chặn nào phụ thuộc bên ngoài** — giấy phép WiFeed đã chốt và rate limit FiinGroup đã kiểm, cùng ngày 2026-08-15. Cùng ngày, một **đợt khảo sát nguồn 9 nguồn / ~400 lời gọi thật** đã khép độ rộng dữ liệu: thêm **6 nguồn mới** và mở **5 khối dữ liệu** trước nay bỏ trống.
 
 **Stack chốt 2026-08-24:** Next.js · Python/FastAPI · Postgres + ClickHouse *(lưu tick thô — [ADR 0007](docs/00-overview/decisions/0007-monorepo-layout-and-stack.md))*.
 
@@ -13,13 +13,13 @@ Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập d
 | Từ điển 729 mã trường FiinGroup | ✅ phủ 100% response thật | [field-dictionary.json](docs/10-sources/market/field-dictionary.json) |
 | Chọn nguồn chuẩn cho từng chỉ tiêu | ✅ đã chốt | [chọn trường cho ETL thị trường](docs/20-design/market-field-selection.md) |
 | Dự án skill | ✅ **đã đóng**, không còn việc treo | [bảo trì skill](docs/30-skills/maintenance.md) |
-| Thiết kế kho dữ liệu · pipeline tin | ✅ đã duyệt | kho dữ liệu **đã cài**; pipeline tin chưa |
-| Tầng ngữ nghĩa nối dữ liệu ↔ skill | 🟡 đề xuất, **chưa duyệt** | [chatbot-semantic-layer.md](docs/20-design/chatbot-semantic-layer.md) |
-| Hai skill chứng khoán | ✅ xong, test 6 vòng, đã dừng tối ưu | 3.046 dòng |
+| Thiết kế kho dữ liệu · pipeline tin | ✅ đã duyệt, **cả hai đã cài** | kho dữ liệu từ lát 1–7b; pipeline tin lát 8/8b (thu thập) + 9a/9b (lưới AI) |
+| Tầng ngữ nghĩa nối dữ liệu ↔ skill | ✅ **dựng lát 10, đóng hợp đồng lát 11** (2026-09-07) | 9 function + vòng chat `python -m agent` — [chatbot-semantic-layer.md](docs/20-design/chatbot-semantic-layer.md) |
+| Hai skill chứng khoán | ✅ xong, đã dừng tối ưu; bộ hồi quy hiện hành là **vòng 7** (bộ vòng 6 đã mất khỏi repo) | 3.046 dòng |
 | Repo vào git | ✅ khởi tạo 2026-08-14 | commit đầu tiên |
-| **Hạ tầng + schema hai kho** | ✅ **2026-08-26** | Postgres **17 migration** (alembic) · ClickHouse **2** · compose PG+CH+Redis |
+| **Hạ tầng + schema hai kho** | ✅ **2026-08-26** | Postgres **20 migration** (alembic) · ClickHouse **2** · compose PG+CH+Redis |
 | **Ingester realtime** | ✅ **ghi thật từ 2026-08-27** — hàng đợi có trần, tràn ra đĩa khi kho trục trặc | 4,72 triệu dòng phiên 28/08 · chưa lần nào phải dùng tới đĩa |
-| **ETL theo lịch** | `etl omo` · `etl refdata` · **`etl screener`** (15:20) · **`etl events`** (18:10) · **`etl price`** (mới 2026-09-04, 15:40 — giá theo ngày + backfill 12,5 năm) — ⏸️ **tạm tắt, ưu tiên dev** ([lộ trình §2 mục 4d](docs/00-overview/roadmap.md)) | 11 task Scheduler, `LogonType=Interactive` (cửa sổ cmd hiện tên task đang chạy; đảo từ S4U 2026-09-04 để khỏi cần admin), đều `Disabled` (`dlck-price` 15:40 · `dlck-price-backfill` thứ 7 00:05 từ 2026-09-04) |
+| **ETL theo lịch** | Chỉ **6/15 họ job** có task: `etl omo` (4 mốc) · `etl refdata` (08:00) · `etl screener` (15:20) · `etl events` (18:10) · `etl price` (15:40) · `etl price --backfill` (thứ 7). Chín họ còn lại ra đời ở lát 6–9, **chưa từng có lịch** — lịch chung thuộc **lát 13**. ⏸️ **tạm tắt, ưu tiên dev** ([lộ trình §2 mục 4d](docs/00-overview/roadmap.md)) | 11 task Scheduler, `LogonType=Interactive` (cửa sổ cmd hiện tên task đang chạy; đảo từ S4U 2026-09-04 để khỏi cần admin); **10 `Disabled`, riêng `dlck-price-backfill` `Ready`** *(đọc trạng thái thật 2026-09-07)* |
 | **`api` · `frontend`** | ❌ chưa bắt đầu | |
 
 Bảng đầy đủ kèm bằng chứng: [lộ trình §0](docs/00-overview/roadmap.md).
@@ -39,7 +39,7 @@ Bảng đầy đủ kèm bằng chứng: [lộ trình §0](docs/00-overview/road
 | **Chỉ số quốc tế** *(mới)* | Yahoo Finance | **36 chỉ số / 21 nước** · lợi suất TPCP Mỹ · họ biến động |
 | **Vàng/bạc mốc chuẩn** *(mới)* | LBMA | từ **1968**, 14.662 điểm một lời gọi |
 | **Crypto + vàng 24/7** *(mới)* | Binance | 10 đồng · PAXG |
-| Tin tức | 8 báo điện tử | 47 RSS + 6 crawler |
+| Tin tức | 8 báo điện tử | 47 RSS + 8 nguồn crawl *(6 lượt thường + 2 sitemap chỉ backfill)* |
 
 ⛔ **Loại có chủ đích, đừng mở lại:** chứng quyền (342 mã) · lô lẻ (1.890 mã) · trái phiếu (187 mã) — **cả ba đều có dữ liệu**, loại vì không phục vụ phân tích · realtime FiinTrade *(dùng của BVSC)* · luồng cần đăng nhập. **Đã kiểm, không nguồn nào có:** NAV quỹ mở. Lý do từng mục: [phạm vi nguồn §2](docs/10-sources/README.md).
 
@@ -64,10 +64,12 @@ dulieuchungkhoan.vn/
 │   ├── 30-skills/       tài liệu bảo trì + corpus của hai skill
 │   └── 90-records/      hồ sơ làm việc: plans · surveys
 ├── frontend/            Next.js — chưa bắt đầu (mới có README)
-├── backend/             Python — ingester (chạy thật) · etl (omo · refdata · screener · events · price · snapshot · fundamentals) · api (chưa bắt đầu)
-│   ├── agent/skills/    vn-stock-advisor · vn-stock-knowledge — sản phẩm chạy được
-│   └── tests/           640 test *(2026-09-05, sau lát 6 và fix jitter `riskFreeRate`)*, chạy trên Postgres/ClickHouse/Redis THẬT
-├── database/            migrations: Postgres 17 (alembic) · ClickHouse 2
+├── backend/             Python — ingester (chạy thật) · etl 15 họ job · agent (tầng ngữ nghĩa) · api (chưa bắt đầu)
+│   ├── etl/             omo · refdata · screener · events · price · snapshot · fundamentals
+│   │                    wichart · fred · fx · lbma · yahoo · binance · news · classify
+│   ├── agent/           9 function + vòng chat terminal; agent/skills/ = hai skill chứng khoán
+│   └── tests/           chạy trên Postgres/ClickHouse/Redis THẬT — số test ở database/README.md
+├── database/            migrations: Postgres 20 (alembic) · ClickHouse 2
 ├── deploy/infra/        docker compose — Postgres · ClickHouse · Redis
 └── scripts/             register-tasks.ps1 — đăng ký 11 task Windows Scheduler
 ```
@@ -89,7 +91,9 @@ Kiến thức dựng lại nằm rải ở nhiều file — đây là chuỗi n�
 
    🔴 **Bước ba không được bỏ.** Migration `0013` seed 161 dòng gán ngành tay bằng cách phân giải ticker → `issuer_id` qua `market.security`; bảng đó còn **rỗng** lúc `0013` chạy ở bước một ⇒ nạp **0 dòng, không exception, không cảnh báo nào**, và job `etl refdata` sau đó vẫn báo y hệt trạng thái khoẻ mạnh.
 
-4. `cd backend && uv run pytest tests` — kỳ vọng **456 passed, 2 skipped** *(đo 2026-09-04)* *(hai skip là probe thủ công có cổng env: `RUN_PROBE`, `RUN_CHAOS`)*.
+4. `cd backend && uv run --env-file ../.env pytest tests` — số test kỳ vọng và ý nghĩa hai `skipped` do [`database/README.md`](database/README.md) sở hữu, **không chép lại ở đây** *(§1.7 — con số này từng nằm ở ba chỗ trong chính file README và cả ba nói khác nhau)*.
+
+   🔴 **`--env-file ../.env` là bắt buộc** nếu shell chưa export sẵn biến: `uv` không tự nạp `.env`, chạy trần trong shell sạch cho hàng trăm `error` ở bước fixture — **không phải test hỏng**.
 5. **Chỉ khi muốn máy đó ghi thật** — đăng ký 11 task Windows Scheduler, **không cần admin** *(từ 2026-09-04 task chạy `Interactive`: mỗi job một cửa sổ `cmd` có tiêu đề tên task, nút X bị job khoá — [service-topology §5](docs/20-design/service-topology.md))*. Phải là `pwsh` chứ không phải `powershell` *(file UTF-8 không BOM, PowerShell 5 đọc sai dấu)*:
 
    ```bash

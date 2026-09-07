@@ -624,8 +624,13 @@ def main():
             m.append(f'| `{t}` | {ISSUER_NAME.get(t, "")} | {why} |')
         m.append('')
 
-    open(os.path.join(here, 'industry-mapping.md'), 'w', encoding='utf-8').write(NL.join(m) + NL)
-    open(os.path.join(here, 'industry-mapping.json'), 'w', encoding='utf-8').write(json.dumps({
+    # newline='\n' BẮT BUỘC — không có nó thì trên Windows Python dịch '\n' thành CRLF, và
+    # lần chạy kế tiếp git báo TOÀN BỘ file thay đổi dù nội dung không đổi một chữ. Cùng khuôn
+    # với gen_field_selection.py; .gitattributes cũng ghim hai file sinh ra là eol=lf.
+    with open(os.path.join(here, 'industry-mapping.md'), 'w', encoding='utf-8', newline='\n') as f:
+        f.write(NL.join(m) + NL)
+    with open(os.path.join(here, 'industry-mapping.json'), 'w', encoding='utf-8', newline='\n') as f:
+        f.write(json.dumps({
         'do_ngay': DO_NGAY,
         'industries': [{'code': c, 'name_vi': n} for c, n in INDUSTRIES],
         'layer1': [{'icb_code': c, 'icb_level': int(cap[1]), 'icb_name': nm,

@@ -1,7 +1,5 @@
-import json
 import os
 import pathlib
-from datetime import date
 
 import pytest
 import sqlalchemy as sa

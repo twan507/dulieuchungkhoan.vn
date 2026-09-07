@@ -8,3 +8,8 @@
 # file thay đổi dù nội dung không đổi một chữ.
 docs/20-design/market-field-selection.md    text eol=lf
 docs/20-design/market-field-selection.json  text eol=lf
+
+# Hai file sinh boi docs/20-design/gen_industry_mapping.py — cung ly do nhu tren:
+# generator ghi voi newline LF tuong minh, phai ghim eol=lf de checkout khong tra ve CRLF.
+docs/20-design/industry-mapping.md          text eol=lf
+docs/20-design/industry-mapping.json        text eol=lf

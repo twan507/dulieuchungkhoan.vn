@@ -2,7 +2,7 @@
 cầu chì ModelDown, --dry-run không ghi. Client giả trả Structured theo kịch bản — không gọi model thật trong CI (test-strategy luật 1)."""
 import json
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta, timezone
 from types import SimpleNamespace
 
 import pytest

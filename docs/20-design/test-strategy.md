@@ -6,13 +6,13 @@
 
 | Lớp | Bộ công cụ |
 |---|---|
-| Backend (FastAPI: api · etl · ingester) | **pytest** + pytest-asyncio · mock HTTP bằng `httpx.MockTransport`/`respx` |
+| Backend (FastAPI: api · etl · ingester · agent) | **pytest** thuần · mock HTTP bằng `httpx.MockTransport` · test async gọi thẳng `asyncio.run(...)` |
 | Frontend (Next.js) | **Vitest** + React Testing Library · MSW cho tầng gọi API |
 | E2E (khi có FE/SSE) | **Playwright**, chỉ Chromium — 10–20 smoke critical path |
 
 ## Luật riêng theo stack
 
-1. 🔴 **Cấm gọi thật nguồn ngoài trong CI.** Mọi BVSC/FiinTrade/WiChart/FRED/ECB/Yahoo/LBMA/Binance mock bằng `httpx.MockTransport` hoặc `respx`. Test CI phải **deterministic và offline** — nguồn sống thay đổi/timeout sẽ làm CI đỏ giả.
+1. 🔴 **Cấm gọi thật nguồn ngoài trong CI.** Mọi BVSC/FiinTrade/WiChart/FRED/ECB/Yahoo/LBMA/Binance mock bằng `httpx.MockTransport`. Test CI phải **deterministic và offline** — nguồn sống thay đổi/timeout sẽ làm CI đỏ giả.
    > **Tách hoàn toàn với "giám sát hợp đồng".** Việc gọi **live** để bắt nguồn đổi schema/độ tươi là [giám sát hợp đồng](market-data-store.md#71-giám-sát-hợp-đồng-dữ-liệu) — chạy theo lịch, **không phải** test CI. Trộn hai thứ này làm CI phụ thuộc nguồn ngoài.
 
 2. 🔴 **DB test là Postgres + ClickHouse THẬT** (service container trong CI), **không SQLite/in-memory.** pgvector, JSONB, materialized view sinh nến của ClickHouse sẽ cho **test xanh giả** trên engine giả lập. Tăng tốc bằng reuse-db / bỏ migration nơi an toàn, không bằng đổi engine.

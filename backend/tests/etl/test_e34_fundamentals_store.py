@@ -66,7 +66,7 @@ def _fetched(iid, kind, name, found_by="floor", item=None):
 
 def test_due_list_floor_takes_never_checked_first_then_the_oldest_within_quota(db):
     _quiet(db)
-    a = _issuer(db, "A", "ZZA", "ZZA")
+    _issuer(db, "A", "ZZA", "ZZA")          # chua kiem bao gio -> phai dung dau hang
     b = _issuer(db, "B", "ZZB", "ZZB")
     c = _issuer(db, "C", "ZZC", "ZZC")
     _checked(db, b, "bs", 100)                  # quá nhịp 90 ⇒ tới hạn

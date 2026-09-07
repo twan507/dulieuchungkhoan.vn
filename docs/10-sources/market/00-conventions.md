@@ -166,7 +166,7 @@ BVSC trả HTTP status đúng nghĩa: `404` cho endpoint không tồn tại, `20
 
 ---
 
-## 7. Mười ba bẫy triển khai
+## 7. Mười bốn bẫy triển khai
 
 ### Bẫy 1 — `organCode` khác `ticker` ở 41% doanh nghiệp
 

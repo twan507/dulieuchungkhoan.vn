@@ -122,8 +122,8 @@ def vps_ch(tmp_path_factory):
         errfile = diag_dir / "err.log"
         if errfile.exists():
             errtext = errfile.read_text(encoding="utf-8", errors="replace")[-3000:]
-        print(f"\n[DEBUG-VPS] container state: {status}")
-        print(f"[DEBUG-VPS] err.log tail:\n{errtext}")
+        print(f"\n[probe-vps] container state: {status}")
+        print(f"[probe-vps] err.log tail:\n{errtext}")
 
     try:
         # 180s (thay vì 60s như fixture `ch` DEV): container này khởi động NGAY sau khi
