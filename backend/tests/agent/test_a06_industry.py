@@ -52,6 +52,20 @@ def test_ma_khong_ton_tai(db, kho):
     assert json.loads(cay_nganh(db, ticker="ZZZZ"))["tim_thay"] is False
 
 
+def test_chi_so_chua_gan_nganh_bao_dung_loai_khong_phai_luon_la_etf(db, kho):
+    """B1 (review lát 10): nhánh 'chưa gán ngành' từng nói cứng ly_do "quỹ/ETF theo thiết kế
+    không có ngành" — sai với VNINDEX (loại 'index', không phải quỹ/ETF; issuer_id=None trong
+    fixture nên _SQL_NGANH_CUA_MA không ra dòng nào). CLAUDE.md §3.6 cấm suy loại thật từ một
+    quan sát hẹp — ly_do phải lấy đúng `loai` từ resolve_ticker, và response phải kèm trường
+    `loai` như các hàm anh em (get_price_series, get_financials)."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(cay_nganh(db, ticker="VNINDEX"))
+    assert out["tim_thay"] is True
+    assert out["co_du_lieu"] is False
+    assert out["loai"] == "index"
+    assert "etf" not in out["ly_do"].lower() and "quỹ" not in out["ly_do"]
+
+
 def test_industry_code_khong_ton_tai_thi_khong_khang_dinh_co_that(db, kho):
     """F5 (review CHUẨN lát 10, vòng 3): bản sửa F7 (vòng 2) từng khoá industry_code lạ vào
     {"tim_thay": True, "co_du_lieu": False, "so_dong": 0, "nhom": []} — khẳng định một mã

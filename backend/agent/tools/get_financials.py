@@ -19,7 +19,11 @@ from agent.format import display_metric
 from agent.labels import DEFAULT_BY_STATEMENT, LABELS
 from agent.tools._shared import khong_co_du_lieu, resolve_ticker, rong, to_json
 
-TRAN_KY = 8
+# Nới 8 -> 20 kỳ — chủ dự án chốt 2026-09-07 "nới các giới hạn thoải mái ra, không phải sợ
+# quá tốn kém token": ngữ cảnh model 1 triệu token không thiếu chỗ chứa; trần chỉ còn để bắt
+# ca bệnh (model xin hàng trăm kỳ), không chặn phân tích chuỗi dài bình thường (20 kỳ năm ~
+# 20 năm báo cáo, 20 kỳ quý ~ 5 năm).
+TRAN_KY = 20
 
 # hình dạng #2 (spec §4.6): đo kho thật 2026-09-07 — TOÀN BỘ market.financial_statement (27,3
 # triệu dòng) chỉ thuộc issuer của mã 'stock' (1.523 issuer, khớp docstring đầu file); 0 issuer

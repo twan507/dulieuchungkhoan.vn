@@ -61,11 +61,18 @@ def test_chi_so_khong_co_bctc_la_hinh_dang_2_khong_phai_rong(db, kho):
 
 def test_tran_tam_nam(db, kho):
     """Kho fixture chỉ seed ĐÚNG 1 năm (2024) cho FPT (BCTC_FPT_2024 trong conftest.py) — không
-    đủ để lộ hành vi cắt trần thật (trần 8 kỳ, theo Ràng buộc toàn cục của plan). Chèn thêm 14
-    năm `isa3` NGAY TRONG TEST này (không đụng conftest.py — đúng luật "không sửa file dùng
-    chung") để có 15 năm > TRAN_KY=8, rồi kiểm hàm cắt đúng 8 và báo da_cat=True.
+    đủ để lộ hành vi cắt trần thật. Chèn thêm nhiều năm `isa3` NGAY TRONG TEST này (không đụng
+    conftest.py — đúng luật "không sửa file dùng chung") để vượt TRAN_KY, rồi kiểm hàm cắt
+    đúng TRAN_KY và báo da_cat=True.
+
+    Dùng chính hằng số TRAN_KY của module (không mã hoá cứng số kỳ) — trần đã nới 8 -> 20
+    (chủ dự án chốt 2026-09-07), khoá cứng "15 năm > 8" như bản cũ sẽ không còn vượt trần mới
+    và làm test hoá xanh giả (§4.4.4: tiêu chí phải bất biến, không phải số thời điểm).
     """
-    for nam in range(2010, 2024):  # 2010..2023 — 14 năm, cộng năm 2024 sẵn có trong kho = 15
+    from agent.tools.get_financials import TRAN_KY
+    nam_them = TRAN_KY + 6  # đủ dư để chắc chắn vượt trần dù trần đổi tiếp sau này
+    for i in range(nam_them):
+        nam = 2024 - 1 - i  # 2023, 2022, ... — không đụng năm 2024 sẵn có trong kho
         db.execute(sa.text(
             "INSERT INTO market.financial_statement"
             " (issuer_id, year_report, length_report, statement_type, metric_code, value)"
@@ -73,7 +80,8 @@ def test_tran_tam_nam(db, kho):
             {"i": kho["issuer:FPT"], "y": nam, "v": nam * 1_000_000_000})
     db.execute(sa.text("SET LOCAL ROLE dlck_api"))
     out = json.loads(bao_cao_tai_chinh(db, "FPT", "IS", 2000, 2024))
-    assert len(out["du_lieu"]) <= 8
+    assert nam_them + 1 > TRAN_KY  # +1 vì năm 2024 sẵn có trong kho cũng thuộc IS/isa3
+    assert len(out["du_lieu"]) <= TRAN_KY
     assert out["da_cat"] is True
 
 

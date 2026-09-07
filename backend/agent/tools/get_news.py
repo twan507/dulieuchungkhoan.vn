@@ -81,7 +81,9 @@ def tim_tin(conn: sa.Connection, query: str | None = None, ticker: str | None = 
     ma = resolve_ticker(conn, ticker) if ticker else None
     if ma is not None and not ma["tim_thay"]:
         return to_json(ma)
-    lim = cap_limit(limit, 10, 30)
+    # Trần 15/100 (cũ 10/30) — chủ dự án chốt 2026-09-07: nới trần thoải mái, ngữ cảnh model
+    # 1 triệu token không thiếu chỗ chứa; trần chỉ còn để bắt ca bệnh, không chặn ca thường.
+    lim = cap_limit(limit, 15, 100)
     p = {"q": query, "tk": ma["ticker"] if ma else None, "g": group_no, "sub": sub,
          "nganh": industry_code, "tu": from_date, "den": to_date, "lim": lim}
 

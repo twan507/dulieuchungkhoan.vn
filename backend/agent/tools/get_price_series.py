@@ -5,12 +5,17 @@ Kho CHỈ có giá cổ phiếu đang niêm yết — đo trên kho dev 2026-09-
 0 dòng cho `etf`, và **0/442** mã `delisted`. Vì vậy mọi loại khác 'stock' và mọi mã đã huỷ
 niêm yết ra hình dạng "có mã, không có dữ liệu" — nói thẳng còn hơn để model đoán.
 
-N5/G1 (review CHUẨN lát 10, vòng 2): TRAN_PHIEN=400 cắt câm — đo kho thật 2026-09-07, mã BT6
-có 5.764 phiên (2002-04-18..2026-09-04) nhưng hàm chỉ trả 400 phiên, không cờ nào báo đã cắt;
-356 mã đang niêm yết có >400 phiên. `ORDER BY trading_date DESC LIMIT 400` giữ 400 phiên GẦN
-NHẤT trong khoảng hỏi (không phải 400 phiên đầu khoảng) — hành vi này giữ nguyên vì hợp lý hơn
-cho câu hỏi thường gặp ("giá gần đây"), nhưng giờ báo tường minh qua `da_cat`/`tong_khop`
-(cùng khuôn get_news.tim_tin) và `ghi_chu` nói rõ đây là phiên gần nhất, không phải phiên đầu.
+N5/G1 (review CHUẨN lát 10, vòng 2): TRAN_PHIEN cắt câm nếu không báo cờ — đo kho thật
+2026-09-07, mã BT6 có 5.764 phiên (2002-04-18..2026-09-04); 356 mã đang niêm yết có >400 phiên
+(trần cũ). `ORDER BY trading_date DESC LIMIT :lim` giữ các phiên GẦN NHẤT trong khoảng hỏi
+(không phải phiên đầu khoảng) — hành vi này giữ nguyên vì hợp lý hơn cho câu hỏi thường gặp
+("giá gần đây"), nhưng báo tường minh qua `da_cat`/`tong_khop` (cùng khuôn get_news.tim_tin)
+và `ghi_chu` nói rõ đây là phiên gần nhất, không phải phiên đầu.
+
+TRAN_PHIEN nới 400 -> 2000 (~8 năm phiên): chủ dự án chốt 2026-09-07 "nới các giới hạn thoải
+mái ra, không phải sợ quá tốn kém token" — ngữ cảnh model 1 triệu token không thiếu chỗ chứa.
+BT6 (5.764 phiên) vẫn vượt 2000 nên vẫn cần cờ da_cat cho các mã niêm yết lâu năm, nhưng 2000
+đủ phủ phần lớn nhu cầu phân tích gần đây mà trần 400 cũ cắt mất.
 """
 from __future__ import annotations
 
@@ -22,7 +27,7 @@ from agent.tools._shared import co_du_lieu, khong_co_du_lieu, resolve_ticker, ro
 _LY_DO = {"index": "kho chưa có dữ liệu giá cho chỉ số",
           "etf": "kho chưa có dữ liệu giá cho chứng chỉ quỹ ETF",
           "fund_cert": "kho chưa có dữ liệu giá cho chứng chỉ quỹ"}
-TRAN_PHIEN = 400
+TRAN_PHIEN = 2000
 
 _SQL_KHOANG = sa.text(
     "SELECT min(trading_date), max(trading_date) FROM market.price_daily WHERE security_id = :sid")

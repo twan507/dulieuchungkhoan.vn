@@ -28,7 +28,11 @@ from agent.format import display_metric
 from agent.labels import DEFAULT_RATIOS, LABELS
 from agent.tools._shared import co_du_lieu, resolve_ticker, rong, to_json
 
-TRAN_MA, TRAN_CHI_TIEU = 10, 8
+# Nới 10/8 -> 25/15 (mã / chỉ tiêu) — chủ dự án chốt 2026-09-07 "nới các giới hạn thoải mái
+# ra, không phải sợ quá tốn kém token": ngữ cảnh model 1 triệu token không thiếu chỗ chứa;
+# trần chỉ còn để bắt ca bệnh (model xin so sánh hàng trăm mã), không chặn so sánh nhóm ngành
+# cỡ thường gặp.
+TRAN_MA, TRAN_CHI_TIEU = 25, 15
 
 
 def so_sanh_cung_nganh(conn: sa.Connection, tickers: list[str] | None = None,
@@ -88,7 +92,10 @@ def so_sanh_cung_nganh(conn: sa.Connection, tickers: list[str] | None = None,
     if not rows:
         out_rong = {**rong(), "ngay_du_lieu": str(ngay)}
         if khong_ton_tai:
+            # B3 (review lát 10): mọi nhánh có mã trượt phải kèm goi_y của ĐÚNG những mã đó —
+            # cùng khuôn với nhánh "không mã nào hợp lệ" ở trên (F1), không chỉ liệt tên suông.
             out_rong["khong_tim_thay"] = khong_ton_tai
+            out_rong["goi_y"] = {t: tra[t]["goi_y"] for t in khong_ton_tai}
         if ma_hop_le:
             out_rong["khong_co_du_lieu_phien"] = ma_hop_le
         return to_json(out_rong)
@@ -107,11 +114,20 @@ def so_sanh_cung_nganh(conn: sa.Connection, tickers: list[str] | None = None,
         du_lieu.append({"ma": r.ticker, "nganh": r.nganh, "chi_tieu": ct})
 
     # N4: cắt câm ở TRAN_MA + nuốt mã không tra được — cả hai phải báo rõ, không im lặng.
-    # len(mas_xin) > TRAN_MA: biết CHẮC ngay từ Python (đã cắt trước khi truy vấn).
-    # len(rows) >= TRAN_MA: industry_code có thể còn nhiều mã hơn TRAN_MA, suy từ kết quả thật.
-    extra = {"ngay_du_lieu": str(ngay), "da_cat": len(mas_xin) > TRAN_MA or len(rows) >= TRAN_MA}
+    # len(mas_xin) > TRAN_MA: biết CHẮC ngay từ Python (đã cắt trước khi truy vấn) — đúng với
+    # CẢ hai nhánh (có tickers hay chỉ industry_code), vì mas_xin rỗng thì > TRAN_MA luôn False.
+    # len(rows) >= TRAN_MA: industry_code có thể còn nhiều mã hơn TRAN_MA, suy từ kết quả thật
+    #   — CHỈ đáng tin khi KHÔNG có danh sách mã tường minh (mas_xin rỗng). B2 (review lát 10):
+    #   điều kiện cũ áp luôn cả khi mas_xin có mã, gây dương tính giả — hỏi ĐÚNG TRAN_MA mã hợp
+    #   lệ (không hơn) và tất cả đều có phiên screener thì rows == TRAN_MA dù KHÔNG có gì bị cắt
+    #   (kết quả đã bị chặn bởi chính danh sách mas_xin, không phải bởi LIMIT). Khi mas_xin có
+    #   mã, cỡ cắt thật duy nhất là len(mas_xin) > TRAN_MA — đã xét ở vế trái.
+    da_cat = len(mas_xin) > TRAN_MA or (not mas_xin and len(rows) >= TRAN_MA)
+    extra = {"ngay_du_lieu": str(ngay), "da_cat": da_cat}
     if khong_ton_tai:
         extra["khong_tim_thay"] = khong_ton_tai
+        # B3: đồng bộ với nhánh "if not rows" ở trên — mã trượt luôn kèm gợi ý của chính nó.
+        extra["goi_y"] = {t: tra[t]["goi_y"] for t in khong_ton_tai}
     if ma_hop_le:
         khong_co_phien = sorted(set(ma_hop_le) - {r.ticker for r in rows})
         if khong_co_phien:

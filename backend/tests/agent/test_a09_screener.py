@@ -68,11 +68,17 @@ def test_ma_ton_tai_nhung_khong_co_phien_khac_ma_khong_ton_tai(db, kho):
     assert [c["ma"] for c in out["du_lieu"]] == ["HPG"]
 
 
-def test_qua_10_ma_bi_cat_va_bao_da_cat(db, kho):
-    """N4: xin so sánh >10 mã, danh sách bị hạ về 10 mã đầu (TRAN_MA) — phải báo da_cat=True,
-    không được câm lặng cắt rồi trả lời như thể đã so đủ."""
+def test_qua_tran_ma_bi_cat_va_bao_da_cat(db, kho):
+    """N4: xin so sánh nhiều hơn TRAN_MA mã, danh sách bị hạ về TRAN_MA mã đầu — phải báo
+    da_cat=True, không được câm lặng cắt rồi trả lời như thể đã so đủ.
+
+    Dùng chính hằng số TRAN_MA của module (không mã hoá cứng số mã) — trần đã nới 10 -> 25
+    (chủ dự án chốt 2026-09-07), khoá cứng "11 mã" như bản cũ sẽ không còn vượt trần mới và
+    làm test hoá xanh giả (§4.4.4: tiêu chí phải bất biến, không phải số thời điểm)."""
+    from agent.tools.compare_peers import TRAN_MA
     db.execute(sa.text("SET LOCAL ROLE dlck_api"))
-    mas = ["HPG", "VCB", "TIN", "HDB", "LPB", "FPT"] + [f"ZZ{i}" for i in range(5)]  # 11 mã
+    mas = ["HPG", "VCB", "TIN", "HDB", "LPB", "FPT"] + [f"ZZ{i}" for i in range(TRAN_MA - 5)]
+    assert len(mas) > TRAN_MA
     out = json.loads(so_sanh_cung_nganh(db, tickers=mas, metric_codes=["rtd21"]))
     assert out["da_cat"] is True
 
@@ -181,6 +187,31 @@ def test_hoi_qua_tran_ma_nhung_mot_vai_ma_sau_co_that_van_duoc_nhan_ra(db, kho):
     assert out["tim_thay"] is True
     assert {c["ma"] for c in out["du_lieu"]} == {"HPG", "VCB"}
     assert set(out["khong_tim_thay"]) == {f"ZZ{i:02d}" for i in range(10)}
+
+
+def test_da_cat_khong_bao_sai_khi_hoi_dung_bang_tran_ma(db, kho, monkeypatch):
+    """B2 (review lát 10): điều kiện cũ `len(rows) >= TRAN_MA` báo da_cat=True dù không cắt gì
+    khi hỏi ĐÚNG TRAN_MA mã hợp lệ và tất cả đều có phiên screener — kết quả bị chặn bởi chính
+    danh sách mas_xin, không phải bởi LIMIT. Hạ TRAN_MA xuống 3 (monkeypatch, cùng khuôn
+    test_vuot_tran_phien... ở test_a05_price) rồi hỏi đúng 3 mã có thật trong fixture."""
+    import agent.tools.compare_peers as compare_peers_mod
+    monkeypatch.setattr(compare_peers_mod, "TRAN_MA", 3)
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(so_sanh_cung_nganh(db, tickers=["HPG", "VCB", "TIN"], metric_codes=["rtd21"]))
+    assert out["so_dong"] == 3
+    assert out["da_cat"] is False
+
+
+def test_mot_phan_ma_hop_le_van_kem_goi_y_cho_ma_truot(db, kho):
+    """B3 (review lát 10): nhánh 'một phần mã hợp lệ' (ít nhất một mã tra được) chỉ liệt mã
+    trượt vào khong_tim_thay mà không kèm goi_y, trong khi nhánh 'không mã nào hợp lệ' (F1,
+    xem test_hoi_toan_ma_khong_ton_tai_thi_khong_tra_ma_bat_ky) đã trả goi_y dạng dict. Đồng
+    bộ để nhánh nào có mã trượt cũng kèm gợi ý. HPGX gõ nhầm HPG — trigram đã xác nhận cho
+    đúng gợi ý này ở test_resolve_ticker_ma_bia_thi_co_goi_y (test_a04_shared.py)."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(so_sanh_cung_nganh(db, tickers=["HPG", "HPGX"], metric_codes=["rtd21"]))
+    assert out["khong_tim_thay"] == ["HPGX"]
+    assert "HPG" in out["goi_y"]["HPGX"]
 
 
 def test_hoi_nganh_khong_kem_ma_van_loc_theo_nganh(db, kho):

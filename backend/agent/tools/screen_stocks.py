@@ -63,7 +63,11 @@ def loc_co_phieu(conn: sa.Connection, criteria: list[dict] | None = None,
     ngay = conn.execute(sa.text("SELECT max(trading_date) FROM market.screener_daily")).scalar()
     if ngay is None:
         return to_json(rong())
-    lim = cap_limit(limit, 20, 50)
+    # Trần 30/200 (cũ 20/50) — chủ dự án chốt 2026-09-07: "nới các giới hạn thoải mái ra,
+    # không phải sợ quá tốn kém token". Ngữ cảnh model là 1 triệu token nên chỗ chứa không
+    # phải vấn đề; trần chỉ còn tác dụng bắt ca bệnh (model xin số dòng phi lý), không chặn
+    # ca dùng bình thường (CLAUDE.md không ghi số này — quyết định nằm ở phiên làm việc).
+    lim = cap_limit(limit, 30, 200)
     sort = sort_by or "rtd11"
     dieu_kien, params = [], {"ngay": ngay, "nganh": industry_code, "san": exchange, "lim": lim}
     for i, c in enumerate(criteria):

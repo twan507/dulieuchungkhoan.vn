@@ -49,7 +49,9 @@ def su_kien_doanh_nghiep(conn: sa.Connection, ticker: str, event_type: str | Non
         return to_json(ma)
     if ma["issuer_id"] is None:
         return to_json({**khong_co_du_lieu(ma["loai"], _LY_DO_KHONG_ISSUER), "ma": ma["ticker"]})
-    lim = cap_limit(limit, 20, 50)
+    # Trần 30/200 (cũ 20/50) — chủ dự án chốt 2026-09-07: nới trần thoải mái, ngữ cảnh model
+    # 1 triệu token không thiếu chỗ chứa; trần chỉ còn để bắt ca bệnh, không chặn ca thường.
+    lim = cap_limit(limit, 30, 200)
     rows = conn.execute(_SQL_SU_KIEN, {"iid": ma["issuer_id"], "loai": event_type,
                                        "tu": from_date, "den": to_date, "lim": lim}).all()
     if not rows:

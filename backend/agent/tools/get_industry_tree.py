@@ -4,6 +4,11 @@ KHÔNG có tham số icb_level và KHÔNG trả cây ICB: bộ ngành riêng là
 thị và phân tích, ICB chỉ là đường nạp nhanh ở tầng ETL (industry-tree.md §1).
 Đọc ngành của doanh nghiệp PHẢI qua view market.v_issuer_industry — đọc thẳng
 issuer.industry_id là bỏ qua lớp gán tay (market.issuer_industry_override).
+
+B1 (review lát 10): nhánh ticker "chưa gán ngành" từng nói cứng "quỹ/ETF theo thiết kế không
+có ngành" — sai với VNINDEX (loại 'index', không phải quỹ/ETF). Không suy loại thật từ một
+quan sát hẹp (CLAUDE.md §3.6) — lấy đúng `loai` từ resolve_ticker và trả kèm trong response,
+cùng khuôn với các hàm anh em (get_price_series, get_financials đều trả `loai`).
 """
 from __future__ import annotations
 
@@ -49,7 +54,8 @@ def cay_nganh(conn: sa.Connection, industry_code: str | None = None, ticker: str
         row = conn.execute(_SQL_NGANH_CUA_MA, {"iid": ma["issuer_id"]}).first()
         if row is None or row.code is None:
             return to_json({"tim_thay": True, "co_du_lieu": False, "ma": ma["ticker"],
-                            "ly_do": "mã này chưa được gán ngành (quỹ/ETF theo thiết kế không có ngành)"})
+                            "loai": ma["loai"],
+                            "ly_do": f"mã này (loại {ma['loai']}) chưa được gán ngành trong kho"})
         return to_json({"tim_thay": True, "co_du_lieu": True, "ma": ma["ticker"],
                         "nganh": {"ma": row.code, "ten": row.name_vi},
                         "nhom": {"ma": row.nhom_ma, "ten": row.nhom_ten},

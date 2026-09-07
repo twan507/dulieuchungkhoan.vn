@@ -20,7 +20,11 @@ import sqlalchemy as sa
 from agent.format import display_series_value, format_date_vi
 from agent.tools._shared import cap_limit, co_du_lieu, khong_tim_thay, rong, to_json
 
-TRAN_DANH_MUC = 40
+# Nới 40 -> 250 — chủ dự án chốt 2026-09-07 "nới các giới hạn thoải mái ra, không phải sợ quá
+# tốn kém token". Trần danh mục đặc biệt quan trọng: kho có 192 chuỗi (64 macro + 128 asset,
+# đo 2026-09-07) — danh mục là CỬA DUY NHẤT để model tìm mã trước khi hỏi số (N3), trần 40 cũ
+# cắt mất 3/4 số chuỗi. 250 vượt hẳn 192 nên danh mục không còn bị cắt trong thực tế.
+TRAN_DANH_MUC = 250
 
 # CAST(:x AS type) — KHÔNG viết :x::type, SQLAlchemy lặng lẽ bỏ tham số (CLAUDE.md §3 lát 10).
 _SQL_DANH_MUC = sa.text("""
@@ -35,7 +39,7 @@ _SQL_DANH_MUC = sa.text("""
 """)
 
 # N3: danh mục là cửa DUY NHẤT để model tìm mã (kho có 192 chuỗi, đo 2026-09-07) — đếm riêng
-# tổng số khớp thật để model biết còn bao nhiêu ngoài 40 mục đã trả, thay vì cắt câm.
+# tổng số khớp thật để model biết còn bao nhiêu ngoài TRAN_DANH_MUC mục đã trả, thay vì cắt câm.
 _SQL_DANH_MUC_DEM = sa.text("""
     SELECT (SELECT count(*) FROM macro.indicator i
             WHERE CAST(:kw AS text) IS NULL OR i.code ILIKE '%' || :kw || '%' OR i.name_vi ILIKE '%' || :kw || '%')
@@ -119,7 +123,10 @@ def chuoi_vi_mo(conn: sa.Connection, code: str | None = None, keyword: str | Non
         tong = _dem_danh_muc(conn, keyword)
         return to_json({"kieu": "danh_muc", "danh_muc": danh_muc, "tong_khop": tong,
                         "da_cat": tong > len(danh_muc)})
-    lim = cap_limit(limit, 60, 200)
+    # Trần 120/2000 (cũ 60/200) — chủ dự án chốt 2026-09-07: nới trần thoải mái, ngữ cảnh model
+    # 1 triệu token không thiếu chỗ chứa; trần chỉ còn để bắt ca bệnh, không chặn ca thường
+    # (2000 điểm ~ nhiều năm dữ liệu ngày cho một chuỗi macro/asset).
+    lim = cap_limit(limit, 120, 2000)
 
     ind = conn.execute(_SQL_MACRO_INDICATOR, {"c": code}).first()
     if ind:
