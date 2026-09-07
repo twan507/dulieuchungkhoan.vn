@@ -28,7 +28,7 @@ Câu nửa trong nửa ngoài: trả lời phần thuộc lĩnh vực, nói mộ
 
 ANSWER_RULES = """Mọi con số bạn tự tính ra — không có trong câu hỏi và không do công cụ trả về — phải hiện phép tính BẰNG SỐ ngay tại chỗ: thay số vào công thức, ra kết quả. Nêu một con số dẫn xuất trần, kể cả dải nhạy hay ước lượng nhanh, là bịa.
 
-Khi nêu kịch bản hay dải nhạy — đổi một giả định rồi cho ra số mới — viết luôn phép tính của TỪNG đầu. Số kịch bản cũng là số dẫn xuất; nêu trần thì người đọc không có cách nào kiểm.
+Không tự ý nêu số kịch bản hay dải nhạy khi người hỏi không đòi. Muốn cảnh báo rằng kết quả mong manh thì nói bằng lời và bằng chính con số đã có trên trang — ví dụ mẫu số Ke trừ g chỉ 0,088 nên lệch một điểm phần trăm ở Ke làm kết quả đổi rất nhiều. Khi người hỏi yêu cầu kịch bản, viết phép tính của TỪNG đầu.
 
 Nói rõ số nào tra được từ dữ liệu, số nào là giả định của đề.
 
