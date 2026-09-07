@@ -140,12 +140,15 @@ def test_ket_thuc_sach_nhung_khong_co_chu_van_khong_tra_rong(tool_dem):
     assert len(lich_su) == 2
 
 
-def test_system_du_ba_block_va_scope_guard_dung_truoc(model_gia, tool_dem):
-    """L1 phải có mặt từ request ĐẦU TIÊN — không bao giờ đến sau function."""
+def test_system_du_bon_block_va_scope_guard_dung_truoc(model_gia, tool_dem):
+    """L1 phải có mặt từ request ĐẦU TIÊN — không bao giờ đến sau function.
+
+    Bốn block từ lát 11: SCOPE_GUARD · L1 · ANSWER_RULES · luật công cụ mang ngày.
+    """
     llm, ghi = model_gia
     run_turn(llm, None, None, [], "Giá HPG?")
     system = ghi["requests"][0]["system"]
-    assert len(system) == 3
+    assert len(system) == 4
     assert "chỉ trả lời trong lĩnh vực chứng khoán" in system[0]["text"]
     assert len(system[1]["text"]) > 50_000
 

@@ -24,6 +24,19 @@ Hệ thống có bốn thứ có thể "quyết định" nội dung câu trả l
 | 3 | **Skill L2** `vn-stock-knowledge` | **Nội dung** chấm được đúng/sai: công thức, quy trình, định nghĩa | Nhận định thị trường, tỷ trọng |
 | 4 | **Function calling** | **Dữ kiện thật**: giá, BCTC, chỉ tiêu, tin | Cách diễn giải dữ kiện |
 
+**System prompt gồm bốn block, thứ tự có chủ đích** *(lát 11, 2026-09-07)*:
+
+| # | Block | Đổi theo ngày? | Vai |
+|---|---|---|---|
+| 1 | `SCOPE_GUARD` | không | Có trả lời hay không |
+| 2 | **L1** (`build_system_blocks` nạp trọn) | không | Hình dạng câu trả lời |
+| 3 | `ANSWER_RULES` | không | **Luật trình bày của tầng sản phẩm**: số dẫn xuất phải kèm phép tính bằng số · phân biệt số tra được với giả định của đề · cấm nêu tỷ trọng, điểm mua/bán, vùng giá cụ thể |
+| 4 | `TOOL_RULES` | **có** — mang ngày hôm nay | Cách dùng công cụ, neo thời gian |
+
+Hai lý do `ANSWER_RULES` **không** nhập vào `TOOL_RULES`: tên khối kia tự khai *"chỉ nói cách dùng công cụ"* nên nhét luật trình bày vào là làm chú thích nói dối; và khối kia **đổi mỗi ngày**, gói luật ổn định vào đó là tự huỷ tiền tố cache MiniMax mỗi ngày một lần mà không được gì. Ba block đầu bất biến ⇒ tiền tố cache dài ra.
+
+⚠️ `ANSWER_RULES` là **tầng sản phẩm, không phải nội dung skill** — nó nói *cách trình bày*, không nói *phân tích thế nào*. Ranh giới bốn tầng ở bảng trên giữ nguyên.
+
 Ba luật đã được test và phải giữ nguyên:
 
 - **L2 cấp nội dung, L1 quyết định hình dạng** khi câu hỏi cần cả hai tầng.
@@ -139,5 +152,5 @@ Ghi thẳng để không ai tưởng phần này đã chắc:
 Đo thật lúc chạy bộ hồi quy vòng 7. Cả ba đều **hỏng im lặng**: không exception, không cờ lỗi — đúng họ bẫy CLAUDE.md §3.4 đã ghi. Ghi ra để người sau không lặp lại.
 
 1. **`max_tokens` quá nhỏ cắt câu trả lời thành rỗng im lặng.** Đặt `max_tokens=4000`: 3/40 request có `stop_reason=max_tokens`, một request tiêu **3.999 token chỉ cho phần thinking** rồi hết chỗ cho chữ ⇒ ba câu (A2, A4, B9) trả về **rỗng**. Sửa: nâng lên `32000`; vòng chat không bao giờ được trả rỗng im lặng mà phải nói rõ model dừng vì lý do gì.
-2. **Model từ chối tra dữ liệu vì tưởng mốc thời gian nằm ngoài tri thức của nó.** Hỏi CPI tháng 8/2026 — model trả lời *"mốc cập nhật gần nhất của tôi là tháng 1/2026"* và **không gọi function nào**, trong khi kho có sẵn đúng số 4,45%. Sửa: thêm block `system` thứ ba neo ngày hôm nay, kèm yêu cầu bắt buộc gọi công cụ trước khi nói "không có dữ liệu".
+2. **Model từ chối tra dữ liệu vì tưởng mốc thời gian nằm ngoài tri thức của nó.** Hỏi CPI tháng 8/2026 — model trả lời *"mốc cập nhật gần nhất của tôi là tháng 1/2026"* và **không gọi function nào**, trong khi kho có sẵn đúng số 4,45%. Sửa: thêm block `system` riêng neo ngày hôm nay (**từ lát 11 là block thứ tư**), kèm yêu cầu bắt buộc gọi công cụ trước khi nói "không có dữ liệu".
 3. **Cache MiniMax trúng trong cùng cuộc hội thoại nhưng không trúng giữa hai câu hỏi khác nhau.** Lượt gọi function thứ hai của cùng một câu: vào 409 token, đọc cache 36.886 — trúng gần như tuyệt đối. Nhưng **mọi request đầu của một câu mới** đều `cache_read = 128` (mức nền), dù tiền tố `system + tools` giống hệt câu trước và cách nhau vài giây. ⇒ ngân sách chi phí phải tính **mỗi câu mới trả đủ ~36,7k token "lạnh"**, phần cache chỉ cứu được các lượt gọi function tiếp theo trong cùng câu đó — không cứu được giữa các câu.

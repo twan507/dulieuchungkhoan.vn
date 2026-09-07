@@ -7,7 +7,7 @@ Bản vá là đoạn văn nguyên văn ở docs/30-skills/maintenance.md §7, p
 import pytest
 
 from agent.skills import L2_TOPICS, load_l1, load_l2
-from agent.system_prompt import SCOPE_GUARD, build_system_blocks
+from agent.system_prompt import ANSWER_RULES, SCOPE_GUARD, build_system_blocks
 
 
 def test_scope_guard_chep_nguyen_van_tu_maintenance():
@@ -17,7 +17,7 @@ def test_scope_guard_chep_nguyen_van_tu_maintenance():
 
 def test_block_dau_tien_la_scope_guard():
     blocks = build_system_blocks()
-    assert len(blocks) == 3
+    assert len(blocks) == 4
     assert blocks[0]["text"] == SCOPE_GUARD
 
 
@@ -68,5 +68,17 @@ def test_khoi_luat_cong_cu_dung_CUOI_de_khong_pha_tien_to_cache():
     import datetime as dt
 
     blocks = build_system_blocks(dt.date(2026, 9, 7))
-    assert "07/09/2026" in blocks[2]["text"]
-    assert "07/09/2026" not in blocks[0]["text"] + blocks[1]["text"]
+    assert "07/09/2026" in blocks[3]["text"]
+    assert "07/09/2026" not in blocks[0]["text"] + blocks[1]["text"] + blocks[2]["text"]
+
+
+def test_bon_block_dung_thu_tu_va_answer_rules_dung_thu_ba():
+    """Luật trình bày phải là block RIÊNG, không nhét vào khối luật công cụ.
+
+    Vòng 7: hình dạng 13/15, ngưỡng 14. Câu A4b bịa dải nhạy 23.500–32.500 (đúng là
+    ~24.643–30.962) vì luật "số dẫn xuất phải kèm phép tính" mới chỉ có ở RUBRIC CHẤM.
+    """
+    blocks = build_system_blocks()
+    assert len(blocks) == 4
+    assert blocks[0]["text"] == SCOPE_GUARD
+    assert blocks[2]["text"] == ANSWER_RULES

@@ -6,6 +6,13 @@ vực vẫn được trả lời đầy đủ. Nguyên văn: docs/30-skills/main
 
 TOOL_RULES là tầng sản phẩm chứ không phải nội dung skill: nó chỉ nói CÁCH dùng công cụ và
 neo ngày hiện tại, không nói gì về cách phân tích — ranh giới bốn tầng giữ nguyên.
+
+ANSWER_RULES cũng là tầng sản phẩm, nhưng là luật TRÌNH BÀY nên tách khỏi TOOL_RULES: (a) tên
+khối kia nói "cách dùng công cụ", nhét luật trình bày vào là làm chính dòng chú thích này nói
+dối; (b) TOOL_RULES mang ngày hôm nay nên đổi mỗi ngày — gói luật ổn định vào đó là mỗi ngày
+tự huỷ tiền tố cache một cách vô ích. Sinh ra sau vòng 7: hình dạng 13/15 (ngưỡng 14), câu A4b
+bịa dải nhạy vì luật "số dẫn xuất phải kèm phép tính" mới chỉ nằm ở RUBRIC CHẤM, không có ở
+prompt — dạy một đằng chấm một nẻo thì lượt chạy không nói lên điều gì.
 """
 from __future__ import annotations
 
@@ -18,6 +25,12 @@ SCOPE_GUARD = """Bạn chỉ trả lời trong lĩnh vực chứng khoán, tài 
 Câu hỏi ngoài lĩnh vực đó — sức khoẻ, pháp lý, lập trình, ẩm thực, đời tư, kiến thức phổ thông — từ chối gọn trong một câu, nói rõ bạn chỉ làm mảng này, rồi dừng. Không giải thích dài, không xin lỗi, không đưa lời khuyên thay thế, và không lái ngược về chứng khoán cho có việc.
 
 Câu nửa trong nửa ngoài: trả lời phần thuộc lĩnh vực, nói một câu rằng phần còn lại không thuộc chỗ mình."""
+
+ANSWER_RULES = """Mọi con số bạn tự tính ra — không có trong câu hỏi và không do công cụ trả về — phải hiện phép tính BẰNG SỐ ngay tại chỗ: thay số vào công thức, ra kết quả. Nêu một con số dẫn xuất trần, kể cả dải nhạy hay ước lượng nhanh, là bịa.
+
+Nói rõ số nào tra được từ dữ liệu, số nào là giả định của đề.
+
+Không nêu tỷ trọng danh mục, điểm mua, điểm bán hay vùng giá cụ thể cho bất kỳ mã nào, và không dùng câu mang nghĩa hành động ("gom dần", "mua thêm khi giá về…"). Nêu điều kiện làm kết luận đổi thì được."""
 
 TOOL_RULES_MAU = """Hôm nay là ngày {hom_nay}. Tri thức tự nhớ của bạn cũ hơn ngày này rất nhiều — đừng bao giờ nói một mốc thời gian nào đó "nằm ngoài dữ liệu của tôi", vì kho dữ liệu của hệ thống mới hơn trí nhớ của bạn.
 
@@ -51,5 +64,6 @@ def build_system_blocks(hom_nay: dt.date | None = None) -> list[dict]:
     return [
         {"type": "text", "text": SCOPE_GUARD},
         {"type": "text", "text": _L1_CACHE},
+        {"type": "text", "text": ANSWER_RULES},
         {"type": "text", "text": build_tool_rules(hom_nay)},
     ]
