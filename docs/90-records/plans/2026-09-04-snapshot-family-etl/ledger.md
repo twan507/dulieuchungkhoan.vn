@@ -236,3 +236,20 @@ Lượt vá cho `ShareIssuance` bắn thêm kind `valuation` là đúng yêu c�
 `etl snapshot --codes AAA,ABB,AAM,AAT` ⇒ `attempted 16 · failed 0 · floor_compared 16 · changed_floor 4 · rows_written 4`. Bốn cặp đổi đều là kind **`valuation`**; so hai bản ghi liền nhau: bốn trường đổi (`valuationSector.valuationStocks` — P/E, P/B, vốn hoá của 58–82 mã cùng ngành · `valuationStock.riskFreeRate` **0.04337 → 0.04569** · `rtd35` · `vnIndexEquityRisk`), trong đó **chỉ `riskFreeRate` nằm trong tập trắng** — ba trường kia đã ngoài hash từ spec §4.3. Đúng dự báo ở §3 ("`riskFreeRate` có thể jitter cùng họ hai trường đã loại — AC5 là phép đo đầu tiên"). Xử lý theo đúng điều kiện đảo ngược spec §4.3: **bỏ `riskFreeRate` khỏi `KEEP["valuation"]`**, không nới ngưỡng — nhánh `fix/valuation-riskfreerate-jitter`, TDD (test pin hash không đổi khi `riskFreeRate` đổi, đổi khi `rtd7` đổi), 640 test xanh. Bốn dòng `snapshot_daily` ngày 05/09 đã ghi là bản chụp thật, giữ nguyên.
 
 **Nửa còn lại chưa đóng:** lời gọi thẳng `GetSnapshotNoneBank` lúc 08:25 thứ 7 vẫn trả AAA `rtd11 ÷ outstandingShare` = **7.090**, ABB **17.204** — giá 03/09; kind `snapshot` của cả 4 mã `unchanged` (không dòng mới). Sau 41 giờ kể từ đóng cửa 04/09 nguồn chưa nạp ⇒ nạp theo **ngày làm việc kế tiếp hoặc muộn hơn**; đo tiếp khi giá đổi (sớm nhất thứ 2 07/09). Hệ quả cho lát 13 không đổi (job `snapshot` đọc giá trễ ≥ 1 ngày làm việc so với `price`).
+
+## 6. AC5 — đo lại 2026-09-07 12:56 (thứ 2, phiên đang mở)
+
+`etl snapshot --codes AAA,ABB,AAM,AAT` ⇒ `attempted 16 · failed 0 · floor_compared 16 · changed_floor 6 · rows_written 6 · retries 0`. Sáu dòng: **4 `valuation`** (AAA · ABB · AAM · AAT) + **2 `ownership`** (AAM · AAT). Diff hai bản ghi liền nhau: `valuation` đổi ở **`valuationStock`** (họ jitter đã biết), `ownership` của AAT đổi ở **`boardOfDirectors`** — dữ liệu thật, không phải jitter.
+
+**Nửa giá vẫn chưa nạp — nay đã đo đủ lâu để bác cả hai giả thuyết trước.** Gọi thẳng nguồn lúc 12:58 (`Snapshot/GetSnapshotNoneBank` và `Snapshot/GetSnapshot`, `Origin: https://fiinapp.bvsc.com.vn`):
+
+| Mã | `rtd11 ÷ outstandingShare` | Nghĩa |
+|---|---|---|
+| AAA | **7.090** | đúng giá đóng cửa **03/09** |
+| ABB | **17.204** | nt |
+
+Cùng lúc `PriceData/GetPriceData` (`PageSize=60`) trả AAA phiên mới nhất **2026-09-04 = 7.130**. Vậy sau **≈ 69 giờ** kể từ đóng cửa 04/09, họ Snapshot vẫn mang giá 03/09 — **trễ ít nhất một phiên**, trong khi họ giá đã có phiên đó từ chiều 04/09.
+
+⇒ Cả hai giả thuyết ghi trước đều **sai**: không phải *"nạp qua đêm"* (ledger §1b, đo 22:10 ngày 04/09), cũng không phải *"theo ngày làm việc kế tiếp"* (§5, đo 08:25 ngày 05/09). Mốc nạp thật **vẫn chưa đo được**; điều đo được là **giá trong họ Snapshot không phải nguồn giá dùng được** — đúng như thiết kế lát 4 đã chọn (18 trường giữ lại không có trường bám giá) nên hệ quả bằng không.
+
+🔴 **AC5 KHÔNG đóng bằng lượt này, và có lẽ không đóng được bằng ngưỡng của chính nó.** `changed_floor = 0` giả định các trường giữ lại không nhúc nhích giữa hai lượt, nhưng `valuation` mang P/E · P/B · vốn hoá của **cả nhóm ngành** — thị trường mở là chúng đổi thật, không phải nhiễu. Đo hôm nay 4/4 mã đổi `valuation` trong lúc phiên đang chạy là **hành vi đúng của dữ liệu**, không phải lỗi. Muốn đóng thì phải sửa **phép thử** (ví dụ: chỉ áp `changed_floor = 0` cho các kind không bám thị trường, hoặc chạy AC5 ngoài giờ giao dịch trên hai lượt cách nhau vài phút) — đây là **quyết định của chủ dự án**, không tự đổi ngưỡng guard.

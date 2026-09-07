@@ -85,3 +85,31 @@ Minor để lại (ruling): M1 `Seen.load` quét toàn bảng mỗi vòng (13 ms
 - **AC8** (`run_id 270`, 03:11–04:12, `--max-minutes 60`): sitemap 2026-08 **1.642 URL**, `skipped_seen 72` (đã có từ collect), **`articles_ok 1.142`**, `refused 9`, `articles_failed 0`, `calls 1.152`, `retries 0`, `budget_hit true`, `months_done []`, `cursor null` (tháng chưa trọn — đúng thiết kế). 3 bài đối chiếu: `published_at` = `meta.cms-date` trên trang (`src='feed'`), ví dụ `post395510` 08/08 10:23 VN; `feed='sitemap'`, `group_from_feed` NULL. Phát hiện: file sitemap tháng **cũ** xếp giảm dần (lượt đi từ 31/08 xuống 08/08) — README §5.2 sửa cùng lượt. Lượt hai (`--max-minutes 30`, 04:13, cửa sổ `dlck-news-backfill2`) nối phần còn lại ~430 URL; số ghi khi rà AC7. ✅
 - **`--loop` bật 04:13** trong cửa sổ `dlck-news-loop` (tách tiến trình, log `D:\twan_projects\dlck-runtime\logs\news-loop.log`, `DLCK_LOCK_CONSOLE=1`), nhịp 5 phút, mỗi vòng một `etl_run` `news.collect`. Dừng bằng Ctrl+C trong cửa sổ. **AC7** tổng hợp sau ≥ 24 giờ (có thứ 2 07/09): `SELECT sum((stats->>'items')::int), sum((stats->>'new')::int), sum((stats->>'merged_title')::int) … FROM ops.etl_run WHERE job='news.collect' AND started_at > '2026-09-05 21:13+00'`.
 - Bài học vận hành: tác vụ nền của công cụ có trần 10 phút — lượt dài phải chạy tách tiến trình (`Start-Process cmd /c …`); log stderr qua `>>` trong cửa sổ đó **trống** (chưa rõ vì sao, stats vẫn ở `etl_run`) — nợ nhỏ cho lát 13.
+
+## 7. AC7 — trả nợ 2026-09-07 (thứ 2, ngày làm việc)
+
+Vòng `--loop` đang sống trong cửa sổ `dlck-news-loop` chạy **301 vòng liên tục, 2026-09-06 11:48 → 2026-09-07 12:48 giờ VN = 25 giờ 0 phút**, trọn buổi sáng thứ 2 ⇒ thoả điều kiện "≥ 24 giờ có ngày làm việc". Số gộp từ `ops.etl_run` (`job = 'news.collect'`, `status = 'success'`, từ `2026-09-06 04:48 UTC`).
+
+| Mục | Số | Ghi chú |
+|---|---|---|
+| Vòng | **301** | nhịp 5 phút, không vòng nào `failed` |
+| `items` | **504.091** | mục danh sách quét lại mỗi vòng — **không phải** số bài |
+| `new` (bài mới vào kho) | **470** | ≈ 451 bài/ngày cả cuối tuần; riêng ngày làm việc 07/09: **311 bài trong 12 giờ 45 phút ≈ 585 bài/ngày** |
+| `merged_url` | **0** | không một URL trùng nào trong 25 giờ |
+| `merged_title` | **6** | ⇒ **tỷ lệ gộp 6/476 = 1,26 %** |
+| `refused` · `skipped_refused` | **5** · **6.342** | từ chối theo luật bóc; `skipped_refused` là URL đã từ chối trước đó, bỏ qua không tải lại |
+| `articles_failed` | **0** | |
+| `lists_ok` · `lists_failed` | **15.753** · **0** | |
+| `calls` · `retries` | **16.233** · **10** | ≈ 649 lời gọi/giờ, retry **0,06 %** |
+| `lists_stored` | **12.497** | bản thô danh sách khi hash đổi |
+
+**HTTP ≠ 200 theo host — đếm từ log `D:\twan_projects\dlck-runtime\logs\news-loop.log`:** đúng **một** sự kiện trong toàn bộ lịch sử vòng lặp, và nó thuộc **tiến trình trước**, không phải tiến trình đang sống: `2026-09-06 06:04:09 WARNING nguoiquansat/rss/vi-mo hỏng sau 4 lần (HTTP 403)` — vòng sau tự lành. Tiến trình đang sống: **0 danh sách hỏng / 301 vòng**.
+
+**Kết luận AC7 — "nhịp 5 phút × 51 danh sách an toàn": ĐẠT.** 16.233 lời gọi rải 8 host trong 25 giờ (≈ 15.600/ngày, khớp ước lượng A2 của spec là ~15.000), 10 retry, 0 lời gọi hỏng, 0 tín hiệu chặn. **Ước "tỷ lệ dedupe ~3,5 lần" của [news-pipeline §9.2](../../../20-design/news-pipeline.md) sai một bậc độ lớn** — đo trên 25 giờ có ngày làm việc chỉ **1,26 %**, cùng hướng với 0,5 % mà lát 9a đo trên cửa sổ ngắn hơn.
+
+🔴 **Hai cảnh báo phải đọc kèm, đừng chép số mà bỏ hai dòng này:**
+
+1. **Số này đo code TRƯỚC lát 9b.** Tiến trình đang chạy khởi động 2026-09-06 11:48, trước khi lát 9b merge; `stats` của **cả 399 lượt** trong kho **không có khoá `merged_near`** ⇒ khoá dedupe thứ tư (`pg_trgm` 0,6, migration `0020`) **chưa từng chạy một vòng nào trong thực tế**. Tỷ lệ 1,26 % là của **ba khoá**, không phải của code đang nằm trên `main`. Muốn có số của bốn khoá thì phải khởi động lại vòng lặp (Ctrl+C trong cửa sổ `dlck-news-loop` rồi bật lại) — quyết định của chủ dự án, không tự làm.
+2. **Hai feed Vietstock đóng băng > 7 ngày** — `vietstock/741/chung-khoan/niem-yet` và `vietstock/742/hang-hoa/kim-loai` xuất hiện trong `warnings` của **mọi vòng**. Đúng cạm bẫy "feed sống mà nội dung đóng băng" đã ghi ở [news/README](../../../10-sources/news/README.md); cảnh báo đang chạy đúng việc của nó, chưa ai xử.
+
+**Kho lúc chốt:** `news.article` **8.440 bài**, trong đó **8.210 chưa phân loại** (`classified_from IS NULL`). Ngày làm việc 07/09 có bài từ **cả 8 nguồn**: cafef 154 · nguoiquansat 41 · tinnhanhck 38 · vneconomy 19 · vietstock 17 · bnews 16 · vietnambiz 15 · baochinhphu 7.
