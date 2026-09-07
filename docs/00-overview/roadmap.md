@@ -337,7 +337,9 @@ Năm job `python -m etl fred|fx|lbma|yahoo|binance` (spec [`2026-09-05-global-et
 
 **Kết quả:** [plans/2026-09-06-news-classify-llm/](../90-records/plans/2026-09-06-news-classify-llm/) — tám điểm chốt theo đề xuất ("như bạn đề xuất đi"), thêm yêu cầu **gắn ngành** (chủ dự án phát hiện thiết kế thiếu), phạm vi chạy thử **≈ 100 bài/nhóm gợi ý**, mục tiêu **đo token và thời gian**. Embedding, bộ gán tay, ngưỡng `confidence`, bật `--loop` ⇒ **lát 9b** (điểm vào bên dưới).
 
-### Điểm vào cho lát 9b — bộ gán tay + bật lưới tự động + embedding, đọc trước khi bắt đầu
+### ~~Điểm vào cho lát 9b~~ — ĐÃ DÙNG XONG 2026-09-06, giữ làm ngữ cảnh
+
+*(bộ gán tay + bật lưới tự động + embedding — kết quả thật ở dòng "lát 9b" của khối lát phía trên: gold 400 bài, ngưỡng 0,8, dedupe bằng `pg_trgm` thay embedding)*
 
 *(viết 2026-09-06 chiều, sau lát 9a; số đo AC4/AC5 chép từ ledger lát 9a §2)*
 
@@ -467,6 +469,8 @@ Năm job `python -m etl fred|fx|lbma|yahoo|binance` (spec [`2026-09-05-global-et
 | 7 | Nhóm nợ nhỏ, đã đo, có chỗ ghi | `~20%` payload chuỗi giá là dữ liệu dư · sổ `ops.llm_call` ghi qua role `dlck_etl` (đúng cho terminal, **sai cho service** — phải tách `dlck_chatlog` khi dựng API) · `news.trade_name` rỗng nên gợi ý mã chỉ dựa ticker và tên doanh nghiệp | ledger lát 10 |
 
 ⚠️ **Hai mục KHÔNG thuộc lát 11 — thuộc tầng ETL, đã có đường khác** *(§1.4: ghi rõ loại để người sau khỏi mở lại)*: `prf`/`rev` có `name_vi` nói *"tỉ đồng"* nhưng `unit='VND'` (phải đối chiếu giá trị thật với BCTC mới kết luận được) · **83 chỉ tiêu `GetScreenerParameters` chưa nạp** vào `metric_dictionary`. Cả hai là việc của một lát ETL, không phải của tầng đọc. Chúng đang bị **loại khỏi mọi đường hiển thị** nên không sinh dữ liệu sai.
+
+⚠️ **Một nợ chéo lát, KHÔNG nằm trong bảy nợ trên:** AC3 nửa Yahoo + WiChart và AC4 của **lát 7b** *(chủ sở hữu: [điểm vào lát 7b](#điểm-vào-cho-lát-7b--đã-dùng-xong-2026-09-05-giữ-làm-ngữ-cảnh) và [ledger lát 7b](../90-records/plans/2026-09-05-intraday-refresh/ledger.md))* — ràng buộc **theo phiên**, chỉ chạy được trong giờ có sàn mở, nên không đợi được lát 11. Ghi ở đây vì luật thứ tự bắt mỗi lát bắt đầu từ điểm vào của lát trước, mà điểm vào lát 10 không nhắc nó.
 
 | Cần biết trước | Ở đâu |
 |---|---|
