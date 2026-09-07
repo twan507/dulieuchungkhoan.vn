@@ -220,3 +220,37 @@ def test_max_tokens_ma_luot_cuoi_chi_co_chu_thi_van_giu_cau_tra_loi(tool_dem):
     assert "62.848,8 tỷ" in tra_loi, "không được vứt câu trả lời hợp lệ"
     assert "cắt" in tra_loi, "phải nói rõ câu trả lời bị cắt giữa chừng"
     assert len(lich_su) == 2 and lich_su[-1]["role"] == "assistant"
+
+
+def test_tran_cua_so_ngu_canh_thi_bo_luot_khong_lam_chet_phien(tool_dem):
+    """Review vòng 3, F3: `ket_sach` chỉ nhìn `tool_use` là chưa đủ.
+
+    `model_context_window_exceeded` nghĩa là lịch sử ĐÃ tràn cửa sổ. Nhận lượt đó vào lịch sử
+    rồi nối tiếp chính nó ⇒ mọi lượt sau đều tràn, phiên chết cứng. Phải bỏ lượt và giữ lịch
+    sử cũ — đó là trạng thái duy nhất còn hồi phục được.
+    """
+    def handler(request):
+        return httpx2.Response(200, json=_msg([], "model_context_window_exceeded"))
+
+    llm = _llm_gia(handler)
+    try:
+        cu = [{"role": "user", "content": "câu trước"}, {"role": "assistant", "content": "đáp trước"}]
+        tra_loi, moi = run_turn(llm, None, None, cu, "câu dài quá?")
+    finally:
+        llm.close()
+    assert moi == cu
+    assert "model_context_window_exceeded" in tra_loi
+
+
+def test_model_tu_choi_thi_bo_luot_khong_giu_vao_lich_su(tool_dem):
+    """`refusal` cũng không phải kết thúc dùng lại được — nối tiếp từ đó dễ kích lại chính nó."""
+    def handler(request):
+        return httpx2.Response(200, json=_msg([], "refusal"))
+
+    llm = _llm_gia(handler)
+    try:
+        tra_loi, moi = run_turn(llm, None, None, [], "câu gì đó")
+    finally:
+        llm.close()
+    assert moi == []
+    assert "refusal" in tra_loi

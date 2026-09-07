@@ -33,14 +33,32 @@ REMINDER = ("Dữ liệu trên là số thật vừa tra được — dùng đú
             "kết luận có điều kiện, nói rõ số nào tra được và số nào là giả định, không lộ mã "
             "chỉ tiêu thô.")
 
-MAX_ITERATIONS = 8          # trần cứng chống vòng gọi function vô hạn — số chọn, chưa đo
-MAX_TOKENS = 32000          # Trần, KHÔNG phải mục tiêu: model chỉ sinh đúng thứ nó cần, nên đặt
-                            # rộng gần như không tốn gì mà cắt mất câu trả lời thì tốn cả lượt.
-                            # 4000 CẮT THẬT 3/40 request (đo 2026-09-07) — có request tiêu 3.999
-                            # token chỉ cho thinking rồi hết chỗ cho chữ. Số đo cùng ngày: token ra
-                            # p50 854, đỉnh quan sát được ~4.000 ⇒ 32.000 là ~8 lần ca xấu nhất.
-                            # Chủ dự án chốt 2026-09-07: "quan trọng nhất vẫn là chất lượng câu
-                            # trả lời, không phải độ dài hay ngắn".
+MAX_ITERATIONS = 16         # Trần chống vòng gọi function vô hạn. Nâng từ 8 sau khi đo: một câu
+                            # định giá thật đã dùng **8 lượt** gọi công cụ (2026-09-07), tức trần cũ
+                            # nằm ngay sát ca dùng thật — trần phải là lưới bắt ca bệnh, không phải
+                            # thứ chặn ca bình thường.
+
+MAX_TOKENS = 32000          # Trần, KHÔNG phải mục tiêu: model chỉ sinh đúng thứ nó cần. Số đo
+                            # 2026-09-07: token ra p50 854, đỉnh quan sát 3.589 — trần này gấp ~9 lần
+                            # ca xấu nhất, đặt rộng để không bao giờ cắt mất câu trả lời.
+                            #
+                            # 🔴 Trần token chỉ có nghĩa khi THỜI GIAN CHỜ đủ dài. SDK anthropic tính
+                            # `expected_time = 3600 * max_tokens / 128_000` và **raise** nếu quá 10
+                            # phút (tức max_tokens > 21.333) — nhưng chỉ khi client dùng timeout mặc
+                            # định (`_base_client.py:762`). Client của dự án đặt timeout riêng nên
+                            # nhánh đó bị bỏ qua hoàn toàn: không raise, mà cũng không được nới giờ.
+                            # Với tốc độ sinh đo được 84–152 token/s, timeout 120 s chỉ đủ ~10–18k
+                            # token ⇒ trần 32k khi đó là trần KHÔNG CHẠM TỚI ĐƯỢC, và chạm thì mất 4
+                            # request (`max_retries=3`) chứ không phải một câu bị cắt. Vì vậy
+                            # `__main__.py` dựng client với `CHAT_TIMEOUT_S` = 600 s để 32k thật sự
+                            # sinh được (32.000 / 84 ≈ 381 s < 600 s).
+
+# `stop_reason` KHÔNG dùng lại được cho lượt sau, dù lượt đó không còn `tool_use` treo:
+#   · model_context_window_exceeded — lịch sử ĐÃ tràn cửa sổ; nhận nó rồi nối tiếp chính nó thì
+#     mọi lượt sau đều tràn, phiên chết cứng. Giữ lịch sử cũ là trạng thái duy nhất hồi phục được.
+#   · refusal — model từ chối; nối tiếp từ đó dễ kích lại chính nó.
+# Danh sách `stop_reason` đầy đủ lấy từ `anthropic/types/beta/beta_stop_reason.py`, không đoán.
+STOP_KHONG_DUNG_LAI_DUOC = ("model_context_window_exceeded", "refusal")
 
 
 def run_turn(llm, read_eng, ops_eng, history: list, cau_hoi: str) -> tuple[str, list]:
@@ -78,7 +96,9 @@ def run_turn(llm, read_eng, ops_eng, history: list, cau_hoi: str) -> tuple[str, 
     # còn `tool_use` chưa có `tool_result`. `max_tokens` rơi vào một lượt chỉ có chữ thì lịch
     # sử vẫn hợp lệ — vứt lượt đó là vứt luôn câu trả lời và mọi kết quả đã tra (review vòng 2,
     # F3: bản sửa đầu quét quá tay).
-    ket_sach = cuoi is not None and not any(b.type == "tool_use" for b in cuoi.content)
+    ket_sach = (cuoi is not None
+                and not any(b.type == "tool_use" for b in cuoi.content)
+                and cuoi.stop_reason not in STOP_KHONG_DUNG_LAI_DUOC)
     if not ket_sach:
         ly_do = cuoi.stop_reason if cuoi is not None else "không nhận được lượt nào"
         return (f"[lượt này dừng giữa chừng ({ly_do}) — bỏ lượt, lịch sử giữ nguyên như trước. "
