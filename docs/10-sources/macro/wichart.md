@@ -378,13 +378,17 @@ Cờ này nói **khoảng cách với một benchmark** — nên nó chỉ có n
 | `kem` | Kẽm TQ | 731 | 0d | CNY/tấn | 1 | **B** | khớp 0,00% |
 | `nhom` | Nhôm TQ | 731 | 0d | CNY/tấn | 1 | **B** | khớp 0,00% |
 | `niken` | Niken TQ | 731 | 0d | CNY/tấn | 1 | **B** | khớp 0,00% |
-| `dong` | Đồng COMEX | 712 | 0d | USD/pound | 1 | **B** | lệch 0,3% |
-| `bac` | Bạc | 711 | 0d | USD/ounce | 1 | **B** | lệch <1% |
+| `dong` | Đồng COMEX | 712 | 0d | USD/pound | 1 | **B** | **đo lại 2026-09-07 trên 276 ngày** vs Yahoo `HG=F`: trung bình **0,79%**, trung vị 0,75%, p90 1,51%, **max 1,90%** — cờ cũ *"lệch 0,3%"* hơi lạc quan, nhưng chuỗi lành |
+| `bac` | Bạc | 711 | 0d | USD/ounce | 1 | **B** | **đo lại 2026-09-07 trên 276 ngày** vs Yahoo `SI=F`: trung vị **0,62%** (đúng cờ cũ *"<1%"*) nhưng trung bình **1,05%**, p90 2,35%, **max 9,71%** — ngày biến động mạnh lệch xa hơn cờ cũ gợi ý |
 | `thiec` | Thiếc TQ | 136 | **523d** | CNY/tấn | 1 | **X** | `DEAD` từ 07/03/2025 — giá thực đã **+63,7%** kể từ đó |
 
 > 🔵 **`vang_the_gioi` khớp chuẩn tuyệt đối** *(đo 2026-08-15)*. Đối chiếu **10 phiên** với Investing XAU/USD (*"Giá Vàng Giao Ngay Đô la Mỹ"*): trùng **tới từng chữ số thập phân, 10/10 ngày, 0,00%**. Không phải "gần giống" mà là bằng nhau — nhiều khả năng WiChart dùng **cùng một nguồn giá** với XAU/USD của Investing. *(Suy luận từ 10 ngày; **chưa xác nhận** nguồn gốc thật.)*
 >
 > Một phép đo độc lập trên **712 ngày** so với PAXG (Binance) cho lệch **0,369%** — xác nhận cờ cũ *"lệch 0,3%"* của key này là **đúng**. Đây là key duy nhất có cờ lệch đã được kiểm bằng chuỗi dài.
+>
+> 🔵 **Rà lại cờ lệch của `dong` và `bac` — đo 2026-09-07, 276 ngày (2025-08-04 → 2026-09-07).** Chuẩn đối chiếu là **hợp đồng tương lai COMEX liên tục** (Yahoo `HG=F` · `SI=F`), đúng nhãn *"Đồng COMEX"* của chính bảng này. Số ở hai dòng trên. **Không có lệch nhãn ngày:** thử ghép `d−1` · `d` · `d+1` thì `d` cho lệch nhỏ nhất ở **cả hai** key (đồng 0,79% so với 1,43%/1,46%; bạc 1,05% so với 2,79%/2,58%) — đúng phép thử ở §"Cách đọc cờ «lệch x%»", và là bằng chứng ngược lại với ca `dau_wti` 2026-08-15.
+>
+> 🔴 **Bài học chọn chuẩn, đo được bằng số:** cùng chuỗi `bac` đó, đem so với **LBMA silver fixing** (đã có trong kho, 12:00 London) thì ra **1,39%** — *tệ hơn* so với chuẩn liên tục. Không phải vì WiChart sai: bản thân cặp **LBMA fixing vs `SI=F`** lệch **1,80%**, tức chính cái chuẩn kia mới là thứ lệch. Fixing là **một lát cắt thời điểm**, không phải giá đóng cửa ngày ⇒ dùng nó làm chuẩn sẽ đổ lỗi nhầm cho nguồn. Cùng họ với lỗi *"so giao ngay với tương lai"* đã trả giá ở `dau_wti`.
 >
 > ⚠️ **WiChart giữ nguyên giá cuối tuần.** **36,8%** số điểm cuối tuần trùng khít điểm liền trước *(đo 2026-08-15)* — thứ Bảy/Chủ nhật chuỗi đứng yên chứ không có giá mới. **Đừng tính biến động cuối tuần từ chuỗi này**; cần vàng chạy 24/7 thì phải lấy nguồn khác.
 >
