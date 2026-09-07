@@ -9,9 +9,15 @@ from __future__ import annotations
 import sqlalchemy as sa
 
 from agent.format import format_date_vi
-from agent.tools._shared import cap_limit, co_du_lieu, resolve_ticker, rong, to_json
+from agent.tools._shared import cap_limit, co_du_lieu, khong_co_du_lieu, resolve_ticker, rong, to_json
 
 LOAI = ["Earning", "AGM", "CashDividend", "ShareIssuance", "StockDividend", "IPO"]
+
+# hình dạng #2 (spec §4.6): sự kiện doanh nghiệp gắn với issuer, nên chỉ số và ETF/chứng chỉ
+# quỹ không bao giờ có — khác hẳn "mã cổ phiếu đúng nhưng khoảng ngày rỗng".
+_LY_DO = {"index": "kho không có sự kiện doanh nghiệp cho chỉ số",
+          "etf": "kho không có sự kiện doanh nghiệp cho chứng chỉ quỹ ETF",
+          "fund_cert": "kho không có sự kiện doanh nghiệp cho chứng chỉ quỹ"}
 
 # CAST(:x AS type) — KHÔNG viết :x::type, SQLAlchemy lặng lẽ bỏ tham số (CLAUDE.md §3 lát 10).
 _SQL_SU_KIEN = sa.text("""
@@ -35,6 +41,9 @@ def su_kien_doanh_nghiep(conn: sa.Connection, ticker: str, event_type: str | Non
     ma = resolve_ticker(conn, ticker)
     if not ma["tim_thay"]:
         return to_json(ma)
+    if ma["loai"] != "stock":
+        return to_json({**khong_co_du_lieu(ma["loai"], _LY_DO.get(ma["loai"], "kho không có sự kiện doanh nghiệp cho loại này")),
+                        "ma": ma["ticker"]})
     lim = cap_limit(limit, 20, 50)
     rows = conn.execute(_SQL_SU_KIEN, {"iid": ma["issuer_id"], "loai": event_type,
                                        "tu": from_date, "den": to_date, "lim": lim}).all()

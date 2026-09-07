@@ -80,6 +80,17 @@ def test_loc_nhan_rong_thi_noi_ro_con_bao_nhieu_bai_chua_nhan(db, kho):
     assert "còn 1 bài chưa phân loại" in out["ghi_chu"]
 
 
+def test_ticker_khong_ton_tai_bao_khong_tim_thay_khong_do_loi_cho_chua_phan_loai(db, kho):
+    """spec §4.6 hình dạng #1: ticker='ZZZZ' không tồn tại trong market.security phải trả
+    tim_thay=False — trước sửa, hàm không gọi resolve_ticker nên rơi vào nhánh 'lọc theo nhãn
+    ra 0 dòng' và trả ghi_chu nói 'còn N bài chưa phân loại', một lời GIẢI THÍCH SAI NGUYÊN
+    NHÂN (mời model kết luận 'chưa phân loại nên chưa thấy tin' thay vì 'mã không tồn tại')."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(tim_tin(db, ticker="ZZZZ"))
+    assert out["tim_thay"] is False
+    assert "ghi_chu" not in out
+
+
 def test_sub_la_bi_tu_choi(db, kho):
     db.execute(sa.text("SET LOCAL ROLE dlck_api"))
     out = json.loads(tim_tin(db, sub="9z"))

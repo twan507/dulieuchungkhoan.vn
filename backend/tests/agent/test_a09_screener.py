@@ -55,6 +55,19 @@ def test_ma_khong_tra_duoc_bi_bao_ro_khong_am_tham_nuot(db, kho):
     assert out["khong_tim_thay"] == ["ZZZZ"]
 
 
+def test_ma_ton_tai_nhung_khong_co_phien_khac_ma_khong_ton_tai(db, kho):
+    """spec §4.6: 'mã bịa ra hoàn toàn' (hình dạng #1) không được gộp chung với 'mã có danh
+    tính nhưng phiên screener gần nhất không có dòng cho mã này' (VNINDEX — không phải cổ
+    phiếu nên không có mặt trong SCREENER của fixture, khác bản chất với ZZZZ vốn không tồn
+    tại trong market.security). Trước sửa, compare_peers không gọi resolve_ticker nên cả hai
+    rơi chung vào một khong_tim_thay, đúng câu spec §4.6 cấm ("#1 bị gộp vào #3")."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(so_sanh_cung_nganh(db, tickers=["HPG", "VNINDEX", "ZZZZ"], metric_codes=["rtd21"]))
+    assert out["khong_tim_thay"] == ["ZZZZ"]
+    assert out["khong_co_du_lieu_phien"] == ["VNINDEX"]
+    assert [c["ma"] for c in out["du_lieu"]] == ["HPG"]
+
+
 def test_qua_10_ma_bi_cat_va_bao_da_cat(db, kho):
     """N4: xin so sánh >10 mã, danh sách bị hạ về 10 mã đầu (TRAN_MA) — phải báo da_cat=True,
     không được câm lặng cắt rồi trả lời như thể đã so đủ."""

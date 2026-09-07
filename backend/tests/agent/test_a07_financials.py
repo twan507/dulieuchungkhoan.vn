@@ -46,6 +46,19 @@ def test_ma_ngoai_bang_nhan_bi_tu_choi(db, kho):
     assert "isa3" in out["ma_hop_le"]
 
 
+def test_chi_so_khong_co_bctc_la_hinh_dang_2_khong_phai_rong(db, kho):
+    """spec §4.6 hình dạng #2: VNINDEX (index, không có issuer) hỏi BCTC phải trả
+    co_du_lieu=False + loai, KHÔNG được lẫn với hình dạng #3 (mã đúng, khoảng ngày rỗng) —
+    trước sửa, resolve_ticker() trả tim_thay=True cho VNINDEX rồi query BCTC thẳng ra 0 dòng,
+    tức 'rong()' (so_dong=0, co_du_lieu=True), y hệt một mã cổ phiếu chưa nộp báo cáo năm đó."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(bao_cao_tai_chinh(db, "VNINDEX", "IS"))
+    assert out["tim_thay"] is True
+    assert out["co_du_lieu"] is False
+    assert out["loai"] == "index"
+    assert "so_dong" not in out
+
+
 def test_tran_tam_nam(db, kho):
     """Kho fixture chỉ seed ĐÚNG 1 năm (2024) cho FPT (BCTC_FPT_2024 trong conftest.py) — không
     đủ để lộ hành vi cắt trần thật (trần 8 kỳ, theo Ràng buộc toàn cục của plan). Chèn thêm 14

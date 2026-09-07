@@ -6,9 +6,12 @@ Mỗi tool tự mở và đóng kết nối trong thân hàm — KHÔNG giữ k�
 """
 from __future__ import annotations
 
+from typing import Literal
+
 import sqlalchemy as sa
 from anthropic import beta_tool
 
+from agent.skills import L2_TOPICS
 from agent.tools.compare_peers import so_sanh_cung_nganh
 from agent.tools.get_corporate_events import su_kien_doanh_nghiep
 from agent.tools.get_financials import bao_cao_tai_chinh
@@ -18,6 +21,10 @@ from agent.tools.get_news import tim_tin
 from agent.tools.get_price_series import gia_theo_ngay
 from agent.tools.load_knowledge_reference import doc_tri_thuc
 from agent.tools.screen_stocks import loc_co_phieu
+
+# spec §4.4 #9 / §6 S5: topic bị từ chối Ở TẦNG SCHEMA, không chỉ ở thân doc_tri_thuc — 9 khoá
+# lấy thẳng từ agent.skills.L2_TOPICS để không có nguồn sự thật thứ hai (CLAUDE.md §1.7).
+_TOPICS = tuple(L2_TOPICS)
 
 
 def build_tools(engine: sa.Engine) -> list:
@@ -113,7 +120,7 @@ def build_tools(engine: sa.Engine) -> list:
         return chay(tim_tin, query, ticker, group_no, sub, industry_code, from_date, to_date, limit)
 
     @beta_tool
-    def load_knowledge_reference(topic: str) -> str:
+    def load_knowledge_reference(topic: Literal[_TOPICS]) -> str:
         """Đọc một tài liệu kiến thức chuyên sâu khi cần công thức, quy trình hoặc định nghĩa.
 
         topic ∈ 'valuation' (định giá, DCF, FCFF/FCFE, WACC, P/E, P/B) | 'financial-statements'

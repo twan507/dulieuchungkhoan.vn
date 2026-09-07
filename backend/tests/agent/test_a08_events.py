@@ -31,3 +31,14 @@ def test_loai_su_kien_la_bi_tu_choi_kem_danh_sach(db, kho):
 def test_ma_khong_ton_tai(db, kho):
     db.execute(sa.text("SET LOCAL ROLE dlck_api"))
     assert json.loads(su_kien_doanh_nghiep(db, "ZZZZ"))["tim_thay"] is False
+
+
+def test_chi_so_khong_co_su_kien_la_hinh_dang_2_khong_phai_rong(db, kho):
+    """spec §4.6 hình dạng #2: VNINDEX (index) không thể có sự kiện doanh nghiệp — kho không lưu
+    sự kiện cho chỉ số, đó là bản chất loại chứng khoán chứ không phải khoảng ngày rỗng (#3)."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(su_kien_doanh_nghiep(db, "VNINDEX"))
+    assert out["tim_thay"] is True
+    assert out["co_du_lieu"] is False
+    assert out["loai"] == "index"
+    assert "so_dong" not in out

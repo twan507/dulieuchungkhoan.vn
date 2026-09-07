@@ -6,6 +6,10 @@ Hai đường lọc khác nhau, đừng trộn:
 Bài chưa nhãn là trạng thái TẠM (sẽ backfill khi lên prod) nên không có nhánh code riêng —
 chỉ có cờ da_phan_loai và ghi_chu; backfill xong thì cờ luôn true, không phải sửa gì.
 
+`ticker` phải qua resolve_ticker TRƯỚC khi lọc (spec §4.6 hình dạng #1): mã không tồn tại phải
+báo tim_thay=False, không được rơi vào nhánh "lọc theo nhãn ra 0 dòng" rồi bị gán nhầm lý do
+"chưa phân loại" — đó là giải thích SAI NGUYÊN NHÂN (review SPEC lát 10 §2.1).
+
 tsv của article_revision sinh bằng to_tsvector('simple', news.immutable_unaccent(title || ' '
 || content)) (migration 0007) — câu hỏi PHẢI bọc cùng news.immutable_unaccent, quên là khớp 0
 bài. Ưu tiên phraseto_tsquery (khớp ĐÚNG CỤM); ra 0 bài mới lùi về plainto_tsquery (khớp theo
@@ -19,7 +23,7 @@ from __future__ import annotations
 import sqlalchemy as sa
 
 from agent.format import format_date_vi
-from agent.tools._shared import cap_limit, co_du_lieu, to_json
+from agent.tools._shared import cap_limit, co_du_lieu, resolve_ticker, to_json
 
 SUBS = [f"{g}{c}" for g, cs in ((1, "abcdef"), (2, "abcdef"), (3, "abcdefghi")) for c in cs]
 
@@ -56,8 +60,13 @@ def tim_tin(conn: sa.Connection, query: str | None = None, ticker: str | None = 
             from_date: str | None = None, to_date: str | None = None, limit: int | None = None) -> str:
     if sub and sub not in SUBS:
         return to_json({"loi": True, "ly_do": f"khong co sub '{sub}'", "sub_hop_le": SUBS})
+    # spec §4.6 hình dạng #1: ticker phải tra được TRƯỚC khi lọc, không thì mã không tồn tại
+    # rơi vào nhánh "lọc theo nhãn ra 0 dòng" và bị gán nhầm lý do "chưa phân loại" (§2.1).
+    ma = resolve_ticker(conn, ticker) if ticker else None
+    if ma is not None and not ma["tim_thay"]:
+        return to_json(ma)
     lim = cap_limit(limit, 10, 30)
-    p = {"q": query, "tk": ticker.upper() if ticker else None, "g": group_no, "sub": sub,
+    p = {"q": query, "tk": ma["ticker"] if ma else None, "g": group_no, "sub": sub,
          "nganh": industry_code, "tu": from_date, "den": to_date, "lim": lim}
 
     dk = list(_DIEU_KIEN_NHAN)
