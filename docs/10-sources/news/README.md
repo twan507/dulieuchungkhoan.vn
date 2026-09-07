@@ -369,5 +369,21 @@ Ba trong bốn lỗi này cùng một dạng: **tin vào phần metadata mà ngu
 
 Đo lại 2026-09-05 20:15–20:45 VN (thứ 7), trước khi bật lát 8: **47/47 feed sống, trả `200` có item.** Chạy `etl news --dry-run` 2026-09-06 01:21 VN (đêm thứ 7 rạng chủ nhật, sau khi bật lát 8): **1.769 item/lượt (53 danh sách)**, **12 bài trùng tiêu đề trong cùng lượt**. Chi tiết đầy đủ (encoding, `pubDate`, sitemap, sáu nguồn crawl) nằm trong hồ sơ lát 8: [`measure-news-2026-09-05.txt`](../../90-records/plans/2026-09-05-news-collect/measure-news-2026-09-05.txt).
 
+### 13.5 Hai feed Vietstock báo "im > 7 ngày" — đo 07/09/2026
+
+Cảnh báo `feed im > 7 ngày` của `etl news` xuất hiện ở **mọi vòng** kể từ khi bật `--loop`. Gọi thẳng ba feed lúc 2026-09-07 13:35 VN để phân biệt *feed hỏng* với *chuyên mục ít tin*:
+
+| Feed | HTTP | Số item | `pubDate` mới nhất | Bài mới nhất |
+|---|---|---|---|---|
+| `742/hang-hoa/kim-loai` | 200 | 20 | **31/08/2026 11:30** (7 ngày) | "Giá vàng thế giới tiếp tục giảm, trong nước đứng im" |
+| `741/chung-khoan/niem-yet` | 200 | 20 | **18/08/2026 11:21** (20 ngày) | "Tân binh UPCoM Global Tanker có gì?" |
+| `830/chung-khoan/co-phieu` *(đối chứng)* | 200 | 20 | **07/09/2026 11:52** | "Nhịp đập Thị trường 07/09: Quay đầu giảm điểm" |
+
+**Kết luận: không phải feed hỏng, cũng không phải Vietstock chết.** Feed đối chứng cùng nguồn có bài trong ngày ⇒ nguồn sống, đường tải đúng. Hai chuyên mục kia đơn giản là **ra tin thưa** — kim loại và niêm yết mới vốn không có tin mỗi ngày.
+
+⇒ Ngưỡng cảnh báo **7 ngày dùng chung cho mọi feed là quá chặt** với chuyên mục thưa tin: nó kêu đúng sự thật ("feed này im") nhưng sự thật đó **không phải sự cố**, nên báo động mỗi vòng sẽ dạy người vận hành bỏ qua cảnh báo — đúng cái giá của báo động giả. Sửa thì có hai đường (ngưỡng riêng từng feed, hoặc chỉ cảnh báo khi feed im **và** feed đối chứng cùng nguồn vẫn ra tin); **chưa chọn** — quyết định của chủ dự án, thuộc lát giám sát (lát 12), không tự đổi.
+
+⚠️ Đừng suy ngược thành *"feed im là bình thường"*: bẫy VietnamFinance ở §12 là feed im **trong khi trang vẫn xuất bản**. Phép phân biệt là **feed đối chứng cùng nguồn**, không phải cảm giác.
+
 ---
 
