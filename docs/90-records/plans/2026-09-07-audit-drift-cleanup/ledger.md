@@ -212,3 +212,23 @@ pytest tests/docs -q  ->  2 failed, 5 passed   (từ 3 failed, 4 passed)
 ```
 
 **Commit:** `docs: the design layer said things the code stopped doing`
+
+### 🔴 Sự cố trong Task 5 — tôi tự gây đúng lỗi D3 đang đi sửa
+
+Script sửa hàng loạt của tôi dùng `pathlib.write_text(...)` **không truyền `newline="\n"`** ⇒ trên Windows ghi ra CRLF. Đúng bằng lỗi **D3** của `gen_industry_mapping.py` mà Task 7 sắp sửa.
+
+Chuỗi việc:
+
+1. Commit Task 5 đi qua bình thường — `git add` chuẩn hoá về LF nhờ `.gitattributes` `* text=auto eol=lf`, nên **nội dung trong repo đúng**. Nhưng working copy 5 file thành CRLF, và `git status` vẫn sạch nên **không có gì báo**.
+2. Tôi viết script quét toàn repo đổi CRLF → LF. Nó báo **211 file** — tức phần lớn không phải do tôi, mà là file **vốn được lưu CRLF trong git** từ trước khi có `.gitattributes`.
+3. `git status` sau đó: **211 file `M`**. Đây là thay đổi nội dung **thật**, hoàn toàn **ngoài phạm vi** lát này (§4.4.3: *"không tiện tay cải thiện code lân cận"*).
+4. 🔴 Script đó còn đọc-ghi **cả file nhị phân** (`.xlsx`) — nếu một file Excel chứa chuỗi byte `0D 0A` thì đã hỏng. May là `git status` không liệt file `.xlsx` nào.
+5. `git checkout -- .` hoàn nguyên sạch. Kiểm lại: 5 sửa đổi Task 5 **còn nguyên** (5 phép grep đều ra 0), file nay là LF, `pytest tests/docs` vẫn 2 failed / 5 passed.
+
+**Ba bài học ghi lại:**
+
+- **Công cụ sửa hàng loạt phải khai `newline="\n"`** — chính xác là bản sửa mà D3 sắp làm cho generator. Từ đây dùng heredoc bash hoặc ghi có `newline="\n"`.
+- **Đừng bao giờ đọc-ghi byte hàng loạt trên `git ls-files`** — danh sách đó có cả nhị phân. Lọc theo phần mở rộng, hoặc dùng `git add --renormalize` để git tự lo.
+- **"211 file thay đổi" là tín hiệu dừng, không phải tín hiệu tiến.** Một lát dọn 47 mục mà chạm 211 file thì đã đi lạc. Việc chuẩn hoá CRLF toàn repo là một quyết định riêng, cần chủ dự án chốt — **không gộp vào đây**.
+
+⚠️ **Ghi thành việc còn treo:** repo hiện có **211 file lưu CRLF trong git** dù `.gitattributes` khai `* text=auto eol=lf` (chúng vào repo trước khi có dòng đó). Muốn dọn thì đường đúng là `git add --renormalize .` thành **một commit riêng**, không lẫn với lát nào — chủ dự án quyết.
