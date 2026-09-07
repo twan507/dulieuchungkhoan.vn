@@ -117,3 +117,13 @@ Chạy theo CLAUDE.md §4.1.5: **hai trục, hai agent Opus độc lập, báo r
 `round7-results` viết ba lỗi hỏng-im-lặng *"đã sửa, **có test canh**"*. `git show --stat d23913c` cho thấy **chỉ 1/3 có test**. Khẳng định chưa kiểm là loại tự đầu độc: nó chặn mất phép kiểm sẽ tìm ra chỗ hở. Đã đính chính hồ sơ và viết nốt hai test. AC5 cũng hạ từ 4/4 xuống **2/4** vì hai câu từ chối chạy mà không lưu transcript.
 
 **Test sau hai vòng review: 976 passed, 2 skipped** (877 trên `main` → **+99**).
+
+### Kiểm hệ quả của C1 lên đáp án bộ hồi quy
+
+Sửa múi giờ đổi cách lọc ngày, nên đáp án B9 (*"bao nhiêu bài tháng 8/2026 nhắc đúng cụm lãi suất điều hành"*) có thể đã mục. Đo lại cả hai cách trên kho thật:
+
+```
+dem bai cum 'lai suat dieu hanh' thang 8/2026: (theo_utc=23, theo_vn=23)
+```
+
+Trùng nhau — **đáp án 23 vẫn đúng**, không phải sửa `regression-round7.md`. Ghi lại vì đây là phép kiểm dễ quên: đổi ngữ nghĩa lọc ngày mà không rà lại đáp án đã lưu thì bộ hồi quy tự mục mà không ai biết.
