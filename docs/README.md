@@ -41,7 +41,7 @@ Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và m�
 | [market/](10-sources/market/) | BVSC + FiinTrade | 44 REST + 5 topic realtime · **phái sinh 14 hợp đồng · ETF/quỹ 31 mã** | 2026-08-10, mẫu 51 mã · phái sinh và ETF 2026-08-15 |
 | [macro/](10-sources/macro/) | WiChart (WiGroup) · **SBV** | 87 REST + **1 trang crawl OMO** | 2026-08-12, toàn bộ 87 key · OMO 2026-08-15 |
 | **[global/](10-sources/global/)** | **FRED · Frankfurter (ECB) · Yahoo · LBMA · Binance** | 15 series vĩ mô Mỹ · 6 cặp tiền + DXY dựng lại · 36 chỉ số/21 nước · vàng-bạc từ 1968 · 10 đồng crypto + PAXG | **2026-08-15**, ~400 lời gọi thật cả đợt |
-| [news/](10-sources/news/) | 8 báo điện tử | 47 RSS + 6 crawler | 2026-08-13, 307 URL · 1.408 tiêu đề · cấu trúc trang bài 2026-08-15, 33 bài |
+| [news/](10-sources/news/) | 8 báo điện tử | 47 RSS + 8 nguồn crawl *(6 thường + 2 backfill)* | 2026-08-13, 307 URL · 1.408 tiêu đề · cấu trúc trang bài 2026-08-15, 33 bài |
 | **[llm/](10-sources/llm/)** | **MiniMax M3** — nhà cung cấp LLM duy nhất (Token Plan) | 1 model · 2 giao diện tương thích · endpoint quota | **2026-09-06**, ≈45 lời gọi thật |
 
 Mỗi nguồn tự chứa đủ đồ nghề: `macro/` có [`verify_wichart.py`](10-sources/macro/verify_wichart.py) — tự kiểm 509 khẳng định của tài liệu WiChart với API sống; `news/` có [`feeds.json`](10-sources/news/feeds.json) — 47 feed + taxonomy dạng máy đọc — và [`article-structure.md`](10-sources/news/article-structure.md) — selector container chính cùng luật bỏ boilerplate riêng từng nguồn.
@@ -60,11 +60,9 @@ Vào đó nếu muốn biết: ranh giới process · chiến lược test · kh
 
 ### 30 · Tri thức chuyên môn
 
-| Đường dẫn | Nội dung |
-|---|---|
-| [maintenance.md](30-skills/maintenance.md) | **Đọc trước khi sửa skill** — quyết định không được đảo · 5 lỗi nguồn đã sửa · 5 thứ cố ý · bộ test hồi quy · đoạn dán vào system prompt · ngân sách dòng |
-| [terminology.md](30-skills/terminology.md) | Bảng tra **bắt buộc** — hai trục phân loại, chuyển đổi thuật ngữ nguồn, lỗi nhận dạng giọng nói đã sửa |
-| [corpus/](30-skills/corpus/) | 96 file tóm tắt bài giảng HP0–HP6 + Trà Chiều — nguyên liệu, không phải tài liệu |
+**Danh sách file do [`30-skills/README.md`](30-skills/README.md) sở hữu** — không chép lại ở đây, hai bản sẽ trôi lệch (§1.6). Bản chép cũ đã tồn tại tới 2026-09-07 và là một trong ba chỗ trùng chủ mà đợt audit bắt được.
+
+Vào đó nếu muốn biết: **bảo trì skill** (đọc trước mọi thay đổi trong `backend/agent/skills/`) · **bảng thuật ngữ** (bắt buộc) · **corpus** bài giảng.
 
 ### Ngoài `docs/`
 

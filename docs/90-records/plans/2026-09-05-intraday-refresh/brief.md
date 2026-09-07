@@ -1,6 +1,6 @@
 # Brief — lát 7b: cập nhật trong phiên cho dữ liệu có biểu đồ (interval, nến đang chạy, FX qua Yahoo)
 
-**Ngày viết:** 2026-09-05 tối, ngay sau khi lát 7 gộp `main` (`7405184`) · **Người viết:** trợ lý, theo yêu cầu chủ dự án · **Trạng thái:** brief để session mới đi đủ quy trình [CLAUDE.md §4.1](../../../CLAUDE.md) (brainstorm → spec → plan → subagent → review → verify). **Đây không phải spec** — spec viết ở session mới, sau khi đo phần giả định ở §4.
+**Ngày viết:** 2026-09-05 tối, ngay sau khi lát 7 gộp `main` (`7405184`) · **Người viết:** trợ lý, theo yêu cầu chủ dự án · **Trạng thái:** brief để session mới đi đủ quy trình [CLAUDE.md §4.1](../../../../CLAUDE.md) (brainstorm → spec → plan → subagent → review → verify). **Đây không phải spec** — spec viết ở session mới, sau khi đo phần giả định ở §4.
 
 **Vị trí trong lộ trình:** chèn **ngay sau lát 7, trước lát 8** (chủ dự án gọi tên 2026-09-05 tối — đúng luật "việc cắt ngang chỉ làm khi chủ dự án gọi tên" của roadmap §3). Thứ tự sau đó giữ nguyên: lát 8 tin tức → … → lát 13 scheduler → lát 14 VPS.
 

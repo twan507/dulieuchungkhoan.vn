@@ -15,7 +15,7 @@ Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập d
 | Dự án skill | ✅ **đã đóng**, không còn việc treo | [bảo trì skill](docs/30-skills/maintenance.md) |
 | Thiết kế kho dữ liệu · pipeline tin | ✅ đã duyệt, **cả hai đã cài** | kho dữ liệu từ lát 1–7b; pipeline tin lát 8/8b (thu thập) + 9a/9b (lưới AI) |
 | Tầng ngữ nghĩa nối dữ liệu ↔ skill | ✅ **dựng lát 10, đóng hợp đồng lát 11** (2026-09-07) | 9 function + vòng chat `python -m agent` — [chatbot-semantic-layer.md](docs/20-design/chatbot-semantic-layer.md) |
-| Hai skill chứng khoán | ✅ xong, test 6 vòng, đã dừng tối ưu | 3.046 dòng |
+| Hai skill chứng khoán | ✅ xong, đã dừng tối ưu; bộ hồi quy hiện hành là **vòng 7** (bộ vòng 6 đã mất khỏi repo) | 3.046 dòng |
 | Repo vào git | ✅ khởi tạo 2026-08-14 | commit đầu tiên |
 | **Hạ tầng + schema hai kho** | ✅ **2026-08-26** | Postgres **20 migration** (alembic) · ClickHouse **2** · compose PG+CH+Redis |
 | **Ingester realtime** | ✅ **ghi thật từ 2026-08-27** — hàng đợi có trần, tràn ra đĩa khi kho trục trặc | 4,72 triệu dòng phiên 28/08 · chưa lần nào phải dùng tới đĩa |
@@ -39,7 +39,7 @@ Bảng đầy đủ kèm bằng chứng: [lộ trình §0](docs/00-overview/road
 | **Chỉ số quốc tế** *(mới)* | Yahoo Finance | **36 chỉ số / 21 nước** · lợi suất TPCP Mỹ · họ biến động |
 | **Vàng/bạc mốc chuẩn** *(mới)* | LBMA | từ **1968**, 14.662 điểm một lời gọi |
 | **Crypto + vàng 24/7** *(mới)* | Binance | 10 đồng · PAXG |
-| Tin tức | 8 báo điện tử | 47 RSS + 6 crawler |
+| Tin tức | 8 báo điện tử | 47 RSS + 8 nguồn crawl *(6 lượt thường + 2 sitemap chỉ backfill)* |
 
 ⛔ **Loại có chủ đích, đừng mở lại:** chứng quyền (342 mã) · lô lẻ (1.890 mã) · trái phiếu (187 mã) — **cả ba đều có dữ liệu**, loại vì không phục vụ phân tích · realtime FiinTrade *(dùng của BVSC)* · luồng cần đăng nhập. **Đã kiểm, không nguồn nào có:** NAV quỹ mở. Lý do từng mục: [phạm vi nguồn §2](docs/10-sources/README.md).
 

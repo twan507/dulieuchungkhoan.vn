@@ -1,6 +1,6 @@
 # QUYẾT ĐỊNH THUẬT NGỮ — ĐÃ CHỐT
 
-Người dùng đã duyệt toàn bộ. Đây là bảng tra bắt buộc cho Giai đoạn 3.
+Người dùng đã duyệt toàn bộ. Đây là bảng tra bắt buộc khi sửa hai skill.
 
 ---
 

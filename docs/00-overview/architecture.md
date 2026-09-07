@@ -11,7 +11,7 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
 ```
 ┌─ L0 · NGUỒN NGOÀI ─────────────────────────────────────────────────┐
 │  BVSC + FiinTrade        WiChart · SBV          8 báo điện tử      │
-│  44 REST + 5 topic RT    87 REST + 1 crawl      47 RSS + 6 crawler │
+│  44 REST + 5 topic RT    87 REST + 1 crawl      47 RSS + 8 crawl   │
 │  phái sinh · ETF/quỹ     FRED · ECB · Yahoo                        │
 │                          LBMA · Binance                            │
 └───────┬────────────────────────┬─────────────────────┬─────────────┘
@@ -50,7 +50,7 @@ Ba khối tài liệu của dự án được dựng trong ba phiên làm việc
 | Thị trường Việt Nam | **BVSC + FiinTrade** — cổ phiếu, chỉ số, **phái sinh 14 hợp đồng**, **ETF/quỹ 31 mã**, BCTC, realtime | ETL + Ingester | [`market/`](../10-sources/market/) |
 | Vĩ mô Việt Nam | **WiChart** 87 key · **SBV** — OMO, crawl HTML *(mới 2026-08-15)* | ETL | [`macro/`](../10-sources/macro/) |
 | Bối cảnh quốc tế *(khối mới 2026-08-15)* | **FRED** 15 series vĩ mô Mỹ · **Frankfurter (ECB)** 6 cặp tiền + DXY dựng lại · **Yahoo** 36 chỉ số/21 nước · **LBMA** vàng-bạc từ 1968 · **Binance** PAXG + 10 đồng crypto | ETL | [`global/`](../10-sources/global/) |
-| Tin tức | **8 báo điện tử** — 47 RSS + 6 crawler | Gom tin · Lưới AI | [`news/`](../10-sources/news/) |
+| Tin tức | **8 báo điện tử** — 47 RSS + 8 nguồn crawl *(6 lượt thường + 2 sitemap backfill)* | Gom tin · Lưới AI | [`news/`](../10-sources/news/) |
 
 🔴 **Hai nguồn có ràng buộc thời gian mà thiết kế phải chịu, không thể vá về sau:**
 

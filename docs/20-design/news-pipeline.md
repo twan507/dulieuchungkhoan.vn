@@ -2,7 +2,7 @@
 
 **Loại tài liệu:** thiết kế (explanation) · **Phiên bản** v3 · **Chốt ngày** 13/08/2026 · **Trạng thái** đã duyệt · **đã cài đặt lát 8 (2026-09-06, phần không AI)**
 
-Tài liệu này ghi **lựa chọn của dulieuchungkhoan.vn**: kiến trúc xử lý, taxonomy 21 sub, quy tắc phân loại, cách gắn mã cổ phiếu, lược đồ kho. Phần *nguồn tin có gì và cư xử thế nào* — 47 feed, 6 crawler, encoding, khối lượng đo được — nằm ở [danh mục nguồn tin](../10-sources/news/README.md).
+Tài liệu này ghi **lựa chọn của dulieuchungkhoan.vn**: kiến trúc xử lý, taxonomy 21 sub, quy tắc phân loại, cách gắn mã cổ phiếu, lược đồ kho. Phần *nguồn tin có gì và cư xử thế nào* — 47 feed, 8 nguồn crawl (6 lượt thường + 2 sitemap backfill), encoding, khối lượng đo được — nằm ở [danh mục nguồn tin](../10-sources/news/README.md).
 
 > **Đánh số mục kế thừa tài liệu gốc v3** và cố ý không đánh lại, vì hàng chục tham chiếu chéo dạng *"xem mục 6.5"* nằm rải trong cả hai file. Mục 4, 5, 6, 11.1–11.3 và 13 nằm ở [danh mục nguồn tin](../10-sources/news/README.md); các mục còn lại ở file này.
 
@@ -35,7 +35,7 @@ Ba nhóm đích:
 ```
 47 RSS feed ──┐                                    ┌─► nhóm 3 ─► Gắn mã CP ─┐
               ├─► Chuẩn hoá ─► Lấy + làm sạch ─► Lưới AI ─┤                 ├─► Kho
-6 crawler ────┘   encoding       nội dung        MỌI tin  ├─► nhóm 1 / 2 ───┘
+8 crawl ──────┘   encoding       nội dung        MỌI tin  ├─► nhóm 1 / 2 ───┘
                   pubDate        HTML → text     đọc      │
                   dedupe URL     cắt trần 3–4k   TOÀN VĂN └─► nhãn x ─► loại bỏ
 ```

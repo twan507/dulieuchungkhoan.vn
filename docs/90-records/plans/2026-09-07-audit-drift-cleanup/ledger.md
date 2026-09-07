@@ -232,3 +232,54 @@ Chuỗi việc:
 - **"211 file thay đổi" là tín hiệu dừng, không phải tín hiệu tiến.** Một lát dọn 47 mục mà chạm 211 file thì đã đi lạc. Việc chuẩn hoá CRLF toàn repo là một quyết định riêng, cần chủ dự án chốt — **không gộp vào đây**.
 
 ⚠️ **Ghi thành việc còn treo:** repo hiện có **211 file lưu CRLF trong git** dù `.gitattributes` khai `* text=auto eol=lf` (chúng vào repo trước khi có dòng đó). Muốn dọn thì đường đúng là `git add --renormalize .` thành **một commit riêng**, không lẫn với lát nào — chủ dự án quyết.
+
+---
+
+## Task 6 — index và dead doc ✅ · **bộ kiểm chuyển XANH 7/7**
+
+**Nhịp K** — cả 9 mục còn đúng: 3 file mồ côi vẫn ở đó · `measure-news-2026-09-05.txt` `find` ra 0 · 2 href sai độ sâu còn nguyên · bảng §2(b) chỉ có 1 dòng · `## 7. Mười ba bẫy` nhưng `grep -c "^### Bẫy"` = **14** · `terminology.md:3` còn "Giai đoạn 3".
+
+**Nhịp S:**
+
+| Mục | Làm gì |
+|---|---|
+| C1 | Dòng lát 11 ở `90-records/README.md` liệt **đủ 11 tên file**, theo khuôn dòng lát 10 liền trên |
+| C2 | Bỏ `measure-news-2026-09-05.txt` khỏi danh sách file, thay bằng ghi chú *"chưa từng được commit"* |
+| C3 | `brief.md:3` `../../../` → `../../../../` · `intraday spec.md:50` `../../` → `../../../` · `news-collect spec.md:5` gỡ link giữ nhãn |
+| C4 | `docs/README.md` §30 — bỏ bảng chép lại, thay bằng câu dẫn sang `30-skills/README.md` |
+| C5 | `90-records/README.md` — bỏ bảng chép lại, thay bằng câu dẫn sang `worksheets/README.md` |
+| C6 | Thêm `DEXCHUS` vào bảng §2(b) *"đã có đường khác"* |
+| C7 | `Mười ba bẫy` → `Mười bốn bẫy` |
+| C8 | Bỏ *"cho Giai đoạn 3"* |
+| C9 | 8 chỗ → `47 RSS + 8 nguồn crawl (6 lượt thường + 2 sitemap backfill)` |
+
+**Ba chỗ cần cân nhắc, không máy móc:**
+
+1. **C3 — vùng lịch sử, chỉ sửa href.** `git diff -U0` xác nhận **mỗi file đúng 1 dòng đổi và phần chữ hiển thị y nguyên**. Riêng `news-collect/spec.md:5` không có href nào để sửa (file **chưa từng tồn tại**) ⇒ gỡ link, giữ nhãn, thêm ghi chú — **theo đúng tiền lệ** `news/README.md:370` đã làm y hệt ngày 2026-09-07.
+2. **C7 — đổi tiêu đề, KHÔNG đánh số lại.** Đổi `Bẫy 4b` → `Bẫy 14` sẽ giết mọi tham chiếu chéo `Bẫy 5`…`Bẫy 13` rải trong repo **và trong CLAUDE.md §3.3**. Sửa một chữ ở tiêu đề là đủ và an toàn.
+3. **C9 — hai dòng ASCII phải giữ độ rộng cột.** `architecture.md:14` là khung `┌─┐`: `"6 crawler"` (9 ký tự) → `"8 crawl  "` (7 + 2 dấu cách) để `│` vẫn thẳng cột. `news-pipeline.md:38` tương tự: `"6 crawler ────┘"` → `"8 crawl ──────┘"`.
+
+**Hai chỗ CỐ Ý không sửa:**
+
+- `10-sources/README.md:201` vẫn còn *"6 crawler"* — nằm trong **changelog phiên bản 4.0 (2026-08-14)**, ghi lại việc bản 4.0 đã làm. Bản ghi at-the-time, sửa là viết lại quá khứ.
+- `architecture.md:73` vẫn trỏ *"quy trình 6 vòng"* — `maintenance.md` §6 đã tự khai bộ vòng 6 mất và trỏ sang vòng 7, nên người đọc theo link **không** bị dẫn sai.
+
+**Phát sinh ngoài danh sách:** `README.md:18` còn *"test 6 vòng"* — cùng họ với chỗ đã sửa ở dòng 5 trong Task 3. Sửa luôn, nếu không thì một file lại tự đá nhau.
+
+### Một lần đỏ giữa chừng, đáng ghi
+
+Lượt sửa C1 đầu tiên **không làm test xanh**: tôi viết tên file rút gọn (`round10-nhom-a`) trong khi phép kiểm so **tên file đầy đủ** (`round10-nhom-a-2026-09-07.md`). Phép kiểm đúng, bản sửa hớ — và nó bắt được. Viết lại đủ tên.
+
+**Nhịp X:**
+
+```
+"6 crawler" còn:  README 0 · docs/README 0 · architecture 0 · news-pipeline 0
+                  10-sources/README 1  <- changelog v4.0, cố ý giữ
+"Mười bốn bẫy" ✓   "Giai đoạn 3" còn 0   DEXCHUS ✓   trùng chủ C4/C5 còn 0
+
+pytest tests/docs -q  ->  7 passed in 0,41 s        ← AC1 ĐẠT
+```
+
+**Từ 6 đỏ / 1 xanh (Task 1) → 7 xanh.** Bộ kiểm nay là lưới thật, không phải trang trí.
+
+**Commit:** `docs: three orphan files, one index entry pointing at nothing, three broken hrefs`
