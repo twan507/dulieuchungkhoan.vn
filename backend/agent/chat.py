@@ -70,8 +70,11 @@ def run_turn(llm, read_eng, ops_eng, history: list, cau_hoi: str) -> tuple[str, 
     #     lịch sử kết thúc bằng role=user ⇒ lượt sau thành hai `user` liên tiếp;
     #   · `max_tokens` rơi giữa một block `tool_use` ⇒ có `tool_use` mà không `tool_result`.
     # Bỏ nguyên lượt còn hơn để người dùng phải giết tiến trình.
-    ket_sach = (cuoi is not None and cuoi.stop_reason in ("end_turn", "stop_sequence")
-                and not any(b.type == "tool_use" for b in cuoi.content))
+    # Điều kiện đúng là **hình dạng lịch sử**, không phải `stop_reason`: lượt cuối không được
+    # còn `tool_use` chưa có `tool_result`. `max_tokens` rơi vào một lượt chỉ có chữ thì lịch
+    # sử vẫn hợp lệ — vứt lượt đó là vứt luôn câu trả lời và mọi kết quả đã tra (review vòng 2,
+    # F3: bản sửa đầu quét quá tay).
+    ket_sach = cuoi is not None and not any(b.type == "tool_use" for b in cuoi.content)
     if not ket_sach:
         ly_do = cuoi.stop_reason if cuoi is not None else "không nhận được lượt nào"
         return (f"[lượt này dừng giữa chừng ({ly_do}) — bỏ lượt, lịch sử giữ nguyên như trước. "
@@ -79,6 +82,8 @@ def run_turn(llm, read_eng, ops_eng, history: list, cau_hoi: str) -> tuple[str, 
     if not tra_loi.strip():
         # Kết thúc sạch nhưng không có chữ nào — vẫn không được trả rỗng im lặng.
         tra_loi = f"[model kết thúc bằng '{cuoi.stop_reason}' nhưng không sinh câu trả lời nào.]"
+    elif cuoi.stop_reason == "max_tokens":
+        tra_loi += "\n\n[câu trả lời bị cắt giữa chừng vì chạm trần token — hỏi lại gọn hơn để có bản đầy đủ]"
     return tra_loi, messages
 
 

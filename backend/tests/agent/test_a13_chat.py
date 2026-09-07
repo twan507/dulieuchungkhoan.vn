@@ -199,3 +199,24 @@ def test_het_max_tokens_giua_luot_cong_cu_thi_bo_luot(tool_dem):
         llm.close()
     assert moi == [], "lịch sử rỗng ban đầu phải giữ rỗng, không nhận lượt hỏng"
     assert "max_tokens" in tra_loi
+
+
+def test_max_tokens_ma_luot_cuoi_chi_co_chu_thi_van_giu_cau_tra_loi(tool_dem):
+    """Review vòng 2, F3: bản sửa C2 quét quá tay.
+
+    `max_tokens` chỉ nguy hiểm khi nó rơi GIỮA một lượt `tool_use` (để lại tool_use không có
+    tool_result). Nếu lượt cuối chỉ có chữ thì lịch sử hợp lệ hoàn toàn, và câu trả lời — dù
+    bị cắt — vẫn đáng giá hơn là vứt đi cùng mọi kết quả tra cứu đã tốn công lấy về.
+    """
+    def handler(request):
+        return httpx2.Response(200, json=_msg(
+            [{"type": "text", "text": "Doanh thu thuần năm 2024 là 62.848,8 tỷ và"}], "max_tokens"))
+
+    llm = _llm_gia(handler)
+    try:
+        tra_loi, lich_su = run_turn(llm, None, None, [], "Doanh thu FPT?")
+    finally:
+        llm.close()
+    assert "62.848,8 tỷ" in tra_loi, "không được vứt câu trả lời hợp lệ"
+    assert "cắt" in tra_loi, "phải nói rõ câu trả lời bị cắt giữa chừng"
+    assert len(lich_su) == 2 and lich_su[-1]["role"] == "assistant"
