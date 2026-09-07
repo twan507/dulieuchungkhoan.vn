@@ -77,6 +77,22 @@ Chủ dự án nêu 2026-09-07: *"model chỉ viết chữ, còn số liệu và
 
 **Bước rẻ nhất làm trước:** viết bộ **dò** (không chặn), quét lại transcript vòng 7–11 đã lưu trong repo, đếm mỗi câu trả lời có bao nhiêu số không truy được về đề hay về tool. Hiện ta mới biết họ lỗi này xảy ra ở A4 — **chưa biết 14 câu kia thế nào**.
 
-## 6. Trạng thái bàn giao
+## 6. Review độc lập (Task 7, Sonnet, hai trục)
 
-*(điền khi đóng lát — sau review Task 7 và verify Task 8)*
+**Trục Chuẩn:** phần bốn commit lát 10 — **sạch**, không Critical/Important. Phần nhánh lát 11 — 1 Minor: docstring `build_system_blocks()` còn ghi *"Ba block"* sau khi hàm trả về bốn (đã sửa, `d99fdd3`).
+
+**Trục Spec:** đủ, đúng, không scope-creep ở bốn hạng mục lõi. Hai điểm reviewer nêu và cách xử:
+
+1. 🔴 **Reviewer bắt được chỗ tôi báo cáo hớ.** `round9-results` viết B9 *"không còn câu khuyến nghị nào"* và *"0 cụm khuyến nghị theo mã"* — gộp lại đọc thành *"đã hết khuyến nghị"*, sai. Reviewer tìm ra **B4 vòng 9** vẫn viết *"Hành động: … duy trì sức mua cao … chuyển dần sang nhóm phòng thủ"*. Đã đính chính ở [round9-results §3b](round9-results-2026-09-07.md) và sửa dòng nợ #2 trong roadmap thành 🟡 *"hết theo MÃ, còn ở mức ngành/danh mục"*. **Bài học:** `grep` chỉ bắt được cách diễn đạt mình đã nghĩ ra trước; phần "hành động" của từng câu phải đọc bằng mắt.
+2. **AC1 — reviewer thấy 11 failed + 7 error khi chạy full suite.** Nguyên nhân đã tìm ra: **hai phiên pytest chạy đồng thời trên cùng một DB test** `dulieu_test` (tôi và agent review cùng chạy `pytest tests`). Bằng chứng: mỗi file lỗi chạy riêng đều pass; và **hai lượt chạy toàn bộ sau khi agent kết thúc đều ra `1029 passed, 2 skipped`**. Không phải nợ có sẵn của repo, cũng không phải do lát 11 — nhưng là **cái bẫy đáng ghi**: bộ test dùng một DB dùng chung, chạy song song hai phiên là hỏng, không có gì báo.
+
+## 7. Trạng thái bàn giao
+
+- Nhánh `feat/semantic-layer-closeout` → `main` bằng `--no-ff`.
+- **1.029 passed, 2 skipped** *(`cd backend && uv run --env-file ../.env pytest tests -q`; **thiếu `--env-file` là 425 error**, không phải test hỏng)*. Trước lát: 1.025.
+- Migration head **`0020`** — lát 11 **không thêm migration nào**.
+- `backend/agent/`: **bốn** block system, lệnh `/moi`, payload chuỗi giá **−21,2%**, test canh đường khởi động.
+- **Không job nào chạy tự động**; 11 task Scheduler vẫn `Disabled` theo [4d].
+- Hồ sơ đo trong thư mục này: vòng 8 · vòng 9 · vòng 10 (nhóm A) · A/B `REMINDER` · rubric v2.
+
+🔴 **Hai thứ lát 12 phải đọc trước khi kết luận bất cứ điều gì từ một lượt chạy:** [rubric v2 §3](rubric-v2.md) (bộ hồi quy có nhiễu ở cả hai lớp) và §5 trên (hàng rào số — việc để dành, kèm lý do vì sao chưa dựng được hôm nay).
