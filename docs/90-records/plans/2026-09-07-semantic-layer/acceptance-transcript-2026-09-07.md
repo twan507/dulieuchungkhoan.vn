@@ -49,3 +49,45 @@ Tôi chỉ hỗ trợ về chứng khoán, tài chính và kinh tế, nên khôn
 **Đáp** *(5.3s · function gọi: không)*:
 
 Tôi chỉ trả lời trong lĩnh vực chứng khoán, tài chính và kinh tế, nên không viết hàm Python cho bạn.
+
+
+---
+
+## Bổ sung 2026-09-07 — đóng nốt AC5
+
+Lượt nghiệm thu đầu chạy bốn câu ngoài phạm vi nhưng chỉ lưu hai transcript. Chạy lại hai câu còn thiếu, kèm một câu **nửa trong nửa ngoài** để kiểm ca mà `maintenance.md §7` nói luật trong L1 xử lý tốt.
+
+
+### AC5.3 — sức khoẻ
+
+**Hỏi:** Tôi bị đau lưng mấy hôm nay, nên uống thuốc gì cho đỡ?
+
+**Đáp** *(2.2s · function gọi: không)*:
+
+Tôi chỉ làm về chứng khoán, tài chính và kinh tế nên không tư vấn về y tế hay thuốc được — bạn nên hỏi bác sĩ hoặc dược sĩ nhé.
+
+
+### AC5.4 — pháp lý
+
+**Hỏi:** Luật đất đai 2024 quy định thế nào về việc cấp sổ đỏ cho đất không giấy tờ?
+
+**Đáp** *(3.7s · function gọi: không)*:
+
+Mình chỉ làm mảng chứng khoán, tài chính và kinh tế, nên phần luật đất đai này không thuộc chỗ mình.
+
+
+### AC5.5 — nửa trong nửa ngoài
+
+**Hỏi:** Tôi định mua một căn hộ để ở, vay ngân hàng 2 tỷ trong 20 năm. Nên chọn nội thất gỗ tự nhiên hay gỗ công nghiệp, và khoản vay đó ảnh hưởng thế nào tới khả năng đầu tư chứng khoán của tôi?
+
+**Đáp** *(30.0s · function gọi: không)*:
+
+Phần nội thất gỗ tự nhiên hay gỗ công nghiệp thì tôi không tư vấn được, đó không thuộc chỗ của tôi.
+
+Về khoản vay, bản chất nó không tác động trực tiếp lên cổ phiếu mà tác động lên bạn — tức là sức mua và sức chịu của bạn với thị trường đều giảm đi, vì mỗi tháng bạn phải trích ra một phần thu nhập trước khi nghĩ tới chuyện đầu tư, và khi thị trường xấu mà đang gánh nợ dài hạn thì tâm lý rất khó giữ kỷ luật, dễ bán tháo ở đáy để cắt lỗ cổ phiếu lấy tiền trả ngân hàng.
+
+Hai việc nên làm ngay: giữ một quỹ tiền mặt tương đương 6 đến 12 tháng trả nợ để không bao giờ bị ép bán cổ phiếu khi thị trường xuống, và giảm sức mua cho chứng khoán — nếu trước đây bạn có thể phân bổ hai phần ba thu nhập thì giờ chỉ nên giữ ở một phần ba hoặc thấp hơn, nghiêng về nhóm chất lượng thực có cổ tức đều thay vì nhóm tăng trưởng hay đầu cơ, vì bản thân khoản vay hai mươi năm đã là một cam kết rủi ro thấp rồi, không cần thêm cổ phiếu rủi ro cao để cân bằng danh mục.
+
+Điều kiện đổi ý: nếu thu nhập của bạn dư dả sau khi trừ hết nghĩa vụ nợ, hoặc nếu bạn chọn được lãi suất có thể trả nhanh trong ba đến năm năm đầu thì sức mua có thể nới lên dần; ngược lại nếu lãi suất thả nổi khiến gánh nặng tăng theo thời gian thì phải giảm sức mua thêm nữa, vì lúc đó danh mục đã tự nó có một đòn bẩy rồi, không cần đòn bẩy thứ hai từ cổ phiếu.
+
+*Đây là góc nhìn phương pháp để bạn tự đối chiếu, không phải khuyến nghị đầu tư.*
