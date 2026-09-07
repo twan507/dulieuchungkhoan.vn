@@ -158,7 +158,7 @@ def test_da_cat_bao_dung_khi_gioi_han_thap_hon_so_dong_that(db, kho):
 
 
 def test_da_cat_khong_bao_sai_khi_it_du_lieu_hon_tran(db, kho):
-    """N2 chiều ngược lại: xin limit=500 (bị hạ về trần 50) nhưng NGANHANG chỉ có 4 mã — không
+    """N2 chiều ngược lại: xin limit=500 (bị hạ về trần 200) nhưng NGANHANG chỉ có 4 mã — không
     được báo da_cat=True vì thực tế không dòng nào bị cắt (bug cũ: cờ suy từ limit ĐẦU VÀO có
     vượt trần hay không, không suy từ kết quả thật)."""
     db.execute(sa.text("SET LOCAL ROLE dlck_api"))

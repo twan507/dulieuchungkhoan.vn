@@ -1,7 +1,7 @@
 """Báo cáo tài chính dạng dài.
 
 Bảng 27,3 triệu dòng (đo 2026-09-07) ⇒ MỌI truy vấn lọc issuer_id trước, rồi mới lọc năm và
-mã chỉ tiêu; trần 8 kỳ. length_report: 1..4 = quý, 5 = CẢ NĂM (không phải quý 5).
+mã chỉ tiêu; trần 20 kỳ. length_report: 1..4 = quý, 5 = CẢ NĂM (không phải quý 5).
 canonical_code NULL toàn bộ nên đừng dùng nó. Tên hiển thị lấy từ bảng nhãn đóng, KHÔNG tra
 name_vi (tên không duy nhất — isa20/isa22 cùng name_vi "LỢI NHUẬN THUẦN" trong nguồn).
 
