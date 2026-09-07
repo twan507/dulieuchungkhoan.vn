@@ -66,7 +66,7 @@ Chi phí thật **$0,016/câu** thấp hơn ước lượng $0,022–0,048 của
 | AC | Kết quả |
 |---|---|
 | **AC1** `tool_runner` chạy với MiniMax | ✅ — spike Task 0 và mọi lượt chat |
-| **AC2** không test nào xanh thành đỏ | ✅ — `main` **877 passed, 2 skipped**; nhánh **976 passed, 2 skipped** (+99, không skip mới) |
+| **AC2** không test nào xanh thành đỏ | ✅ — `main` **877 passed, 2 skipped**; nhánh **986 passed, 2 skipped** (+109, không skip mới) |
 | **AC3** đường đọc dưới `dlck_api`, không ghi được | ✅ — chạy tay dưới đúng credential production, output nguyên văn ở §7 |
 | **AC4** cả 9 function trả đúng dữ liệu thật | ✅ — bảng §2 |
 | **AC5** câu ngoài lĩnh vực bị từ chối gọn | ✅ **4/4, đủ transcript** — ẩm thực · lập trình · sức khoẻ · pháp lý, tất cả ở [acceptance-transcript](acceptance-transcript-2026-09-07.md). *(Lượt đầu chỉ lưu 2/4; hai câu còn lại chạy lại 2026-09-07 để có bằng chứng thật thay vì tự khai.)* Chạy thêm một câu **nửa trong nửa ngoài** (nội thất gỗ + ảnh hưởng khoản vay tới đầu tư): model từ chối đúng vế ngoài phạm vi và trả lời vế tài chính có kết luận điều kiện — đúng ca mà `maintenance.md §7` nói luật trong L1 xử lý tốt |
@@ -78,7 +78,7 @@ Chi phí thật **$0,016/câu** thấp hơn ước lượng $0,022–0,048 của
 
 ## 5. Ba lỗi code mà lượt chạy thật lộ ra
 
-🔴 **Đính chính 2026-09-07 (review trục Spec bắt được):** mục này ban đầu viết *"đã sửa, **có test canh**"*. Sai — `git show --stat d23913c` cho thấy **chỉ 1/3 lỗi có test** lúc đó (lỗi 2). Viết một khẳng định chưa kiểm chính là loại lỗi tự đầu độc mà CLAUDE.md §3.2 cấm: nó chặn mất phép kiểm sẽ tìm ra chỗ hở. Hai test còn thiếu đã bổ sung sau lượt review (`test_ket_thuc_sach_nhung_khong_co_chu_van_khong_tra_rong` cho lỗi 1, `test_luot_tool_use_ghi_so_la_ok` cho lỗi 3).
+🔴 **Đính chính 2026-09-07 (review trục Spec bắt được):** mục này ban đầu viết *"đã sửa, **có test canh**"*. Sai — `git show --stat d23913c` cho thấy **chỉ 1/3 lỗi có test** lúc đó (lỗi 2). Viết một khẳng định chưa kiểm chính là loại lỗi tự đầu độc mà CLAUDE.md §3.2 cấm: nó chặn mất phép kiểm sẽ tìm ra chỗ hở. Hai test còn thiếu đã bổ sung sau lượt review: `test_ket_thuc_sach_nhung_khong_co_chu_van_khong_tra_rong` cho lỗi 1, và phép kiểm `tool_use → 'ok'` cho lỗi 3 — nằm **bên trong** `test_ghi_so_duoi_role_etl_that` chứ không phải một test riêng. *(Bản đầu của chính câu đính chính này ghi tên một test không tồn tại — review vòng 3 bắt được. Đính chính một khẳng định chưa kiểm mà lại kèm một khẳng định chưa kiểm khác: đúng cái §3.2 cấm, lần thứ hai.)*
 
 | # | Lỗi | Bằng chứng | Sửa |
 |---|---|---|---|
@@ -127,7 +127,7 @@ AC9 — ket noi ro ri cua agent_reader:
 
 ```
 main:                877 passed, 2 skipped in 79.77s
-feat/semantic-layer: 976 passed, 2 skipped in 79.32s
+feat/semantic-layer: 986 passed, 2 skipped in 85.43s
 ```
 
 
