@@ -128,6 +128,11 @@ def test_parse_rss_literals_per_source():
     bcp = np_.parse_rss(_feed("baochinhphu"), _src("baochinhphu", group=1))
     assert bcp[0].published_at == datetime(2026, 9, 5, 13, 30, tzinfo=VN) and bcp[0].published_at_src == "feed"
     assert np_.parse_rss(_feed("vneconomy"), _src("vneconomy"))[0].published_at == datetime(2026, 9, 4, 9, 43, 6, tzinfo=VN)
+    # NguoiQuanSat có 4 feed RSS sống trong registry nhưng tới 2026-09-07 chưa test nào chạm
+    # đường parse của nó, dù fixture đã bắt sẵn từ lát 8. Literal đọc tay từ feed-nguoiquansat.xml.
+    nqs = np_.parse_rss(_feed("nguoiquansat"), _src("nguoiquansat"))
+    assert len(nqs) == 40 and nqs[0].published_at == datetime(2026, 9, 5, 22, 17, 1, tzinfo=VN)
+    assert nqs[0].url.endswith("-thanh-dien-314409.html") and nqs[0].published_at_src == "feed"
     assert all(it.sapo_raw for it in cafef[:5])
 
 

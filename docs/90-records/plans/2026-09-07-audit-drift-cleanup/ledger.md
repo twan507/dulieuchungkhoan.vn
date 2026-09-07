@@ -341,3 +341,68 @@ git branch                                     -> chỉ còn main + nhánh đang
 ```
 
 **Commit:** `chore: retire the leftovers the audit turned up`
+
+---
+
+## Task 8 — hai lỗ hổng test, và quyết `flush_once`/`label_for` ✅
+
+**Nhịp K — suy giá trị kỳ vọng bằng tay, không chạy code rồi chép output (§4.5.3):**
+
+```
+phan_ure.json:  2 series, mỗi series 588 điểm thô
+  idx0 'Giá phân Ure Phú Mỹ'  epoch 1787850000000 -> VN 2026-08-28  value 11700
+  idx1 'Giá phân Ure Cà Mau'  epoch 1787850000000 -> VN 2026-08-28  value 12150
+  điểm cũ nhất 2024-09-05: phumy 9850 · camau 10250
+wichart.md §9 dòng 753-754:  scale = 1, đơn vị VND/kg  ⇒ giá trị kỳ vọng = số thô
+2026-08-28 là THỨ SÁU (tính tay) ⇒ điểm chép lại không rơi vào luật bỏ cuối tuần
+
+tn.json: 46 điểm, mới nhất neo 2026-06-01 (Q2) ⇒ chuẩn hoá về 2026-04-01, value 2.23
+feed-nguoiquansat.xml: 40 <item>; bài đầu pubDate 'Sat, 05 Sep 2026 22:17:01 +0700'
+```
+
+**Nhịp S — ba test mới:**
+
+| Mục | Test |
+|---|---|
+| D6 | `test_phan_ure_two_series_share_one_key_and_both_land_with_scale_one` — hai series sống chưa từng được test |
+| D7 | `test_quarterly_percent_series_on_real_capture_anchors_to_quarter_start` |
+| D8 | `_feed("nguoiquansat")` thêm vào `test_parse_rss_literals_per_source` |
+
+### D7 — plan sai, sửa lại khi đọc code
+
+Plan viết *"đổi test `tn` sang dùng `_series("tn")`"*. **Làm vậy là hỏng test.** Nhịp K cho thấy test `tn` đang có là một test **ÂM** (`pytest.raises(SeriesError)`, `reason == "shape"`) với đầu vào **bịa có chủ đích**: quý neo tháng 5, không phải tháng cuối quý. Nó **bắt buộc** phải bịa — bản thu thật toàn quý hợp lệ nên không thể dựng ca đó.
+
+Lỗ hổng thật là **thiếu vế dương**: `tn.json` chưa từng được khẳng định. Nên **thêm** một test dương, **giữ nguyên** test âm.
+
+### D6 — test đỏ ở lượt đầu, và **kỳ vọng của tôi mới là cái sai**
+
+`assert len(phumy) == 588` → đỏ, thật ra 488. Không phải code sai: **588 là số điểm THÔ**, còn luật bỏ điểm cuối tuần chép lại cắt bớt 100 điểm. Tôi đã khẳng định một con số mà chính luật đang kiểm sẽ làm đổi.
+
+Sửa thành phép kiểm **bất biến**, vẫn suy được từ fixture + luật:
+
+```python
+raw = len(_series("phan_ure")[0]["data"])
+assert raw == 588            # đếm tay trong fixture
+assert 0 < len(phumy) < raw  # luật bỏ điểm cuối tuần PHẢI cắt bớt
+```
+
+### Chứng minh test có tác dụng — đột biến, không chỉ "nó xanh"
+
+```
+đột biến 1  wichart_normalize: Asia/Ho_Chi_Minh -> UTC
+            => phan_ure ĐỎ · quarterly_percent ĐỎ            (hoàn nguyên)
+đột biến 2  registry: hoán vị urea_phumy <-> urea_camau
+            => phan_ure ĐỎ                                    (hoàn nguyên)
+```
+
+D8 **không** đột biến riêng — nó đi đúng đường `parse_rss` mà 6 nguồn khác đã canh; giá trị của nó là **phủ thêm một nguồn sống**, không phải canh thêm một nhánh code. Ghi rõ để không ai đọc nhầm là đã chứng minh.
+
+### D4 · D5 — đọc code rồi mới quyết, và **cả hai đều GIỮ**
+
+**`ChWriter.flush_once`** — thân hàm đúng là `manage_once()` rồi `write_once(budget_s=RETRY_BUDGET_S + 30)`. Tức nó **không** đi đường khác production về mặt *thứ tự*, chỉ khác **ngân sách thời gian**: test muốn "xả cho hết", production muốn "mỗi nhịp một ít". Khác biệt này **có chủ đích và đã ghi trong docstring**. Audit nói *"30 test đi đường khác production"* — nói vậy là **nặng hơn sự thật**; câu đúng là *"khác đúng một tham số ngân sách, có lý do"*. **Giữ.**
+
+**`label_for`** — đúng một dòng `LABELS.get(code)`. Khác `LABELS[code]` của 3 tool ở chỗ trả `None` thay vì `KeyError`. 5 assertion của nó đang **ghi lại ngữ nghĩa của `LABELS`** (ví dụ `label_for("prf") is None` — mã bị loại có chủ đích). Xoá là mất 5 assertion đó mà không được gì. **Giữ** — §4.4.3: *"rác có sẵn thì báo, không tự xoá"*.
+
+**Nhịp X:** `pytest test_e38 + test_e52 -q` → **31 passed**; hai đột biến đều bắt được; registry và normalize đã hoàn nguyên (`grep` xác nhận).
+
+**Commit:** `test(etl): the two live sources nobody was testing`
