@@ -232,3 +232,26 @@ Ngữ cảnh model là 1 triệu token nên chỗ chứa không phải ràng bu�
 | Kho có chuỗi lãi suất nào | model liệt **9 chuỗi**, tự nhóm thành chính sách / liên ngân hàng / huy động |
 | **FUCVREIT** có trả cổ tức tiền mặt không | **2 đợt** (chốt 21/05/2018 và 24/05/2021) — trước khi sửa thì bị giấu sạch |
 | Giá HPG 3 năm | chạy trọn với trần 2.000 phiên |
+
+## Vòng review thứ tư ✅ (2026-09-07) — vòng cuối trước merge
+
+Hồ sơ: [Chuẩn v4](review-chuan-v4-2026-09-07.md) · [Spec v4](review-spec-v4-2026-09-07.md).
+
+**Hai mục CHẶN của trục Chuẩn — cùng một lỗi, và nó vô hiệu hoá nguyên một commit:** `tools/__init__.py` vẫn nói với model *"Tối đa 8 kỳ"* và *"Tối đa 10 mã"* trong khi hằng số đã là 20 và 25. **Docstring của `@beta_tool` chính là `description` gửi cho model** — model đọc mô tả, không đọc hằng số. Nghĩa là commit *"nới trần"* không nới gì với hai công cụ đó. Reviewer chỉ ra: đây đúng là hai chỗ **duy nhất** có nêu số bằng chữ trong docstring, tức lượt sửa bỏ sót 100% số chỗ có thể bỏ sót.
+
+**Mục CHẶN của trục Spec: lại là số liệu tài liệu** — 986 vs 997 test, index liệt 13 file trong khi có 15. Tôi thêm hai báo cáo review vào hồ sơ mà **không sửa index cùng lượt**, ngay sau khi chính ledger này đặt tên cho lỗi đó. Lần thứ ba trong một lát.
+
+⇒ **Luật rút ra, áp từ nay:** số test và số file là **số thời điểm**; cập nhật chúng ở đúng ba chỗ (`roadmap` §0, dòng lát, `90-records/README`) **ngay trước khi merge, không sớm hơn** — cập nhật giữa chừng rồi còn đổi code nữa là tự tạo ra lệch.
+
+**Bốn lỗi thật khác, đều do đo mà ra:**
+
+| Lỗi | Bằng chứng | Sửa |
+|---|---|---|
+| 🔴 `get_news()` **không tham số luôn nổ** trên kho thật | 47/8.220 bài có `published_at IS NULL`; `ORDER BY DESC` của Postgres là `NULLS FIRST` nên chúng luôn đứng đầu, rồi `format_date_vi(None)` ném `AttributeError`. Đây là lời gọi tự nhiên nhất cho *"cho tôi tin mới nhất"*, và **137 test xanh không thấy** vì fixture không có bài nào thiếu ngày | dùng đúng quy ước **migration `0007` đã ghi sẵn** (`coalesce(published_at, fetched_at)`) thay vì bịa hành vi mới; `format_date_vi(None)` trả `None` |
+| Ngày do model sinh ném `DataError` | `"hôm qua"`, `"2025-13-45"`, `"tháng trước"` — cả 4 hàm nhận ngày đều nổ. Model nhận lại **traceback SQL thô** thay vì lỗi có cấu trúc | một hàm kiểm dùng chung, áp cho mọi tham số ngày |
+| Từ vựng đóng chỉ được canh một nửa | `get_news(group_no=9)` đổ lỗi *"còn N bài chưa phân loại"*; `get_financials(statement_type='XX')` trả như thể doanh nghiệp chưa nộp báo cáo; `period='Nam'` bị âm thầm đọc thành **quý** | kiểm `group_no`, `industry_code`, `exchange`, `statement_type`, `period` |
+| Nới trần mà quên đặt hạn cho **cả lượt** | 16 vòng × timeout 600 s = **2,7 giờ** một lượt (10,7 giờ nếu tính `max_retries`) | `TRAN_GIAY_MOT_LUOT = 300` (~9 lần p90 đo được); timeout 600 s cũng lan sang thăm dò quota chạy sau mỗi lượt ⇒ tách riêng 15 s |
+
+**Hai lỗi trong chính đợt sửa vòng 3, do vòng 4 bắt:** cờ `da_cat` của `compare_peers` tính theo `len(mas_xin)` trong khi điểm cắt đã dời sang `ma_hop_le_full` ⇒ 2 mã thật + 30 mã bịa báo "đã cắt" dù không cắt gì (sai 4/6 ca đo); và bản sửa "xét tồn tại trên toàn bộ danh sách" **bỏ trần đầu vào mà không thay bằng gì** ⇒ 500 mã = 1.000 round-trip / 2,9 giây, do model điều khiển. Nay có `TRAN_MA_VAO = 100`, đo lại: 500 mã → 200 SQL / 572 ms.
+
+**Số cuối cùng: 1.025 passed, 2 skipped** (`main` 877 → **+148**).
