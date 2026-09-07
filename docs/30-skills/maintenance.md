@@ -99,6 +99,12 @@ Chạy lại bộ này khi: sửa nội dung `valuation.md` · nối function ca
 
 Cách test đã dùng: subagent **Sonnet độc lập**, mỗi vòng ~10 câu **có đáp án xác định**, tự chọn skill, kèm câu lạ ngoài kịch bản dựng sẵn. Kiến thức kiểm được đúng/sai nên không cần model mạnh để chấm.
 
+🔴 **Cập nhật 2026-09-07 — bộ 10 câu vòng 6 không còn trong repo.** `grep` toàn bộ `docs/` và `backend/`: chỉ còn *mô tả phương pháp* ở trên, không có câu hỏi, không có số liệu đầu vào, không có transcript. **Không tái lập được.**
+
+Con số **"FCFF phải ra 260 tỷ" ở trên không đối chiếu được** với bất cứ thứ gì còn lại: ví dụ DCF đầy đủ duy nhất còn trong repo (`backend/agent/skills/vn-stock-knowledge/references/valuation.md`, "Ví dụ 1") cho **270 tỷ** với số liệu đầu vào khác. Câu test vòng 6 gần như chắc chắn dùng số liệu khác ví dụ trong skill — đúng cách làm, nhưng bộ câu đã mất nên không kiểm lại được. **Giữ nguyên con số 260, không sửa thành 270** — sửa số mà không đo là nói dối (CLAUDE.md §1.2).
+
+**Bộ thay thế, đã lưu trong repo:** [`docs/90-records/plans/2026-09-07-semantic-layer/regression-round7.md`](../90-records/plans/2026-09-07-semantic-layer/regression-round7.md) — 15 câu (6 câu tính toán thuần + 9 câu ép function calling), rubric chấm hai lớp (số đúng · hình dạng L1). Kết quả chạy thật: [`round7-results-2026-09-07.md`](../90-records/plans/2026-09-07-semantic-layer/round7-results-2026-09-07.md).
+
 ## 7. Lỗ hổng phạm vi — phải vá ở tầng sản phẩm
 
 **Skill không thể là người gác cổng cho chính nó.** Luật *"chỉ trả lời chứng khoán, tài chính, kinh tế"* nằm trong thân `SKILL.md` chỉ đọc được **sau khi skill đã tải**, mà câu ngoài phạm vi thì không kích hoạt skill nào. Đo được ở vòng 5: **3/4 câu ngoài phạm vi vẫn được trả lời đầy đủ**, kể cả viết trọn một đoạn code Python.

@@ -8,7 +8,7 @@
 | `etl` | Thu thập theo lịch từ 9 nguồn — xem [`docs/10-sources/`](../docs/10-sources/README.md) |
 | `ingester` | Realtime BVSC, tick thô + sổ lệnh + nến 1', ghi batch vào ClickHouse |
 
-**Đang có:** [`agent/skills/`](agent/skills/) — hai skill sản phẩm `vn-stock-advisor` · `vn-stock-knowledge` (3.046 dòng, đã test 6 vòng). ⚠️ **Trước khi sửa bất cứ gì trong đó, bắt buộc đọc [`docs/30-skills/maintenance.md`](../docs/30-skills/maintenance.md).** `agent/` sau này chứa luôn system prompt và glue function-calling.
+**Đang có:** [`agent/skills/`](agent/skills/) — hai skill sản phẩm `vn-stock-advisor` · `vn-stock-knowledge` (3.046 dòng, đã test 6 vòng). ⚠️ **Trước khi sửa bất cứ gì trong đó, bắt buộc đọc [`docs/30-skills/maintenance.md`](../docs/30-skills/maintenance.md).** `agent/` nay đã chứa system prompt, vòng chat REPL và glue function-calling (lát 10, 2026-09-07 — xem mục "Chạy vòng chat" dưới).
 
 **Trạng thái phần code** *(2026-09-06 — năm job REST `screener` · `events` · `price` · `snapshot` · `fundamentals` từ 2026-09-04, job `etl wichart` (vĩ mô · tiền tệ · hàng hoá WiChart → `macro.observation` + `asset.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-05-wichart-macro-etl/)), **năm job quốc tế** `etl fred` · `fx` · `lbma` · `yahoo` · `binance` từ 2026-09-05 chiều ([hồ sơ lát 7](../docs/90-records/plans/2026-09-05-global-etl/)), và job **`etl news`** (47 feed RSS + 6 nguồn crawl HTML → `news.*`, không AI, dedupe URL + tiêu đề 48 giờ, gắn mã tầng 1–2, `--loop`, `--backfill-sitemap` TinnhanhCK) từ 2026-09-06 ([hồ sơ lát 8](../docs/90-records/plans/2026-09-05-news-collect/)), và job **`etl classify`** (lưới AI MiniMax M3 qua `core/llm`: 20 sub + `summary_ai` + mã tầng 3 + gắn 24 ngành, có trần bắt buộc, `ops.llm_call`) từ 2026-09-06 chiều ([hồ sơ lát 9a](../docs/90-records/plans/2026-09-06-news-classify-llm/)), mỗi job một mục dưới)*: `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)) · job `etl screener` (52 trang `GetScreenerItems` → `market.screener_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-screener-daily-etl/)) · job `etl events` (sáu họ `Calendar/GetCorporate*` → `market.corporate_event`, [hồ sơ](../docs/90-records/plans/2026-09-03-events-daily-etl/)) · job `etl price` (`getPriceData` trang 1 mọi cổ phiếu niêm yết + backfill có con trỏ → `market.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-price-daily-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
 
@@ -373,6 +373,18 @@ Một bài = một giao dịch: `UPDATE news.article` (`group_no/sub/confidence/
 **Số đo thật** (2026-09-06, [ledger §2](../docs/90-records/plans/2026-09-06-news-classify-llm/ledger.md), 230 bài adaptive + 100 disabled): adaptive **p50 8 s / p90 16,5 s**, ≈ 3,0k token vào (cache trúng ≈ 50 %), ≈ 745 ra (≈ 330 thinking), **≈ $0,0019/bài quy giá, ≈ 6 bài/phút**; disabled p50 3,6 s, 294 ra, $0,0013/bài. 350 bài/ngày adaptive ≈ 1 giờ ≈ 6–7 % cửa sổ quota 5 giờ. Kho còn 7.797 bài chưa phân loại ≈ 22 giờ / ≈ $15 / 3 cửa sổ — chỉ chạy khi chủ dự án gọi tên.
 
 ⚠️ `ops.llm_call` tham chiếu `ops.etl_run` và `news.article` (FK không `ON DELETE`): **mọi lệnh dọn `news.article` / `ops.etl_run` (kể cả `TRUNCATE` trong test) phải dọn `news.article_industry` + `ops.llm_call` trước** — test e05/e55/e56 đã sửa theo. ⚠️ Chạy lượt > 10 phút **tách tiến trình** (`Start-Process cmd`), theo dõi qua `ops.etl_run`. Chưa gắn vào `--loop`, chưa có task Scheduler — bật chạy tự động chỉ sau khi có bộ đánh giá gán tay ([news-pipeline §12](../docs/20-design/news-pipeline.md)).
+
+## Chạy vòng chat (`agent` — lát 10, 2026-09-07)
+
+```bash
+cd backend && uv run --project . python -m agent   # REPL nhiều lượt — LUÔN chạy tiền cảnh, không có task tự động
+```
+
+⚠️ **Phải `cd backend` trước.** `pythonpath = ["."]` trong `backend/pyproject.toml` chỉ có hiệu lực khi rootdir là `backend`; chạy `uv run --project backend python -m agent` từ gốc repo trả `No module named agent` *(đã gặp thật 2026-09-07)*.
+
+Cần biến môi trường mới **`AGENT_DATABASE_URL`** — user login `agent_reader IN ROLE dlck_api` (chỉ `SELECT` trên `market`/`macro`/`asset`/`news`, không ghi được gì), tạo **per-môi-trường, ngoài migration** (khuôn [`database/README.md`](../database/README.md)), mật khẩu sinh ngẫu nhiên, ghi thẳng `.env`, **không in ra**. `assert_read_only()` chạy lúc khởi động, khẳng định đúng role và không có quyền `INSERT` — sai thì chết ngay, không chạy tiếp.
+
+[`agent/`](agent/) chứa: `system_prompt.py` (gác phạm vi lĩnh vực + neo ngày hôm nay), `skills.py` (nạp trọn L1 lúc khởi động, tra L2 theo nhu cầu), `chat.py` (vòng REPL, dựng `tool_runner` mới mỗi lượt), `db.py`/`llm_log.py`, và [`agent/tools/`](agent/tools/) — 9 function dữ liệu/tri thức chạy dưới `dlck_api`, mỗi tool tự mở/đóng kết nối, không giữ transaction bắc qua lời gọi model. Hợp đồng đầy đủ 9 function: [`docs/20-design/chatbot-semantic-layer.md`](../docs/20-design/chatbot-semantic-layer.md). Bộ hồi quy (15 câu, có function calling) và kết quả chạy thật: [`docs/90-records/plans/2026-09-07-semantic-layer/`](../docs/90-records/plans/2026-09-07-semantic-layer/).
 
 ## Lịch chạy (Windows Task Scheduler)
 

@@ -113,7 +113,7 @@ Nhờ vậy khung ngành đổi thì câu trả lời đổi theo, không phải
 
 ### 3.3 Function calling ↔ tầng skill
 
-[Kho dữ liệu §6.3](../20-design/market-data-store.md) định nghĩa 5 function cho chatbot. [Skill L2](../../backend/agent/skills/vn-stock-knowledge/SKILL.md) viết: *"có công cụ tra dữ liệu thì gọi và dùng số hiện hành, không có thì nói rõ là cần tra"*.
+[Kho dữ liệu §6.3](../20-design/market-data-store.md) định nghĩa bộ function cho chatbot — **9 function** kể từ lát 10 *(dựng và kiểm chứng 2026-09-07)*, hợp đồng đầy đủ ở [chatbot-semantic-layer.md §2](../20-design/chatbot-semantic-layer.md). [Skill L2](../../backend/agent/skills/vn-stock-knowledge/SKILL.md) viết: *"có công cụ tra dữ liệu thì gọi và dùng số hiện hành, không có thì nói rõ là cần tra"*.
 
 Hai câu này nói về **cùng một thứ, từ hai phía** — và chưa bên nào biết bên kia tồn tại. Chi tiết hợp đồng ở [tầng ngữ nghĩa cho chatbot](../20-design/chatbot-semantic-layer.md).
 

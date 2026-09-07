@@ -610,19 +610,20 @@ JOIN organization o USING (organ_code)
 GROUP BY 1,2,3;
 ```
 
+⚠️ Ví dụ trên dùng tên bảng `organization`/`organ_code` — đây là **lược đồ cũ, trước [spec 2026-08-25](../90-records/plans/2026-08-25-postgres-data-schema/)**; tên thật hiện nay là `market.issuer` / `market.security` (xem banner đầu trang và §5.1). Giữ nguyên ví dụ làm minh hoạ ý tưởng view, không phải DDL hiện hành.
+
 Bộ view tối thiểu: `v_financial_ratios` · `v_price_adjusted` · `v_company_profile` · `v_corporate_calendar` · `v_money_flow`.
 
 ### 6.3 Function calling thay vì SQL tự do
 
-Cho bot gọi tập function đã định nghĩa, không cho sinh SQL tuỳ ý:
+Cho bot gọi tập function đã định nghĩa, không cho sinh SQL tuỳ ý. **Chín function thật** (`backend/agent/tools/__init__.py`, dựng và kiểm chứng lát 10, 2026-09-07):
 
 ```
-screen_stocks(criteria, exchange, sector, limit)
-get_financials(ticker, statement_type, from_year, to_year)
-get_price_series(ticker, from_date, to_date, resolution)
-get_corporate_events(ticker, event_type, from_date)
-compare_peers(ticker, metrics)
+get_price_series · get_financials · screen_stocks · compare_peers · get_corporate_events
+get_industry_tree · get_macro_series · get_news · load_knowledge_reference
 ```
+
+Hợp đồng đầy đủ — chữ ký, tham số, trần, nguồn dữ liệu — nằm ở [chatbot-semantic-layer.md §2](chatbot-semantic-layer.md), không chép lại ở đây (một sự thật một chủ, CLAUDE.md §1.7).
 
 Chính xác hơn, tránh truy vấn quét toàn bảng, và kiểm soát được chi phí.
 
