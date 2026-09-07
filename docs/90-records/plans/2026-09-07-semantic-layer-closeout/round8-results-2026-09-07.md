@@ -71,7 +71,21 @@ Chấm bằng **đúng thước vòng 7**: mục 1–5 tính điểm, đạt khi
 | Độ trễ trung bình | **26,4 s** · cao nhất **171,8 s** |
 | Quota cửa sổ 5 giờ | 92% → **90%** sau 15 câu |
 
-Thời gian thật: 15 câu trong **~13 phút** (16:12 − 15:59). Ba câu đắt nhất: B8 **202 s**, A2 127 s, B9 98 s. Vòng 7 đo p50 6,9 s · p90 34,5 s ⇒ **vòng 8 chậm hơn hẳn**; chưa rõ do khối prompt dài thêm hay do nguồn — **chưa đo, không suy đoán**.
+Thời gian thật: 15 câu trong **~13 phút** (16:12 − 15:59). **Vì sao chậm hơn vòng 7 — đã tách bạch bằng `ops.llm_call`, không đoán** *(chủ dự án hỏi 2026-09-07 16:25: có phải do kiến trúc gửi lại kết quả công cụ không)*:
+
+| | Vòng 7 | Vòng 8 |
+|---|---|---|
+| Request | 63 (≈2,9/câu) | 38 (**≈2,1/câu**) |
+| Token vào / request | 16.398 | **13.488** |
+| Token ra / request | 1.233 | **998** |
+| Cache đọc / request | 23.776 | **28.213** |
+| Độ trễ trung bình | 12,5 s | **23,1 s** |
+| p50 · p90 | 6,9 s · 31,4 s | 9,2 s · **78,6 s** |
+| **Token ra mỗi giây** | **98,5** | **43,2** |
+
+⇒ **Không phải do thiết kế.** Thêm một vòng gửi lại thì **số request phải tăng** — đây nó *giảm*; prompt dài thêm thì token vào phải tăng — đây nó *giảm*; luật mới làm câu dài hơn thì token ra phải tăng — đây cũng *giảm*. Thứ duy nhất đổi là **tốc độ sinh chữ tụt hơn một nửa** (98,5 → 43,2 token/s), tức phía nhà cung cấp. Lát 10 đo 84–152 token/s.
+
+⚠️ Đây là số của **một buổi chiều**. Chưa được sửa dải trong `10-sources/llm/minimax.md` — theo §1.2, chỉ sửa khi đo lại; cần thêm ít nhất một điểm đo nữa (vòng 9) cùng hướng. Ba câu đắt nhất: B8 **202 s**, A2 127 s, B9 98 s. Vòng 7 đo p50 6,9 s · p90 34,5 s ⇒ **vòng 8 chậm hơn hẳn**; chưa rõ do khối prompt dài thêm hay do nguồn — **chưa đo, không suy đoán**.
 
 ## 5b. 🔴 Phép đo có nhiễu — đo ngay sau khi chấm (2026-09-07 16:20)
 

@@ -28,6 +28,8 @@ Câu nửa trong nửa ngoài: trả lời phần thuộc lĩnh vực, nói mộ
 
 ANSWER_RULES = """Mọi con số bạn tự tính ra — không có trong câu hỏi và không do công cụ trả về — phải hiện phép tính BẰNG SỐ ngay tại chỗ: thay số vào công thức, ra kết quả. Nêu một con số dẫn xuất trần, kể cả dải nhạy hay ước lượng nhanh, là bịa.
 
+Khi nêu kịch bản hay dải nhạy — đổi một giả định rồi cho ra số mới — viết luôn phép tính của TỪNG đầu. Số kịch bản cũng là số dẫn xuất; nêu trần thì người đọc không có cách nào kiểm.
+
 Nói rõ số nào tra được từ dữ liệu, số nào là giả định của đề.
 
 Không nêu tỷ trọng danh mục, điểm mua, điểm bán hay vùng giá cụ thể cho bất kỳ mã nào, và không dùng câu mang nghĩa hành động ("gom dần", "mua thêm khi giá về…"). Nêu điều kiện làm kết luận đổi thì được."""
