@@ -46,6 +46,18 @@ Câu A4 (Gordon trên FCFE) là chỗ duy nhất **lặp lại được**, khôn
 
 🔴 **Điều này lớn hơn một câu hỏi.** Nó nói rằng **lớp 1 cũng có nhiễu**: cùng một đề, cùng một prompt, model có lúc dùng đúng công thức Gordon có lúc bỏ mất `(1+g)`. Ba vòng trước đây đều báo "15/15" nên tưởng lớp số là chắc chắn — thật ra chưa ai đo tính ổn định của nó.
 
+## 3b. 🔴 Đính chính sau review độc lập: khuyến nghị **chưa** hết, nó chuyển câu
+
+Bảng §2 ghi B9 *"không còn câu khuyến nghị nào"* và mục cổng ghi *"0 cụm khuyến nghị cụ thể theo mã"*. Câu thứ hai đúng; câu thứ nhất gộp lại **dễ đọc thành "đã hết khuyến nghị"** — sai. Reviewer độc lập tìm ra ở **B4** ([transcript dòng 240](round9-transcript-2026-09-07.md)):
+
+> *"**Hành động**: ở góc nhìn phân bổ danh mục, tôi nghiêng về **duy trì sức mua cao** — tức giữ tỷ trọng cổ phiếu ở mức 'vừa có cổ phiếu vừa có sức mua' thay vì gồng… **ưu tiên chuyển dần sang nhóm phòng thủ**."*
+
+Đây đúng là câu hành động ở mức **danh mục và nhóm ngành** — cùng loại với câu B9 của vòng 8 mà chính tài liệu này từng gọi tên. Nó **đạt** theo thước đã chốt (luật chỉ cấm phạm vi *một mã*, và chủ dự án chốt không làm tuyệt đối), nhưng phải nói thẳng:
+
+**Trạng thái thật của nợ #2: hết khuyến nghị THEO MÃ, còn khuyến nghị mức ngành/danh mục — đã biết, đã chấp nhận, không phải đã đóng.**
+
+Và một bài học về cách tôi kiểm: `grep` của AC3 tìm `gom dần|mua thêm|điểm mua|tỷ trọng [0-9]+%` nên **không bắt** được *"duy trì sức mua cao"*, *"chuyển dần sang nhóm phòng thủ"*, *"giữ tỷ trọng cổ phiếu"*. Phép kiểm máy chỉ bắt được đúng cách diễn đạt mình nghĩ ra trước — mọi lần chấm sau phải đọc bằng mắt phần "hành động" của từng câu, đừng tin mỗi grep.
+
 ## 4. Tốc độ trở lại bình thường — thêm một điểm đo cho §5 vòng 8
 
 15 câu trong **~7 phút** (16:27–16:35), mỗi câu 6–45 s, không câu nào chạm 100 s. Vòng 8 cùng bộ câu mất ~13 phút với đỉnh 202 s. Không đổi dòng code nào giữa hai vòng ngoài **một câu prompt** ⇒ củng cố kết luận vòng 8 §5: **chậm là phía nhà cung cấp, không phải kiến trúc**.

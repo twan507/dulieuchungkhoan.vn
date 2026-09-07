@@ -54,10 +54,10 @@ def build_tool_rules(hom_nay: dt.date | None = None) -> str:
 
 
 def build_system_blocks(hom_nay: dt.date | None = None) -> list[dict]:
-    """Ba block, thứ tự có chủ đích.
+    """Bốn block, thứ tự có chủ đích.
 
-    SCOPE_GUARD và L1 đứng trước vì chúng bất biến — MiniMax cache theo tiền tố, giữ hai khối
-    lớn ở đầu thì phần đắt nhất còn cơ hội trúng cache. Khối luật công cụ mang ngày hôm nay
+    SCOPE_GUARD, L1 và ANSWER_RULES đứng trước vì chúng bất biến — MiniMax cache theo tiền tố,
+    giữ ba khối ổn định ở đầu thì phần đắt nhất còn cơ hội trúng cache. Khối luật công cụ mang ngày hôm nay
     nên đổi mỗi ngày, đặt cuối để không phá tiền tố.
     """
     global _L1_CACHE
