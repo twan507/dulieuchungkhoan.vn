@@ -50,3 +50,37 @@ Danh sách link chết và orphan **khớp đúng từng dòng** với audit §5
 **Đo:** toàn bộ 7 phép kiểm chạy **0,51 s**, không DB, không mạng — đạt kỳ vọng "< 2 s" của plan §7.
 
 **Commit:** `test(docs): a red net for the doc-code drift the audit found`
+
+---
+
+## Task 2 — ba thứ làm theo là hỏng việc ✅
+
+**Nhịp K** — cả ba còn đúng nguyên:
+
+```
+D1  grep FRED_API|AGENT_DATABASE_URL|LLM_TIMEOUT_S .env.example  -> rỗng
+    code đọc thật: fred_fetch.py:40 raise RuntimeError("thiếu FRED_API")
+                   agent/db.py:45   _engine("AGENT_DATABASE_URL")
+                   core/llm/settings.py:30 env.get("LLM_TIMEOUT_S")
+A1  screener_guard.py:11  MIN_PRICED_RATIO = 0.2   |  backend/README.md:102  "≥ 50 %"
+A2  __main__.py:150-152   cờ --intraday/--backfill chỉ thêm khi args[0] in ("yahoo","binance")
+```
+
+**Nhịp S:**
+
+- `.env.example` — thêm `AGENT_DATABASE_URL` (cạnh `ETL_DATABASE_URL`, cùng nhóm "user tạo per-môi-trường"), `FRED_API` (nhóm mới), `# LLM_TIMEOUT_S=120`. Giá trị đều là placeholder `change-me-in-production`; **không đọc, không chép gì từ `.env` thật** (§5).
+- `backend/README.md:102` — `≥ 50 %` → `≥ 20 %`, **kèm 6 dòng lý do**: ngưỡng 0,5 đặt từ số đo trang 1, nhưng toàn thị trường giữa phiên chỉ 53,8 % ⇒ chỉ hơn ngưỡng 3,8 điểm; từ chối nhầm một phiên thật là mất vĩnh viễn. Tri thức này trước đó **chỉ sống trong comment của code** — nay lên tài liệu, đúng §1.1.
+- `backend/README.md:321` — thay *"nhận cờ rồi bỏ qua"* bằng *"**không có cờ này** … truyền vào là `exit 2`"*, kèm trỏ `__main__.py:150-152`.
+
+**Nhịp X:**
+
+```
+grep ^FRED_API|^AGENT_DATABASE_URL|LLM_TIMEOUT_S .env.example  -> 3 dòng, đúng chỗ
+so khoá .env.example trước/sau:  MẤT: (không có)   THÊM: AGENT_DATABASE_URL, FRED_API
+backend/README.md:102  "≥ 20 %"            backend/README.md:321  "không có cờ này"
+pytest tests/docs -k guard  ->  1 passed
+```
+
+**Làm sớm hơn plan:** **D2** (chú thích 3 biến không ai đọc) làm luôn ở đây thay vì Task 7, vì cùng một file — đụng `.env.example` hai lượt là thừa. Theo quyết định plan §6.2: **giữ** `POSTGRES_PORT` · `REDIS_PORT` · `LOG_LEVEL`, chỉ thêm một dòng chú thích mỗi nhóm nói rõ "chưa code nào đọc".
+
+**Commit:** `fix(docs): the three statements that break work if you follow them`
