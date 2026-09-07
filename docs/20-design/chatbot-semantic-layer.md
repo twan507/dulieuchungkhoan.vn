@@ -54,6 +54,28 @@ load_knowledge_reference(topic)   # Literal đóng 9 giá trị — đường v�
 
 **Vì sao không cho sinh SQL tự do:** chính xác hơn, tránh quét toàn bảng, kiểm soát được chi phí. Lý do này đã ghi ở [§6.3 kho dữ liệu](market-data-store.md) và giữ nguyên hiệu lực cho cả 9 function.
 
+## 2b. Sáu hình dạng kết quả — hợp đồng chung của cả 9 function
+
+*(Đo thật 2026-09-07 bằng cách gọi từng hàm, không suy từ code. Đây là **nhà** của hợp đồng này: bản gốc bốn hình dạng nằm trong hồ sơ lát 10 ở `90-records/` — vùng bản-ghi-tại-thời-điểm không sửa được — nên mọi thay đổi về sau ghi ở đây.)*
+
+Model phải phân biệt được **"không có mã đó"**, **"có mã nhưng kho không giữ loại dữ liệu này"** và **"đúng mã đúng loại nhưng khoảng hỏi rỗng"**. Trộn ba thứ vào một mảng rỗng là mời model kết luận sai — ví dụ đọc "0 sự kiện" thành "doanh nghiệp chưa từng chia cổ tức". Vì vậy chúng được phân biệt bằng **trường tường minh**, không bằng độ dài mảng.
+
+| # | Khi nào | Khoá | Ví dụ |
+|---|---|---|---|
+| 1 | Mã không tồn tại trong danh bạ | `tim_thay: false` · `ma_da_tra` · `goi_y` | `get_price_series("HPGG")` → gợi ý `["HPG"]` |
+| 1b | Như trên nhưng hàm nhận **danh sách** mã | `tim_thay: false` · `khong_tim_thay: [...]` · `goi_y: {mã: [...]}` · `ly_do` | chỉ `compare_peers`; `goi_y` là **dict** vì mỗi mã trượt có gợi ý riêng |
+| 2 | Mã có thật nhưng **kho không giữ loại dữ liệu này** | `tim_thay: true` · `co_du_lieu: false` · `loai` · `ly_do` · `ma` | hỏi giá `VNINDEX`; hỏi BCTC của một chỉ số |
+| 3 | Đúng mã đúng loại, **khoảng hỏi rỗng** | `tim_thay: true` · `co_du_lieu: true` · `so_dong: 0` · `khoang_co_du_lieu` | hỏi giá HPG năm 1999 → kho có từ ngày nào tới ngày nào |
+| 4 | Có dữ liệu | `tim_thay: true` · `co_du_lieu: true` · `so_dong` · `du_lieu` · (+ `tong_khop`, `da_cat`, `ghi_chu` khi có nghĩa) | |
+| 5 | **Đầu vào sai** (mã chỉ tiêu ngoài bảng nhãn, toán tử lạ, chủ đề lạ) | `loi: true` · `ly_do` · **danh sách giá trị hợp lệ** | trả lỗi *có cấu trúc*, không ném exception — model tự sửa mà không phá vòng chat |
+| 6 | **Danh mục** (model chưa biết mã, đang đi tìm) | `kieu: "danh_muc"` · `danh_muc` · `tong_khop` · `da_cat` | `get_macro_series(keyword="lãi suất")`; đây là cửa duy nhất để model tìm mã chuỗi |
+
+**Ba luật đi kèm, mỗi luật sinh ra từ một lỗi đã trả giá:**
+
+- 🔴 **Không bao giờ cắt câm.** Cắt kết quả thì phải trả `da_cat` **tính từ kết quả thật**, không phải từ việc người gọi có xin nhiều hơn trần hay không. *(Đã trả giá: `get_corporate_events` trả 20/177 sự kiện của FPT kèm cờ "chưa cắt" — đủ để model kết luận sai "FPT chỉ chia cổ tức 2 lần".)*
+- 🔴 **Hình dạng #3 phải kèm khoảng kho thật có.** Không có nó, "0 dòng" đọc thành "doanh nghiệp chưa tồn tại".
+- 🔴 **Kết luận phủ định phải dựa vào sự thật cấu trúc, không vào một liệt kê.** *(Đã trả giá: chặn "mọi loại khác cổ phiếu đều không có sự kiện doanh nghiệp" làm mất 114 sự kiện thật của 18 ETF và 3 chứng chỉ quỹ. Đúng phải là: chỉ số **không có `issuer_id`**, mà sự kiện doanh nghiệp gắn theo issuer.)*
+
 ## 3. Ba quy tắc bắt buộc khi nối dữ liệu vào skill
 
 ### 3.1 Số thật đè số ví dụ, luôn luôn
