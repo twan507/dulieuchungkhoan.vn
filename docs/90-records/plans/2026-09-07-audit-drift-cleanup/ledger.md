@@ -84,3 +84,45 @@ pytest tests/docs -k guard  ->  1 passed
 **Làm sớm hơn plan:** **D2** (chú thích 3 biến không ai đọc) làm luôn ở đây thay vì Task 7, vì cùng một file — đụng `.env.example` hai lượt là thừa. Theo quyết định plan §6.2: **giữ** `POSTGRES_PORT` · `REDIS_PORT` · `LOG_LEVEL`, chỉ thêm một dòng chú thích mỗi nhóm nói rõ "chưa code nào đọc".
 
 **Commit:** `fix(docs): the three statements that break work if you follow them`
+
+---
+
+## Task 3 — `README.md` gốc ✅
+
+**Nhịp K** — đo lại số thật trước khi ghi, không dùng lại số của audit:
+
+```
+ls database/migrations/versions/[0-9]*.py | wc -l        -> 20
+pytest tests --collect-only -q                            -> 1036 collected  (1029 cũ + 7 test docs mới)
+pytest tests -q                                           -> 5 failed, 1031 passed, 2 skipped in 85,50s
+```
+
+🔴 **Một điều lệch lộ ra ngay ở nhịp K, không có trong audit:** `--collect-only` cho **1036** trong khi lượt chạy thật cho **1031 passed + 2 skipped = 1033**. Tức bộ test có **vài test sinh lúc chạy**, không phải lúc thu. Vì thế **không được suy số passed từ số collected** — audit trước đó đã suýt làm vậy. Số cuối cùng chỉ chốt ở Task 9 bằng một lượt chạy thật.
+
+**Nhịp S — 8 vị trí:**
+
+| Dòng | Sửa |
+|---|---|
+| `:5` | 2026-09-05 → **2026-09-07**; *"6 job ETL"* → **15 họ job**; *"14 lát, lát 1–6 xong"* → **15 lát, lát 1–11 xong**; bỏ *"tiếp theo lát 6 giám sát hợp đồng"* → **lát 12 container** |
+| `:5` | *"**596 test** xanh"* → trỏ `database/README.md`; *"test 6 vòng"* → **bộ hồi quy vòng 7**, kèm ghi chú bộ vòng 6 đã mất khỏi repo |
+| `:16` | *"pipeline tin chưa"* → **đã cài** (lát 8/8b thu thập + 9a/9b lưới AI) |
+| `:17` | *"🟡 đề xuất, chưa duyệt"* → ✅ **dựng lát 10, đóng hợp đồng lát 11** |
+| `:20` · `:72` | `17 migration` → **20** |
+| `:22` | *"đều `Disabled`"* → **10 `Disabled`, `dlck-price-backfill` `Ready`**; và nói rõ **chỉ 6/15 họ job có task**, chín họ còn lại chưa từng có lịch |
+| `:67-71` | cây repo — liệt đủ 15 job `etl`, thêm nhánh `agent/` (lát 10) vốn không có trong cây |
+| `:94` | bỏ số test, trỏ `database/README.md`; **thêm `--env-file ../.env` vào lệnh mẫu** — thiếu cờ này là hàng trăm `error` ở bước fixture, không phải test hỏng |
+
+🔴 **Không chỉ vá số — giảm số chủ.** Con số test trước đây nằm ở **ba** chỗ trong chính `README.md` và **cả ba nói khác nhau** (596 · 640 · 456). Nay `README.md` **không còn nêu số test ở chỗ nào**; chủ duy nhất là `database/README.md`. Đây mới là bản sửa thật của §1.7; vá ba con số cho bằng nhau chỉ mua được vài tuần.
+
+**Nhịp X:**
+
+```
+grep "596 test|640 test|456 passed" README.md              -> rỗng
+grep "Postgres \*\*20 migration|migrations: Postgres 20"   -> 2 dòng
+8 job từng thiếu (wichart fred fx lbma yahoo binance news classify) -> có đủ 8
+pytest tests/docs -k migration -> lỗi còn lại chỉ là
+    {'database/README.md (câu ánh xạ test)': '18', 'roadmap.md §0': '18'}   ← Task 4
+pytest tests/docs -q -> 5 failed, 2 passed  (từ 6 failed, 1 passed)
+```
+
+**Commit:** `docs: the root README was two days and eleven slices behind`
