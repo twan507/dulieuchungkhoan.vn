@@ -76,6 +76,27 @@ Model phải phân biệt được **"không có mã đó"**, **"có mã nhưng 
 - 🔴 **Hình dạng #3 phải kèm khoảng kho thật có.** Không có nó, "0 dòng" đọc thành "doanh nghiệp chưa tồn tại".
 - 🔴 **Kết luận phủ định phải dựa vào sự thật cấu trúc, không vào một liệt kê.** *(Đã trả giá: chặn "mọi loại khác cổ phiếu đều không có sự kiện doanh nghiệp" làm mất 114 sự kiện thật của 18 ETF và 3 chứng chỉ quỹ. Đúng phải là: chỉ số **không có `issuer_id`**, mà sự kiện doanh nghiệp gắn theo issuer.)*
 
+## 2c. Giới hạn vận hành — con số hiện hành và vì sao
+
+*(Chốt 2026-09-07. Chủ dự án: **"nới các giới hạn thoải mái ra, không phải sợ quá tốn kém token"** và **"quan trọng nhất vẫn là chất lượng câu trả lời"**. Ngữ cảnh model là 1 triệu token nên chỗ chứa không phải ràng buộc; trần giữ lại làm **lưới bắt ca bệnh**, không phải thứ chặn ca dùng bình thường. Số đo nền: token ra p50 **854**, đỉnh quan sát **3.589**, độ trễ p50 **6,9 s** · p90 **34,5 s**.)*
+
+| Giới hạn | Giá trị | Vì sao con số đó |
+|---|---:|---|
+| `chat.MAX_TOKENS` | **32.000** | ~9 lần đỉnh token ra đã đo |
+| `agent.__main__.CHAT_TIMEOUT_S` | **600 s** | 🔴 **bắt buộc đi kèm trần trên**: SDK tính `expected_time = 3600 × max_tokens / 128.000` và raise nếu > 10 phút — nhưng **chỉ khi client dùng timeout mặc định**, mà client dự án đặt timeout riêng nên nhánh đó bị bỏ qua. Ở tốc độ sinh đo được 84–152 token/s, timeout 120 s chỉ đủ ~10–18k token ⇒ trần 32k khi đó **không chạm tới được**, và chạm thì mất 4 request (`max_retries=3`) chứ không phải một câu bị cắt |
+| `chat.MAX_ITERATIONS` | **16** | một câu định giá thật đã dùng **8 lượt** gọi công cụ ⇒ trần cũ (8) nằm ngay sát ca dùng bình thường |
+| `chat.TRAN_GIAY_MOT_LUOT` | **300 s** | trần vòng lặp đếm **số lượt**, không đếm **thời gian**: 16 vòng × 600 s = 2,7 giờ một lượt (10,7 giờ nếu tính retry). 300 s ≈ 9 lần p90 |
+| `LLMClient.QUOTA_TIMEOUT_S` | **15 s** | thăm dò quota chạy sau **mỗi** lượt; nếu thừa hưởng 600 s thì một endpoint treo bắt người dùng chờ 10 phút mỗi câu |
+| `get_price_series.TRAN_PHIEN` | **2.000** phiên | ~8 năm; trần cũ 400 chỉ phủ ~1,6 năm |
+| `get_financials.TRAN_KY` | **20** kỳ | trần cắt ở Python, câu SQL không có `LIMIT` ⇒ nâng không tốn thêm gì ở DB |
+| `compare_peers.TRAN_MA` · `TRAN_CHI_TIEU` | **25** · **15** | |
+| `compare_peers.TRAN_MA_VAO` | **100** | mỗi mã nhận vào tốn **một truy vấn tồn tại** (mã trượt thêm một truy vấn gợi ý) ⇒ chi phí tuyến tính **do model điều khiển**: 500 mã = 1.000 round-trip / 2,9 s trước khi có trần này |
+| `screen_stocks` · `get_corporate_events` `limit` | 30 · trần **200** | |
+| `get_news` `limit` | 15 · trần **100** | |
+| `get_macro_series` `limit` · **danh mục** | 120 · trần 2.000 · danh mục **250** | 🔴 danh mục là **cửa duy nhất** để model tìm mã chuỗi trước khi hỏi số; kho có **192 chuỗi** nên trần cũ (40) giấu mất 3/4 |
+
+🔴 **Nới trần trong code là chưa đủ — phải nới cả trong mô tả công cụ.** Docstring của mỗi hàm trong `agent/tools/__init__.py` chính là `description` gửi cho model; model đọc mô tả chứ không đọc hằng số. Một lượt nới trần từng để sót đúng hai chỗ nêu số bằng chữ (*"Tối đa 8 kỳ"*, *"Tối đa 10 mã"*) và vì thế **không nới gì** với hai công cụ đó.
+
 ## 3. Ba quy tắc bắt buộc khi nối dữ liệu vào skill
 
 ### 3.1 Số thật đè số ví dụ, luôn luôn
