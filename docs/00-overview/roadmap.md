@@ -749,7 +749,7 @@ Ghi lại ở đây vì chúng nằm rải trong ba file khác nhau và đều �
 
 > Bẫy 3 và 4 là **cùng một loại lỗi trên hai nhà cung cấp khác nhau** — nhãn đơn vị do nguồn tự khai không khớp dữ liệu nguồn tự trả. Nếu thêm nguồn thứ tư, kiểm đơn vị bằng dải giá trị thật trước khi tin nhãn.
 
-Danh sách đầy đủ: [13 bẫy triển khai](../10-sources/market/00-conventions.md) · [6 bẫy WiChart](../10-sources/macro/wichart.md) · [7 cạm bẫy nguồn tin](../10-sources/news/README.md) · [3 bẫy cấu trúc Yahoo](../10-sources/global/yahoo.md) · [8 bẫy FRED](../10-sources/global/fred.md) · [5 bẫy tỷ giá](../10-sources/global/fx.md) · [4 bẫy Binance](../10-sources/global/crypto.md).
+Danh sách đầy đủ: [14 bẫy triển khai](../10-sources/market/00-conventions.md) · [6 bẫy WiChart](../10-sources/macro/wichart.md) · [7 cạm bẫy nguồn tin](../10-sources/news/README.md) · [3 bẫy cấu trúc Yahoo](../10-sources/global/yahoo.md) · [8 bẫy FRED](../10-sources/global/fred.md) · [5 bẫy tỷ giá](../10-sources/global/fx.md) · [4 bẫy Binance](../10-sources/global/crypto.md).
 
 **Điểm chung của cả ba nhóm bẫy:** mọi thứ nguồn tự khai về chính nó đều phải kiểm lại bằng dữ liệu.
 

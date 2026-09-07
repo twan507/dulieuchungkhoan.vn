@@ -19,7 +19,7 @@ Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và m�
 
 **Sắp bắt tay làm** → [lộ trình hợp nhất](00-overview/roadmap.md). Việc nào chặn việc nào, việc nào gấp vì mất dữ liệu theo thời gian, việc nào tưởng để ngỏ mà đã có đáp án.
 
-**Sắp gọi API** → [quy ước chung](10-sources/market/00-conventions.md) trước tiên, 13 bẫy triển khai nằm ở đó.
+**Sắp gọi API** → [quy ước chung](10-sources/market/00-conventions.md) trước tiên, 14 bẫy triển khai nằm ở đó.
 
 **Sắp sửa skill** → [bảo trì skill](30-skills/maintenance.md) và [bảng thuật ngữ](30-skills/terminology.md). Cả hai là **bắt buộc**, không phải tham khảo — file đầu ghi những chỗ sửa nhầm sẽ hỏng skill mà không có gì báo lỗi.
 

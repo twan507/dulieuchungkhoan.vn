@@ -62,7 +62,7 @@ Mục này nói về phạm vi **tám nguồn API và crawl** (thị trường V
 - **Vĩ mô Mỹ** 15 series FRED · **tỷ giá** 6 cặp ECB + DXY dựng lại *(đo 2026-08-15)*
 - **Vàng/bạc fixing** từ 1968 *(LBMA)* · **crypto** 10 đồng + PAXG làm vàng 24/7 *(Binance, đo 2026-08-15)*
 
-Trong 87 key WiChart, phân loại sau audit: **61 lõi · 6 phụ · 20 loại bỏ**. Chi tiết ở [wichart.md](macro/wichart.md).
+Trong 87 key WiChart, phân loại sau audit: **62 lõi · 6 phụ · 19 loại bỏ** *(đếm lại 2026-09-07 từ bảng §5 của `wichart.md`; `ca_tra` chuyển X → A khi đo lại 2026-09-05 mà dòng này chưa theo)*. Chi tiết ở [wichart.md](macro/wichart.md).
 
 ### Ngoài phạm vi — ba loại, mỗi loại một hàm ý khác nhau
 
@@ -100,7 +100,7 @@ Quyết định của chủ dự án, ghi ngày **2026-08-15**. Cả ba mục đ
 
 | File | Nội dung | Số endpoint |
 |---|---|---|
-| [00-conventions.md](market/00-conventions.md) | **Đọc trước tiên.** Base URL, xác thực, cấu trúc response, xử lý lỗi, kiểu dữ liệu, đơn vị, 13 bẫy triển khai, và **kết quả đo rate limit** | — |
+| [00-conventions.md](market/00-conventions.md) | **Đọc trước tiên.** Base URL, xác thực, cấu trúc response, xử lý lỗi, kiểu dữ liệu, đơn vị, 14 bẫy triển khai, và **kết quả đo rate limit** | — |
 | [01-bvsc-rest.md](market/01-bvsc-rest.md) | Danh mục mã, snapshot, sổ lệnh khớp, chỉ số, **phái sinh 14 hợp đồng**, **ETF/quỹ 31 mã** | 7 |
 | [02-bvsc-tvcharts.md](market/02-bvsc-tvcharts.md) | Biểu đồ lịch sử chuẩn TradingView UDF, **kèm giới hạn UDF cho phái sinh** | 4 |
 | [03-fiin-reference.md](market/03-fiin-reference.md) | Danh bạ doanh nghiệp, cây ngành ICB | 2 |
@@ -142,7 +142,7 @@ Nhóm mới, lập 2026-08-15. **Lý do tách riêng:** chỉ số cổ phiếu 
 |---|---|---|
 | [news/README.md](news/README.md) | 47 feed RSS, 8 nguồn crawl HTML (6 lượt thường + 2 sitemap backfill), quy tắc chuẩn hoá encoding và thời gian đăng, khối lượng đo được, nguồn đã loại | 8 báo |
 | [news/article-structure.md](news/article-structure.md) | **Cấu trúc trang bài** — selector container chính và luật bỏ boilerplate riêng từng nguồn, 61 selector kèm mức bằng chứng. Đo 2026-08-15 trên 33 bài; trang thô 94–527 KB | 8 báo |
-| [`news/feeds.json`](news/feeds.json) | Cùng nội dung ở dạng máy đọc — feed, taxonomy 20 sub, nhật ký loại bỏ | 47 feed |
+| [`news/feeds.json`](news/feeds.json) | Cùng nội dung ở dạng máy đọc — feed, taxonomy 21 sub, nhật ký loại bỏ | 47 feed |
 
 ### 3.5 Mô hình ngôn ngữ — `llm/`
 
@@ -158,7 +158,7 @@ Không nằm trong tầng tra cứu, nhưng đọc kèm:
 |---|---|
 | [market-data-store.md](../20-design/market-data-store.md) | **Kiến trúc dulieuchungkhoan.vn** — thu thập, lưu trữ, phân phối lại. Sơ đồ, DDL, lịch ETL, SSE, chatbot, giám sát hợp đồng |
 | [news-pipeline.md](../20-design/news-pipeline.md) | Kiến trúc gom tin, taxonomy, quy tắc phân loại, gắn mã cổ phiếu, kho lưu trữ |
-| [market-field-selection.md](../20-design/market-field-selection.md) | **Chọn trường cho ETL** — lấy/bỏ từng mã trường, nguồn chuẩn, lý do tại chỗ. 213 dòng, kèm [bản JSON máy đọc](../20-design/market-field-selection.json), sinh tự động từ [`gen_field_selection.py`](../20-design/gen_field_selection.py) |
+| [market-field-selection.md](../20-design/market-field-selection.md) | **Chọn trường cho ETL** — lấy/bỏ từng mã trường, nguồn chuẩn, lý do tại chỗ. 279 dòng *(213 ở bản đầu 2026-08-14; bảng nới hai lần 2026-08-15 và 2026-09-03 — số hiện hành do chính `market-field-selection.md` sở hữu)*, kèm [bản JSON máy đọc](../20-design/market-field-selection.json), sinh tự động từ [`gen_field_selection.py`](../20-design/gen_field_selection.py) |
 
 ## 4. Quy ước trình bày
 

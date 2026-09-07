@@ -105,18 +105,43 @@ def test_no_orphan_plan_docs():
     ai nhắc tên là file người sau không biết có mà đọc.
 
     Chủ sở hữu hợp lệ chỉ có hai dạng — đúng như §1.6 định nghĩa "index sở hữu":
-      (a) một `README.md` bất kỳ (index của tầng hay của thư mục cha), hoặc
+      (a) `docs/90-records/README.md` — index sở hữu tầng này — nhắc tên THƯ MỤC plan, hoặc
       (b) một `.md` khác NẰM CÙNG THƯ MỤC (spec/plan/ledger gọi tên file anh em).
     Bị nhắc trong một hồ sơ ở thư mục khác KHÔNG tính — đó là trích dẫn, không phải mục lục.
+
+    🔴 Bản đầu (2026-09-07 sáng) nhận "README.md BẤT KỲ có nhắc tên file" là đủ, và vì thế
+    TỰ VÔ HIỆU: `90-records/README.md:16` có câu quy ước "File bên trong: `spec.md`,
+    `plan.md`, `ledger.md`" ⇒ mọi file mang ba tên đó, ở BẤT KỲ thư mục nào, kể cả thư mục
+    chưa hề được đưa vào bảng index, đều được tính là "có chủ". Tái hiện 2026-09-07 chiều:
+    dựng `plans/9999-99-99-thu-mo-coi/` với `spec.md` + `bao-cao-la.md` — test bắt được file
+    tên riêng, `spec.md` LỌT SẠCH. Tức phép kiểm mù đúng ở ba loại file phổ biến nhất.
+    Nay tách làm hai vế: thư mục phải có tên trong bảng index, rồi mới xét từng file.
     """
     plans = REPO / "docs" / "90-records" / "plans"
+    index = (plans.parent / "README.md").read_text(encoding="utf-8")
     corpus = {md: md.read_text(encoding="utf-8") for md in _all_md()}
+
+    # Vế 1 — mọi thư mục plan phải có tên trong bảng của 90-records/README.md.
+    lost_dirs = sorted(d.name for d in plans.iterdir() if d.is_dir() and d.name not in index)
+    assert not lost_dirs, (
+        "thư mục plan không có dòng nào trong docs/90-records/README.md:\n  "
+        + "\n  ".join(lost_dirs))
+
+    # Vế 2 — từng file. Chủ sở hữu là file anh em CÙNG THƯ MỤC, hoặc chính DÒNG index của
+    # thư mục đó. Xét theo dòng chứ không theo cả file index: câu quy ước chung ở đầu
+    # `90-records/README.md` có nêu `spec.md`/`plan.md`/`ledger.md`, nhận cả file thì mọi
+    # file mang ba tên ấy lại được miễn trừ — đúng lỗ hổng vừa vá.
+    rows = {d.name: next((ln for ln in index.splitlines() if d.name in ln), "")
+            for d in plans.iterdir() if d.is_dir()}
     orphans = []
     for md in sorted(plans.rglob("*.md")):
-        owners = [o for o in corpus
-                  if o != md and (o.name == "README.md" or o.parent == md.parent)]
-        if not any(md.name in corpus[o] for o in owners):
-            orphans.append(md.relative_to(REPO).as_posix())
+        if md.name == "README.md":
+            continue          # README LÀ index của thư mục nó, không phải thứ cần được index
+        plan_dir = md.relative_to(plans).parts[0]
+        siblings = [o for o in corpus if o != md and o.parent == md.parent]
+        if md.name in rows.get(plan_dir, "") or any(md.name in corpus[o] for o in siblings):
+            continue
+        orphans.append(md.relative_to(REPO).as_posix())
     assert not orphans, (
         "file .md không index/ledger nào nhắc tên:\n  " + "\n  ".join(orphans))
 
@@ -165,6 +190,29 @@ def test_sub_count_matches_code():
     assert totals == {total}, (
         f"{doc}: tổng sub nêu trong văn bản = {sorted(totals)}, code nói {total}")
 
+    # 🔴 Và MỌI tài liệu sống khác nhắc con số này cũng phải khớp — không chỉ file chủ.
+    # Bản đầu chỉ soi `news-pipeline.md`; hệ quả là lượt sửa 20→21 làm đúng file chủ rồi
+    # dừng, để lại bốn bản sao nói 20 ở bốn file khác (rà 2026-09-07 chiều). Đó đúng là
+    # "sửa một chỗ, quét mọi chỗ" của §1.7 — nên phép kiểm phải quét mọi chỗ.
+    others = ["README.md", "backend/README.md", "docs/README.md",
+              "docs/10-sources/README.md", "docs/10-sources/news/README.md",
+              "docs/20-design/README.md", "backend/etl/news_classify.py"]
+    bad = {rel: sorted({int(n) for n in re.findall(r"(\d+) sub\b", _read(rel))} - {total})
+           for rel in others}
+    bad = {k: v for k, v in bad.items() if v}
+    assert not bad, f"tổng sub thật = {total}; tài liệu nói khác: {bad}"
+
+    # feeds.json tự gọi mình là "bản máy đọc" của taxonomy — nó phải là bản ĐÚNG, không phải
+    # bản lạc hậu nhất. Tới 2026-09-07 nó vẫn thiếu `2f` trong khi code và migration đã có.
+    tax = json.loads(_read("docs/10-sources/news/feeds.json"))["taxonomy"]
+    in_json = {g: sorted(v) for g, v in tax.items() if isinstance(v, dict)}
+    in_code = {g: sorted(v) for g, v in subs.items() if g != "x"}
+    by_group = {k.split("_")[0]: v for k, v in in_json.items()}   # "2_tai_chinh…" -> "2"
+    assert {g: len(v) for g, v in by_group.items()} == per_group, (
+        f"feeds.json taxonomy {[(g, len(v)) for g, v in by_group.items()]} != code {per_group}")
+    for g, codes in in_code.items():
+        assert by_group[g] == codes, f"feeds.json nhóm {g}: {by_group[g]} != code {codes}"
+
 
 # --------------------------------------------------------------------------- 5
 
@@ -203,13 +251,16 @@ def test_crawl_source_count_matches_feeds_json():
     docs = ["README.md", "docs/README.md", "docs/00-overview/architecture.md",
             "docs/10-sources/README.md", "docs/10-sources/news/README.md",
             "docs/20-design/news-pipeline.md"]
-    # Chỉ bắt "N crawler" và "N nguồn crawl" — KHÔNG bắt "N crawl" trần, vì
-    # `architecture.md` có "87 REST + 1 crawl" nói về trang OMO của SBV, không phải nguồn tin.
-    count = re.compile(r"(\d+)\s+crawler|(\d+)\s+nguồn crawl")
+    # Bắt cả "N crawler", "N nguồn crawl" VÀ "N crawl" trần — hai ô ASCII (`architecture.md`
+    # khung L0, `news-pipeline.md` sơ đồ) dùng dạng trần, và bản đầu bỏ sót chúng nên một số
+    # sai ở đó sẽ lọt (R1 chỉ ra 2026-09-07). Loại trừ đúng một câu: "REST + 1 crawl" của
+    # trang OMO SBV — đó không phải nguồn tin.
+    text_of = {rel: _read(rel).replace("REST + 1 crawl", "REST + OMO") for rel in docs}
+    count = re.compile(r"(\d+)\s+crawler|(\d+)\s+nguồn crawl|(\d+)\s+crawl")
     bad = {}
     for rel in docs:
-        for a, b in count.findall(_read(rel)):
-            n = int(a or b)
+        for a, b, c in count.findall(text_of[rel]):
+            n = int(a or b or c)
             if n not in allowed:
                 bad.setdefault(rel, set()).add(n)
     assert not bad, f"số nguồn crawl hợp lệ là {sorted(allowed)}, tài liệu nói khác: {bad}"
@@ -242,3 +293,29 @@ def test_guard_constants_match_docs():
         bad.append(f"market-data-store.md thiếu '{want}' (DIRECTORY_ABSENT_DAYS = {days})")
 
     assert not bad, "ngưỡng tài liệu lệch code:\n  " + "\n  ".join(bad)
+
+
+# --------------------------------------------------------------------------- 8
+
+def test_trap_count_matches_conventions_headings():
+    """Số bẫy nêu trong tài liệu phải khớp số mục `### Bẫy` thật của `00-conventions.md`.
+
+    Lượt sửa 2026-09-07 đổi tiêu đề §7 "Mười ba" -> "Mười bốn" nhưng bỏ sót ba chỗ khác
+    vẫn ghi "13 bẫy" (R3 chỉ ra). Cùng họ với `test_sub_count_matches_code`: một con số,
+    nhiều chủ, không ai quét.
+    """
+    conv = "docs/10-sources/market/00-conventions.md"
+    real = len(re.findall(r"^### Bẫy", _read(conv), re.M))
+    assert real > 0
+    word = {13: "Mười ba", 14: "Mười bốn", 15: "Mười lăm"}.get(real)
+    assert word, f"chưa có chữ số cho {real} — bổ sung vào bảng trong test này"
+    assert f"## 7. {word} bẫy triển khai" in _read(conv), (
+        f"{conv}: tiêu đề §7 không khớp {real} mục `### Bẫy`")
+
+    bad = {}
+    for rel in ["docs/README.md", "docs/10-sources/README.md",
+                "docs/00-overview/roadmap.md", "CLAUDE.md"]:
+        for n in re.findall(r"(\d+) bẫy triển khai", _read(rel)):
+            if int(n) != real:
+                bad.setdefault(rel, set()).add(int(n))
+    assert not bad, f"số bẫy thật = {real}; tài liệu nói khác: {bad}"
