@@ -44,6 +44,14 @@ def so_sanh_cung_nganh(conn: sa.Connection, tickers: list[str] | None = None,
     for t in mas:
         (ma_hop_le if resolve_ticker(conn, t)["tim_thay"] else khong_ton_tai).append(t)
 
+    # 🔴 Người hỏi có cho mã mà KHÔNG mã nào tra được ⇒ dừng tại đây. Không được rơi xuống
+    # truy vấn bên dưới: mệnh đề `cardinality(:mas) = 0` ở đó nghĩa là "không lọc theo mã",
+    # nên danh sách rỗng sẽ mở toang cả thị trường và trả 10 mã bất kỳ kèm cờ "có dữ liệu" —
+    # dữ liệu sai một cách tự tin, nặng hơn hẳn ca trả rỗng (review vòng 2, mục CHẶN).
+    if mas and not ma_hop_le:
+        return to_json({"tim_thay": False, "khong_tim_thay": khong_ton_tai, "so_dong": 0,
+                        "du_lieu": [], "ly_do": "không mã nào trong danh sách tồn tại trong danh bạ"})
+
     ngay = conn.execute(sa.text("SELECT max(trading_date) FROM market.screener_daily")).scalar()
     if ngay is None:
         return to_json({**rong(), "ngay_du_lieu": None})

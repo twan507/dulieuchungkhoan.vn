@@ -136,3 +136,28 @@ def test_criteria_value_khong_phai_so_bi_tu_choi_co_cau_truc(db, kho):
     db.execute(sa.text("SET LOCAL ROLE dlck_api"))
     out = json.loads(loc_co_phieu(db, criteria=[{"metric_code": "rtd21", "operator": "<", "value": "nam"}]))
     assert out["loi"] is True
+
+
+def test_hoi_toan_ma_khong_ton_tai_thi_khong_tra_ma_bat_ky(db, kho):
+    """Hồi quy — review vòng 2, mục CHẶN.
+
+    Bản sửa trước đổi tham số SQL từ *mã người hỏi* sang *mã tra được*, nhưng giữ nguyên
+    mệnh đề canh `cardinality(:mas) = 0 OR ...`. Danh sách rỗng vốn có nghĩa "không lọc theo
+    mã, lọc theo ngành", nay lại có nghĩa "không mã nào tra được" ⇒ hỏi một mã bịa thì hàm mở
+    toang truy vấn và trả 10 mã bất kỳ của thị trường kèm `co_du_lieu: true`. Trước khi sửa
+    nó trả rỗng (sai im lặng); sau khi sửa nó trả **dữ liệu sai một cách tự tin** — nặng hơn.
+    Đo trên kho thật 2026-09-07: `so_sanh_cung_nganh(["ABCDE"])` → A32, AAA, AAH, AAM, AAN…
+    """
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(so_sanh_cung_nganh(db, tickers=["ABCDE"], metric_codes=["rtd21"]))
+    assert out.get("du_lieu", []) == [], "không được trả mã nào khi mọi mã hỏi đều không tồn tại"
+    assert out["so_dong"] == 0
+    assert out["khong_tim_thay"] == ["ABCDE"]
+
+
+def test_hoi_nganh_khong_kem_ma_van_loc_theo_nganh(db, kho):
+    """Chốt chặn cho bản sửa trên: nhánh 'chỉ lọc theo ngành' phải còn nguyên tác dụng."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(so_sanh_cung_nganh(db, industry_code="NGANHANG", metric_codes=["rtd21"]))
+    assert out["so_dong"] > 0
+    assert {d["ma"] for d in out["du_lieu"]} <= {"VCB", "TIN", "HDB", "LPB"}
