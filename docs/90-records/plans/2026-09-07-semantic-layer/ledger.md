@@ -190,3 +190,45 @@ Token ra đỉnh **3.589** — còn xa trần, và không request nào chạm tr
 Cùng lượt kiểm trên, model viết *"gom dần ở vùng này, tỷ trọng vừa phải"* và *"chỉ mua thêm khi giá về rồi uốn lên ở vùng hỗ trợ gần (khoảng 20.000–21.000)"* — gần như một lệnh mua có điểm vào, dù vẫn kèm disclaimer. Bảng chấm vòng 7 cũng đã đánh dấu B7 là "sát ranh giới" ở mục 4 (*không khuyến nghị*).
 
 Đây **không phải lỗi kỹ thuật** mà là quyết định về giọng sản phẩm, nên **không tự sửa**. Cấu trúc của vấn đề giống hệt lỗ hổng phạm vi mà `SCOPE_GUARD` phải vá: L1 có cấm lệnh mua/bán cụ thể, nhưng L1 chỉ có tiếng nói *sau khi* skill tải và *trong* mạch trả lời, còn ranh giới này cần một luật ở tầng sản phẩm. Hai đường: để nguyên, hoặc thêm một dòng vào khối luật system prompt cấm nêu tỷ trọng và điểm mua cụ thể cho một mã. **Chờ chủ dự án quyết.**
+
+## Vòng review thứ ba ✅ (2026-09-07)
+
+Hồ sơ: [Chuẩn v3](review-chuan-v3-2026-09-07.md) · [Spec v3](review-spec-v3-2026-09-07.md).
+
+**Chuỗi "sửa xong đẻ hồi quy" đứt ở vòng này** — trục Chuẩn báo **0 mục CHẶN** trong code, sau khi tự đếm lại kho để tìm ca chặn/lọt nhầm thay vì đọc code. Nhưng vòng 3 đổi chiều lỗi:
+
+🔴 **Mục CHẶN duy nhất nằm ở TÀI LIỆU, do chính bốn commit trước đó tạo ra**: tài liệu thiết kế **sống** ghi trần token `8000` trong khi code là `32000`; roadmap ghi 976 test (thật 986); index liệt 11/13 file và chép lại con số AC5 đã bị thay thế. Đúng lỗi §1.7 mà tôi tự dặn: sửa xong lại đổi code mà không quét lại.
+
+🔴 **Và tệ hơn:** câu tôi viết để **đính chính một khẳng định chưa kiểm** lại chứa một khẳng định chưa kiểm khác — nó nêu tên test `test_luot_tool_use_ghi_so_la_ok` **không tồn tại** (phép kiểm thật nằm trong `test_ghi_so_duoi_role_etl_that`). Lỗi §3.2 hai lần liên tiếp, lần sau nằm ngay trong lời sửa lần trước.
+
+**Mẫu hỏng của đợt sửa vòng 2 — đảo chiều so với vòng 1:** vòng 1 hỏng vì *sửa rộng quá phạm vi bug*; vòng 2 hỏng vì **sửa hẹp đúng bằng danh sách reviewer đọc tên** — `khoang_co_du_lieu` vá đúng hai hàm được điểm danh, hàm thứ ba cùng bệnh để nguyên. ⇒ Đợt sửa vòng 3 đổi luật giao việc: *"với mỗi mục, sửa theo NGUYÊN TẮC, áp cho MỌI hàm cùng bệnh; trước khi báo cáo xong một mục phải tự rà cả 9 file và trả lời được còn hàm nào cùng bệnh không"*. Kết quả: người thực thi **tự tìm ra `get_news` cũng cùng bệnh** dù không ai nêu tên.
+
+## Nới giới hạn (chủ dự án chốt 2026-09-07)
+
+*"nới các giới hạn thoải mái ra, không phải sợ quá tốn kém token đâu"*
+
+| Chỗ | Spec §4.4 | **Nay** | Vì sao |
+|---|---|---|---|
+| `MAX_TOKENS` | (spec ghi 4.000) | **32.000** | đỉnh token ra đo được 3.589 ⇒ rộng gấp ~9 lần ca xấu nhất |
+| Thời gian chờ | 120 s (mặc định `core.llm`) | **600 s** (`CHAT_TIMEOUT_S`) | 🔴 bắt buộc đi kèm: SDK tính `expected_time = 3600 × max_tokens / 128.000` và **raise** nếu > 10 phút — nhưng **chỉ khi client dùng timeout mặc định**; client dự án đặt timeout riêng nên nhánh đó bị bỏ qua. Ở 84–152 token/s, timeout 120 s chỉ đủ ~10–18k token ⇒ trần 32k **không chạm tới được**, và chạm thì mất **4 request** (`max_retries=3`) chứ không phải một câu bị cắt |
+| `MAX_ITERATIONS` | 8 | **16** | một câu định giá thật đã dùng **8 lượt** gọi công cụ — trần cũ nằm ngay sát ca dùng bình thường |
+| `get_price_series` `TRAN_PHIEN` | 400 | **2000** | 400 chỉ phủ ~1,6 năm; `BT6` có 5.764 phiên |
+| `get_financials` `TRAN_KY` | 8 | **20** | |
+| `compare_peers` `TRAN_MA` · `TRAN_CHI_TIEU` | 10 · 8 | **25 · 15** | |
+| `screen_stocks` · `get_corporate_events` `limit` | 20 · 50 | **30 · 200** | |
+| `get_news` `limit` | 10 · 30 | **15 · 100** | |
+| `get_macro_series` `limit` | 60 · 200 | **120 · 2000** | |
+| `get_macro_series` **danh mục** | 40 | **250** | 🔴 quan trọng nhất: kho có **192 chuỗi**, trần 40 cắt mất 3/4 — mà danh mục là **cửa duy nhất** để model tìm mã trước khi hỏi số. Đo lại sau khi nâng: `tong_khop=192`, trả đủ 192, `da_cat=False` |
+
+Ngữ cảnh model là 1 triệu token nên chỗ chứa không phải ràng buộc; trần giữ lại làm **lưới bắt ca bệnh**, không phải thứ chặn ca dùng bình thường. Số đo sau khi nâng: `get_price_series("BT6")` → 2.000 dòng, `tong_khop=5764`, `da_cat=True`, phủ `2018-08-29..2026-09-04`.
+
+**Hai test từng mã hoá cứng trần cũ** (`test_qua_10_ma_bi_cat_va_bao_da_cat`, `test_tran_tam_nam`) đã sửa để đọc hằng từ module — nếu không, chúng sẽ **xanh giả** sau khi nâng trần, tức trần mới không còn ai canh.
+
+## Chạy thật sau khi nới (2026-09-07)
+
+| Câu | Kết quả |
+|---|---|
+| So P/E của **HPGG** (gõ nhầm) và VCB | model tự tra lại thành HPG nhờ `goi_y`, trả đúng 7,89 vs 11,82 |
+| Kho có chuỗi lãi suất nào | model liệt **9 chuỗi**, tự nhóm thành chính sách / liên ngân hàng / huy động |
+| **FUCVREIT** có trả cổ tức tiền mặt không | **2 đợt** (chốt 21/05/2018 và 24/05/2021) — trước khi sửa thì bị giấu sạch |
+| Giá HPG 3 năm | chạy trọn với trần 2.000 phiên |
