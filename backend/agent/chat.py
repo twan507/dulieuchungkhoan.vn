@@ -34,9 +34,13 @@ REMINDER = ("Dữ liệu trên là số thật vừa tra được — dùng đú
             "chỉ tiêu thô.")
 
 MAX_ITERATIONS = 8          # trần cứng chống vòng gọi function vô hạn — số chọn, chưa đo
-MAX_TOKENS = 8000           # 4000 CẮT THẬT 3/40 request (đo 2026-09-07): sau khi nạp một file
-                            # tri thức L2, model tiêu tới 3.999 token chỉ cho thinking rồi hết
-                            # chỗ cho câu trả lời ⇒ lượt đó trả về rỗng, im lặng.
+MAX_TOKENS = 32000          # Trần, KHÔNG phải mục tiêu: model chỉ sinh đúng thứ nó cần, nên đặt
+                            # rộng gần như không tốn gì mà cắt mất câu trả lời thì tốn cả lượt.
+                            # 4000 CẮT THẬT 3/40 request (đo 2026-09-07) — có request tiêu 3.999
+                            # token chỉ cho thinking rồi hết chỗ cho chữ. Số đo cùng ngày: token ra
+                            # p50 854, đỉnh quan sát được ~4.000 ⇒ 32.000 là ~8 lần ca xấu nhất.
+                            # Chủ dự án chốt 2026-09-07: "quan trọng nhất vẫn là chất lượng câu
+                            # trả lời, không phải độ dài hay ngắn".
 
 
 def run_turn(llm, read_eng, ops_eng, history: list, cau_hoi: str) -> tuple[str, list]:
