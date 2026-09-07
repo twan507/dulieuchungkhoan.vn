@@ -406,3 +406,66 @@ D8 **không** đột biến riêng — nó đi đúng đường `parse_rss` mà 
 **Nhịp X:** `pytest test_e38 + test_e52 -q` → **31 passed**; hai đột biến đều bắt được; registry và normalize đã hoàn nguyên (`grep` xác nhận).
 
 **Commit:** `test(etl): the two live sources nobody was testing`
+
+---
+
+## Task 9 — nghiệm thu ✅
+
+### Một sự cố phải giải trước khi nghiệm thu được
+
+Lượt chạy cả bộ đầu tiên **đỏ 1 test** — chính test `phan_ure` vừa viết — trong khi chạy riêng file đó thì **xanh**. Trông y hệt nhiễm chéo giữa các test. Không phải.
+
+```
+grep phan_ure backend/etl/wichart_registry.py   -> ("phan_ure", 0): ("urea_phumy", …)   ĐÚNG
+git diff backend/etl/wichart_registry.py        -> rỗng, khớp HEAD
+build() ngay lúc đó                             -> idx0 = urea_camau   ← HOÁN VỊ
+```
+
+File đúng mà `build()` sai ⇒ **`__pycache__` cũ**. `.pyc` sinh lúc chạy **đột biến 2** (hoán vị registry) và source khôi phục **trong cùng một giây** (`20:03` cả hai) — phép kiểm hết hạn theo mtime của Python không nhận ra source đã đổi. Xoá `__pycache__` là đúng ngay lập tức.
+
+> **Bài học:** sau mỗi lần đột biến file nguồn, phải **xoá `__pycache__`**, không chỉ khôi phục file. Đột biến + khôi phục trong cùng một giây là ca mtime không phân giải được. Và nó suýt bị chẩn đoán nhầm thành "test nhiễm chéo" — đúng thứ CLAUDE.md §4.6 dặn: có vòng phản hồi đỏ rồi mới đặt giả thuyết.
+
+### Tám cổng nghiệm thu
+
+| AC | Lệnh | Kết quả |
+|---|---|---|
+| **AC1** | `pytest tests/docs -q` | **7 passed** *(mở màn 6 failed / 1 passed)* |
+| **AC2** | `pytest tests -q` | **1.038 passed, 2 skipped**, 88,44 s *(nền 1.029 + 7 docs + 3 lỗ hổng − 1 gộp)* |
+| **AC3** | bảng §5 dưới | 47/47 mục có kết cục ghi tên |
+| **AC4** | `test_no_dead_internal_links` | xanh |
+| **AC5** | `test_no_orphan_plan_docs` | xanh |
+| **AC6** | `ruff check . --select F` | **All checks passed!** |
+| **AC7** | `git grep "\[DEBUG-" backend` | **0** — lần đầu phép kiểm §4.6 thật sự về 0 |
+| **AC8** | `python -m etl fred --dry-run --keys CPIAUCSL` | `ok: 1 · points: 954 · exit 0` — chứng minh `FRED_API` trong `.env.example` nối đúng đường thật |
+
+Cộng `npm test` → **7/7** *(bộ node lần đầu có script chạy)*.
+
+---
+
+## §5 — Kết cục của 47 phát hiện (AC3)
+
+**42 đã sửa · 3 cố ý giữ nguyên · 1 làm khác cách · 1 làm một nửa.**
+
+| Nhóm | Mục | Kết cục |
+|---|---|---|
+| A · tài liệu nói sai code | A1 A2 A3 A4 A5 A6 A7 A8 A9 A10 A11 A12 | ✅ **đã sửa** (12) |
+| | **A13** | ✅ sửa **khác plan** — annotate thay vì đổi số, vì dòng đó là bản ghi lúc đóng lát 7 và `DEXCHUS` bị bỏ ở lát **7b** ⇒ đổi thành 14 là viết lại quá khứ cho sai đi |
+| B · lệch số/trạng thái | B1 … B13 | ✅ **đã sửa** (13). Riêng B1 sửa **triệt để**: bỏ hẳn số test khỏi `README.md`, chỉ còn một chủ ở `database/README.md` |
+| C · dead doc/index | C1 … C9 | ✅ **đã sửa** (9) |
+| D · code/config | D1 D3 D6 D7 D8 D9 D10 D11 | ✅ **đã sửa** (8) |
+| | **D2** | ⚪ **cố ý giữ** — `POSTGRES_PORT`/`REDIS_PORT`/`LOG_LEVEL` chưa ai đọc, nhưng `.env.example` là hồ sơ cấu hình cho người dựng máy, không phải danh sách biến code đọc; lát 12 sẽ động đúng vùng này. Chỉ thêm chú thích *(plan §6.2)* |
+| | **D4** | ⚪ **cố ý giữ** — `flush_once` = `manage_once()` + `write_once(budget rộng hơn)`, khác production đúng **một tham số ngân sách**, có docstring khai. Audit nói *"đi đường khác production"* là nặng hơn sự thật |
+| | **D5** | ⚪ **cố ý giữ** — `label_for` là `LABELS.get()` một dòng; 5 assertion của nó ghi lại ngữ nghĩa `LABELS`. Xoá là mất 5 assertion mà không được gì *(§4.4.3)* |
+| | **D12** | 🟡 **một nửa** — xoá **15 nhánh local**; **2 nhánh remote để lại**: xoá nhánh remote là đẩy ra ngoài và khó lấy lại, cần chủ dự án đồng ý |
+
+### Ba việc mới phát sinh, để lại cho chủ dự án
+
+| # | Việc | Vì sao không gộp vào đây |
+|---|---|---|
+| 1 | **211 file lưu CRLF trong git** dù `.gitattributes` khai `* text=auto eol=lf` (vào repo trước khi có dòng đó) | Đường đúng là `git add --renormalize .` thành **một commit riêng**. Chạm 211 file trong một lát dọn 47 mục là đã đi lạc |
+| 2 | **2 nhánh remote** `origin/feat/intraday-refresh` · `origin/feat/news-collect` | `git push origin --delete …` — hành động ra ngoài |
+| 3 | **`ruff` chưa vào `pyproject.toml`** | Lát này chạy `uvx ruff` tạm. Thêm vào `dependency-groups.dev` + một bước lint là **quyết định quy trình**, thuộc lát 12/13 |
+
+### Điều kiện đảo ngược
+
+Nếu bộ kiểm `tests/docs` bắt đầu đỏ vì **lý do cách diễn đạt** (ai đó sửa câu chữ hợp lệ mà regex không khớp) nhiều hơn vì **lệch thật**, thì nó đang tính phí nhiều hơn giá trị — lúc đó nới regex hoặc bỏ phép kiểm đó, đừng sửa tài liệu cho vừa regex.
