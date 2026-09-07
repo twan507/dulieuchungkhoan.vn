@@ -90,3 +90,30 @@ Bảy file sửa: `chatbot-semantic-layer.md` (bỏ nhãn "chưa duyệt", 8→9
 Các hit `icb_level` còn lại **là đúng**: chúng thuộc tầng lưu trữ ICB (`market.icb_industry`, `etl/refdata_*`) — ICB vẫn được nạp và giữ làm tham chiếu, chỉ là **không bao giờ ra tới model**. Hit trong `90-records/` là vùng lịch sử, không sửa.
 
 **Đính chính lệnh chạy đã lan vào README:** agent chép đúng lệnh sai từ plan (`uv run --project backend python -m agent`); đã sửa `backend/README.md` thành `cd backend && uv run --project . python -m agent` kèm giải thích vì sao.
+
+## Hai vòng review độc lập ✅ XONG (2026-09-07)
+
+Chạy theo CLAUDE.md §4.1.5: **hai trục, hai agent Opus độc lập, báo riêng, không gộp và không xếp hạng chéo**. Hồ sơ: [trục Chuẩn](review-chuan-2026-09-07.md) · [trục Spec](review-spec-2026-09-07.md).
+
+| Trục | Kết quả | Phán quyết |
+|---|---|---|
+| **Chuẩn** (đúng repo + code smell) | 2 CHẶN · 8 nên sửa · 10 ghi nhận | "chưa merge được" |
+| **Spec** (thiếu/sai/scope-creep) | 0 CHẶN · 7 nên sửa · 7 ghi nhận · **không có scope creep** | "làm đúng phần lớn cam kết, nhưng chưa xong" |
+
+### Hai mục CHẶN của trục Chuẩn — cả hai đều thật, đã sửa
+
+**C1 — lệch múi giờ trong `get_news`, đúng bẫy §3.1.** `published_at` là `timestamptz`, phiên Postgres chạy `Etc/UTC` ⇒ lọc và hiển thị theo **ngày UTC chứ không phải ngày Việt Nam**. Đo: **404/8.147 bài (5%) khai sai ngày**; bài tên *"07/09: Đọc gì trước giờ giao dịch chứng khoán?"* bị công cụ khai là 06/09; lọc ngày VN 06/09 bỏ sót 18 bài. Khuôn đúng đã có sẵn ở `etl/fundamentals_store.py:121` và `etl/snapshot_store.py:125` — chỉ file này đi lệch. **Fixture cũ không thể bắt được** vì đặt mọi bài lúc `08:00+07`; đã thêm một bài lúc `23:30+00`.
+
+**C2 — vòng chat để lại lịch sử hỏng, khoá chết cả phiên.** Chạm `max_iterations` thì SDK dừng ngay sau lượt `tool_use` (`_should_stop()` kiểm ở **đầu** vòng) ⇒ lịch sử kết thúc bằng `role=user`, lượt sau thành hai `user` liên tiếp. `max_tokens` rơi giữa `tool_use` ⇒ `tool_use` không có `tool_result`. Mà `repl` khi lỗi lại **giữ nguyên lịch sử đã nhiễm độc** ⇒ mọi câu sau đều nổ. Ca đầu còn không có exception nào, chỉ in `Trợ lý: ` trống. Nay: lượt không kết thúc sạch thì **bỏ nguyên lượt, trả lại lịch sử cũ**.
+
+### Ba lệch của trục Spec — đã sửa
+
+1. **Bốn hình dạng trạng thái dữ liệu chỉ đúng ở 2/8 function.** Hỏi BCTC hay sự kiện của một **chỉ số** trả *"có dữ liệu, 0 dòng"* thay vì *"loại chứng khoán này không có thứ đó"*; `compare_peers` không gọi `resolve_ticker` lần nào; `get_news` đổ lỗi *"còn 7.918 bài chưa phân loại"* cho một **mã không tồn tại**.
+2. **`topic` không phải enum trong schema** — spec chốt `Literal` 9 giá trị, code khai `str`. Nay schema thật có `enum` đủ 9 khoá.
+3. **Hai test mang đúng tên nhưng kiểm sai chỗ**: `test_lich_su_song_qua_hai_luot` chỉ gọi `run_turn` **một lần** (bẫy runner-cạn-iterator không ai canh); `test_ghi_so_duoi_role_etl_that` chạy `INSERT` viết tay, **không gọi `log_llm_call`** — chính vì thế lỗi `tool_use → failed` mới lọt tới lúc chạy thật.
+
+### 🔴 Một chỗ hồ sơ nói quá — loại lỗi §3.2
+
+`round7-results` viết ba lỗi hỏng-im-lặng *"đã sửa, **có test canh**"*. `git show --stat d23913c` cho thấy **chỉ 1/3 có test**. Khẳng định chưa kiểm là loại tự đầu độc: nó chặn mất phép kiểm sẽ tìm ra chỗ hở. Đã đính chính hồ sơ và viết nốt hai test. AC5 cũng hạ từ 4/4 xuống **2/4** vì hai câu từ chối chạy mà không lưu transcript.
+
+**Test sau hai vòng review: 976 passed, 2 skipped** (877 trên `main` → **+99**).

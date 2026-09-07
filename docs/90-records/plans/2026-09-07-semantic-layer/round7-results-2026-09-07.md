@@ -66,7 +66,7 @@ Chi phí thật **$0,016/câu** thấp hơn ước lượng $0,022–0,048 của
 | AC | Kết quả |
 |---|---|
 | **AC1** `tool_runner` chạy với MiniMax | ✅ — spike Task 0 và mọi lượt chat |
-| **AC2** không test nào xanh thành đỏ | ✅ — `main` **877 passed, 2 skipped**; nhánh **953 passed, 2 skipped** (+76, không skip mới) |
+| **AC2** không test nào xanh thành đỏ | ✅ — `main` **877 passed, 2 skipped**; nhánh **976 passed, 2 skipped** (+99, không skip mới) |
 | **AC3** đường đọc dưới `dlck_api`, không ghi được | ✅ — chạy tay dưới đúng credential production, output nguyên văn ở §7 |
 | **AC4** cả 9 function trả đúng dữ liệu thật | ✅ — bảng §2 |
 | **AC5** câu ngoài lĩnh vực bị từ chối gọn | ⚠️ **2/4 có transcript** — ẩm thực và lập trình lưu ở [acceptance-transcript](acceptance-transcript-2026-09-07.md); hai câu còn lại (sức khoẻ, pháp lý) chạy nhưng **không lưu transcript**, nên chỉ tính hai câu có bằng chứng |
@@ -126,5 +126,5 @@ AC9 — ket noi ro ri cua agent_reader:
 
 ```
 main:                877 passed, 2 skipped in 79.77s
-feat/semantic-layer: 953 passed, 2 skipped in 85.57s
+feat/semantic-layer: 976 passed, 2 skipped in 79.32s
 ```
