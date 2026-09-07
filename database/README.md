@@ -89,7 +89,13 @@ Cả bộ trong một lệnh *(số hiện hành ở ngay dưới — mục này
 cd backend && uv run --env-file ../.env pytest tests -q
 ```
 
-🔴 **`--env-file ../.env` là bắt buộc nếu shell chưa export sẵn biến** *(đo 2026-09-07)*: `uv` **không** tự nạp `.env` (không có `[tool.uv] env-file` trong `backend/pyproject.toml`), nên chạy trần trong một shell sạch cho **425 error** ở bước fixture — `KeyError: 'TEST_DATABASE_URL'` tại `tests/conftest.py:23` — chứ không phải test hỏng. Cùng lệnh kèm `--env-file` cho **1.038 passed, 2 skipped** *(2026-09-07 sau đợt dọn lệch tài liệu ↔ code: +7 test `tests/docs` thi hành §1.7, +3 test bịt lỗ hổng `phan_ure`/`tn`/NguoiQuanSat; 1.029 sau lát 11)*. 🔴 **Đây là chủ sở hữu duy nhất của con số này** — `README.md` gốc và `roadmap.md` §0 cố ý KHÔNG nêu lại (trước 2026-09-07 nó nằm ở bốn chỗ và bốn chỗ nói khác nhau).
+Ngoài bộ Python còn **một bộ nhỏ bằng Node** cho `scripts/stack.mjs` (7 test: đọc PID cổng, đời Docker, chốt an toàn volume, cấu hình realtime). Chạy từ **gốc repo**, không cần DB:
+
+```bash
+npm test
+```
+
+🔴 **`--env-file ../.env` là bắt buộc nếu shell chưa export sẵn biến** *(đo 2026-09-07)*: `uv` **không** tự nạp `.env` (không có `[tool.uv] env-file` trong `backend/pyproject.toml`), nên chạy trần trong một shell sạch cho **425 error** ở bước fixture — `KeyError: 'TEST_DATABASE_URL'` tại `tests/conftest.py:23` — chứ không phải test hỏng. Cùng lệnh kèm `--env-file` cho **1.039 passed, 2 skipped** *(2026-09-07 sau đợt dọn lệch tài liệu ↔ code: +7 test `tests/docs` thi hành §1.7, +2 test bịt lỗ hổng `phan_ure` và `tn` — phần NguoiQuanSat là assertion chèn vào hàm sẵn có, không thêm hàm mới; 1.029 sau lát 11)*. 🔴 **Đây là chủ sở hữu duy nhất của con số này** — `README.md` gốc và `roadmap.md` §0 cố ý KHÔNG nêu lại (trước 2026-09-07 nó nằm ở bốn chỗ và bốn chỗ nói khác nhau).
 
 🔴 **Đừng chạy hai phiên `pytest` cùng lúc.** Cả bộ dùng **một** DB test `dulieu_test`; hai phiên song song giẫm dữ liệu của nhau và cho ra hàng chục fail/error rải rác ở `tests/etl` — mỗi file chạy riêng lại pass, nên rất dễ tưởng là nợ kỹ thuật có sẵn *(đã gặp thật 2026-09-07: một phiên review chạy song song ⇒ 11 failed + 7 error; chạy lại một mình ⇒ 1.029 passed hai lượt liên tiếp)*.
 

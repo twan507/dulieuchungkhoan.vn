@@ -32,7 +32,7 @@
       "baochinhphu_pubdate": "M/D/YYYY h:mm:ss AM/PM, KHONG co timezone, gia dinh +07. URL cung nhung gio: 102+YYMMDD+HHMMSS+serial",
       "vietstock_bnews_slug": "slug trong URL chi la trang tri, chi ID quyet dinh. Lay ID tu trang index: vietstock.vn/rss, bnews.vn/rss.html",
       "vietnambiz_pubdate": "pubDate RONG hoan toan - phai lay gio tu URL: YYYY+M+DD+HHMMSS+serial. Chuoi rong parse thanh gio hien tai nen feed chet van bao tuoi.",
-    "dedupe": "theo URL chuan hoa (bo utm_*, gidzl). Nhieu feed cung site tro chung mot kenh."
+      "dedupe": "theo URL chuan hoa (bo utm_*, gidzl). Nhieu feed cung site tro chung mot kenh."
     }
   },
   "taxonomy": {
@@ -49,7 +49,8 @@
       "2b": "ngan hang trung uong",
       "2c": "hang hoa va nang luong",
       "2d": "an ninh va dia chinh tri",
-      "2e": "thuong mai va thue quan"
+      "2e": "thuong mai va thue quan",
+      "2f": "doanh nghiep va kinh te cac nuoc"
     },
     "3_doanh_nghiep_niem_yet": {
       "3a": "CBTT va su kien quyen",
