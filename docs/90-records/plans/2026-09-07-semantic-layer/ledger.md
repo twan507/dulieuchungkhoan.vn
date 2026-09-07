@@ -127,3 +127,44 @@ dem bai cum 'lai suat dieu hanh' thang 8/2026: (theo_utc=23, theo_vn=23)
 ```
 
 Trùng nhau — **đáp án 23 vẫn đúng**, không phải sửa `regression-round7.md`. Ghi lại vì đây là phép kiểm dễ quên: đổi ngữ nghĩa lọc ngày mà không rà lại đáp án đã lưu thì bộ hồi quy tự mục mà không ai biết.
+
+## Vòng review thứ hai ✅ (2026-09-07)
+
+Chạy vì vòng 1 sửa 12 file trong hai lượt vội — vòng 2 có nhiệm vụ **kiểm chính các bản sửa**, không chỉ soi lại code cũ. Hồ sơ: [Chuẩn v2](review-chuan-v2-2026-09-07.md) · [Spec v2](review-spec-v2-2026-09-07.md).
+
+🔴 **Vòng 2 trả lời đúng câu hỏi nó sinh ra để hỏi: hai trong các bản sửa của vòng 1 đẻ ra lỗi NẶNG HƠN lỗi chúng chữa.** Cả hai reviewer độc lập cùng bắt được ca thứ nhất.
+
+### Hồi quy 1 — `compare_peers` trả 10 mã bất kỳ cho một mã không tồn tại
+
+Bản sửa vòng 1 đổi tham số SQL từ *mã người hỏi* sang *mã tra được*, nhưng giữ nguyên mệnh đề canh `cardinality(:mas) = 0 OR upper(ticker) = ANY(:mas)`. Danh sách rỗng vốn có nghĩa **"không lọc theo mã, lọc theo ngành"**, sau bản sửa lại có nghĩa **"không mã nào tra được"** ⇒ hỏi `ABCDE` thì hàm mở toang truy vấn:
+
+```
+hoi ['ABCDE']        -> co_du_lieu=True so_dong=10 ma_tra=['A32','AAA','AAH','AAM','AAN','AAS']
+hoi ['ZZZZ','YYYY']  -> co_du_lieu=True so_dong=10 ma_tra=['A32','AAA','AAH','AAM','AAN','AAS']
+```
+
+Trước bản sửa: trả rỗng (sai im lặng). Sau bản sửa: **dữ liệu sai một cách tự tin** — tệ hơn hẳn. Ba test mới của vòng 1 không bắt được vì case nào cũng có ít nhất một mã hợp lệ.
+
+### Hồi quy 2 — `get_corporate_events` chặn nhầm ETF và chứng chỉ quỹ
+
+Bản sửa vòng 1 thêm nhánh "loại chứng khoán này không có sự kiện doanh nghiệp" cho **mọi** loại khác `stock`. Đo lại trên kho thật:
+
+```
+loại CÓ sự kiện doanh nghiệp:  stock 1.526 mã / 104.706 · etf 18 mã / 104 · fund_cert 3 mã / 10
+loại CÓ báo cáo tài chính:     stock 1.523 mã / 27.281.962   (KHÔNG có etf/fund_cert/index)
+FUCVREIT (etf): 14 sự kiện, 2 CashDividend
+```
+
+⇒ nhánh chặn **đúng cho `get_financials`** nhưng **sai cho `get_corporate_events`**: nó nói một điều chưa đo và làm mất dữ liệu thật (§1.2, §3.6 — kết luận phủ định về cả một loại không suy được từ một quan sát). Sửa lại theo **sự thật cấu trúc**: chỉ chỉ số (không có `issuer_id`) mới không thể có sự kiện. Test cũ chỉ kiểm `VNINDEX` nên rơi đúng vùng lời khẳng định còn đúng — đó là lý do nó không bắt được.
+
+### Bài học chung của hai ca
+
+Cả hai đều là **sửa đúng triệu chứng, sai phạm vi**: một cái mở rộng nghĩa của danh sách rỗng, một cái mở rộng "chỉ số không có sự kiện" thành "mọi thứ không phải cổ phiếu đều không có". Và trong cả hai ca, **test viết cùng lượt sửa không bắt được** vì nó chỉ phủ đúng ca đã nghĩ tới. Đây là lý do vòng review thứ hai tồn tại.
+
+### Các mục khác của vòng 2
+
+- **F3** — bản sửa C2 của vòng 1 quét quá tay: `max_tokens` rơi vào một lượt **chỉ có chữ** cũng bị bỏ lượt, vứt luôn câu trả lời hợp lệ và mọi kết quả đã tra. Điều kiện đúng là **hình dạng lịch sử** (không còn `tool_use` chưa có `tool_result`), không phải `stop_reason`. Đã sửa.
+- **F4** — bản sửa N1 (`JOIN LATERAL` khoá revision) đẩy vị từ `tsv` ra ngoài subquery, **chặn hẳn** chỉ mục GIN: 158 ms vs 27 ms, cost 68.307 vs 1.302.
+- **N5** — `get_price_series` là công cụ **duy nhất còn cắt câm**: `BT6` có 5.764 phiên, tool trả 400 mà không cờ; 356 mã hơn 400 phiên.
+- **F6** `value: true` lọt guard vì `bool` là con của `int` · **F7** `get_industry_tree` chưa chuẩn hoá hình dạng · **N7** import rác.
+- Reviewer xác nhận **sạch**: `Literal[_TOPICS]` sinh enum đủ 9 khoá trong `input_schema` thật · `resolve_ticker` thêm vào `get_news` không đổi hành vi mã hợp lệ (+5,7 ms) · `v_issuer_industry` 1-1 nên không nhân dòng · test mới không tautological · `ket_sach` không sót giá trị kết-thúc-bình-thường nào của SDK.
