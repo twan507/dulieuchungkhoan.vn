@@ -23,9 +23,14 @@ from __future__ import annotations
 import sqlalchemy as sa
 
 from agent.format import format_date_vi
-from agent.tools._shared import cap_limit, co_du_lieu, resolve_ticker, to_json
+from agent.tools._shared import cap_limit, co_du_lieu, kiem_industry_code, kiem_ngay, resolve_ticker, to_json
 
 SUBS = [f"{g}{c}" for g, cs in ((1, "abcdef"), (2, "abcdef"), (3, "abcdefghi")) for c in cs]
+
+# CHECK constraint thật (migration 0007): group_no smallint CHECK (group_no BETWEEN 1 AND 3).
+# Nhóm 'x' (tin bị loại) KHÔNG có mặt ở đây — nó biểu diễn bằng group_no NULL (xem migration),
+# nên không phải một giá trị group_no có thể hỏi được qua tham số int này.
+GROUP_NO_HOP_LE = [1, 2, 3]
 
 # CLAUDE.md §3.1: published_at là timestamptz, phiên Postgres chạy Etc/UTC — so/hiển thị "ngày"
 # PHẢI ép sang Asia/Ho_Chi_Minh trước khi lấy ::date, không được để mặc định so theo ngày UTC
@@ -76,6 +81,15 @@ def tim_tin(conn: sa.Connection, query: str | None = None, ticker: str | None = 
             from_date: str | None = None, to_date: str | None = None, limit: int | None = None) -> str:
     if sub and sub not in SUBS:
         return to_json({"loi": True, "ly_do": f"khong co sub '{sub}'", "sub_hop_le": SUBS})
+    if group_no is not None and group_no not in GROUP_NO_HOP_LE:
+        return to_json({"loi": True, "ly_do": f"khong co nhom '{group_no}'", "group_no_hop_le": GROUP_NO_HOP_LE})
+    for loi in (kiem_ngay(from_date, "from_date"), kiem_ngay(to_date, "to_date")):
+        if loi:
+            return to_json(loi)
+    if industry_code:
+        loi = kiem_industry_code(conn, industry_code)
+        if loi:
+            return to_json(loi)
     # spec §4.6 hình dạng #1: ticker phải tra được TRƯỚC khi lọc, không thì mã không tồn tại
     # rơi vào nhánh "lọc theo nhãn ra 0 dòng" và bị gán nhầm lý do "chưa phân loại" (§2.1).
     ma = resolve_ticker(conn, ticker) if ticker else None

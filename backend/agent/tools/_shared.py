@@ -7,13 +7,40 @@ danh tính 18 chỉ số nhưng không một điểm giá nào, nên hai ca đó
 from __future__ import annotations
 
 import json
+import re
+from datetime import date
 
 import sqlalchemy as sa
+
+_RE_NGAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 def to_json(payload: dict) -> str:
     """SDK đặt NGUYÊN giá trị trả về vào tool_result.content và không kiểm kiểu ⇒ phải là str."""
     return json.dumps(payload, ensure_ascii=False, default=str)
+
+
+def kiem_ngay(gia_tri: str | None, ten_tham_so: str) -> dict | None:
+    """Kiểm một tham số ngày do MODEL sinh — input không tin được (đầu file CLAUDE.md).
+
+    Đo thật 2026-09-07: mọi hàm ghép `from_date`/`to_date` thẳng vào `CAST(:x AS date)` rồi
+    giao cho Postgres soát — model sinh '2025-13-45' (đúng hình dạng, tháng không có thật) hay
+    'hôm qua'/'tháng trước' (model tự ý dùng ngôn ngữ tự nhiên) đều làm Postgres ném thẳng
+    `DataError`, thoát khỏi thân hàm mà không qua bất kỳ khuôn lỗi nào của tầng ngữ nghĩa.
+
+    Trả None khi hợp lệ (bỏ trống luôn hợp lệ — nghĩa là "không lọc theo mốc này"). Trả lỗi có
+    cấu trúc khi không, để model tự sửa mà không cần đọc traceback SQL.
+    """
+    if gia_tri is None:
+        return None
+    if isinstance(gia_tri, str) and _RE_NGAY.match(gia_tri):
+        try:
+            date.fromisoformat(gia_tri)
+            return None
+        except ValueError:
+            pass  # đúng hình dạng nhưng không phải ngày thật, vd '2025-13-45' — rơi xuống lỗi
+    return {"loi": True, "ly_do": f"{ten_tham_so} phải theo định dạng YYYY-MM-DD, nhận được: {gia_tri!r}",
+            "dinh_dang_hop_le": "YYYY-MM-DD"}
 
 
 def cap_limit(limit: int | None, mac_dinh: int, tran: int) -> int:
@@ -83,3 +110,26 @@ def resolve_ticker(conn: sa.Connection, ticker: str) -> dict:
     return {"tim_thay": True, "security_id": row.security_id, "issuer_id": row.issuer_id,
             "ticker": row.ticker, "loai": row.security_type, "trang_thai": row.status,
             "san": row.exchange}
+
+
+# industry_code là từ vựng ĐÓNG dùng chung ở get_news/screen_stocks/compare_peers (mỗi hàm lọc
+# theo mã ngành, không tra riêng một mã như resolve_ticker) — một chủ (CLAUDE.md §1.7), tránh
+# chép lại câu SQL này ba lần rồi lệch nhau. get_industry_tree KHÔNG dùng hàm này: nó tra industry_code
+# như một ĐỐI TƯỢNG chính (không phải bộ lọc phụ) nên đã có nhánh gợi ý riêng bằng similarity (F5).
+_SQL_NGANH_HOP_LE = sa.text("SELECT code FROM market.industry WHERE level = 2 ORDER BY code")
+
+
+def kiem_industry_code(conn: sa.Connection, ma: str | None) -> dict | None:
+    """Kiểm industry_code khi dùng làm BỘ LỌC PHỤ — 24 mã ngành cấp 2 (đo 2026-09-07).
+
+    Trả None khi bỏ trống hoặc khớp đúng một trong 24 mã. Trả lỗi có cấu trúc khi không, kèm
+    TOÀN BỘ danh sách hợp lệ — không được để lọt xuống dưới rồi lặng lẽ ra 0 dòng: 0 dòng vì
+    "mã ngành không tồn tại" và 0 dòng vì "mã ngành có thật nhưng không khớp gì trong khoảng
+    hỏi" là hai lý do khác hẳn nhau (đúng bẫy đổ lỗi sai nguyên nhân CLAUDE.md §3.6 nhắc tới).
+    """
+    if ma is None:
+        return None
+    hop_le = [r[0] for r in conn.execute(_SQL_NGANH_HOP_LE)]
+    if ma not in hop_le:
+        return {"loi": True, "ly_do": f"khong co ma nganh '{ma}'", "industry_code_hop_le": hop_le}
+    return None

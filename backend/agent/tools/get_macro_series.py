@@ -18,7 +18,7 @@ from __future__ import annotations
 import sqlalchemy as sa
 
 from agent.format import display_series_value, format_date_vi
-from agent.tools._shared import cap_limit, co_du_lieu, khong_tim_thay, rong, to_json
+from agent.tools._shared import cap_limit, co_du_lieu, khong_tim_thay, kiem_ngay, rong, to_json
 
 # Nới 40 -> 250 — chủ dự án chốt 2026-09-07 "nới các giới hạn thoải mái ra, không phải sợ quá
 # tốn kém token". Trần danh mục đặc biệt quan trọng: kho có 192 chuỗi (64 macro + 128 asset,
@@ -118,6 +118,9 @@ def _dem_danh_muc(conn: sa.Connection, keyword: str | None) -> int:
 def chuoi_vi_mo(conn: sa.Connection, code: str | None = None, keyword: str | None = None,
                 from_date: str | None = None, to_date: str | None = None,
                 limit: int | None = None) -> str:
+    for loi in (kiem_ngay(from_date, "from_date"), kiem_ngay(to_date, "to_date")):
+        if loi:
+            return to_json(loi)
     if not code:
         danh_muc = _danh_muc(conn, keyword)
         tong = _dem_danh_muc(conn, keyword)

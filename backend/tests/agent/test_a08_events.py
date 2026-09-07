@@ -28,6 +28,15 @@ def test_loai_su_kien_la_bi_tu_choi_kem_danh_sach(db, kho):
     assert "CashDividend" in out["loai_hop_le"]
 
 
+def test_from_date_hinh_dang_sai_bao_loi_co_cau_truc_khong_nem(db, kho):
+    """Đo thật 2026-09-07: from_date='2025-13-45' (đúng hình dạng chuỗi, tháng không có thật)
+    trước đây lọt xuống CAST(:tu AS date) và làm Postgres ném DataError."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(su_kien_doanh_nghiep(db, "FPT", from_date="2025-13-45"))
+    assert out["loi"] is True
+    assert out["dinh_dang_hop_le"] == "YYYY-MM-DD"
+
+
 def test_ma_khong_ton_tai(db, kho):
     db.execute(sa.text("SET LOCAL ROLE dlck_api"))
     assert json.loads(su_kien_doanh_nghiep(db, "ZZZZ"))["tim_thay"] is False

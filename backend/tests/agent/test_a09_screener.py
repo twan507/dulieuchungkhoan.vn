@@ -220,3 +220,29 @@ def test_hoi_nganh_khong_kem_ma_van_loc_theo_nganh(db, kho):
     out = json.loads(so_sanh_cung_nganh(db, industry_code="NGANHANG", metric_codes=["rtd21"]))
     assert out["so_dong"] > 0
     assert {d["ma"] for d in out["du_lieu"]} <= {"VCB", "TIN", "HDB", "LPB"}
+
+
+def test_screen_industry_code_la_bi_tu_choi_khong_ra_0_dong_cam(db, kho):
+    """industry_code='KHONGCO' không nằm trong 24 mã ngành cấp 2 thật (đo 2026-09-07) — trước
+    sửa, mã lạ lọt xuống WHERE ind.code=:nganh, ra 0 dòng khớp, y hệt hình dạng 'ngành có thật
+    nhưng hôm nay rỗng' (rong()) — sai nguyên nhân, model không biết mã ngành mình gõ không tồn tại."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(loc_co_phieu(db, industry_code="KHONGCO"))
+    assert out["loi"] is True
+    assert "NGANHANG" in out["industry_code_hop_le"]
+
+
+def test_screen_exchange_la_bi_tu_choi(db, kho):
+    """exchange chỉ có ba giá trị thật HOSE/HNX/UPCOM (đo 2026-09-07, market.security), không
+    có CHECK ở DB nên phải tự chặn — 'NYSE' lạ trước sửa lặng lẽ ra 0 dòng thay vì báo sai sàn."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(loc_co_phieu(db, exchange="NYSE"))
+    assert out["loi"] is True
+    assert out["exchange_hop_le"] == ["HOSE", "HNX", "UPCOM"]
+
+
+def test_compare_industry_code_la_bi_tu_choi_khong_ra_0_dong_cam(db, kho):
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(so_sanh_cung_nganh(db, industry_code="KHONGCO", metric_codes=["rtd21"]))
+    assert out["loi"] is True
+    assert "NGANHANG" in out["industry_code_hop_le"]

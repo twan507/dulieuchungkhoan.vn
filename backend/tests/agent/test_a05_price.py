@@ -66,6 +66,21 @@ def test_khong_du_400_phien_thi_khong_bao_da_cat(db, kho):
     assert out["tong_khop"] == 3
 
 
+def test_from_date_ngon_ngu_tu_nhien_bao_loi_co_cau_truc_khong_nem(db, kho):
+    """Đo thật 2026-09-07: model sinh from_date='hom qua' (không phải YYYY-MM-DD) trước đây
+    lọt thẳng xuống CAST(:tu AS date) và làm Postgres ném DataError, thoát khỏi thân hàm."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(gia_theo_ngay(db, "HPG", from_date="hom qua"))
+    assert out["loi"] is True
+    assert out["dinh_dang_hop_le"] == "YYYY-MM-DD"
+
+
+def test_to_date_hinh_dang_sai_bao_loi_co_cau_truc(db, kho):
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(gia_theo_ngay(db, "HPG", to_date="2025-13-45"))
+    assert out["loi"] is True
+
+
 def test_vuot_tran_phien_bao_da_cat_va_giu_phien_gan_nhat(db, kho, monkeypatch):
     """N5/G1 (review CHUẨN lát 10, vòng 2): trước sửa, hàm cắt câm ở TRAN_PHIEN=400 (đo kho
     thật: BT6 có 5.764 phiên, tool trả 400 không cờ nào báo, 356 mã đang niêm yết >400 phiên).

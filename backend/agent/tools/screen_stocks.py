@@ -19,11 +19,16 @@ import sqlalchemy as sa
 
 from agent.format import display_metric
 from agent.labels import DEFAULT_RATIOS, LABELS
-from agent.tools._shared import cap_limit, co_du_lieu, rong, to_json
+from agent.tools._shared import cap_limit, co_du_lieu, kiem_industry_code, rong, to_json
 
 TOAN_TU = {">": ">", "<": "<", ">=": ">=", "<=": "<=", "=": "="}
 _KEY = "payload->'stockScreenerItem'->>"
 _KHOA_CAN = {"metric_code", "operator", "value"}
+# Đo kho thật 2026-09-07: market.security.exchange chỉ có đúng ba giá trị này (HOSE 471, HNX
+# 344, UPCOM 1202) — không có CHECK constraint ở DB (cột chỉ NOT NULL) nên phải tự chặn ở đây,
+# không thì exchange lạ lọt xuống WHERE rồi lặng lẽ ra 0 dòng như "sàn có thật nhưng hôm nay
+# rỗng" thay vì "sàn không tồn tại".
+EXCHANGE_HOP_LE = ["HOSE", "HNX", "UPCOM"]
 
 
 def _don_vi(conn: sa.Connection) -> dict[str, str | None]:
@@ -59,6 +64,13 @@ def loc_co_phieu(conn: sa.Connection, criteria: list[dict] | None = None,
         # có cấu trúc mà file này trả cho mọi ca khác).
         if isinstance(c["value"], bool) or not isinstance(c["value"], (int, float)):
             return to_json({"loi": True, "ly_do": f"value phai la so, nhan duoc: {c['value']!r}"})
+
+    if exchange and exchange not in EXCHANGE_HOP_LE:
+        return to_json({"loi": True, "ly_do": f"khong co san '{exchange}'", "exchange_hop_le": EXCHANGE_HOP_LE})
+    if industry_code:
+        loi = kiem_industry_code(conn, industry_code)
+        if loi:
+            return to_json(loi)
 
     ngay = conn.execute(sa.text("SELECT max(trading_date) FROM market.screener_daily")).scalar()
     if ngay is None:

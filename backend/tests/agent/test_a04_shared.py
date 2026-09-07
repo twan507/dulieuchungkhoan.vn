@@ -8,7 +8,7 @@ import json
 
 import sqlalchemy as sa
 
-from agent.tools._shared import cap_limit, resolve_ticker, to_json
+from agent.tools._shared import cap_limit, kiem_ngay, resolve_ticker, to_json
 from agent.tools.load_knowledge_reference import doc_tri_thuc
 
 
@@ -56,6 +56,31 @@ def test_doc_tri_thuc_tra_chuoi_json_co_noi_dung():
     out = json.loads(doc_tri_thuc("valuation"))
     assert out["chu_de"] == "valuation"
     assert "FCFF" in out["noi_dung"]
+
+
+def test_kiem_ngay_bo_trong_la_hop_le():
+    assert kiem_ngay(None, "from_date") is None
+
+
+def test_kiem_ngay_dung_khuon_la_hop_le():
+    assert kiem_ngay("2026-09-07", "from_date") is None
+
+
+def test_kiem_ngay_ngon_ngu_tu_nhien_bi_tu_choi_co_cau_truc():
+    """Đo thật 2026-09-07: model có thể sinh 'hôm qua' thay vì ngày ISO — phải ra lỗi có cấu
+    trúc để model tự sửa, không được để lọt xuống Postgres rồi ném DataError."""
+    out = kiem_ngay("hom qua", "from_date")
+    assert out["loi"] is True
+    assert out["dinh_dang_hop_le"] == "YYYY-MM-DD"
+    assert "from_date" in out["ly_do"]
+
+
+def test_kiem_ngay_dung_hinh_dang_nhung_khong_phai_ngay_that_bi_tu_choi():
+    """'2025-13-45' đúng khuôn YYYY-MM-DD về mặt chuỗi nhưng tháng 13 không tồn tại — regex
+    hình dạng không đủ, phải kiểm luôn ngày có THẬT hay không (date.fromisoformat)."""
+    out = kiem_ngay("2025-13-45", "to_date")
+    assert out["loi"] is True
+    assert "to_date" in out["ly_do"]
 
 
 def test_doc_tri_thuc_chu_de_la_thi_bao_loi_kem_danh_sach():

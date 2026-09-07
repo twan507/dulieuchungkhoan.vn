@@ -39,6 +39,27 @@ def test_khong_bao_gio_lo_ma_tho(db, kho):
         assert ma not in raw
 
 
+def test_statement_type_la_bi_tu_choi_khong_ra_0_dong_cam(db, kho):
+    """statement_type ngoài {IS,BS,CF} (đo kho thật 2026-09-07: 'NO' được DB CHECK cho phép
+    nhưng 0 dòng thật, không có nhãn hiển thị trong labels.py) trước sửa lọt qua
+    DEFAULT_BY_STATEMENT.get(..., []) thành codes=[] rồi câu SQL luôn ra 0 dòng — model nhận
+    hình dạng #3 ("mã đúng, khoảng năm rỗng") dù statement_type mình gõ không hề tồn tại."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(bao_cao_tai_chinh(db, "FPT", statement_type="XX"))
+    assert out["loi"] is True
+    assert out["statement_type_hop_le"] == ["IS", "BS", "CF"]
+
+
+def test_period_la_bi_tu_choi_khong_am_tham_doi_thanh_quy(db, kho):
+    """period chỉ so sánh == 'nam' rồi mặc định coi MỌI giá trị khác là quý (length_report
+    1..4) — gõ nhầm 'Nam' (hoa đầu) trước sửa bị âm thầm đọc thành 'quý', ra 0 dòng vì kho
+    fixture chỉ có báo cáo NĂM cho FPT, không báo statement_type/period đã gõ sai."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(bao_cao_tai_chinh(db, "FPT", period="Nam"))
+    assert out["loi"] is True
+    assert out["period_hop_le"] == ["nam", "quy"]
+
+
 def test_ma_ngoai_bang_nhan_bi_tu_choi(db, kho):
     db.execute(sa.text("SET LOCAL ROLE dlck_api"))
     out = json.loads(bao_cao_tai_chinh(db, "FPT", "IS", 2024, 2024, metric_codes=["prf"]))

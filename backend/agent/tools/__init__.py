@@ -54,7 +54,7 @@ def build_tools(engine: sa.Engine) -> list:
 
         statement_type: 'IS' kết quả kinh doanh, 'BS' cân đối kế toán, 'CF' lưu chuyển tiền tệ.
         period: 'nam' (cả năm) hoặc 'quy'. metric_codes để trống thì trả bộ chỉ tiêu cốt lõi.
-        Tối đa 8 kỳ mỗi lần gọi.
+        Tối đa 20 kỳ mỗi lần gọi.
         """
         return chay(bao_cao_tai_chinh, ticker, statement_type, from_year, to_year, period, metric_codes)
 
@@ -73,14 +73,15 @@ def build_tools(engine: sa.Engine) -> list:
     @beta_tool
     def compare_peers(tickers: list[str] = [], metric_codes: list[str] = [],
                       industry_code: str | None = None) -> str:
-        """So sánh nhiều mã trên cùng bộ chỉ tiêu, cùng một phiên dữ liệu. Tối đa 10 mã."""
+        """So sánh nhiều mã trên cùng bộ chỉ tiêu, cùng một phiên dữ liệu. Tối đa 25 mã."""
         return chay(so_sanh_cung_nganh, tickers, metric_codes, industry_code)
 
     @beta_tool
     def get_corporate_events(ticker: str, event_type: str | None = None,
                              from_date: str | None = None, to_date: str | None = None,
                              limit: int | None = None) -> str:
-        """Sự kiện doanh nghiệp: cổ tức tiền mặt, cổ tức cổ phiếu, phát hành thêm, đại hội, IPO.
+        """Sự kiện doanh nghiệp: cổ tức tiền mặt, cổ tức cổ phiếu, phát hành thêm, đại hội,
+        công bố kết quả kinh doanh, IPO.
 
         event_type ∈ 'CashDividend' | 'StockDividend' | 'ShareIssuance' | 'AGM' | 'Earning' | 'IPO'.
         """

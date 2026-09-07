@@ -18,7 +18,7 @@ from __future__ import annotations
 import sqlalchemy as sa
 
 from agent.format import format_date_vi
-from agent.tools._shared import cap_limit, co_du_lieu, khong_co_du_lieu, resolve_ticker, rong, to_json
+from agent.tools._shared import cap_limit, co_du_lieu, khong_co_du_lieu, kiem_ngay, resolve_ticker, rong, to_json
 
 LOAI = ["Earning", "AGM", "CashDividend", "ShareIssuance", "StockDividend", "IPO"]
 
@@ -44,6 +44,9 @@ def su_kien_doanh_nghiep(conn: sa.Connection, ticker: str, event_type: str | Non
                          limit: int | None = None) -> str:
     if event_type and event_type not in LOAI:
         return to_json({"loi": True, "ly_do": f"khong co loai su kien '{event_type}'", "loai_hop_le": LOAI})
+    for loi in (kiem_ngay(from_date, "from_date"), kiem_ngay(to_date, "to_date")):
+        if loi:
+            return to_json(loi)
     ma = resolve_ticker(conn, ticker)
     if not ma["tim_thay"]:
         return to_json(ma)

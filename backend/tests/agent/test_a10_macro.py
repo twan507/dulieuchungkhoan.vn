@@ -24,6 +24,15 @@ def test_cpi_thang_8_2026(db, kho):
     assert out["ten"] == "CPI (YoY)"
 
 
+def test_from_date_ngon_ngu_tu_nhien_bao_loi_co_cau_truc_khong_nem(db, kho):
+    """Đo thật 2026-09-07: from_date='xyz' trước đây lọt xuống CAST(:tu AS date) của nhánh
+    macro và làm Postgres ném DataError, thoát khỏi thân hàm."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(chuoi_vi_mo(db, code="vn.cpi", from_date="xyz"))
+    assert out["loi"] is True
+    assert out["dinh_dang_hop_le"] == "YYYY-MM-DD"
+
+
 def test_dau_wti_la_nhanh_asset(db, kho):
     db.execute(sa.text("SET LOCAL ROLE dlck_api"))
     out = json.loads(chuoi_vi_mo(db, code="wti", from_date="2026-09-05", to_date="2026-09-05"))

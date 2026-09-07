@@ -25,6 +25,14 @@ from agent.tools._shared import khong_co_du_lieu, resolve_ticker, rong, to_json
 # 20 năm báo cáo, 20 kỳ quý ~ 5 năm).
 TRAN_KY = 20
 
+# DB CHECK constraint thật cho phép thêm 'NO' (migration 0004) nhưng đo kho thật 2026-09-07:
+# market.financial_statement chỉ có BS/CF/IS (0 dòng 'NO') và DEFAULT_BY_STATEMENT (labels.py)
+# chỉ định nghĩa bộ chỉ tiêu mặc định cho ba loại này — 'NO' không có tên hiển thị nào trong
+# tầng ngữ nghĩa nên không phơi ra model (cùng tinh thần loại bỏ khối "không có giá trị phân
+# tích" ở CLAUDE.md §2.2, dù lý do ở đây là "chưa có ai ánh xạ nhãn", không phải "không phân tích").
+STATEMENT_TYPE_HOP_LE = ["IS", "BS", "CF"]
+PERIOD_HOP_LE = ["nam", "quy"]
+
 # hình dạng #2 (spec §4.6): đo kho thật 2026-09-07 — TOÀN BỘ market.financial_statement (27,3
 # triệu dòng) chỉ thuộc issuer của mã 'stock' (1.523 issuer, khớp docstring đầu file); 0 issuer
 # non-stock có báo cáo tài chính, kể cả những issuer etf/fund_cert CÓ issuer_id. Đây là phạm
@@ -54,6 +62,11 @@ _SQL_BCTC = sa.text("""
 def bao_cao_tai_chinh(conn: sa.Connection, ticker: str, statement_type: str = "IS",
                       from_year: int | None = None, to_year: int | None = None,
                       period: str = "nam", metric_codes: list[str] | None = None) -> str:
+    if statement_type not in STATEMENT_TYPE_HOP_LE:
+        return to_json({"loi": True, "ly_do": f"khong co loai bao cao '{statement_type}'",
+                        "statement_type_hop_le": STATEMENT_TYPE_HOP_LE})
+    if period not in PERIOD_HOP_LE:
+        return to_json({"loi": True, "ly_do": f"khong co ky '{period}'", "period_hop_le": PERIOD_HOP_LE})
     codes = list(metric_codes or []) or DEFAULT_BY_STATEMENT.get(statement_type, [])
     ma_la = [c for c in codes if c not in LABELS]
     if ma_la:

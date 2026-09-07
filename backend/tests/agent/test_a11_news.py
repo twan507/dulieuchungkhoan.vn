@@ -91,11 +91,42 @@ def test_ticker_khong_ton_tai_bao_khong_tim_thay_khong_do_loi_cho_chua_phan_loai
     assert "ghi_chu" not in out
 
 
+def test_from_date_ngon_ngu_tu_nhien_bao_loi_co_cau_truc_khong_nem(db, kho):
+    """Đo thật 2026-09-07: from_date='thang truoc' trước đây lọt xuống CAST(:tu AS date) và
+    làm Postgres ném DataError, thoát khỏi thân hàm."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(tim_tin(db, from_date="thang truoc"))
+    assert out["loi"] is True
+    assert out["dinh_dang_hop_le"] == "YYYY-MM-DD"
+
+
 def test_sub_la_bi_tu_choi(db, kho):
     db.execute(sa.text("SET LOCAL ROLE dlck_api"))
     out = json.loads(tim_tin(db, sub="9z"))
     assert out["loi"] is True
     assert "3i" in out["sub_hop_le"]          # 3i hợp lệ (migration 0019: nhóm 3 tới 'i', không phải 'e')
+
+
+def test_group_no_la_bi_tu_choi_khong_do_loi_cho_chua_phan_loai(db, kho):
+    """Đo thật 2026-09-07: group_no CHECK constraint (migration 0007) chỉ nhận 1..3. Trước
+    sửa, group_no=9 lọt xuống câu lọc theo nhãn, ra 0 dòng, rồi bị gán nhầm lý do "còn N bài
+    chưa phân loại" — cùng bệnh đã sửa cho ticker bịa (review SPEC lát 10 §2.1), chỉ khác
+    tham số. Lỗi có cấu trúc phải xuất hiện TRƯỚC khi chạm câu ghi_chú đó."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(tim_tin(db, group_no=9))
+    assert out["loi"] is True
+    assert out["group_no_hop_le"] == [1, 2, 3]
+    assert "ghi_chu" not in out
+
+
+def test_industry_code_la_bi_tu_choi_khong_do_loi_cho_chua_phan_loai(db, kho):
+    """Cùng bệnh group_no ở trên nhưng cho industry_code — 'KHONGCO' không nằm trong 24 mã
+    ngành cấp 2 thật (đo 2026-09-07), phải bị chặn trước khi rơi vào nhánh 'chưa phân loại'."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(tim_tin(db, industry_code="KHONGCO"))
+    assert out["loi"] is True
+    assert "NGANHANG" in out["industry_code_hop_le"]
+    assert "ghi_chu" not in out
 
 
 def test_ngay_hien_thi_theo_gio_vn_khong_theo_utc(db, kho):

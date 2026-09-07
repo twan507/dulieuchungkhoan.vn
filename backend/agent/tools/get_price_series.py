@@ -22,7 +22,7 @@ from __future__ import annotations
 import sqlalchemy as sa
 
 from agent.format import display_metric, format_date_vi
-from agent.tools._shared import co_du_lieu, khong_co_du_lieu, resolve_ticker, rong, to_json
+from agent.tools._shared import co_du_lieu, khong_co_du_lieu, kiem_ngay, resolve_ticker, rong, to_json
 
 _LY_DO = {"index": "kho chưa có dữ liệu giá cho chỉ số",
           "etf": "kho chưa có dữ liệu giá cho chứng chỉ quỹ ETF",
@@ -35,6 +35,9 @@ _SQL_KHOANG = sa.text(
 
 def gia_theo_ngay(conn: sa.Connection, ticker: str, from_date: str | None = None,
                   to_date: str | None = None, adjusted: bool = True) -> str:
+    for loi in (kiem_ngay(from_date, "from_date"), kiem_ngay(to_date, "to_date")):
+        if loi:
+            return to_json(loi)
     ma = resolve_ticker(conn, ticker)
     if not ma["tim_thay"]:
         return to_json(ma)

@@ -26,7 +26,7 @@ import sqlalchemy as sa
 
 from agent.format import display_metric
 from agent.labels import DEFAULT_RATIOS, LABELS
-from agent.tools._shared import co_du_lieu, resolve_ticker, rong, to_json
+from agent.tools._shared import co_du_lieu, kiem_industry_code, resolve_ticker, rong, to_json
 
 # Nới 10/8 -> 25/15 (mã / chỉ tiêu) — chủ dự án chốt 2026-09-07 "nới các giới hạn thoải mái
 # ra, không phải sợ quá tốn kém token": ngữ cảnh model 1 triệu token không thiếu chỗ chứa;
@@ -46,6 +46,10 @@ def so_sanh_cung_nganh(conn: sa.Connection, tickers: list[str] | None = None,
     mas_xin = [t.upper() for t in (tickers or [])]
     if not mas_xin and not industry_code:
         return to_json({"loi": True, "ly_do": "phai cho tickers hoac industry_code"})
+    if industry_code:
+        loi = kiem_industry_code(conn, industry_code)
+        if loi:
+            return to_json(loi)
 
     # resolve_ticker TỪNG mã trong TOÀN BỘ danh sách người hỏi (mas_xin, KHÔNG cắt về TRAN_MA
     # trước) để tách "hoàn toàn không tồn tại" (khong_tim_thay, hình dạng #1) khỏi "có danh
