@@ -26,11 +26,11 @@ class Series:
     group: str                      # 'vi_mo' | 'hang_hoa'
     domain: str                     # 'macro' | 'asset'
     code: str                       # mã của mình
-    doc_name: str                   # tên series theo §9 (để đối chiếu với API)
+    doc_name: str                   # tên series theo bảng đo (`wichart_source`), để đối chiếu với API
     name_vi: str
-    unit: str                       # macro: đơn vị gốc §9 · asset: đơn vị của mình (Phụ lục A)
-    scale: Decimal                  # §9 — nhân raw để về đơn vị gốc
-    freq: str                       # §9 — bằng tần suất thật đã đo
+    unit: str                       # macro: đơn vị gốc theo bảng đo (`wichart_source`) · asset: đơn vị của mình (Phụ lục A)
+    scale: Decimal                  # bảng đo (`wichart_source`) — nhân raw để về đơn vị gốc
+    freq: str                       # bảng đo (`wichart_source`) — bằng tần suất thật đã đo
     role: str                       # 'data' | 'growth_ref'
     flags: tuple[str, ...]
     asset_class: str | None = None
@@ -38,8 +38,8 @@ class Series:
     price_type: str | None = None
     region: str = "vn"
     calendar: str | None = None      # chỉ asset có lịch (asset.asset.calendar); macro để None
-    tier: str = "A"                  # §9, cấp KEY (không phải cấp series)
-    key_flags: tuple[str, ...] = ()  # §9, cấp KEY (vd WIN2Y, FREQMIS) — khác flags cấp series
+    tier: str = "A"                  # bảng đo (`wichart_source`), cấp KEY (không phải cấp series)
+    key_flags: tuple[str, ...] = ()  # bảng đo (`wichart_source`), cấp KEY (vd WIN2Y, FREQMIS) — khác flags cấp series
 
     @property
     def external_sub(self) -> str:
@@ -56,7 +56,7 @@ class Series:
                 "key_flags": list(self.key_flags)}
 
 
-# (key, idx) -> (code, name_vi). Tăng trưởng = <code>.growth, role growth_ref (theo §9).
+# (key, idx) -> (code, name_vi). Tăng trưởng = <code>.growth, role growth_ref (theo bảng đo (`wichart_source`)).
 MACRO: dict[tuple[str, int], tuple[str, str]] = {
     ("gdp", 0): ("vn.gdp.nominal", "GDP giá hiện hành"),
     ("gdp", 1): ("vn.gdp.real", "GDP giá so sánh"),
@@ -204,12 +204,12 @@ def build(doc: dict | None = None, tier_x: list[str] | None = None) -> list[Seri
     for (key, idx), domain in ours.items():
         meta = doc.get(key)
         if meta is None or meta.get("tier") == "X" or key in tier_x:
-            raise RegistryError(f"{key}[{idx}] có trong module nhưng §9 không thu thập (thiếu hoặc Tier X)")
+            raise RegistryError(f"{key}[{idx}] có trong module nhưng bảng đo (wichart_source) không thu thập (thiếu hoặc Tier X)")
         if idx >= len(meta["s"]):
-            raise RegistryError(f"{key}[{idx}] vượt số series §9 ({len(meta['s'])})")
+            raise RegistryError(f"{key}[{idx}] vượt số series của bảng đo (wichart_source): {len(meta['s'])}")
         doc_name, unit_doc, scale, role, flags = meta["s"][idx]
         if role is None:
-            raise RegistryError(f"{key}[{idx}] §9 đánh dấu không nạp (role None) mà module vẫn map")
+            raise RegistryError(f"{key}[{idx}] bảng đo (wichart_source) đánh dấu không nạp (role None) mà module vẫn map")
         common = dict(key=key, idx=idx, group=meta["g"], domain=domain, doc_name=doc_name,
                       scale=Decimal(str(scale)), freq=meta.get("freq") or "d", role=role, flags=tuple(flags),
                       tier=meta.get("tier", "A"), key_flags=tuple(meta.get("flags", [])))
@@ -225,7 +225,7 @@ def build(doc: dict | None = None, tier_x: list[str] | None = None) -> list[Seri
             continue
         for idx, s in enumerate(meta["s"]):
             if s[3] is not None and (key, idx) not in ours:
-                raise RegistryError(f"§9 thu thập {key}[{idx}] ({s[0]!r}) mà module chưa map")
+                raise RegistryError(f"bảng đo (wichart_source) thu thập {key}[{idx}] ({s[0]!r}) mà module chưa map")
     if len({s.code for s in out}) != len(out):
         raise RegistryError("mã trùng trong module")
     return out

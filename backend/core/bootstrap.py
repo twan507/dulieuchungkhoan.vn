@@ -13,6 +13,7 @@ import logging
 import os
 import re
 import sys
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import command
@@ -40,14 +41,23 @@ def _ident(name: str) -> str:
     return name
 
 
-def alembic_config(url: str) -> Config:
+def configure_alembic_for(url: str) -> Config:
+    """Dựng `Config` và ĐẶT TIẾN TRÌNH vào tư thế alembic chạy được — hai tác dụng phụ TOÀN TIẾN TRÌNH,
+    tên hàm nói rõ để bên gọi không tưởng đây là hàm thuần (Chuẩn M2, review toàn nhánh lát 12):
+
+    * gán `os.environ["DATA_DATABASE_URL"] = url` — `database/migrations/env.py` đọc URL từ biến này,
+      không nhận qua tham số; GÁN chứ không `setdefault` để URL của lời gọi luôn thắng;
+    * `os.chdir(REPO_ROOT)` — `script_location` trong `alembic.ini` là đường dẫn TƯƠNG ĐỐI gốc repo.
+
+    Chấp nhận được vì cả hai bên gọi là tiến trình one-shot (`main()` của service `migrate`, và test).
+    """
     cfg = Config(str(REPO_ROOT / "database" / "alembic.ini"))
-    os.environ["DATA_DATABASE_URL"] = url      # migrations/env.py đọc biến này — GÁN, không setdefault
-    os.chdir(REPO_ROOT)                        # script_location tương đối gốc repo
+    os.environ["DATA_DATABASE_URL"] = url
+    os.chdir(REPO_ROOT)
     return cfg
 
 
-def provision_postgres(engine: sa.Engine, users) -> list[str]:
+def provision_postgres(engine: sa.Engine, users: Sequence[tuple[str, str, str]]) -> list[str]:
     done: list[str] = []
     with engine.begin() as conn:
         raw = conn.connection.driver_connection          # psycopg.Connection — để ghép identifier/literal an toàn
@@ -136,7 +146,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     pg_url = os.environ["DATA_DATABASE_URL"]
     try:
-        cfg = alembic_config(pg_url)
+        cfg = configure_alembic_for(pg_url)
         command.upgrade(cfg, "head")
         print("bootstrap: postgres migrate xong (head)")
         ch = ch_migrate.get_client(os.environ["CLICKHOUSE_URL"])

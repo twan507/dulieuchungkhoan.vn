@@ -65,7 +65,7 @@ def test_provision_raises_a_clear_error_naming_the_role_when_the_target_role_is_
 
 
 def test_reseed_skips_when_security_is_empty(migrated_engine):
-    cfg = bootstrap.alembic_config(os.environ["TEST_DATABASE_URL"])
+    cfg = bootstrap.configure_alembic_for(os.environ["TEST_DATABASE_URL"])
     assert bootstrap.reseed_industry_if_needed(migrated_engine, cfg) == ("skipped:security-rong", 0)
 
 
@@ -79,7 +79,7 @@ def test_reseed_seeds_the_matching_ticker_then_skips(migrated_engine):
             "INSERT INTO market.security (ticker, exchange, security_type, issuer_id) VALUES (:t, 'HOSE', 'stock', :i)"),
             {"t": ticker, "i": iid})
     try:
-        cfg = bootstrap.alembic_config(os.environ["TEST_DATABASE_URL"])
+        cfg = bootstrap.configure_alembic_for(os.environ["TEST_DATABASE_URL"])
         assert bootstrap.reseed_industry_if_needed(migrated_engine, cfg) == ("seeded", 1)
         with migrated_engine.connect() as c:
             assert c.execute(sa.text("SELECT count(*) FROM market.issuer_industry_override WHERE issuer_id = :i"),
@@ -90,3 +90,18 @@ def test_reseed_seeds_the_matching_ticker_then_skips(migrated_engine):
             c.execute(sa.text("DELETE FROM market.issuer_industry_override"))
             c.execute(sa.text("DELETE FROM market.security WHERE issuer_id = :i"), {"i": iid})
             c.execute(sa.text("DELETE FROM market.issuer WHERE issuer_id = :i"), {"i": iid})
+
+
+def test_main_exits_2_naming_the_missing_variable_before_it_touches_any_store(monkeypatch, capsys):
+    """T8a — `main()` chưa có test trực tiếp. Phép kiểm env chạy TRƯỚC mọi kết nối (đọc `main()`:
+    `missing` ngay sau `load_dotenv`), nên ca này không cần DB; nếu ai đảo thứ tự, test đỏ vì
+    `DATA_DATABASE_URL='x'` không phải URL kết nối được.
+
+    `load_dotenv` phải bị vô hiệu: nó `setdefault` từ `.env` THẬT ở gốc repo, nên biến vừa xoá sẽ
+    được nạp lại và ca "thiếu biến" không bao giờ xảy ra trên máy dev."""
+    monkeypatch.setattr(bootstrap, "load_dotenv", lambda: None)
+    for k in bootstrap.REQUIRED:
+        monkeypatch.setenv(k, "x")
+    monkeypatch.delenv("CLICKHOUSE_INGESTER_PASSWORD")
+    assert bootstrap.main() == 2
+    assert "bootstrap: thiếu env: CLICKHOUSE_INGESTER_PASSWORD" in capsys.readouterr().err

@@ -86,7 +86,7 @@ def main():
     ns = vars(wichart_source)
     W, TIER_X = ns["WICHART"], ns["TIER_X"]
 
-    print(f"Đọc registry từ file: {len(W)} key, {len(TIER_X)} key Tier X\n")
+    print(f"Đọc registry từ module wichart_source: {len(W)} key, {len(TIER_X)} key Tier X\n")
     print("=" * 78)
     print("A. KIỂM TỪNG KEY TRONG REGISTRY")
     print("=" * 78)

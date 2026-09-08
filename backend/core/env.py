@@ -115,7 +115,7 @@ def check(path: Path | None = None, out=sys.stdout) -> int:
     for k in missing:
         print(f"THIẾU  {k}", file=out)
     for k in weak:
-        print(f"YẾU  {k}", file=out)
+        print(f"YẾU    {k}", file=out)
     for k in unknown:
         print(f"LẠ     {k}", file=out)
     if not missing and not weak and not unknown:

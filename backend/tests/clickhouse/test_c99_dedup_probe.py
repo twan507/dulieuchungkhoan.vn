@@ -18,7 +18,7 @@ import pytest
 if not os.environ.get("RUN_PROBE"):
     pytest.skip("probe thủ công — đặt RUN_PROBE=1 để chạy", allow_module_level=True)
 
-from tests.clickhouse.conftest import CH_CONF_DIR, IMAGE, _free_port  # noqa: E402
+from tests.conftest import CH_CONF_DIR, IMAGE, _free_port  # noqa: E402
 
 TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 COLS = ["symbol", "ts", "seq", "price", "volume", "side", "change",

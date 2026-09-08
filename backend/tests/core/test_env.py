@@ -1,6 +1,7 @@
+import io
 import os
 
-from core.env import load_dotenv
+from core.env import ASSEMBLED_KEYS, REQUIRED_KEYS, check, compose_urls, load_dotenv
 
 
 def test_load_dotenv_reads_and_does_not_override(tmp_path, monkeypatch):
@@ -16,10 +17,6 @@ def test_load_dotenv_reads_and_does_not_override(tmp_path, monkeypatch):
 def test_load_dotenv_missing_file_is_noop(tmp_path):
     load_dotenv(tmp_path / "khong-ton-tai.env")  # không raise
 
-
-import io
-
-from core.env import ASSEMBLED_KEYS, REQUIRED_KEYS, check, compose_urls
 
 BASE = {
     "POSTGRES_HOST": "127.0.0.1", "POSTGRES_PORT": "5432", "POSTGRES_DB": "dulieu",
@@ -122,7 +119,7 @@ def test_check_flags_placeholder_values_as_weak_and_exits_1(tmp_path):
     rc = check(f, out=out)
     text = out.getvalue()
     assert rc == 1
-    assert "YẾU  POSTGRES_PASSWORD" in text
+    assert "YẾU    POSTGRES_PASSWORD" in text                 # ba nhãn căn cùng cột: tên bắt đầu cột 8
     assert "change-me" not in text                      # tên biến, không bao giờ giá trị
 
 
