@@ -22,8 +22,8 @@ def _free_port() -> int:
 def redis_url():
     name = f"redis-test-{uuid.uuid4().hex[:8]}"
     port = _free_port()
-    subprocess.run(["docker", "run", "-d", "--name", name,
-                    "-p", f"127.0.0.1:{port}:6379", "redis:7-alpine"],
+    subprocess.run(["docker", "run", "-d", "--rm", "--name", name,      # --rm + `rm -v`: redis:7-alpine
+                    "-p", f"127.0.0.1:{port}:6379", "redis:7-alpine"],  # khai VOLUME /data, xem tests/conftest.py
                    check=True, capture_output=True)
     url = f"redis://127.0.0.1:{port}/0"
     import redis as redis_sync
@@ -39,4 +39,4 @@ def redis_url():
             raise RuntimeError("redis test container không lên")
         yield url
     finally:
-        subprocess.run(["docker", "rm", "-f", name], capture_output=True)
+        subprocess.run(["docker", "rm", "-f", "-v", name], capture_output=True)

@@ -106,7 +106,8 @@ def chaos_ch(chaos_container_name, tmp_path_factory):
         client._chaos_dsn = url
         yield client
     finally:
-        subprocess.run(["docker", "rm", "-f", name], capture_output=True)
+        subprocess.run(["docker", "rm", "-f", "-v", name], capture_output=True)   # -v: cả volume ẩn danh
+        # KHÔNG `--rm` lúc run: test này `docker stop`/`start` container giữa chừng.
 
 
 def _try_reconnect(w, dsn: str) -> bool:

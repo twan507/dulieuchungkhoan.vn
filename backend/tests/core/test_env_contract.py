@@ -1,8 +1,8 @@
 """`.env.example` ↔ `core.env` ↔ code phải cùng nói một chuyện (spec lát 12 §6, CLAUDE.md §1.7).
 
 Ba vế: (1) mọi khoá trong `.env.example` đều là khoá `core.env` biết; (2) mọi khoá bắt buộc
-có mặt và KHÔNG bị comment; (3) không khai khoá nào trong bảy URL RÁP (`ASSEMBLED_KEYS`) — URL kết nối là thứ ráp,
-không phải thứ khai; khoá `*_URL` khác (vd `LLM_BASE_URL`) hợp lệ khi thuộc `KNOWN_KEYS`.
+có mặt và KHÔNG bị comment; (3) không khai khoá nào trong bảy URL RÁP (`ASSEMBLED_KEYS`) — lý do và
+ruling ở docstring của `test_example_declares_no_assembled_url`, chủ sở hữu duy nhất của ý đó.
 Vế 4 soi CODE: mọi tên env đọc bằng literal trong code sản phẩm phải là khoá biết hoặc khoá ráp.
 """
 from __future__ import annotations
@@ -19,8 +19,10 @@ CODE_DIRS = [REPO / "backend" / d for d in ("core", "etl", "ingester", "agent", 
 FOREIGN = {"TZ"}
 # Bắt os.environ/os.getenv/environ/env, `.get(`/`[`, nháy đơn lẫn nháy kép (Chuẩn I4/T2a — mẫu cũ chỉ
 # bắt os.environ*/env* nháy kép; 0 chỗ dùng os.getenv/nháy đơn trong repo hiện nay nên chưa từng thủng).
+# Nháy đóng là BACKREFERENCE (`(?P=q)`) chứ không phải lớp ký tự thứ hai: `os.getenv("FOO')` không
+# phải Python hợp lệ, đếm nó thành một biến env là đếm rác (nit re-review 2026-09-08).
 _READ = re.compile(
-    r"""(?:(?:os\.environ|\benviron|\benv)(?:\.get\(|\[)|os\.getenv\()\s*['"]([A-Z][A-Z0-9_]+)['"]""")
+    r"""(?:(?:os\.environ|\benviron|\benv)(?:\.get\(|\[)|os\.getenv\()\s*(?P<q>["'])(?P<name>[A-Z][A-Z0-9_]+)(?P=q)""")
 # Khoá compose bơm qua `${TÊN...}` — cũng là "có người đọc" dù không có literal trong code Python.
 COMPOSE_FILES = [REPO / "docker-compose.yml", REPO / "docker-compose.vps.yml"]
 _COMPOSE_VAR = re.compile(r"\$\{([A-Z][A-Z0-9_]+)")
@@ -58,7 +60,7 @@ def _scan_code_env_names() -> dict[str, str]:
     for d in CODE_DIRS:
         for p in d.rglob("*.py"):
             for m in _READ.finditer(p.read_text(encoding="utf-8")):
-                seen.setdefault(m.group(1), p.relative_to(REPO).as_posix())
+                seen.setdefault(m.group("name"), p.relative_to(REPO).as_posix())
     return seen
 
 
@@ -75,7 +77,13 @@ def test_read_regex_catches_all_five_reader_shapes():
     for s, name in samples.items():
         m = _READ.search(s)
         assert m, s
-        assert m.group(1) == name, s
+        assert m.group("name") == name, s
+
+
+def test_read_regex_rejects_a_mismatched_quote_pair():
+    """Đối chứng âm: `os.getenv("FOO')` không phải lời gọi Python hợp lệ. Mẫu cũ ghép hai lớp ký tự
+    RỜI (`['\"]` … `['\"]`) nên vẫn nuốt và đếm `FOO` là một biến env; backreference nháy thì không."""
+    assert _READ.search("""os.getenv("FOO')""") is None
 
 
 def _compose_readers() -> set[str]:

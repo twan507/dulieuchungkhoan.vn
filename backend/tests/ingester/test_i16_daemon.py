@@ -1,9 +1,14 @@
 """Daemon: ngoài phiên ngủ, trong phiên chạy, lỗi khởi động (≥ 2) thoát để Docker khởi động lại (spec §5.5)."""
 import asyncio
 import logging
+import signal
+import sys
 from datetime import datetime, timedelta
 
-from ingester.main import SESSION_END_MEASURE, SESSION_END_RUN, SESSION_START, TZ, daemon, next_window
+import ingester.main as main_mod
+from ingester.config import Config as IngesterConfig
+from ingester.main import (SESSION_END_MEASURE, SESSION_END_RUN, SESSION_START, TZ, _relay,
+                           _session_with_relay, daemon, install_loop_stop, next_window)
 
 
 def vn(y, m, d, h, mi):
@@ -93,12 +98,6 @@ def test_daemon_after_a_clean_session_waits_for_the_next_window():
     assert calls == [vn(2026, 9, 8, 9, 0), vn(2026, 9, 9, 8, 30)]
 
 
-import signal
-import sys
-
-from ingester.main import install_loop_stop
-
-
 def test_install_loop_stop_declines_on_windows_and_arms_on_posix():
     async def scenario():
         stop = asyncio.Event()
@@ -124,9 +123,6 @@ def test_daemon_returns_right_after_a_session_ended_by_signal():
 
     rc = asyncio.run(daemon("run", session, clock=fc.now, sleep=fc.sleep, stop=stop, end_hm=SESSION_END_RUN))
     assert rc == 0 and fc.sleeps == []      # không ngủ tới phiên kế — thoát ngay để container dừng
-
-
-from ingester.main import _relay, _session_with_relay
 
 
 def test_relay_sets_the_session_stop_when_shutdown_fires():
@@ -159,9 +155,6 @@ def test_each_session_gets_a_fresh_stop_and_the_relay_is_cancelled_after_it():
     asyncio.run(scenario())
 
 
-import ingester.main as main_mod
-
-
 def test_loop_stop_is_armed_only_for_run_and_measure(monkeypatch):
     armed = []
     monkeypatch.setattr(main_mod, "install_loop_stop", lambda ev: armed.append(ev) or True)
@@ -172,17 +165,20 @@ def test_loop_stop_is_armed_only_for_run_and_measure(monkeypatch):
     async def fake_run(cfg, minutes, stop=None):
         return 0
 
+    async def fake_reconcile(cfg, d):
+        return 0
+
     monkeypatch.setattr(main_mod, "_run_count", fake_count)
     monkeypatch.setattr(main_mod, "_run_run", fake_run)
+    monkeypatch.setattr(main_mod, "_run_reconcile", fake_reconcile)
     monkeypatch.setattr(main_mod.config, "load", lambda need_db: object())
     monkeypatch.setattr(main_mod, "_day_log_handler", lambda cfg: logging.NullHandler())
     assert asyncio.run(main_mod.run("count", count="20260908")) == 0
     assert armed == []                                        # count: giữ đường KeyboardInterrupt
+    assert asyncio.run(main_mod.run("reconcile")) == 0
+    assert armed == []                                        # reconcile: lượt ngắn một phát, cũng không arm
     assert asyncio.run(main_mod.run("run", minutes=1)) == 0
     assert len(armed) == 1                                    # run: một lần, trước khi rẽ
-
-
-from ingester.config import Config as IngesterConfig
 
 
 def test_run_exits_2_when_the_day_log_cannot_be_opened(tmp_path, monkeypatch, capsys):

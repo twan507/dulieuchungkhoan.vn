@@ -128,3 +128,11 @@ def test_production_code_never_reads_docs():
     assert not hits, "code ráp đường dẫn vào docs/ — dời tri thức vào backend/ hoặc database/:\n  " + "\n  ".join(hits)
     ignore = (REPO / ".dockerignore").read_text(encoding="utf-8").splitlines()
     assert "docs" in ignore                                    # image vẫn không mang docs/
+
+
+def test_the_three_stores_never_carry_a_profile():
+    """T7a. `profiles` khiến service chỉ lên khi bật đúng profile: một kho lỡ mang nó thì `docker
+    compose up -d` bỏ qua IM LẶNG, và mọi service app chết ở hợp đồng khởi động vì không có kho.
+    Xanh ngay lúc thêm (không có profile nào trong file) — đây là rào, không phải phát hiện lỗi."""
+    for s in ("postgres", "redis", "clickhouse"):
+        assert "profiles" not in _services()[s], s

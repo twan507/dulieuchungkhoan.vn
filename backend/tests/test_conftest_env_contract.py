@@ -92,4 +92,7 @@ def test_assert_test_db_name_rejects_a_name_without_the_test_suffix():
 
 
 def test_assert_test_db_name_accepts_a_proper_test_db_name():
-    _root_conftest().assert_test_db_name("dulieu_test", "dulieu")   # không raise là đạt
+    """Ca dương phải khẳng định một GIÁ TRỊ, không chỉ "không raise" — một thân hàm rỗng cũng không
+    raise, nên phép kiểm cũ vẫn xanh sau khi ai đó xoá sạch ba điều kiện (nit re-review 2026-09-08).
+    Hàm trả lại chính tên đã kiểm, và `conftest` dùng GIÁ TRỊ TRẢ VỀ đó để ghép câu DDL."""
+    assert _root_conftest().assert_test_db_name("dulieu_test", "dulieu") == "dulieu_test"

@@ -150,7 +150,8 @@ def vps_ch(tmp_path_factory):
         ch_migrate.upgrade(client)
         yield client
     finally:
-        subprocess.run(["docker", "rm", "-f", name], capture_output=True)
+        subprocess.run(["docker", "rm", "-f", "-v", name], capture_output=True)   # -v: cả volume ẩn danh
+        # KHÔNG `--rm` lúc run: probe còn `docker inspect`/`docker cp` log sau khi container thoát.
 
 
 def _insert_timing_probe(client, label: str) -> None:
