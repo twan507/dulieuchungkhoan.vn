@@ -10,23 +10,28 @@ from etl.omo_parse import OmoResult
 
 
 def store(result: OmoResult, html: str, conn) -> dict:
-    exists = conn.execute(
-        sa.text("SELECT 1 FROM macro.omo_session WHERE session_date = :d"),
-        {"d": result.session_date},
-    ).first()
-    if exists:
-        return {"skipped": True}
-    conn.execute(
+    # Chính lệnh GHI làm luôn việc kiểm trùng — không `SELECT` trước rồi `INSERT` sau.
+    # 🔴 Vì sao (rà chuẩn hoá 2026-09-08): `session_date` là PRIMARY KEY, nên cặp SELECT-rồi-INSERT
+    # để hở một cửa sổ: tiến trình thứ hai đi qua `SELECT` TRƯỚC khi tiến trình thứ nhất commit sẽ
+    # đâm thẳng vào `omo_session_pkey` và giết cả lượt bằng mã 2 — báo động giả, vì phiên đó đã có
+    # người ghi đúng. Lát 13 (`restart: unless-stopped` + chạy bù) biến hai lượt chồng lấn thành
+    # chuyện thường. `ON CONFLICT DO NOTHING ... RETURNING` gộp kiểm và ghi vào MỘT lệnh nguyên tử:
+    # không trả dòng nào ⇒ người khác đã ghi ⇒ bỏ trọn lượt, y như nhánh `skipped` cũ.
+    won = conn.execute(
         sa.text(
             "INSERT INTO macro.omo_session"
             " (session_date, crawled_at, has_reverse_repo, has_repo, has_outright_sale)"
             " VALUES (:d, now(), :r, :p, :o)"
+            " ON CONFLICT (session_date) DO NOTHING"
+            " RETURNING session_date"
         ),
         {"d": result.session_date,
          "r": "reverse_repo" in result.groups_present,
          "p": "repo" in result.groups_present,
          "o": "outright_sale" in result.groups_present},
-    )
+    ).first()
+    if won is None:
+        return {"skipped": True}
     for row in result.rows:
         conn.execute(
             sa.text(

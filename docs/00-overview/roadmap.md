@@ -180,12 +180,11 @@ lát 13  scheduler trong container  bảng lịch trong code + chạy bù + ch�
                                    18:10 và sau `snapshot`; `snapshot` KHÔNG trước ~15:20 — số đo lát 11), thay 11 task Windows, bật
                                    lại [4d]; `classify` chạy ĐỘC LẬP với `news` kiểu quét sàn (chủ dự án chốt 2026-09-07 — xem điểm
                                    vào lát 12 §4); rồi CẢ HỆ chạy thử trên máy dev vài ngày.
-                                   🔴 **Việc MỞ ĐẦU lát này, làm trước bảng lịch:** `omo_store.store()` chống ghi trùng bằng
-                                   SELECT-rồi-INSERT chứ không bằng ràng buộc DB — cơ chế yếu nhất trong 6 loại idempotency, và
-                                   `restart`/chạy bù của chính lát này là thứ làm nó vỡ. Quyết định §4.8 ngày 2026-09-08 chọn thêm
-                                   `UNIQUE (session_date)` + `ON CONFLICT DO NOTHING`, nhưng **phải đếm dòng trùng trên kho thật
-                                   trước** (`SELECT session_date, count(*) FROM macro.omo_session GROUP BY 1 HAVING count(*) > 1;`)
-                                   — không rỗng thì cách gộp mới là quyết định thật. Hồ sơ:
+                                   ✅ **Một nợ của lát này đã trả trước, 2026-09-08:** `omo_store.store()` từng
+                                   SELECT-rồi-INSERT, nên hai lượt chồng lấn — thứ mà `restart: unless-stopped` + chạy bù của
+                                   chính lát này sinh ra — làm lượt sau chết bằng `UniqueViolation` (báo động giả: `session_date`
+                                   vốn ĐÃ là `PRIMARY KEY`, dữ liệu không hỏng). Nay là một lệnh
+                                   `ON CONFLICT DO NOTHING RETURNING`, không migration. Hồ sơ:
                                    [decision-unify-jobs-2026-09-08.md](../90-records/plans/2026-09-07-audit-drift-cleanup/decision-unify-jobs-2026-09-08.md)
 lát 14  giám sát hợp đồng        contract_snapshot + source_build + series_health (market-data-store §7.1) — phủ MỌI nguồn một lần.
                                    **Số cũ là "lát 12"; dời xuống SAU scheduler ngày 2026-09-07** — lý do ở bảng ánh xạ
