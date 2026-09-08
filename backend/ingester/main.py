@@ -15,7 +15,6 @@ import sys
 import time
 from datetime import datetime, time as dtime, timedelta
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 import clickhouse_connect
 from clickhouse_connect.driver.exceptions import ClickHouseError
@@ -23,6 +22,7 @@ import redis.asyncio as aioredis
 import websockets
 
 from core import ch_migrate
+from core.clock import VN as TZ, today_vn
 from ingester import catalog as cat
 from ingester import config, eio
 from ingester import leader as leader_mod
@@ -36,7 +36,6 @@ from ingester.pipeline import process_record
 from ingester.reconcile import reconcile
 
 log = logging.getLogger("ingester")
-TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 SESSION_END_MEASURE = (15, 10)   # đo tới 15:10 — trọn đuôi phiên + PLO
 SESSION_END_RUN = (15, 5)        # ghi thật dừng đúng 15:05 — spec §2.1
 SESSION_START = (8, 30)          # mốc task Windows cũ 08:30 — daemon nối socket từ đây (spec lát 12 §5.5)
@@ -325,7 +324,11 @@ def next_window(now: datetime, start_hm: tuple[int, int], end_hm: tuple[int, int
 async def daemon(mode: str, run_session, *, clock=lambda: datetime.now(TZ), sleep=asyncio.sleep,
                  stop: asyncio.Event | None = None, end_hm: tuple[int, int] = SESSION_END_RUN) -> int:
     """Vòng cửa sổ phiên: ngoài phiên ngủ (lát ≤ 60 s), trong phiên gọi `run_session` một lần.
-    Mã ≥ 2 (hợp đồng khởi động hỏng) ⇒ thoát để Docker khởi động lại có giãn cách; 0/1 ⇒ chờ phiên kế."""
+    Mã ≥ 2 (hợp đồng khởi động hỏng) ⇒ thoát để Docker khởi động lại có giãn cách; 0/1 ⇒ chờ phiên kế.
+
+    Nhánh thoát thứ ba — theo TÍN HIỆU: `stop` (chính là `shutdown` của tiến trình, do `install_loop_stop`
+    bật khi SIGTERM/SIGINT) set ⇒ trả về NGAY sau phiên đang chạy, không ngủ tới phiên kế, để `docker stop`
+    không phải chờ hết grace period. Vòng ngủ cũng tỉnh theo `stop`."""
     stop = stop or asyncio.Event()
     while not stop.is_set():
         now = clock()
@@ -447,7 +450,7 @@ async def _leader_state_watcher(is_leader: asyncio.Event, sink: state_mod.RedisS
 
 async def _run_reconcile(cfg: config.Config, d) -> int:
     client = clickhouse_connect.get_client(dsn=cfg.clickhouse_url)
-    day = d or datetime.now(TZ).date()
+    day = d or today_vn()
     result = reconcile(client, day)
     _print_reconcile(result)
     return 1 if (result.p1 or result.p2) else 0
@@ -573,7 +576,7 @@ async def _replay_startup_debt(writer, store, rc_client_factory) -> list:
                     "phiên xả tiếp (gauge `spill_bytes` cho khối nợ còn lại)",
                     sorted(str(d) for d in debt_days))
         return []
-    days = sorted(d for d in debt_days if d < datetime.now(TZ).date())
+    days = sorted(d for d in debt_days if d < today_vn())
     for dd in days:
         log.info("nợ đĩa ngày %s đã phát lại — chạy lại đối chứng thay cho phán quyết "
                  "'KHÔNG ĐÁNG TIN' của phiên trước", dd)
@@ -739,7 +742,7 @@ async def _run_run(cfg: config.Config, minutes: float | None, stop: asyncio.Even
     # ghi sẽ biến một phiên sạch thành exit 1 vì hết giờ đọc, dù dữ liệu đã vào đủ.
     rc_client = clickhouse_connect.get_client(dsn=cfg.clickhouse_url)
     try:
-        result = reconcile(rc_client, datetime.now(TZ).date())
+        result = reconcile(rc_client, today_vn())
     finally:
         rc_client.close()
     _print_reconcile(result)

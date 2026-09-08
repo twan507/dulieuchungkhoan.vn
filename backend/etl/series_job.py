@@ -14,15 +14,14 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Callable
-from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
 
+from core.clock import VN
 from core.env import load_dotenv
 from etl import omo_store, series_guard, series_store
 from etl.registry import SeriesError, load_registry
 
-VN = ZoneInfo("Asia/Ho_Chi_Minh")
 MAX_DETAILS = 50
 
 

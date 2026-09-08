@@ -8,11 +8,11 @@ import re
 import unicodedata
 from dataclasses import dataclass
 from datetime import datetime
-from zoneinfo import ZoneInfo
 
 from bs4 import BeautifulSoup, Comment
 
-VN = ZoneInfo("Asia/Ho_Chi_Minh")
+from core.clock import VN
+
 MIN_CHARS = 100
 _WS = re.compile(r"\s+")
 

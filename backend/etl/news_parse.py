@@ -12,13 +12,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
-from zoneinfo import ZoneInfo
 
 from bs4 import BeautifulSoup
 
+from core.clock import VN
 from etl.news_registry import SITEMAPS, Source
 
-VN = ZoneInfo("Asia/Ho_Chi_Minh")
 DROP_QUERY = re.compile(r"^(utm_|gidzl$|fbclid$)")
 TITLE_PREFIX = re.compile(r"^\s*(\(chinhphu\.vn\)\s*-?|\(đtck\)|\(dtck\)|bnews)\s*", re.I)
 VNBIZ_URL = re.compile(r"-(\d{15,16})\.htm")

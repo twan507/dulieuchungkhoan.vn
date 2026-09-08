@@ -9,11 +9,10 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime
-from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
 
+from core.clock import today_vn
 from core.env import load_dotenv
 from etl import omo_store, snapshot_fetch, snapshot_guard, snapshot_store
 from etl.guard_common import GuardRefused
@@ -21,7 +20,6 @@ from etl.snapshot_fetch import BadShape, FetchError
 
 log = logging.getLogger("etl.snapshot")
 JOB = snapshot_store.JOB
-VN = ZoneInfo("Asia/Ho_Chi_Minh")
 MAX_RECRAWL = 50                       # trần re-crawl giá một lượt — xem chú thích trong _recrawl
 RECRAWL_MAX_MINUTES = 20               # trần thời gian cho phần re-crawl giá — xem chú thích trong _recrawl
 
@@ -126,7 +124,7 @@ def run(codes=None, kinds=None, max_minutes=None, get=None, sleep=time.sleep) ->
         deadline = time.monotonic() + max_minutes * 60 if max_minutes else None
         fetched, failed, bad_shape, stopped, calls, retries = _fetch_all(targets, get, sleep, deadline)
 
-        run_date = datetime.now(VN).date()
+        run_date = today_vn()
         try:
             with engine.begin() as conn:
                 tally, written = snapshot_store.apply(conn, fetched, run_date)

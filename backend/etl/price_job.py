@@ -13,16 +13,15 @@ import os
 import sys
 import time
 from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
 
+from core.clock import VN, today_vn
 from core.env import load_dotenv
 from etl import omo_store, price_fetch, price_guard, price_normalize, price_store
 from etl.guard_common import GuardRefused
 
 log = logging.getLogger("etl.price")
-VN = ZoneInfo("Asia/Ho_Chi_Minh")
 _wall_clock = time.time      # seam cho test: patch toàn cục time.time thì SQLAlchemy pool cũng ăn tick
 _sleep = time.sleep          # seam cho test: nghỉ khi nguồn nghẽn (backfill)
 SOURCE_DOWN_PAUSE_S = 600    # sự cố 05/09: FiinTrade nghẽn từng quãng ~15 phút tối thứ 7 — nghỉ 10 phút rồi nối tiếp
@@ -119,7 +118,7 @@ def _daily(engine, tickers: list[str] | None) -> int:
             stats["subset"] = True                 # lượt --codes không được làm mốc cho lượt toàn tập
         try:
             verdict = price_guard.check(len(cl.codes), with_data, len(res.invalid), len(res.failed),
-                                        latest, datetime.now(VN).date(), baseline, empty=len(empty))
+                                        latest, today_vn(), baseline, empty=len(empty))
             if not verdict.ok:
                 raise GuardRefused(verdict)
             fetched_at = _now_iso()
