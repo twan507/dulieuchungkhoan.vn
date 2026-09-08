@@ -150,7 +150,7 @@ Luật: kiểm **lệnh** chứ không kiểm trạng thái; và test phải ch�
 
 Và một phép kiểm rẻ đứng trên tất cả: **trước khi bật bất cứ job nào chạy tự động, chạy tay chính lệnh đó dưới đúng credential production ít nhất một lần.** Ca thứ ba bắt được đúng bằng cách này — `python -m ingester --minutes 2` ngoài giờ, hai phút, lộ ngay lỗi mà 185 test xanh không thấy.
 
-Cả ba phép kiểm nay đã mã hoá thành code — `Assert-TaskCommand` (kèm `-MustNotContain`) trong `scripts/register-tasks.ps1`, test `test_flow_rebuild_works_under_etl_role`, và `test_assert_migrated_works_under_ingester_role`.
+Cả ba phép kiểm nay đã mã hoá thành code — `Assert-TaskCommand` (kèm `-MustNotContain`) từng nằm trong `scripts/register-tasks.ps1` (script về hưu ở lát 12, 2026-09-08 — bài học giữ), test `test_flow_rebuild_works_under_etl_role`, và `test_assert_migrated_works_under_ingester_role`.
 
 ### 3.6 Kết luận phủ định về toàn nguồn không suy được từ một endpoint
 
@@ -298,6 +298,7 @@ Ghi vào **hồ sơ plan của chính task** (`90-records/plans/<task>/` — tro
 | Git | `core.longpaths true` *(đã bật — worktree từng lỗi "Filename too long")* |
 | Bí mật | `.env` ở gốc repo, đã được `.gitignore` che. **Không bao giờ in giá trị khoá ra output hay ghi vào file.** |
 | Email dự án | `dulieuchungkhoan.official@gmail.com` *(tạo 2026-08-24)* — dùng khi đăng ký dịch vụ, khai email liên hệ (User-Agent crawler, API key…). Không phải email cá nhân của chủ dự án |
+| Chạy production | Docker: `docker compose up -d --build` ở gốc repo (lát 12); native `uv run …` chỉ cho dev/test, cùng một `.env` nguyên tố |
 
 ---
 
