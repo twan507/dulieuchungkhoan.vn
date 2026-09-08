@@ -1194,6 +1194,38 @@ Ba test cũ đổi sang phiên có hạn (thêm chú thích `# minutes=: một p
 
 Run: `cd backend && PYTHONIOENCODING=utf-8 uv run pytest tests/ingester/test_i16_daemon.py tests/ingester/test_i10_main.py tests/ingester/test_i15_recovery_drain.py -q` — Expected: xanh. Commit riêng: `fix(ingester): separate the shutdown signal from the session deadline; bounded runs in tests`.
 
+- [ ] **Step 3d — BỔ SUNG theo phán quyết 2026-09-08 (review Task 6): chỉ cài `install_loop_stop` ở `run`/`measure`.**
+
+Cài trước nhánh chọn chế độ (Step 3b) làm `count` và `reconcile` trên POSIX mất đường ngắt: `add_signal_handler` đè handler `core.shutdown`, mà hai chế độ đó không ai đọc `shutdown`. Sửa `run()`: bỏ `install_loop_stop(shutdown)` ngay sau `logging.basicConfig`; gọi nó **bên trong** nhánh `measure` (trước khi rẽ `--minutes`/daemon) và nhánh `run` (sau `config.load`, trước khi rẽ). `count`/`reconcile` giữ handler `core.shutdown` (KeyboardInterrupt) như cũ.
+
+Test thêm vào `test_i16_daemon.py` (đỏ trước — recorder ghi nhận lời gọi ở `count`):
+
+```python
+import ingester.main as main_mod
+
+
+def test_loop_stop_is_armed_only_for_run_and_measure(monkeypatch):
+    armed = []
+    monkeypatch.setattr(main_mod, "install_loop_stop", lambda ev: armed.append(ev) or True)
+
+    async def fake_count(*a, **k):
+        return 0
+
+    async def fake_run(cfg, minutes, stop=None):
+        return 0
+
+    monkeypatch.setattr(main_mod, "_run_count", fake_count)
+    monkeypatch.setattr(main_mod, "_run_run", fake_run)
+    monkeypatch.setattr(main_mod.config, "load", lambda need_db: object())
+    monkeypatch.setattr(main_mod, "_day_log_handler", lambda cfg: logging.NullHandler())
+    assert asyncio.run(main_mod.run("count", count="20260908")) == 0
+    assert armed == []                                        # count: giữ đường KeyboardInterrupt
+    assert asyncio.run(main_mod.run("run", minutes=1)) == 0
+    assert len(armed) == 1                                    # run: một lần, trước khi rẽ
+```
+
+(`import logging` đầu file test.) Run: `cd backend && PYTHONIOENCODING=utf-8 uv run pytest tests/ingester/test_i16_daemon.py tests/ingester/test_i10_main.py -q` — xanh. Commit riêng: `fix(ingester): arm the loop stop only for run and measure so count/reconcile stay interruptible`.
+
 - [ ] **Step 4: Commit**
 
 ```bash
