@@ -182,3 +182,5 @@ $ ls -la ./clickhouse-backups
 **Việc phát sinh, không thuộc phạm vi task vận hành này (không sửa):** `./clickhouse-backups` ở gốc repo hiện là thư mục chưa track, chưa có trong `.gitignore` — để nguyên, chỉ ghi nhận.
 
 **Tóm tắt:** AC4 = PASS · AC7 = PASS · giả định 2.2.2 đóng. Task 9 (lát 12 "chạy được trong container") hoàn tất cả bốn AC còn lại (AC2, AC4, AC7, seed 161) trên project `dlck`.
+
+**Đính chính sau Task 9 (tiếp), 2026-09-08 16:45 — đường backup.** `.env` cũ mang `CLICKHOUSE_BACKUP_DIR=./clickhouse-backups` (viết cho gốc `deploy/infra` thời compose cũ); từ Task 3 đường tương đối giải theo gốc repo nên AC7 rơi zip vào `./clickhouse-backups` chưa gitignore. Sửa: `.env` → `./deploy/infra/clickhouse-backups` (đường mặc định trong `.env.example`), dời hai zip, `docker compose up -d` tạo lại `clickhouse`/`etl`/`api`/`ingester` (mount đổi), chạy lại `core.ch_backup` trong container → `backup: không có gì mới` (job thấy hai zip ở đúng chỗ). Cây git sạch. Ghi chú thêm từ operator: quyền volume runtime là `appuser:root` (Dockerfile `chown` không có `:group`), đủ để ghi — đã kiểm bằng chính AC4.
