@@ -1067,6 +1067,67 @@ async def run(mode: str, minutes: float | None = None, out: str | None = None, d
 Run: `cd backend && PYTHONIOENCODING=utf-8 uv run pytest tests/ingester -q`
 Expected: xanh (9 test mới + bộ ingester cũ, có container ClickHouse tạm).
 
+- [ ] **Step 3b — BỔ SUNG theo phán quyết 2026-09-08 (review Task 5): đường dừng tử tế cho vòng asyncio.**
+
+Phát hiện: `ingester/main.py` **không có** `except KeyboardInterrupt`; `KeyboardInterrupt` ném từ handler tín hiệu trong lúc `await stop.wait()` thoát thẳng khỏi `asyncio.run()` — đuôi phiên (xả hàng đợi `_drain_for_verdict`, đối chứng) **không chạy**, cả với Ctrl+C lẫn SIGTERM. Đường đúng cho asyncio là tín hiệu → `stop.set()` trên loop, để phiên đóng y như tới deadline.
+
+Thêm test vào `backend/tests/ingester/test_i16_daemon.py` (đỏ trước):
+
+```python
+import signal
+import sys
+
+from ingester.main import install_loop_stop
+
+
+def test_install_loop_stop_declines_on_windows_and_arms_on_posix():
+    async def scenario():
+        stop = asyncio.Event()
+        armed = install_loop_stop(stop)
+        if sys.platform == "win32":
+            assert armed is False and not stop.is_set()
+            return
+        assert armed is True
+        signal.raise_signal(signal.SIGTERM)
+        await asyncio.sleep(0.05)          # handler chạy ở vòng lặp kế
+        assert stop.is_set()
+    asyncio.run(scenario())
+
+
+def test_daemon_returns_right_after_a_session_ended_by_signal():
+    fc = FakeClock(vn(2026, 9, 8, 10, 0))
+    stop = asyncio.Event()
+
+    async def session():
+        fc.t = vn(2026, 9, 8, 10, 5)
+        stop.set()                          # tín hiệu đến giữa phiên: _run_run đóng phiên rồi trả về
+        return 0
+
+    rc = asyncio.run(daemon("run", session, clock=fc.now, sleep=fc.sleep, stop=stop, end_hm=SESSION_END_RUN))
+    assert rc == 0 and fc.sleeps == []      # không ngủ tới phiên kế — thoát ngay để container dừng
+```
+
+Code trong `backend/ingester/main.py` (thêm `import signal` đầu file):
+
+```python
+def install_loop_stop(stop: asyncio.Event) -> bool:
+    """SIGTERM/SIGINT → `stop.set()` trên loop đang chạy: phiên đóng đúng đường deadline (xả hàng đợi,
+    đối chứng) thay vì `KeyboardInterrupt` cắt ngang `await` (review Task 5 lát 12: `_run_run` không có
+    `except KeyboardInterrupt`, đuôi phiên không chạy). Windows (Proactor) không hỗ trợ ⇒ False, giữ
+    đường KeyboardInterrupt của `core.shutdown` (mã thoát như Ctrl+C, không xả)."""
+    loop = asyncio.get_running_loop()
+    try:
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            loop.add_signal_handler(sig, stop.set)
+    except (NotImplementedError, RuntimeError):
+        return False
+    return True
+```
+
+`_run_run(cfg, minutes, stop: asyncio.Event | None = None)`: thay dòng `stop = asyncio.Event()` bên trong bằng `stop = stop or asyncio.Event()`; `_run_measure(minutes, out, stop=None)` tương tự. Trong `run()`: ngay sau `logging.basicConfig(...)` thêm `stop = asyncio.Event()` và `install_loop_stop(stop)`; truyền `stop=stop` vào mọi lời gọi `_run_run`/`_run_measure` (kể cả trong `session()` của daemon) và `daemon(..., stop=stop)`. Trong `daemon()`, ngay sau `rc = await run_session()` và dòng log: `if stop.is_set(): return rc` (tín hiệu ⇒ thoát để container dừng, không chờ phiên kế).
+
+Run: `cd backend && PYTHONIOENCODING=utf-8 uv run pytest tests/ingester/test_i16_daemon.py tests/ingester/test_i10_main.py -q` — Expected: xanh (trên Windows test đầu đi nhánh `False`).
+
 - [ ] **Step 4: Commit**
 
 ```bash
