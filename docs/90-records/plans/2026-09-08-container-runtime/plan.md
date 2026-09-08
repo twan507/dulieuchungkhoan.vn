@@ -2127,6 +2127,196 @@ git commit -m "docs(ledger): all 15 job families ran in the container; SIGTERM, 
 
 ---
 
+### Task 10a — BỔ SUNG theo chỉ đạo chủ dự án 2026-09-08 (Task 10 chặn ở AC3): code không được đọc `docs/` — dữ liệu tra cứu dời vào code
+
+**Sự thật đo (Task 10 Step 1, operator 18:51):** `fundamentals --codes FPT --kinds bs` trong container → `exit=2`, `FileNotFoundError: [Errno 2] No such file or directory: '/app/docs/10-sources/market/field-dictionary.json'`. `.dockerignore` gốc (spec §5.3) loại `docs`, Dockerfile không `COPY docs/` — **đúng thiết kế**; sai ở chỗ code đọc file dưới `docs/` lúc chạy. Grep code ngoài test (2026-09-08): **bốn** chỗ — `backend/etl/fundamentals_store.py:37` → `docs/10-sources/market/field-dictionary.json` · `backend/etl/news_registry.py:13` → `docs/10-sources/news/feeds.json` · `backend/etl/screener_normalize.py:29` → `docs/20-design/market-field-selection.json` · `backend/etl/wichart_registry.py:15` → `docs/10-sources/macro/wichart.md` (khối Python §9, đọc bằng `exec`). Bốn họ `fundamentals` `news` `screener` `wichart` cùng chết trong container. Thêm một script dev cùng lỗi: `database/gen_price_columns.py:17` đọc `docs/20-design/market-field-selection.json` bằng đường dẫn tương đối.
+
+**Chỉ đạo chủ dự án (2026-09-08 ~19:05, nguyên văn):** *"code không được đọc doc, chỉ có bạn mới đọc docs để lấy kiến thức code, còn code cần kiến thức gì bạn phải viết lại vào code — trong backend hoặc db gì đó, không phải docs"* · *"không được đưa vào image [thứ] không sửa đổi và kiểm soát được, để hết ở trong code mới là đúng, các phần tra cứu cần dùng hardcode lại các file json hoặc md chuẩn hoá cần thiết"*. Phương án trợ lý định làm (image mang `docs/10-sources` + `docs/20-design`) **bị bác — không áp dụng**.
+
+**Ruling thực thi:** `.dockerignore` **giữ nguyên** (`docs` vẫn bị loại; spec §5.3 đúng). Ba file JSON **`git mv`** sang `backend/etl/data/` — một chủ sở hữu duy nhất, docs chỉ trỏ tới (không chép thành hai bản, CLAUDE.md §1.7). Khối Python §9 của `wichart.md` thành module **`backend/etl/wichart_source.py`** (nội dung khối nguyên văn), `wichart_registry` import module thay vì `exec` markdown; `wichart.md` §9 giữ tiêu đề + một đoạn trỏ tới module. Luật của chủ dự án mã hoá thành test tĩnh (đỏ trước): **không file `.py` nào trong `backend/` (ngoài `backend/tests/`) và `database/` ráp đường dẫn vào `docs/`**. Không đổi tên/định dạng ba file JSON (đường dẫn đổi, nội dung không).
+
+**Files:**
+- Move (`git mv`, giữ lịch sử): `docs/10-sources/market/field-dictionary.json` → `backend/etl/data/field-dictionary.json` · `docs/10-sources/news/feeds.json` → `backend/etl/data/feeds.json` · `docs/20-design/market-field-selection.json` → `backend/etl/data/market-field-selection.json`
+- Create: `backend/etl/wichart_source.py`
+- Modify (code): `backend/etl/fundamentals_store.py` · `backend/etl/news_registry.py` · `backend/etl/screener_normalize.py` · `backend/etl/wichart_registry.py` · `database/gen_price_columns.py` · `docs/20-design/gen_field_selection.py` · `docs/10-sources/macro/verify_wichart.py` · `.gitattributes`
+- Modify (test): `backend/tests/docs/test_d03_compose_contract.py` (+1 test) · `backend/tests/etl/test_e36_wichart_registry.py` · `backend/tests/docs/test_d01_docs_consistency.py` (hai chỗ `_read` feeds.json)
+- Modify (tài liệu sống — link + câu chữ): `README.md` · `backend/README.md` · `docs/00-overview/roadmap.md` · `docs/10-sources/README.md` · `docs/10-sources/market/appendix-A-field-codes.md` · `docs/10-sources/news/README.md` · `docs/10-sources/news/article-structure.md` · `docs/10-sources/macro/wichart.md` · `docs/20-design/README.md` · `docs/20-design/market-field-selection.md` · `docs/20-design/news-pipeline.md`
+- Modify (tài liệu lịch sử `docs/90-records/`, `docs/00-overview/decisions/` — **CHỈ href, giữ nhãn**): đúng những link mà `test_no_dead_internal_links` báo chết **do lượt dời này** (so với mốc Step 1)
+
+- [ ] **Step 1: Mốc link chết TRƯỚC khi sửa** (tests/docs đang đỏ có chủ đích tới Task 11 vì file xoá ở Task 5/7 — lượt dời này **không được thêm** link chết mới)
+
+Run: `cd backend && PYTHONIOENCODING=utf-8 uv run pytest tests/docs/test_d01_docs_consistency.py::test_no_dead_internal_links -q 2>&1 | grep -E "^E\s+\S+:[0-9]+ -> " | sort > <report-dir>/deadlinks-before.txt; wc -l <report-dir>/deadlinks-before.txt`
+Expected: một danh sách `file:dòng -> đích` (toàn bộ đều trỏ tới `register-tasks.ps1` · `core/console.py` · `stack.mjs` · `.dockerignore` · `deploy/app/docker-compose.yml` · `deploy/infra/docker-compose.vps.yml` · `create_users.sql.example` — file đã xoá ở Task 5/7/8). Đây là mốc so sánh ở Step 6.
+
+- [ ] **Step 2: Test đỏ — code không đọc `docs/`** — thêm vào cuối `backend/tests/docs/test_d03_compose_contract.py` (đã có `import re`, `REPO`):
+
+```python
+def test_production_code_never_reads_docs():
+    """Image không mang `docs/` (spec §5.3, `.dockerignore`) — mọi tri thức code cần lúc chạy phải nằm trong
+    backend/ hoặc database/ (chỉ đạo chủ dự án 2026-09-08). Task 10 lát 12: `fundamentals` chết exit 2 trong
+    container vì đọc docs/10-sources/…; `news` · `screener` · `wichart` cùng lỗi. Quét tĩnh, không dựng container."""
+    pat = re.compile(r"""["']docs["']\s*/|["']docs/""")
+    skip = {".venv", "__pycache__", ".pytest_cache", "node_modules"}
+    hits = []
+    for root in (REPO / "backend", REPO / "database"):
+        for py in sorted(root.rglob("*.py")):
+            rel = py.relative_to(REPO).as_posix()
+            parts = set(rel.split("/"))
+            if parts & skip or rel.startswith("backend/tests/"):
+                continue
+            for n, line in enumerate(py.read_text(encoding="utf-8").splitlines(), 1):
+                if pat.search(line):
+                    hits.append(f"{rel}:{n}: {line.strip()}")
+    assert not hits, "code ráp đường dẫn vào docs/ — dời tri thức vào backend/ hoặc database/:\n  " + "\n  ".join(hits)
+    ignore = (REPO / ".dockerignore").read_text(encoding="utf-8").splitlines()
+    assert "docs" in ignore                                    # image vẫn không mang docs/
+```
+
+Run: `cd backend && PYTHONIOENCODING=utf-8 uv run pytest tests/docs/test_d03_compose_contract.py -q -k never_reads_docs 2>&1 | tail -12`
+Expected: **FAIL**, thông báo liệt kê đúng **5** dòng: `backend/etl/fundamentals_store.py:37` · `backend/etl/news_registry.py:13` · `backend/etl/screener_normalize.py:29` · `backend/etl/wichart_registry.py:15` · `database/gen_price_columns.py:17`. (Nếu ra thêm dòng nào khác ⇒ dòng đó cũng phải sửa ở Step 4; nếu ít hơn 5 ⇒ regex sai, sửa test trước.) Lưu ý `rglob` đi qua `backend/.venv` nhưng bộ lọc `skip` loại bằng tên thư mục — nếu chậm > 30 s thì đổi sang `os.walk` cắt `dirs[:]`, giữ nguyên ngữ nghĩa.
+
+- [ ] **Step 3: Dời ba file JSON, sửa `.gitattributes`**
+
+```bash
+mkdir -p backend/etl/data
+git mv docs/10-sources/market/field-dictionary.json backend/etl/data/field-dictionary.json
+git mv docs/10-sources/news/feeds.json               backend/etl/data/feeds.json
+git mv docs/20-design/market-field-selection.json    backend/etl/data/market-field-selection.json
+```
+
+`.gitattributes` dòng `docs/20-design/market-field-selection.json  text eol=lf` → `backend/etl/data/market-field-selection.json  text eol=lf`. Kiểm: `git status --short | grep -c "^R"` → `3`.
+
+- [ ] **Step 4: Code trỏ vào `etl/data/`; khối §9 thành module**
+
+(a) `backend/etl/fundamentals_store.py:37` → `DICTIONARY_JSON = Path(__file__).resolve().parent / "data" / "field-dictionary.json"`.
+(b) `backend/etl/news_registry.py:13` → `FEEDS_JSON = Path(__file__).resolve().parent / "data" / "feeds.json"`; docstring dòng 1–2: vế *"đọc từ docs/10-sources/news/feeds.json (chủ duy nhất của danh sách feed, như wichart_registry đọc khối Python trong wichart.md)"* → *"đọc từ `etl/data/feeds.json` (chủ duy nhất của danh sách feed — dời từ `docs/` vào code 2026-09-08, lát 12 Task 10a)"*.
+(c) `backend/etl/screener_normalize.py:29` → `SELECTION_JSON = Path(__file__).resolve().parent / "data" / "market-field-selection.json"`.
+(d) **Tạo `backend/etl/wichart_source.py`:** docstring dưới đây + **nguyên văn** nội dung khối Python cuối `docs/10-sources/macro/wichart.md` (mọi dòng nằm giữa fence mở ```` ```python ```` ở dòng 610 và fence đóng ở dòng 799 — tức dòng 611–798; định nghĩa `BASE`, `url()`, `G`/`D`, `WICHART`, `TIER_X`, `SRCNOTE`; **không đổi một ký tự dữ liệu nào**, kể cả hai dòng comment đầu khối):
+
+```python
+"""Bảng đo về nguồn WiChart — 87 key: series, đơn vị gốc, hệ số `scale`, role, cờ, tier, `SRCNOTE`.
+
+Từng là khối Python §9 của `docs/10-sources/macro/wichart.md` (audit 2026-08-12, đo lại 2026-08-15 · 2026-09-05 · 2026-09-07).
+Dời nguyên văn vào code 2026-09-08 (lát 12, Task 10a): code không đọc `docs/`, image không mang `docs/`.
+Chủ sở hữu duy nhất của bảng này là module này; `wichart.md` giữ phần người đọc (bẫy, quy ước, cách đo).
+Sửa số ở đây CHỈ khi đo lại (CLAUDE.md §1.2). `etl.wichart_registry.build()` ghép bảng này với MACRO/ASSET;
+`docs/10-sources/macro/verify_wichart.py` đọc module này để đối chiếu với API sống.
+"""
+```
+
+(e) `backend/etl/wichart_registry.py`: bỏ `WICHART_MD` (và `import re`, `Path` nếu mồ côi sau khi bỏ); thêm `from etl import wichart_source` ở khối import; docstring đầu file: gạch đầu dòng thứ nhất thành *"- `etl/wichart_source.py` (từng là §9 `wichart.md`, dời vào code 2026-09-08): sự thật ĐO về nguồn — tên series, đơn vị gốc, `scale`, role, cờ, nhóm, tần suất."* và bỏ vế "Đọc bằng `exec`, đúng cách `verify_wichart.py` làm". Seam mới:
+
+```python
+def load_doc() -> tuple[dict, list[str]]:
+    """Trả (WICHART, TIER_X) từ bảng đo về nguồn — module `etl.wichart_source` sở hữu (từng là khối §9 wichart.md)."""
+    return wichart_source.WICHART, list(wichart_source.TIER_X)
+
+
+def build(doc: dict | None = None, tier_x: list[str] | None = None) -> list[Series]:
+    if doc is None:
+        doc, tier_x = load_doc()
+    tier_x = list(tier_x or [])
+    # … phần thân giữ nguyên từ dòng `out: list[Series] = []` trở xuống …
+```
+
+`tests/etl/test_e41_wichart_job.py:19` gọi `wr.load_doc()` không đối số — vẫn chạy. Không còn `RegistryError("không thấy khối Python …")`.
+(f) `database/gen_price_columns.py:17` → `pathlib.Path(__file__).resolve().parents[1] / "backend" / "etl" / "data" / "market-field-selection.json"` (`parents[1]` của `database/gen_price_columns.py` = gốc repo).
+(g) `docs/20-design/gen_field_selection.py`: `DICT = HERE.parents[1] / "backend" / "etl" / "data" / "field-dictionary.json"`; `OUT_JSON = HERE.parents[1] / "backend" / "etl" / "data" / "market-field-selection.json"`; hai href trong template (dòng 578, 710) `../10-sources/market/field-dictionary.json` → `../../backend/etl/data/field-dictionary.json`. **Không chạy lại generator** — sửa tay file sinh `docs/20-design/market-field-selection.md` (dòng 27, 631) đúng cùng chuỗi.
+(h) `docs/10-sources/macro/verify_wichart.py`: bỏ `MD = …` (dòng 37) và bốn dòng đọc/`exec` (84–87); thay bằng:
+
+```python
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "backend"))   # gốc repo/backend
+from etl import wichart_source                                              # bảng hardcode nay ở code (2026-09-08)
+```
+
+(đặt sau các `import` chuẩn; trong `main()` dùng `ns = vars(wichart_source)` thay cho dict `ns` từ `exec`). Docstring dòng 5 *"đọc bảng registry Python NGAY TRONG FILE MD"* → *"đọc bảng registry từ `backend/etl/wichart_source.py` (dời khỏi file MD 2026-09-08)"*. Bỏ `import re` nếu không còn dùng.
+
+- [ ] **Step 5: Tài liệu — index và link theo file (§1.6, §1.7)**
+
+Tài liệu sống (đổi href **và** câu chữ cho đúng sự thật mới):
+
+| File:dòng | Sửa |
+|---|---|
+| `README.md:13` | href → `backend/etl/data/field-dictionary.json` |
+| `backend/README.md:241` | chuỗi `docs/10-sources/market/field-dictionary.json` → `backend/etl/data/field-dictionary.json`; **thêm** ngay dưới dòng 13 ("Trạng thái phần code") một đoạn: *"**`etl/data/`** — dữ liệu tra cứu máy đọc mà job cần lúc chạy: `field-dictionary.json` (729 mã BCTC, `fundamentals`), `feeds.json` (47 feed + 8 crawl + taxonomy, `news`/`classify`), `market-field-selection.json` (chọn trường, `screener`); bảng đo WiChart ở `etl/wichart_source.py`. Dời từ `docs/` vào code 2026-09-08 (lát 12): code không đọc `docs/`, image không mang `docs/`. Tài liệu người đọc vẫn ở `docs/10-sources/`."* |
+| `docs/00-overview/roadmap.md:22` | href → `../../backend/etl/data/field-dictionary.json` |
+| `docs/00-overview/roadmap.md:467` | *"khối Python `WICHART`/`TIER_X`/`SRCNOTE` trong [wichart.md §9](…)"* → *"khối Python `WICHART`/`TIER_X`/`SRCNOTE` — nay là [`backend/etl/wichart_source.py`](../../backend/etl/wichart_source.py) (dời khỏi wichart.md §9 ngày 2026-09-08)"* |
+| `docs/10-sources/README.md:117` | href → `../../backend/etl/data/field-dictionary.json`; thêm *"(file nằm trong code từ 2026-09-08)"* |
+| `docs/10-sources/README.md:125` | *"đọc registry ngay trong `wichart.md`"* → *"đọc registry từ `backend/etl/wichart_source.py`"* |
+| `docs/10-sources/README.md:145` | href → `../../backend/etl/data/feeds.json`; thêm *"(file nằm trong code từ 2026-09-08)"* |
+| `docs/10-sources/README.md:189` | *"đã hardcode ở [wichart.md §9](macro/wichart.md)"* → *"đã hardcode ở [`backend/etl/wichart_source.py`](../../backend/etl/wichart_source.py) (từng là wichart.md §9)"* |
+| `docs/10-sources/market/appendix-A-field-codes.md:233` | href → `../../../backend/etl/data/field-dictionary.json` |
+| `docs/10-sources/news/README.md:21` | href → `../../../backend/etl/data/feeds.json`; thêm *"(nằm trong code từ 2026-09-08)"* |
+| `docs/10-sources/news/article-structure.md:24` | href → `../../../backend/etl/data/feeds.json` |
+| `docs/10-sources/macro/wichart.md` §9 (dòng 608–799) | giữ tiêu đề `## 9. Bảng hardcode`; **thay trọn khối fence** bằng: *"Bảng hardcode (87 key · series · đơn vị gốc · `scale` · role · cờ · tier · `SRCNOTE`) **do [`backend/etl/wichart_source.py`](../../../backend/etl/wichart_source.py) sở hữu từ 2026-09-08** (lát 12, Task 10a: code không đọc `docs/`, image không mang `docs/`). Khối Python từng nằm ở đây được dời nguyên văn, không đổi số nào. Ý nghĩa cột giữ nguyên: `scale` = nhân raw để về đơn vị gốc (đơn vị 1); `role` = `data` · `growth_ref` · `None` (không nạp); cờ cấp series và cấp key theo bộ ký hiệu của tài liệu này. Sửa số trong module chỉ khi đo lại (CLAUDE.md §1.2); [`verify_wichart.py`](verify_wichart.py) đọc module đó để đối chiếu với API sống."* |
+| `docs/20-design/README.md:14` | href bản máy đọc → `../../backend/etl/data/market-field-selection.json` |
+| `docs/20-design/market-field-selection.md:27`, `:631` | href → `../../backend/etl/data/field-dictionary.json` (cùng chuỗi với template ở Step 4g) |
+| `docs/20-design/news-pipeline.md:9`, `:456` | href → `../../backend/etl/data/feeds.json` |
+| `docs/20-design/news-pipeline.md:433` | ô `docs/10-sources/news/feeds.json` → `backend/etl/data/feeds.json` |
+| `backend/tests/docs/test_d01_docs_consistency.py:207`, `:243` | `_read("docs/10-sources/news/feeds.json")` → `_read("backend/etl/data/feeds.json")` |
+| `backend/tests/etl/test_e36_wichart_registry.py` | docstring dòng 1: *"(khối §9 của wichart.md · bảng mã trong module)"* → *"(bảng đo `etl/wichart_source.py` · bảng mã trong `wichart_registry`)"*; test `test_build_raises_when_module_maps_a_series_the_doc_does_not_collect` viết lại (không còn đọc md): |
+
+```python
+def test_build_raises_when_module_maps_a_series_the_source_table_does_not_collect():
+    import copy
+    from etl import wichart_source as ws
+    broken = copy.deepcopy(ws.WICHART)
+    entries = list(broken["xang_dau"]["s"])
+    assert entries[1][0] == "Giá xăng E5"
+    entries[1] = ("Giá xăng E5", "VND/lít", 1e3, None, ["DEAD"])
+    broken["xang_dau"]["s"] = entries
+    with pytest.raises(wr.RegistryError, match=r"xang_dau\[1\]"):
+        wr.build(doc=broken, tier_x=list(ws.TIER_X))
+```
+
+Tài liệu lịch sử (`docs/90-records/`, `docs/00-overview/decisions/`): chạy lại lệnh Step 1 vào `deadlinks-after.txt`; với mỗi dòng **có trong after mà không có trong before** ⇒ đó là link vỡ do lượt dời này ⇒ sửa **chỉ href** sang đích mới (`backend/etl/data/<file>` với số `../` đúng cấp), giữ nguyên nhãn hiển thị. Không sửa dòng nào khác trong hai vùng đó.
+
+- [ ] **Step 6: Xanh + hồi quy + phép kiểm §1.7**
+
+Run: `cd backend && PYTHONIOENCODING=utf-8 uv run pytest tests/docs/test_d03_compose_contract.py -q 2>&1 | tail -3`
+Expected: `9 passed` (8 cũ + `test_production_code_never_reads_docs`).
+
+Run: `cd backend && PYTHONIOENCODING=utf-8 uv run pytest tests/etl/test_e11_screener_normalize.py tests/etl/test_e35_fundamentals_job.py tests/etl/test_e36_wichart_registry.py tests/etl/test_e41_wichart_job.py tests/etl/test_e52_news_parse.py -q 2>&1 | tail -3`
+Expected: tất cả pass, 0 failed (ghi số).
+
+Run: `cd backend && PYTHONIOENCODING=utf-8 uv run pytest tests/docs/test_d01_docs_consistency.py -q 2>&1 | tail -5` rồi `… ::test_no_dead_internal_links -q 2>&1 | grep -E "^E\s+\S+:[0-9]+ -> " | sort > <report-dir>/deadlinks-after.txt; diff <report-dir>/deadlinks-before.txt <report-dir>/deadlinks-after.txt && echo "deadlinks: không đổi"`
+Expected: chỉ `test_no_dead_internal_links` còn đỏ (đúng nợ Task 11), mọi test khác trong file xanh; `diff` rỗng + `deadlinks: không đổi`.
+
+Run: `cd backend && PYTHONIOENCODING=utf-8 uv run pytest tests/etl -q 2>&1 | tail -2`
+Expected: `… passed` (0 failed; ghi số).
+
+Run: `PYTHONIOENCODING=utf-8 uv run --project backend python -m py_compile docs/10-sources/macro/verify_wichart.py docs/20-design/gen_field_selection.py database/gen_price_columns.py && echo "compile: OK"` và `PYTHONIOENCODING=utf-8 uv run --project backend python -c "import sys; sys.path.insert(0,'backend'); from etl import wichart_source as w; print('WICHART', len(w.WICHART), 'keys; TIER_X', len(w.TIER_X))"`
+Expected: `compile: OK`; một dòng đếm (ghi số vào report — không có expected cứng, chỉ để chứng minh module import được ngoài pytest).
+
+Run: `git grep -n -E "[\"']docs[\"']\s*/|[\"']docs/" -- backend database ':!backend/tests' | wc -l`
+Expected: `0`.
+
+Run: `git grep -n "10-sources/market/field-dictionary.json\|10-sources/news/feeds.json\|20-design/market-field-selection.json" -- . ':!docs/90-records' ':!docs/00-overview/decisions' | grep -v "dời\|từng\|2026-09-08"`
+Expected: **0 hit** ngoài vùng lịch sử (mọi câu còn nhắc đường cũ phải là câu kể chuyện dời, có ngày).
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add -A backend/etl backend/tests database/gen_price_columns.py docs .gitattributes README.md backend/README.md
+git status --short   # kiểm: đúng 3 dòng R (rename) + các dòng M/A liệt kê ở mục Files, không có file lạ
+git commit -m "fix(etl): lookup data moves from docs/ into backend/etl — production code never reads docs"
+```
+
+- [ ] **Step 8: Vận hành — image mới, chạy lại họ `fundamentals`** (gốc repo; không đọc `.env`, không `docker compose config`)
+
+```bash
+docker compose up -d --build 2>&1 | tail -8
+docker run --rm dlck-backend sh -c 'test ! -e /app/docs && test -f /app/backend/etl/data/field-dictionary.json && test -f /app/backend/etl/data/feeds.json && test -f /app/backend/etl/data/market-field-selection.json && test -f /app/backend/etl/wichart_source.py && echo "image-data: OK"'
+docker compose run --rm etl python -m etl fundamentals --codes FPT --kinds bs; echo "exit=$?"
+docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<'SQL'
+select run_id, job, status, left(coalesce(error,''),60) as error from ops.etl_run where job='market.fundamentals' order by run_id desc limit 2;
+SQL
+```
+
+Expected: 7 service lên lại (`migrate` `Exited (0)`); `image-data: OK`; `exit=0` kèm dòng `fundamentals xong: {…}`; dòng `ops.etl_run` mới nhất của `market.fundamentals` là `success` (dòng trước đó — run 5 — vẫn `failed | FileNotFoundError…`, giữ làm bằng chứng). `exit=2` hay `exit=1` ⇒ dừng, báo nguyên trạng. Ghi output vào report; controller ghi ledger. Task 10 (tiếp) nối từ họ `screener`.
+
+---
+
 ### Task 11: Tài liệu sống (spec §8) — cùng lượt, và "Điểm vào cho lát 13"
 
 **Files:**
@@ -2264,7 +2454,7 @@ CLONE="$TMP/dlck-clone"; rm -rf "$CLONE"
 git clone --quiet . "$CLONE" && cp .env "$CLONE/.env"
 docker compose -p dlck-clonecheck -f "$CLONE/docker-compose.yml" config --quiet && echo "config: OK"
 docker compose -p dlck-clonecheck -f "$CLONE/docker-compose.yml" build migrate 2>&1 | tail -2 && echo "clone build: OK"
-docker run --rm dlck-backend sh -c 'test ! -e /app/.env && test ! -e /app/backend/tests && test -f /app/database/alembic.ini && echo "image: OK"'
+docker run --rm dlck-backend sh -c 'test ! -e /app/.env && test ! -e /app/backend/tests && test ! -e /app/docs && test -f /app/database/alembic.ini && test -f /app/backend/etl/data/feeds.json && echo "image: OK"'
 rm -rf "$CLONE"
 ```
 
