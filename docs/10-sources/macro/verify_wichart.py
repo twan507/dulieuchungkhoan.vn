@@ -20,7 +20,8 @@ Cách chạy:
 Exit code 0 nếu mọi khẳng định đúng, 1 nếu có sai lệch.
 
 DÙNG LÀM BỘ GIÁM SÁT HỢP ĐỒNG: chạy hàng ngày trong CI. Vì script đọc registry
-trực tiếp từ file md, nó tự bám theo mọi thay đổi bạn ghi vào tài liệu — sai lệch
+từ `backend/etl/wichart_source.py` (cùng bảng mà `etl.wichart_registry` dùng
+để dựng kho), nó tự bám theo mọi thay đổi bạn ghi vào module đó — sai lệch
 báo về nghĩa là WiGroup vừa đổi đơn vị, đổi nhãn, đổi tần suất, hoặc một series
 đã chết. Xem docs/10-sources/macro/wichart.md §7.
 
