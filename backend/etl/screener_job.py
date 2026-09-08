@@ -13,15 +13,10 @@ import sqlalchemy as sa
 
 from core.env import load_dotenv
 from etl import omo_store, screener_fetch, screener_guard, screener_normalize, screener_store
+from etl.guard_common import GuardRefused
 
 log = logging.getLogger("etl.screener")
 JOB = screener_store.JOB
-
-
-class GuardRefused(Exception):
-    def __init__(self, reasons):
-        self.reasons = list(reasons)
-        super().__init__("; ".join(self.reasons))
 
 
 def run() -> int:
@@ -47,7 +42,7 @@ def run() -> int:
                                                priced, unmapped, baseline,
                                                unknown=n.unknown_com_group)
                 if not verdict.ok:
-                    raise GuardRefused(verdict.reasons)
+                    raise GuardRefused(verdict)
                 apply_stats = screener_store.apply(conn, mapped)
         except GuardRefused as e:
             screener_store.store_refusal_evidence(engine, pages, run_id, e.reasons)

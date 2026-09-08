@@ -18,17 +18,12 @@ from core.env import load_dotenv
 from etl import fundamentals_fetch, fundamentals_guard, fundamentals_normalize, fundamentals_store, omo_store
 from etl.fundamentals_fetch import BadShape, FetchError
 from etl.fundamentals_normalize import BadRecord
+from etl.guard_common import GuardRefused
 from etl.price_job import VN, _next_open
 
 log = logging.getLogger("etl.fundamentals")
 JOB = fundamentals_store.JOB
 _wall_clock = time.time                  # seam cho test
-
-
-class GuardRefused(Exception):
-    def __init__(self, verdict):
-        self.verdict = verdict
-        super().__init__("; ".join(verdict.reasons))
 
 
 def _engine():

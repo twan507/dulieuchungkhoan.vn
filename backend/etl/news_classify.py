@@ -206,7 +206,13 @@ JOB = "news.classify"
 QUOTA_EVERY = 25
 QUOTA_MIN_INTERVAL_PCT = 20       # cửa sổ 5 giờ — giữ phần cho chatbot/dev (brainstorm §4.4)
 QUOTA_MIN_WEEKLY_PCT = 10
-MAX_CONSECUTIVE_FAILED = 5
+MAX_CONSECUTIVE_FAILED = 5      # cầu chì lỗi liên tiếp
+# ⚠️ Cùng khái niệm với `price_fetch.MAX_CONSECUTIVE_FAILURES` và `news_job.MAX_CONSECUTIVE_FAILED`,
+# nhưng hai chỗ kia là **10**. Chênh lệch có chủ đích: mỗi lời gọi hỏng ở đây đốt quota Token Plan
+# thật, còn một lời gọi HTTP hỏng thì không mất gì — nên cầu chì phải nổ sớm hơn.
+# 🔴 Ghi chú này viết khi rà chuẩn hoá 2026-09-07 bằng cách ĐỐI CHIẾU ba hằng số, không phải chép
+# lại một quyết định gốc: spec/plan lát 9a chốt số 5 mà không ghi vì sao khác 10. Nếu ai đó biết
+# lý do khác, sửa dòng này.
 
 
 class ModelDown(Exception):
