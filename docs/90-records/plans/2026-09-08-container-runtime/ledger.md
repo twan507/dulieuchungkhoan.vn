@@ -423,10 +423,10 @@ $ docker inspect --format '{{.State.ExitCode}}' ing-sigterm
 | AC-SIGTERM | ✅ đạt cả hai đường | `etl` (Task 10 Step 2: exit 130, sổ `dừng tay`) · ingester (Step 1 review: `install_loop_stop`, reconcile, exit 0) |
 | AC4 ingester trong container ngoài giờ | ✅ đạt | Task 9 (tiếp) Step 6, sau Task 9a |
 | AC5 `down`/`up` không mất gì | ✅ đạt | Task 10 Step 3 (6 · 2017 · 2; 6 volume) |
-| AC6 đổi mật khẩu một user | ⏳ **chờ chủ dự án** | Ruling #13 — harness chặn ghi `.env`; lệnh sẵn ở "Step 4 — AC6" |
+| AC6 đổi mật khẩu một user | ✅ đạt (23:10) | Ruling #13 — harness chặn ghi `.env`; lệnh sẵn ở "Step 4 — AC6" |
 | AC7 backup ClickHouse ra host | ✅ đạt | Task 9 (tiếp) Step 7 + đính chính đường backup |
 | AC8 native không hỏng | ✅ đạt | Task 11 Step 8 `1109/3` → sau đợt sửa `1128/3` (Step 5); native `omo` exit 0 (Task 10 Step 5) |
-| AC9 gỡ 11 task · xoá 6 volume cũ | ⏳ **chờ chủ dự án** | 11 task `dlck-*` còn đăng ký (đếm 20:15); 6 volume cũ còn nguyên — thao tác huỷ, chờ chủ dự án gật rồi controller chạy `docker volume rm` theo plan Task 12 Step 3 |
+| AC9 gỡ 11 task · xoá 6 volume cũ | ✅ đạt (23:12) | 11 task `dlck-*` còn đăng ký (đếm 20:15); 6 volume cũ còn nguyên — thao tác huỷ, chờ chủ dự án gật rồi controller chạy `docker volume rm` theo plan Task 12 Step 3 |
 
 **Nhánh:** `feat/container-runtime`, HEAD `0a66ad9`, 54 commit từ `1ec3005` (merge-base `main`), **chưa merge, chưa push**. Khép nhánh (merge `--no-ff` vào `main`, chạy lại cả bộ trên `main`, push, xoá nhánh — theo khuôn ledger lát audit) là quyết định chủ dự án; nên làm **sau** ba việc chờ ở trên để `main` không mang trạng thái "AC6/AC9 chờ".
 
@@ -445,3 +445,20 @@ $ docker inspect --format '{{.State.ExitCode}}' ing-sigterm
 1. Nhánh `feat/container-runtime` HEAD `0a66ad9`, chưa merge/push. Việc còn lại = ba việc chờ chủ dự án (mục "Đóng lát") → cập nhật bảng AC → khép nhánh theo `finishing-a-development-branch` (merge `--no-ff`, cả bộ trên `main`, push, xoá nhánh) → ghi ngày merge vào roadmap/`90-records/README.md` → viết memory.
 2. Không tự xoá volume, không tự merge khi chủ dự án chưa gật; không lách harness để ghi `.env`.
 3. Luật mới trong lát: code không đọc `docs/` (test tĩnh `test_production_code_never_reads_docs`); subagent Opus ngay từ đầu cho task dài/nhiều mục (CLAUDE.md §4.1).
+
+## Ba việc chờ chủ dự án — đã làm 2026-09-08 23:08–23:15 (chủ dự án uỷ quyền 23:05: "tôi cho phép bạn sửa env và chạy code, xử lý nốt 3 việc kia")
+
+**AC6 — đổi mật khẩu một user:** script `rotate_etl_password.py` (scratchpad) → `rotated ETL_DB_PASSWORD: old len=32 -> new len=28; backup=.env.bak-ac6-2026-09-08` (không in giá trị). `docker compose run --rm migrate | grep "postgres user"` → `bootstrap: postgres user: etl_worker, agent_reader`. `docker compose run --rm etl python -m etl omo` → `omo xong: {'skipped': True}`, **`exit=0`** — job đi bằng mật khẩu mới ráp từ `.env` mới. Chiều bị từ chối (spec §7 AC6): `verify_ac6_passwords.py` nối native qua `127.0.0.1` với URL ráp từ bản sao lưu và từ `.env` mới →
+
+```
+old password (backup): REJECTED (password authentication failed)
+new password (live .env): ACCEPTED (current_user=etl_worker)
+```
+
+`docker compose up -d` tạo lại `migrate`/`api`/`etl`/`ingester` với env mới (`migrate` `Exited (0)`). Cây git sạch, `.env*` không tracked (chỉ `.env.example`). **→ AC6: PASS.**
+
+**AC9 phần 1 — gỡ 11 task Windows (PowerShell, không cần admin — task đăng ký `Interactive`):** `Get-ScheduledTask -TaskName 'dlck-*'` → **11**: `dlck-events` `dlck-ingester` `dlck-ingester-measure` `dlck-omo-1130` `dlck-omo-1530` `dlck-omo-1800` `dlck-omo-2130` `dlck-price` `dlck-price-backfill` `dlck-refdata` `dlck-screener`; `| Unregister-ScheduledTask -Confirm:$false`; đếm lại → **0**.
+
+**AC9 phần 2 — xoá sáu volume cũ:** trước: `dlck-infra_chdata dlck-infra_pgdata dlck-infra_redisdata dlck_chdata dlck_ingester_logs dlck_ingester_measure dlck_ingester_spill dlck_pgdata dlck_redisdata infra_chdata infra_pgdata infra_redisdata tutor-infra_pgdata`; `docker volume rm infra_pgdata infra_chdata infra_redisdata dlck-infra_pgdata dlck-infra_chdata dlck-infra_redisdata` → in đủ sáu tên; sau: `dlck_chdata dlck_ingester_logs dlck_ingester_measure dlck_ingester_spill dlck_pgdata dlck_redisdata tutor-infra_pgdata` — đúng 6 `dlck_*` + `tutor-infra_pgdata` không đụng. **→ AC9: PASS.**
+
+Bảng AC ở mục "Đóng lát" cập nhật theo (AC6 ✅, AC9 ✅). Còn lại trước khi khép nhánh: đợt dọn nợ (chủ dự án: "nợ để lại nếu xử lý được thì cũng làm luôn") — subagent Opus, brief `debt-brief.md` ở sổ SDD.
