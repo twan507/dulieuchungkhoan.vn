@@ -15,6 +15,16 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy.exc import IntegrityError
 
+from core.env import load_dotenv
+
+# 🔴 Nạp `.env` NGAY TẠI ĐÂY, không đợi module khác nạp hộ (rà chuẩn hoá 2026-09-08).
+# Trước đó không gì trong `tests/` nạp cả: cả bộ xanh chỉ vì `tests/agent/test_a14_startup.py`
+# `import agent.__main__`, và file đó gọi `load_dotenv()` lúc import — `tests/agent` đứng đầu
+# bảng chữ cái nên mọi test sau ăn ké. Hậu quả: `pytest tests` xanh mà `pytest tests/etl` ném
+# `KeyError: TEST_DATABASE_URL`. `load_dotenv` dùng `setdefault` nên biến đặt sẵn ở shell/CI
+# vẫn thắng, và thiếu file `.env` thì nó im lặng bỏ qua. Hợp đồng ở `tests/test_conftest_env_contract.py`.
+load_dotenv()
+
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 

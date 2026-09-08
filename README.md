@@ -91,9 +91,8 @@ Kiến thức dựng lại nằm rải ở nhiều file — đây là chuỗi n�
 
    🔴 **Bước ba không được bỏ.** Migration `0013` seed 161 dòng gán ngành tay bằng cách phân giải ticker → `issuer_id` qua `market.security`; bảng đó còn **rỗng** lúc `0013` chạy ở bước một ⇒ nạp **0 dòng, không exception, không cảnh báo nào**, và job `etl refdata` sau đó vẫn báo y hệt trạng thái khoẻ mạnh.
 
-4. `cd backend && uv run --env-file ../.env pytest tests` — số test kỳ vọng và ý nghĩa hai `skipped` do [`database/README.md`](database/README.md) sở hữu, **không chép lại ở đây** *(§1.7 — con số này từng nằm ở ba chỗ trong chính file README và cả ba nói khác nhau)*.
+4. `cd backend && uv run pytest tests` — số test kỳ vọng và ý nghĩa hai `skipped` do [`database/README.md`](database/README.md) sở hữu, **không chép lại ở đây** *(§1.7 — con số này từng nằm ở ba chỗ trong chính file README và cả ba nói khác nhau)*.
 
-   🔴 **`--env-file ../.env` là bắt buộc** nếu shell chưa export sẵn biến: `uv` không tự nạp `.env`, chạy trần trong shell sạch cho hàng trăm `error` ở bước fixture — **không phải test hỏng**.
 5. **Chỉ khi muốn máy đó ghi thật** — đăng ký 11 task Windows Scheduler, **không cần admin** *(từ 2026-09-04 task chạy `Interactive`: mỗi job một cửa sổ `cmd` có tiêu đề tên task, nút X bị job khoá — [service-topology §5](docs/20-design/service-topology.md))*. Phải là `pwsh` chứ không phải `powershell` *(file UTF-8 không BOM, PowerShell 5 đọc sai dấu)*:
 
    ```bash

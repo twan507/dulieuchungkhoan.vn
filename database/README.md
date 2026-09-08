@@ -86,7 +86,7 @@ cd backend && uv run pytest tests/schema -v
 Cả bộ trong một lệnh *(số hiện hành ở ngay dưới — mục này chỉ giữ **lịch sử tăng trưởng**, đừng đọc nó làm số hôm nay)* *(đo 2026-09-06 chiều sau lát 9a lưới AI phân loại: 877 test, +52 test — `tests/core/test_llm_*` 13, `test_s15` 4, `test_e59`–`e61` 34, và +1 test dispose; migration head `0018`; 809 trưa cùng ngày sau lát 8b + trả nợ nhỏ; 791 sáng sau lát 8 thu thập tin: +53 test `test_e52`–`e58`; 729 tối 2026-09-05 sau lát 7b cập nhật trong phiên: +20 test `test_e50`–`e51` và test mới ở e41/e43–e49; 709 sau lát 7 ETL quốc tế và đợt sửa review toàn nhánh; 650 chiều cùng ngày sau nợ Ctrl+C `test_e42`; 640 sáng sau lát 6 `etl wichart`; không migration mới, head vẫn `0017`)*, gồm cả `tests/clickhouse` và `tests/ingester` *(hai bộ này tự dựng container ClickHouse riêng ở cổng riêng, không đụng CH production)*:
 
 ```bash
-cd backend && uv run --env-file ../.env pytest tests -q
+cd backend && uv run pytest tests -q
 ```
 
 Ngoài bộ Python còn **một bộ nhỏ bằng Node** cho `scripts/stack.mjs` (7 test: đọc PID cổng, đời Docker, chốt an toàn volume, cấu hình realtime). Chạy từ **gốc repo**, không cần DB:
@@ -95,7 +95,7 @@ Ngoài bộ Python còn **một bộ nhỏ bằng Node** cho `scripts/stack.mjs`
 npm test
 ```
 
-🔴 **`--env-file ../.env` là bắt buộc nếu shell chưa export sẵn biến** *(đo 2026-09-07)*: `uv` **không** tự nạp `.env` (không có `[tool.uv] env-file` trong `backend/pyproject.toml`), nên chạy trần trong một shell sạch cho **425 error** ở bước fixture — `KeyError: 'TEST_DATABASE_URL'` tại `tests/conftest.py:23` — chứ không phải test hỏng. Cùng lệnh kèm `--env-file` cho **1.039 passed, 2 skipped** *(2026-09-07 sau đợt dọn lệch tài liệu ↔ code: +7 test `tests/docs` thi hành §1.7, +2 test bịt lỗ hổng `phan_ure` và `tn` — phần NguoiQuanSat là assertion chèn vào hàm sẵn có, không thêm hàm mới; 1.029 sau lát 11)*. 🔴 **Đây là chủ sở hữu duy nhất của con số này** — `README.md` gốc và `roadmap.md` §0 cố ý KHÔNG nêu lại (trước 2026-09-07 nó nằm ở bốn chỗ và bốn chỗ nói khác nhau).
+**Không cần `--env-file`** *(từ 2026-09-08)*: `tests/conftest.py` tự gọi `load_dotenv()`, nên `uv run pytest tests -q` **và mọi lượt chạy một phần** (`pytest tests/etl`, `pytest tests/schema`) đều chạy được trong shell sạch. `load_dotenv` dùng `setdefault` nên biến export sẵn ở shell/CI vẫn thắng. 🔴 *Lịch sử, đừng làm theo:* trước 2026-09-08 `--env-file ../.env` là bắt buộc — chạy trần cho **425 error** `KeyError: 'TEST_DATABASE_URL'`. Rồi test canh đường khởi động của lát 11 vô tình nạp `.env` hộ cả bộ, nên `pytest tests` xanh mà `pytest tests/etl` vẫn đỏ: một sợi dây phụ thuộc thứ tự thu thập, nay đã thay bằng lời gọi tường minh (hợp đồng: `backend/tests/test_conftest_env_contract.py`). Số hiện hành: **1.072 passed, 2 skipped** *(đo 2026-09-08)* *(2026-09-07 sau đợt dọn lệch tài liệu ↔ code: +7 test `tests/docs` thi hành §1.7, +2 test bịt lỗ hổng `phan_ure` và `tn` — phần NguoiQuanSat là assertion chèn vào hàm sẵn có, không thêm hàm mới; 1.029 sau lát 11)*. 🔴 **Đây là chủ sở hữu duy nhất của con số này** — `README.md` gốc và `roadmap.md` §0 cố ý KHÔNG nêu lại (trước 2026-09-07 nó nằm ở bốn chỗ và bốn chỗ nói khác nhau).
 
 🔴 **Đừng chạy hai phiên `pytest` cùng lúc.** Cả bộ dùng **một** DB test `dulieu_test`; hai phiên song song giẫm dữ liệu của nhau và cho ra hàng chục fail/error rải rác ở `tests/etl` — mỗi file chạy riêng lại pass, nên rất dễ tưởng là nợ kỹ thuật có sẵn *(đã gặp thật 2026-09-07: một phiên review chạy song song ⇒ 11 failed + 7 error; chạy lại một mình ⇒ 1.029 passed hai lượt liên tiếp)*.
 
