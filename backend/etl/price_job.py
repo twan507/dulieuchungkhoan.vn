@@ -20,6 +20,7 @@ import sqlalchemy as sa
 from core.console import banner
 from core.env import load_dotenv
 from etl import omo_store, price_fetch, price_guard, price_normalize, price_store
+from etl.guard_common import GuardRefused
 
 log = logging.getLogger("etl.price")
 VN = ZoneInfo("Asia/Ho_Chi_Minh")
@@ -27,12 +28,6 @@ _wall_clock = time.time      # seam cho test: patch toàn cục time.time thì S
 _sleep = time.sleep          # seam cho test: nghỉ khi nguồn nghẽn (backfill)
 SOURCE_DOWN_PAUSE_S = 600    # sự cố 05/09: FiinTrade nghẽn từng quãng ~15 phút tối thứ 7 — nghỉ 10 phút rồi nối tiếp
 SOURCE_DOWN_MAX_PAUSES = 3   # 3 lần nghỉ liên tiếp không có mã nào qua (30 phút) ⇒ coi nguồn chết thật, lượt failed như cũ
-
-
-class GuardRefused(Exception):
-    def __init__(self, verdict):
-        self.verdict = verdict
-        super().__init__("; ".join(verdict.reasons))
 
 
 def _now_iso() -> str:

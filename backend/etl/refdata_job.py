@@ -16,18 +16,11 @@ import sqlalchemy as sa
 
 from core.env import load_dotenv
 from etl import omo_store, refdata_fetch, refdata_guard, refdata_merge, refdata_normalize, refdata_store
+from etl.guard_common import GuardRefused
 from etl.refdata_indices import SNAP_CODES
 
 log = logging.getLogger("etl.refdata")
 JOB = refdata_store.JOB
-
-
-class GuardRefused(Exception):
-    """Chốt chặn hai tầng từ chối lượt chạy — giao dịch dữ liệu phải rollback."""
-
-    def __init__(self, reasons):
-        self.reasons = list(reasons)
-        super().__init__("; ".join(self.reasons))
 
 
 def run(accept_drop: bool = False) -> int:
@@ -53,7 +46,7 @@ def run(accept_drop: bool = False) -> int:
                     counts, baseline, n.index_codes, SNAP_CODES, planned_flips, listed
                 )
                 if not verdict.ok and not accept_drop:
-                    raise GuardRefused(verdict.reasons)
+                    raise GuardRefused(verdict)
                 apply_stats = refdata_store.apply(conn, t, delist)
         except GuardRefused as e:
             refdata_store.store_refusal_evidence(engine, raw, run_id, e.reasons)

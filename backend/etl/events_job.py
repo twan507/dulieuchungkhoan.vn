@@ -14,15 +14,10 @@ import sqlalchemy as sa
 
 from core.env import load_dotenv
 from etl import events_fetch, events_guard, events_normalize, events_store, omo_store
+from etl.guard_common import GuardRefused
 
 log = logging.getLogger("etl.events")
 JOB = events_store.JOB
-
-
-class GuardRefused(Exception):
-    def __init__(self, verdict):
-        self.verdict = verdict
-        super().__init__("; ".join(verdict.reasons))
 
 
 def run(accept_new: bool = False) -> int:

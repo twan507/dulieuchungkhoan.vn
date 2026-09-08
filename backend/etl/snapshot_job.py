@@ -16,6 +16,7 @@ import sqlalchemy as sa
 
 from core.env import load_dotenv
 from etl import omo_store, snapshot_fetch, snapshot_guard, snapshot_store
+from etl.guard_common import GuardRefused
 from etl.snapshot_fetch import BadShape, FetchError
 
 log = logging.getLogger("etl.snapshot")
@@ -23,12 +24,6 @@ JOB = snapshot_store.JOB
 VN = ZoneInfo("Asia/Ho_Chi_Minh")
 MAX_RECRAWL = 50                       # trần re-crawl giá một lượt — xem chú thích trong _recrawl
 RECRAWL_MAX_MINUTES = 20               # trần thời gian cho phần re-crawl giá — xem chú thích trong _recrawl
-
-
-class GuardRefused(Exception):
-    def __init__(self, verdict):
-        self.verdict = verdict
-        super().__init__("; ".join(verdict.reasons))
 
 
 def _engine():

@@ -107,3 +107,35 @@ SELECT session_date, count(*) FROM macro.omo_session GROUP BY 1 HAVING count(*) 
 ```
 
 Rỗng thì thêm ràng buộc thẳng; không rỗng thì phải chốt cách gộp trước — và **đó mới là quyết định thật**, không phải việc cơ học.
+
+---
+
+## Đính chính khi thực thi — **bỏ mục 2 của P2** (đổi `MAX_BAD_SHAPE` → `MAX_SHAPE`)
+
+*Ghi thêm 2026-09-08, ngay trong lượt thực thi. Không sửa phần trên: phần trên là quyết định
+lúc chưa có số đo này.*
+
+Nhịp **Kiểm** trước khi đổi tên đã đo một thứ mà bước 0 không đo: **tên trường mà mỗi hằng số
+canh**. Kết quả lật ngược mục này.
+
+| Guard | Hằng số | Trường nó canh |
+|---|---|---|
+| `fundamentals_guard` | `MAX_BAD_SHAPE` | `Tally.bad_shape` |
+| `snapshot_guard` | `MAX_BAD_SHAPE` | `Tally.bad_shape` |
+| `series_guard` | `MAX_SHAPE` | `Tally.shape` |
+| `wichart_guard` | `MAX_SHAPE` | `Tally.series_shape` — mà file này **còn** có `keys_bad_shape` |
+
+**Cả bốn file đang đặt tên ĐÚNG:** mỗi hằng số mang tên của chính trường nó canh. Đổi hai file
+đầu thành `MAX_SHAPE` là **phá** sự tương ứng đó để lấy một sự giống nhau bề mặt — và ở
+`wichart_guard`, một `MAX_SHAPE` đứng cạnh `keys_bad_shape` còn gây nhầm nó canh trường nào.
+
+Sâu hơn: R4 mô tả mục này là *"cùng giá trị 0.05, khác tên"*. Nhưng **giá trị bằng nhau là
+trùng hợp, không phải một sự thật chung có hai chủ** — đúng thứ §1.7 nhắm tới thì phải là một
+sự thật, một chủ. Bốn ngưỡng này là bốn số đo độc lập của bốn họ khác nhau. Tức mục 2 chết vì
+**đúng lý do đã loại P3** ở trên (*"chưa có bằng chứng nào cho thấy 4 giá trị đó phải bằng nhau
+mãi; ép chung là quyết định thay cho tương lai"*) — lúc chấm, tôi đã không nhận ra mục 2 là một
+mẩu của chính P3.
+
+**P2 thực thi còn lại:** mục 1 (một `GuardRefused` ở `etl/guard_common.py`, 6 job import),
+mục 3 (không đụng `Fetcher` — giữ nguyên), mục 4 (test hợp đồng
+`tests/etl/test_e65_guard_refused_contract.py`).
