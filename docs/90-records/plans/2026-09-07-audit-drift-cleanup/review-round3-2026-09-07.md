@@ -111,4 +111,4 @@ Kết cục:
 | `MAX_BAD_SHAPE` vs `MAX_SHAPE` | ⚪ **giữ nguyên** — cả bốn file đang đặt tên đúng theo trường nó canh; giá trị 0,05 bằng nhau là trùng hợp, không phải một sự thật chung |
 | `MAX_CONSECUTIVE_FAILED` 5 vs 10 | ✅ **đã ghi lý do** tại `news_classify.py` |
 | `snapshot_store` không ghi `raw_payload` | ✅ **đã ghi lý do** tại `snapshot_store.py` |
-| `omo_store` SELECT-rồi-INSERT | 🟡 **hoãn có chủ đích** — chọn O1 (UNIQUE + `ON CONFLICT`), nhưng phải đếm dòng trùng trên kho thật trước. Việc mở đầu lát 13 |
+| `omo_store` SELECT-rồi-INSERT | ✅ **sửa xong 2026-09-08, không cần migration** — đo kho thật thì `omo_session_pkey PRIMARY KEY (session_date)` **đã có sẵn**, nên nhận định *"không có ràng buộc DB"* của R4 sai. Vấn đề thật nhỏ hơn: cửa sổ giữa `SELECT` và `INSERT` làm lượt sau chết bằng `UniqueViolation` — báo động giả. Nay gộp thành `ON CONFLICT DO NOTHING RETURNING`, có test hai luồng ở đúng `READ COMMITTED` |

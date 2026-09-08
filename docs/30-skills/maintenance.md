@@ -125,6 +125,19 @@ Luật trong L1 §Ranh giới **vẫn giữ** vì nó xử lý tốt ca nửa tr
 
 Tổng corpus trong phạm vi **875.415 byte**, nén tỷ lệ **3,5 : 1**. Ngân sách đo từ dung lượng nội dung thật, không suy từ số section. Mọi file hiện nằm trong sai số ±10%.
 
+🔴 **"Trong phạm vi" nghĩa là gì — và vì sao phải ghi ra đây.** Hai chữ này từng chỉ được định nghĩa trong tài liệu trung gian Giai đoạn 1 (`BAN-DO-KHAI-NIEM.md`), mà tài liệu đó **đã bỏ khi đóng dự án skill** — chỉ còn ở commit `a14eb54`. Hậu quả đo được ngày 2026-09-07: một vòng review đếm corpus ra **1.363.262 byte** và báo con số 875.415 là sai, trong khi cả hai đều đúng, chỉ là **đếm hai thứ khác nhau**. Đúng lỗi §1.1 — tài liệu sống mất tri thức vận hành vì nó nằm ở chỗ khác.
+
+| | Đo 2026-09-08 |
+|---|---:|
+| 67 file nguồn HP0–HP6, **toàn bộ** | **1.363.262 byte** |
+| trong đó **355 section trong phạm vi** = 460 section thô **trừ** khung giảng (`Hỏi đáp` 33 · `Điểm thầy nhấn mạnh` 27 · `Bối cảnh thị trường lúc giảng` 28 · `Khuyến nghị đầu tư` 6 · `Dữ liệu kinh tế…` 4 · vài mục khác) | **875.415 byte** ⇐ *ngân sách* |
+| thư mục `Tra Chieu` (29 file) — **không** thuộc phạm vi | 577.398 byte |
+| 8 file skill sinh ra *(đo lại hôm nay: `SKILL.md` + 8 reference)* | 316.260 byte |
+
+Và **3,5 : 1 là tỷ lệ byte → DÒNG** (875.415 byte nén xuống 2.150 dòng), không phải byte → byte. Lấy 875.415 chia cho 316.260 byte skill ra 2,8 — con số đó **không có nghĩa gì**, đừng dùng nó để kết luận corpus đã phình hay teo.
+
+Số 67 file kiểm lại hôm nay vẫn **khớp nguyên** con số kiểm kê Giai đoạn 1 (5+7+7+16+15+9+8), tức corpus chưa đổi kể từ lúc đặt ngân sách.
+
 Bốn chỗ lệch tỷ lệ **có lý do, đừng "cân bằng" lại**: `valuation` và `financial-statements` dày hơn vì công thức và quy trình không nén theo tỷ lệ như văn nói — đây là lõi *"tự làm được"*. `advanced` chiếm 4,7% corpus nhưng 8% ngân sách vì Fama-French, APT, CAPM là công thức thuần. `portfolio-and-rotation` và `psychology-information` mỏng hơn vì chồng lấn skill 1 nhiều nhất, chỉ viết tầng cơ chế mà skill 1 cố tình bỏ.
 
 **Nếu vượt ngân sách:** nén tiếp đúng `portfolio-and-rotation` và `psychology-information`. **Không cắt** khối HP3 — đó là mức "tự làm được" đã chốt. **Không cắt** `advanced` — 4,7% corpus, cắt không tiết kiệm được gì mà mất hẳn Fama-French/APT/hedging vì không nguồn nào khác có.

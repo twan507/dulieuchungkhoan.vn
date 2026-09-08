@@ -139,3 +139,48 @@ mẩu của chính P3.
 **P2 thực thi còn lại:** mục 1 (một `GuardRefused` ở `etl/guard_common.py`, 6 job import),
 mục 3 (không đụng `Fetcher` — giữ nguyên), mục 4 (test hợp đồng
 `tests/etl/test_e65_guard_refused_contract.py`).
+
+---
+
+## Đính chính thứ hai — **tiền đề của O1 sai**, và việc đã làm xong ngay trong ngày
+
+*Ghi thêm 2026-09-08. Không sửa phần O1/O2/O3 phía trên: đó là quyết định lúc tin vào một dữ kiện sai.*
+
+Chủ dự án hỏi *"có việc nào nên làm luôn"*, nên nhịp **Kiểm** của O1 chạy sớm hơn dự tính — và
+lật đổ chính tiền đề của nó.
+
+| Đo trên kho production 2026-09-08 | Kết quả |
+|---|---|
+| `SELECT session_date, count(*) … HAVING count(*) > 1` | **0 dòng trùng** (bảng có 3 dòng, 2026-08-26 → 2026-09-04) |
+| Ràng buộc thật của `macro.omo_session` (`pg_constraint`) | 🔴 **`omo_session_pkey PRIMARY KEY (session_date)` ĐÃ CÓ SẴN** |
+| `macro.omo_auction` | `PRIMARY KEY (session_date, op_type, tenor_days)` — cũng đã có |
+
+🔴 **Dòng *"`macro.omo_session` không có UNIQUE trên `session_date`"* ở bảng "Đã kiểm bằng lệnh"
+của bước 0 là SAI**, và tôi đã xếp nó vào cột *đã kiểm*. `PRIMARY KEY` **là** một ràng buộc
+duy nhất. Tôi suy ra từ việc đọc `omo_store.py` — nó `SELECT` trước rồi `INSERT`, khiến mã đọc
+**như thể** không có ràng buộc nào — rồi liếc migration `0005` mà không đọc kỹ dòng
+`session_date date PRIMARY KEY`. Đúng loại lỗi §3.2: một câu chưa kiểm nằm trong danh sách
+"đã kiểm" thì **chặn mất phép kiểm sẽ tìm ra sự thật**.
+
+### Vấn đề THẬT, nhỏ hơn và không cần migration
+
+Vì đã có PK, hai lượt chồng lấn **không ghi trùng được**. Cái vỡ là khác: tiến trình B đi qua
+`SELECT` trong lúc A **chưa commit** sẽ thấy trống, đâm vào `INSERT`, chờ A, rồi ăn
+`UniqueViolation` ⇒ **lượt chạy chết với mã 2 như thể nguồn hỏng**, trong khi phiên đó đã có
+người ghi đúng. Báo động giả, không phải hỏng dữ liệu.
+
+**Đã sửa xong trong lượt này** — `INSERT … ON CONFLICT (session_date) DO NOTHING RETURNING`
+gộp kiểm và ghi vào một lệnh nguyên tử, không trả dòng ⇒ bỏ trọn lượt như nhánh `skipped` cũ.
+**Ít code hơn bản cũ** (bỏ hẳn `SELECT`), **không migration**, nên O1/O2/O3 đều không còn là
+lựa chọn phải cân: câu hỏi biến mất chứ không phải được trả lời.
+
+### Một cái bẫy nữa, ghi lại vì suýt tạo test giả
+
+Bản test đầu tiên tái hiện cửa sổ bằng cách đặt kết nối B ở `REPEATABLE READ` để chốt ảnh chụp
+cũ — gọn, tất định, không cần luồng. Nó **đỏ**, nhưng đỏ vì `ON CONFLICT DO NOTHING` dưới
+`REPEATABLE READ` ném `SerializationFailure`: một hành vi đúng của Postgres mà **production
+không bao giờ chạm**, vì job chạy ở `READ COMMITTED` mặc định. Test đó sẽ canh một thứ không
+tồn tại. Bản dùng được phải chạy hai kết nối thật ở đúng mức cô lập production, và chờ tới khi
+B **thật sự bị khoá** (`pg_stat_activity`) rồi mới commit A — không `sleep` mù.
+Test: `tests/etl/test_e04_store_flow.py::test_store_khong_no_khi_tien_trinh_khac_dang_ghi_dung_phien_do`,
+đã kiểm đỏ trên mã cũ và chạy lại 3 lượt đều xanh (~0,9 s).

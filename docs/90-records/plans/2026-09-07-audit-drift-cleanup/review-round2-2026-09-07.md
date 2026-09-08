@@ -119,3 +119,27 @@ sinh lai 4 file generator -> cmp byte-by-byte KHỚP cả 4
 **Đợt dọn §1.7 lại vi phạm §1.7.** Audit gọi tên `news-pipeline.md`, tôi sửa đúng file đó rồi dừng — **không `git grep "20 sub"` toàn repo**. Trước lượt sửa, năm chỗ cùng sai nên *nhất quán*; sau lượt sửa chúng **mâu thuẫn nhau**. Ở khía cạnh đó tôi làm tình trạng **tệ đi**. Y hệt với "13 bẫy".
 
 Bài học không phải "cẩn thận hơn" — mà là **phép kiểm phải quét mọi chỗ, vì con người sẽ luôn chỉ sửa chỗ được gọi tên**. Vì vậy vòng này sửa **bộ kiểm trước**, rồi để nó tự liệt kê 5 + 3 vị trí còn lại thay vì tôi phải nhớ.
+
+---
+
+## Đóng mục "chưa kiểm" cuối cùng — 2026-09-08
+
+*Ghi thêm, không sửa bảng trên: bảng trên là ảnh chụp lúc vòng 2 kết thúc.*
+
+Mục `maintenance.md` §8 (*"875.415 byte, nén 3,5:1"* vs R3 đếm ra 1.363.262) đã **đo lại và
+đóng**. Kết luận ngược cả hai phía:
+
+- **Con số 875.415 ĐÚNG.** "Trong phạm vi" = **355 section** còn lại sau khi lọc khung giảng
+  khỏi 460 section thô của 67 file HP0–HP6. Định nghĩa đó nằm trong `BAN-DO-KHAI-NIEM.md` —
+  tài liệu trung gian Giai đoạn 1 **đã bỏ khi đóng dự án skill**, chỉ còn ở commit `a14eb54`.
+- **Con số 1.363.262 của R3 cũng ĐÚNG** — nó là **toàn bộ** 67 file, không lọc. Hai bên đếm
+  hai thứ khác nhau.
+- **`3,5 : 1` là byte → DÒNG** (875.415 byte xuống 2.150 dòng), không phải byte → byte. Ai lấy
+  nó chia cho dung lượng file skill sẽ ra 2,8 và tưởng có drift.
+
+Lỗi thật vì thế **không phải con số** mà là §1.1: tài liệu sống giữ con số nhưng để định nghĩa
+của nó ở một file đã xoá. Đã ghi định nghĩa + cả ba phép đo vào thẳng `maintenance.md` §8.
+
+🔴 Bài học chung với `feeds.json` và "20 sub" của chính vòng này: **một con số không có định
+nghĩa kèm theo thì lần rà sau sẽ bị báo là sai** — và người rà không có cách nào biết mình đang
+đo nhầm thứ. Số đo phải đi kèm *"đo cái gì"*, không chỉ *"đo ngày nào"*.
