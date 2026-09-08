@@ -211,6 +211,8 @@ $ ls -la ./clickhouse-backups
 | 10 | Sau AC7 | `.env` cũ `CLICKHOUSE_BACKUP_DIR=./clickhouse-backups` (gốc `deploy/infra` cũ) ⇒ sửa về `./deploy/infra/clickhouse-backups`, dời zip, tạo lại service | — |
 | 11 | Task 10 dispatch | Họ nào `exit 1` không phải guard ⇒ ghi lại và chạy tiếp họ kế (các họ độc lập, một lượt cho đủ bức tranh); `exit 2` ⇒ dừng ngay. Không kích hoạt vế đầu (lỗi gặp là exit 2) | Vài lượt chạy thừa |
 | 12 | Task 10 → 10a | Trợ lý định đưa `docs/10-sources` + `docs/20-design` vào image; **chủ dự án bác**: code không đọc `docs/`, không đưa `docs/` vào image. Thực thi: ba JSON `git mv` sang `backend/etl/data/`, khối §9 `wichart.md` thành `backend/etl/wichart_source.py`, test tĩnh cấm đường dẫn `docs/` trong code ngoài test; `.dockerignore` giữ nguyên; docs chỉ trỏ tới (một chủ sở hữu) | Nếu sau này thêm file tra cứu mới mà đặt lại dưới `docs/` thì test tĩnh bắt ngay; chi phí là đổi ~20 link tài liệu một lần |
+| 13 | Task 10 Step 4 | Harness chặn lệnh ghi `.env` (xoay `ETL_DB_PASSWORD`) hai lần ⇒ **không lách**, để AC6 cho chủ dự án chạy tay theo lệnh sẵn trong ledger; các bước còn lại (AC3 · AC-SIGTERM · AC5 · AC8 native) làm trọn | AC6 chưa có output thật tới khi chủ dự án chạy; lát chưa khép hoàn toàn nếu bỏ qua |
+| 14 | Task 10 (tiếp) | Dự đoán spec §9.3 "`screener` ngoài phiên ⇒ exit 1" sai — guard chỉ kiểm hình dạng dữ liệu; exit 0 sau giờ đóng cửa là hành vi đúng, không sửa gì | — |
 
 **Minor để dành cho review toàn nhánh (Task 12), không mở vòng sửa:** T1 import giữa file `test_env.py`; `check()` coi khoá khai rỗng là có; T2 contract test không có fixture phản ví dụ, hai docstring nói cùng ý; T3 `resolve_backup_dir` thiếu ca `""`/`"."`; T4 năm chỗ `datetime.now(VN).date()` có sẵn chưa dùng `today_vn`, `today_vn()` không đối số chưa test đồng hồ giả; T5 `install_signal_handlers` để lại handler trong test in-process, danh sách test hồi quy của brief thiếu 7 file CLI (reviewer đã chạy: 48 passed); T6 docstring `daemon()` thiếu nhánh thoát theo tín hiệu, ba khối import rải trong `test_i16`, `shutdown` tạo cả cho `count`/`reconcile`; T7 contract compose không chặn `profiles` quay lại, **rác có sẵn** `test_c99_dedup_probe.py:20` import ba tên đã dời (chỉ vỡ khi `RUN_PROBE=1`); T8 `main()` chưa test trực tiếp, `_ch_literal` chưa test mật khẩu có quote; T9a regex Dockerfile không ghim `/backups` trong `chown`, hai dấu cách trước `&&`.
 
@@ -269,3 +271,84 @@ exit=0
 
   `ops.etl_run`: run 7 `market.fundamentals | success` (run 5 `failed | FileNotFoundError…` giữ làm bằng chứng). **→ họ `fundamentals` trong container: PASS.** Task 10 nối từ `screener`.
 - Implementer tự khai: `roadmap.md:468–472` vẫn dẫn `[wichart.md §9]` làm link bằng chứng (đích còn tồn tại, §9 nay là đoạn trỏ) và `:467` giữ vế lịch sử "`verify_wichart.py` đã đọc được khối này bằng `exec`" (neo ngày 2026-08-12) — để Task 11/12 rà cùng lượt roadmap.
+
+**Task 10a — review (2026-09-08 19:50–20:05):** reviewer (Sonnet) xác nhận hai rủi ro nêu tên — khối WiChart dời **nguyên văn** (đọc so từng dòng đầu/giữa/cuối), danh sách link chết chỉ lệch +2 dòng do đoạn `etl/data/` chèn vào `backend/README.md` (cosmetic). 2 Important: docstring `verify_wichart.py` còn nói "đọc registry trực tiếp từ file md" (sót thật) và `roadmap.md:467` còn nói "đã đọc được khối này bằng `exec`" (do brief khoanh hẹp — **Ruling: sửa**, tài liệu sống không được sai §1.7, giữ mốc lịch sử 2026-08-12 và thêm sự thật hiện tại). Vòng sửa 1/5 `2f28c1c`; re-review: cả hai ADDRESSED, không vỡ gì mới. Minor để dành: chuỗi lỗi trong `build()` còn chữ "§9" (thân hàm giữ nguyên theo brief); `roadmap.md:467` lặp ý trong một ô; `verify_wichart.py:89` in "Đọc registry từ file"; các dòng `roadmap.md:468–472` dẫn `[wichart.md §9]` làm link bằng chứng. **Task 10a: xong** (`7875ac3` + `2f28c1c`).
+
+## Task 10 (tiếp) — 10 họ còn lại · bảng 15 họ (2026-09-08 19:49–20:06, operator Sonnet, image `7875ac3`)
+
+**Tiền kiểm:** `docker compose ps -a` — đủ 7 service: `migrate` `Exited (0)`, `postgres`/`redis`/`clickhouse` `(healthy)`, `api`/`etl`/`ingester` `Up`. Chạy tiếp AC3 từ họ `screener` theo đúng thứ tự brief, mỗi lệnh `docker compose run --rm etl python -m etl …`.
+
+**`screener`** — 52 lượt `POST …/Screener/GetScreenerItems` đều `200 OK`, rồi:
+
+```
+screener xong: {'counts': {'items': 1545, 'pages': 52, 'priced': 1545, 'trading_dates': 1}, 'rows_written': 1541, 'unmapped': 4, …, 'trading_date': '2026-09-08'}
+exit=0
+```
+
+**Lệch dự đoán của spec §9.3 / plan** ("ngoài phiên ⇒ guard từ chối, exit 1"): job chạy trọn, ghi 1.541 dòng cho phiên hôm nay. Kiểm code: guard của screener (`etl/screener_guard.check`) chỉ kiểm **hình dạng dữ liệu** — tỷ lệ mã có `closePrice > 0` ("không phải ngày giao dịch"), thiếu trang, `totalCount` sụt, tỷ lệ không ghép được `security_id`, `comGroupCode` lạ — **không có guard theo giờ**. 19:50 của một ngày giao dịch là sau giờ đóng cửa, dữ liệu trong ngày đã đủ nên thành công là hành vi đúng; dự đoán "guard có phiên" trong spec là giả định sai, không phải lỗi job. Không vi phạm AC3.
+
+**`omo`** → `omo xong: {'sessions': 1, 'auctions': 4, 'flow_rows': 5}`, `exit=0`. **`wichart --keys vang`** → `wichart xong: {… 'points': 1036, … 'inserted': 1036 …}`, `exit=0`. **`fred --keys DGS10`** → `fred xong: {… 'points': 16154, … 'inserted': 16154 …}`, `exit=0`. **`fx`** → `fx xong: {'tally': {'total': 7, 'failed': 0 …}, … 'inserted': 49342 …}`, `exit=0` (sổ ghi tên job `global.ecb`). **`lbma`** → `lbma xong: {'tally': {'total': 2, 'failed': 0 …}, … 'inserted': 29498 …}`, `exit=0`. **`yahoo --keys '^GSPC'`** → `yahoo xong: {'tally': {'total': 1, 'failed': 0 …}, 'bars': 275, 'inserted': 275 …}`, `exit=0`. **`binance --intraday`** → `binance xong: {'tally': {'total': 11, 'failed': 0 …}, 'bars': 33, 'inserted': 33 …}`, `exit=0` — không bị chặn địa lý từ mạng này. **`news --sources cafef`** → `news cycle 0: items 179 · new 179 · merged 0/0/0 · seen 0 · refused 5 · warnings []`, `exit=0` (job dài nhất, ~9–10 phút; sổ ghi `news.collect`). **`classify --limit 1`** → `classify xong: {… 'selected': 1, 'classified': 1, 'failed': 0, … 'quota_stop': False, 'budget_hit': False, 'model_down': False, 'warnings': []}`, `exit=0` (sổ ghi `news.classify`; không giá trị `LLM_API` nào lộ trong log).
+
+**Kiểm chứng `ops.etl_run`** (`select distinct on (job) …`):
+
+```
+          job          | status  |       error       |          finished_at
+-----------------------+---------+-------------------+-------------------------------
+ global.binance        | success |                   | 2026-09-08 12:55:12.030813+00
+ global.ecb            | success |                   | 2026-09-08 12:54:00.968734+00
+ global.fred           | success |                   | 2026-09-08 12:53:48.993869+00
+ global.lbma           | success |                   | 2026-09-08 12:54:16.821911+00
+ global.yahoo          | success |                   | 2026-09-08 12:54:24.997346+00
+ macro.omo_crawl       | success |                   | 2026-09-08 12:53:30.198896+00
+ macro.wichart         | success |                   | 2026-09-08 12:53:39.361526+00
+ market.events         | success |                   | 2026-09-08 09:50:22.684167+00
+ market.fundamentals   | success |                   | 2026-09-08 12:45:40.376938+00
+ market.price_backfill | failed  | dừng tay (Ctrl+C) | 2026-09-08 11:53:32.660967+00
+ market.price_daily    | success |                   | 2026-09-08 11:51:01.590263+00
+ market.refdata        | success |                   | 2026-09-08 09:09:07.321998+00
+ market.screener       | success |                   | 2026-09-08 12:52:25.839957+00
+ market.snapshot       | success |                   | 2026-09-08 11:51:13.411022+00
+ news.classify         | success |                   | 2026-09-08 13:05:12.047497+00
+ news.collect          | success |                   | 2026-09-08 13:04:53.830158+00
+(16 rows)
+```
+
+`select count(*) from ops.etl_run` → **17** = 16 tên job phân biệt (`price` chiếm `market.price_daily` + `market.price_backfill`; `fx` ghi dưới `global.ecb`) + một dòng lịch sử (`market.fundamentals` run 5 `failed` exit 2 trên image cũ; `distinct on` chỉ giữ run 7 `success`).
+
+**Bảng 15 họ (AC3):**
+
+| họ | cờ | exit | status | ghi chú |
+|---|---|---|---|---|
+| refdata | (không) | 0 | success | run 1, Task 9 |
+| events | `--accept-new` | 0 | success | run 2, tự xong cuối phiên trước |
+| price | `--codes FPT,VNM` | 0 | success | job `market.price_daily` (run 3) |
+| snapshot | `--codes FPT --kinds snapshot` | 0 | success | run 4 |
+| fundamentals | `--codes FPT --kinds bs` | 2 → 0 | failed → success | run 5 exit 2 trên image cũ (`FileNotFoundError`, image không mang `docs/`) → Task 10a → run 7 success (`dictionary_rows: 729`, 15.904 dòng) |
+| screener | (không) | 0 | success | chạy trọn sau giờ đóng cửa — guard kiểm dữ liệu, không kiểm giờ (xem trên) |
+| omo | (không) | 0 | success | — |
+| wichart | `--keys vang` | 0 | success | 1.036 điểm |
+| fred | `--keys DGS10` | 0 | success | 16.154 điểm |
+| fx | (không) | 0 | success | job `global.ecb`, 49.342 dòng |
+| lbma | (không) | 0 | success | 29.498 dòng |
+| yahoo | `--keys '^GSPC'` | 0 | success | 275 nến |
+| binance | `--intraday` | 0 | success | 33 nến, không geo-block |
+| news | `--sources cafef` | 0 | success | job `news.collect`, 179 bài mới |
+| classify | `--limit 1` | 0 | success | job `news.classify`, 1 bài |
+
+**→ AC3: PASS** — cả 15 họ có ít nhất một dòng `ops.etl_run` `success`; dòng `failed` duy nhất còn lại (`market.price_backfill`) là phép thử SIGTERM có chủ đích (Step 2, PASS); không lệnh nào `exit=2` trên image đã sửa.
+
+**Step 5 — AC8 nửa native (2026-09-08 20:11):** `cd backend && PYTHONIOENCODING=utf-8 uv run python -m etl omo` → `omo xong: {'skipped': True}`, **`exit=0`** — native vào cùng kho `dlck` qua `127.0.0.1`, cùng `.env` nguyên tố (skipped = không có phiên mới sau lượt trong container 5 phút trước, đúng idempotent). **→ AC8 (nửa native): PASS**; cả bộ pytest ở Task 11 Step 8.
+
+**Step 4 — AC6 (đổi mật khẩu một user): ⏳ CHỜ CHỦ DỰ ÁN.** Trợ lý đã viết script xoay `ETL_DB_PASSWORD` không in giá trị (scratchpad `sdd/2026-09-08-container-runtime/rotate_etl_password.py`, kèm `verify_ac6_passwords.py` kiểm "mật khẩu cũ bị từ chối" theo spec §7 AC6), nhưng **bộ phân loại quyền của harness chặn lệnh ghi `.env`** (hai lần, 19:20 và 20:10) — không lách (Ruling #13). Chủ dự án chạy tay (Git Bash, gốc repo), không dán giá trị vào đâu:
+
+```bash
+cp .env .env.bak-ac6-2026-09-08                 # bản cũ (gitignore) để kiểm "mật khẩu cũ bị từ chối"
+# sửa tay dòng ETL_DB_PASSWORD= trong .env thành một chuỗi chữ-số mới, hoặc:
+#   uv run --project backend python <scratchpad>/rotate_etl_password.py .
+docker compose run --rm migrate | grep "postgres user"      # Expected: bootstrap: postgres user: etl_worker, agent_reader
+docker compose run --rm etl python -m etl omo; echo "exit=$?"   # Expected: exit=0
+cd backend && uv run python <scratchpad>/verify_ac6_passwords.py ..   # Expected: old REJECTED (password authentication failed) · new ACCEPTED
+cd .. && docker compose up -d                               # tạo lại service với env mới (vệ sinh, không bắt buộc)
+```
+
+Ghi output (không giá trị) vào ledger là AC6 đạt.
