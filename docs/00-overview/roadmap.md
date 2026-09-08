@@ -73,7 +73,7 @@ Phiên 2026-08-27 chạy cả hai: `t` khớp **205.130 = 205.130** và `ptm` kh
 
 **Việc phải làm** *(nhỏ, rời nhau)* — ✅ **cả ba xong 2026-08-27**:
 
-1. ~~`scripts/register-tasks.ps1`: `dlck-ingester-measure` từ `-Once` chuyển thành hằng ngày~~ ✅ — bỏ chốt chặn "đã tồn tại thì giữ nguyên" lẫn nhánh `-Once` (không còn ai dùng); đăng ký lại thật và soi trigger: Weekly Thứ 2–6 08:30.
+1. ~~`scripts/register-tasks.ps1` (đã xoá ở lát 12): `dlck-ingester-measure` từ `-Once` chuyển thành hằng ngày~~ ✅ — bỏ chốt chặn "đã tồn tại thì giữ nguyên" lẫn nhánh `-Once` (không còn ai dùng); đăng ký lại thật và soi trigger: Weekly Thứ 2–6 08:30.
 2. ~~Thêm chính sách xoá file đo cũ~~ ✅ — một dòng trong chính job đo: `prune_old` chạy đầu mỗi phiên `--measure`, xoá thư mục `YYYYMMDD` quá 30 ngày (2 test seam, có case biên đúng ngày cắt).
 3. ~~Kiểm ngân sách RAM~~ ✅ — **97 + 13 MB** *(đo 2026-08-27)* nằm trong trần 200 MB, đã ghi thành dòng riêng trong bảng [service-topology §7b](../20-design/service-topology.md) để không quên khi lên VPS 6 GiB.
 
@@ -168,7 +168,8 @@ lát 11  đóng hợp đồng + trả nợ  ✅ XONG 2026-09-07 — hai luật x
                                    tự phát · chậm chiều 07/09 là do nhà cung cấp (43 token/s so với 98), không do kiến trúc.
                                    Nợ #7 tách ba: cắt payload xong; `ops.llm_call` role sai đẩy sang lát API; `news.trade_name` sang
                                    ETL tin. Hồ sơ: [plans/2026-09-07-semantic-layer-closeout/](../90-records/plans/2026-09-07-semantic-layer-closeout/). TIẾP: lát 12
-lát 12  chạy được trong container  ✅ XONG 2026-09-08 — `.env` chỉ khai nguyên tố, `core.env` ráp bảy URL lúc chạy (chọn P2
+lát 12  chạy được trong container  ✅ XONG 2026-09-08 (AC6 chờ chủ dự án; AC9 ở Task 12) — `.env` chỉ
+                                   khai nguyên tố, `core.env` ráp bảy URL lúc chạy (chọn P2
                                    trong ba phương án độc lập, §4.8); một `docker-compose.yml` gốc (project `dlck`) + overlay VPS
                                    qua `COMPOSE_FILE`; image tự đủ (`backend/` + `database/`, KHÔNG `docs/`); `core.bootstrap`
                                    migrate hai kho + cấp 4 user login + tự seed ngành lớp 2 mỗi lần `up`; `ingester` thành daemon
@@ -544,6 +545,8 @@ Năm job `python -m etl fred|fx|lbma|yahoo|binance` (spec [`2026-09-05-global-et
 
 ### ~~Điểm vào cho lát 12~~ — ĐÃ DÙNG XONG 2026-09-08, giữ làm ngữ cảnh
 
+> ✅ **Lát 12 xong 2026-09-08.** Bảng khảo sát dưới đây là hiện trạng **TRƯỚC** lát 12, giữ làm lịch sử — đừng đọc như hiện tại (compose gốc, ingester daemon, `.env` nguyên tố đã thay hết).
+
 *(viết 2026-09-07 tối, sau khi đóng lát 11; khảo sát đã làm, CHƯA viết dòng code nào)*
 
 **Mục tiêu chủ dự án nêu:** *"chuẩn hoá tất cả tác vụ, thiết kế cho chạy trong Docker để sau này dùng được trên VPS luôn không phải làm lại."*
@@ -574,7 +577,7 @@ Năm job `python -m etl fred|fx|lbma|yahoo|binance` (spec [`2026-09-05-global-et
 | **Ba chỗ `date.today()` trần**, còn lại đều `ZoneInfo` VN tường minh | [`etl/refdata_job.py:60`](../../backend/etl/refdata_job.py) (mốc nước domain state) · [`core/ch_backup.py:39`](../../backend/core/ch_backup.py) · [`agent/system_prompt.py:53`](../../backend/agent/system_prompt.py) | đích của mục 6. Compose app **chưa đặt `TZ`** cho service nào; chỉ ClickHouse ở infra có |
 | **Compose app chưa có service `ingester`**; service `etl` chạy `python -m etl` không tham số = vòng heartbeat | đọc `deploy/app/docker-compose.yml` | phải thêm service; cổng health 8100 của topology §6 code chưa có |
 | **Đồ Windows không chặn.** `core/console.py` gate bằng `DLCK_LOCK_CONSOLE`, trên Linux trả `False`; `spill.py` đã có nhánh `fcntl` | đọc code | về hưu là dọn dẹp, không phải lỗi. ⚠️ Trong lúc làm lát 12 **không chạy `register-tasks.ps1`** — nó tự bật lại `dlck-ingester` |
-| `scripts/stack.mjs` đã có `assertVolumeSurvived` | đọc code | dùng được cho tiêu chí *"`down` rồi `up` không mất gì"* |
+| `scripts/stack.mjs` (đã xoá ở lát 12) đã có `assertVolumeSurvived` | đọc code | dùng được cho tiêu chí *"`down` rồi `up` không mất gì"* |
 
 **Đợt chuẩn hoá 2026-09-08 đã đổi nền, bản 2026-09-07 chưa biết** — hồ sơ [audit-drift-cleanup](../90-records/plans/2026-09-07-audit-drift-cleanup/) và [quyết định §4.8 gộp job](../90-records/plans/2026-09-07-audit-drift-cleanup/decision-unify-jobs-2026-09-08.md): hợp đồng mã thoát **0/1/2 thi hành bằng test cho cả 15 họ** (`test_e63`) · `pool_pre_ping` thống nhất (`test_e64`) · **một `GuardRefused`** ở `etl/guard_common.py` (`test_e65`) · `refdata` dùng `Fetcher` chung, có retry · `omo_store` ghi nguyên tử `ON CONFLICT DO NOTHING RETURNING`, không migration · `tests/conftest.py` tự nạp `.env`. **`Fetcher` KHÔNG gộp** (P2) — chỉ xét lại nếu lát 12 lộ ra khuôn container cần cấu hình tập trung, với dữ kiện mới.
 
@@ -637,7 +640,12 @@ Số thật để đặt trần, đo từ **230 lượt** đã chạy (`ops.llm_
 
 **Nghiệm thu:** cả hệ chạy thử vài ngày trên dev (kho dev đã dựng lại từ đầu ở lát 12); bật lại ingester theo [4d] sau lát 14.
 
-**Trạng thái bàn giao:** `main` = lát 12 (sau khi khép nhánh ở Task 12) · số test do `database/README.md` sở hữu · migration head `0020` · kho `dlck` mới: refdata + 161 override + mỗi họ một lượt hẹp · 11 task Windows về hưu (gỡ ở Task 12) · 6 volume cũ xoá ở Task 12.
+**Trạng thái bàn giao:** `main` = lát 12 (sau khi khép nhánh ở Task 12) · số test do `database/README.md` sở hữu · migration head `0020` · kho `dlck` mới: refdata + 161 override + mỗi họ một lượt hẹp · 11 task Windows về hưu (gỡ ở Task 12) · 6 volume cũ xoá ở Task 12 · **AC6 (xoay mật khẩu) chờ chủ dự án chạy tay** — lệnh ở ledger lát 12.
+
+⚠️ **Để dành cho lát 15 (VPS)**, không phải việc của lát 13: bind `${CLICKHOUSE_BACKUP_DIR}:/backups`
+— trên Linux sạch Docker tự tạo thư mục host thiếu với chủ `root:root`, còn `clickhouse-server` ghi
+bằng uid 101 (đo AC7 2026-09-08: file backup thuộc `101:101`) — cùng lớp lỗi AC4; khi lên VPS tạo
+sẵn thư mục có quyền ghi trước `up`.
 
 ### Điểm vào cho lát 14 — giám sát hợp đồng, đọc khi tới lát 14 *(số cũ: lát 12)*
 **Trạng thái bàn giao MỚI NHẤT — 2026-09-07 sau lát 11:** `main` = lát 11 · số test **do [`database/README.md`](../../database/README.md) sở hữu** *(bản này từng dán "1.029" — bỏ, số đã đổi từ 2026-09-08)* 🔴 **Chỉ dẫn `--env-file` kèm dòng này đã hết đúng từ 2026-09-08** — `tests/conftest.py` nay tự nạp `.env`, lệnh là `uv run pytest tests -q`; chủ sở hữu là [`database/README.md`](../../database/README.md) · migration head **`0020`** (lát 11 không thêm migration) · `backend/agent/` có **bốn** block system (`SCOPE_GUARD` · L1 · `ANSWER_RULES` · luật công cụ mang ngày) và lệnh `/moi` trong REPL · **không job nào chạy tự động** · **10/11** task Scheduler `Disabled` theo [4d], ngoại lệ `dlck-price-backfill` `Ready` *(đọc trạng thái thật bằng `Get-ScheduledTask` 2026-09-07)*. Hai thứ phải biết trước *(bản 2026-09-07 viết "lát 12" — lúc đó 12 còn là lát giám sát; sửa 2026-09-08 cho đúng chủ)*: **bộ hồi quy có nhiễu** — **ai đụng `backend/agent/`** đọc [rubric v2 §3](../90-records/plans/2026-09-07-semantic-layer-closeout/rubric-v2.md) trước khi kết luận một thay đổi là tốt hay xấu; và **ngưỡng cảnh báo feed 7 ngày quá chặt** với chuyên mục thưa tin ([news/README §13.5](../10-sources/news/README.md)) — hai đường sửa đã ghi, chọn đường nào là việc của **lát 14 này**, khớp với chính news/README.
@@ -742,7 +750,7 @@ Bốn mục đang nằm trong danh sách **"Còn để ngỏ"** của pipeline t
 | **Tách từ tiếng Việt** | Chỉ làm nếu có bằng chứng `simple` + `unaccent` không đủ | |
 | ~~**Câu treo cuối của dự án skill**~~ | ✅ **Đã quyết 2026-08-14: giữ nguyên tên "ngân hàng"** trong luận điểm *ngành báo hiệu* — là cơ chế, không phải danh sách ngành cứng. Bảng rà `CAN-SUA.md` hết việc và đã xoá | |
 | ~~**Đoạn giới hạn phạm vi vào system prompt**~~ | Skill không tự gác cổng được — xem [§4](architecture.md) | Làm khi dựng backend ✅ **XONG ở lát 10 (2026-09-07)** — hằng `SCOPE_GUARD` trong `backend/agent/system_prompt.py`, đứng trước L1 vì bất biến (cache theo tiền tố); nghiệm thu 4/4 câu ngoài lĩnh vực bị từ chối gọn |
-| ~~**Đăng ký lại 7 task với `-LogonType S4U`**~~ | ✅ **XONG 2026-08-28** — cả 7 task nay `LogonType=S4U`, `RunLevel=Limited`; nghiệm thu bằng soi `Principal` từng task. Cửa sổ `cmd` (rủi ro bấm nhầm X giết phiên ghi tick) **đã hết**. ⚠️ *"Chạy cả khi không đăng nhập"* chỉ đúng một nửa — Docker Desktop sống trong session người dùng nên log off là hai kho tắt theo: [service-topology §5](../20-design/service-topology.md) | `scripts/register-tasks.ps1` nay nhận `-LogonType` + tự kiểm `Assert-TaskLogonType`. Hai bẫy đã trả giá và ghi lại: script cần **`pwsh`** (UTF-8 không BOM, 5.1 parse hỏng) và `-UserId` phải **qualified `DOMAIN\user`** (tên trần fail cả S4U lẫn Interactive) |
+| ~~**Đăng ký lại 7 task với `-LogonType S4U`**~~ | ✅ **XONG 2026-08-28** — cả 7 task nay `LogonType=S4U`, `RunLevel=Limited`; nghiệm thu bằng soi `Principal` từng task. Cửa sổ `cmd` (rủi ro bấm nhầm X giết phiên ghi tick) **đã hết**. ⚠️ *"Chạy cả khi không đăng nhập"* chỉ đúng một nửa — Docker Desktop sống trong session người dùng nên log off là hai kho tắt theo: [service-topology §5](../20-design/service-topology.md) | `scripts/register-tasks.ps1` (đã xoá ở lát 12) nay nhận `-LogonType` + tự kiểm `Assert-TaskLogonType`. Hai bẫy đã trả giá và ghi lại: script cần **`pwsh`** (UTF-8 không BOM, 5.1 parse hỏng) và `-UserId` phải **qualified `DOMAIN\user`** (tên trần fail cả S4U lẫn Interactive) |
 | ~~**Luật huỷ niêm yết cho mã vắng danh bạ**~~ | ✅ **CÀI XONG 2026-08-28, nghiệm thu trên DB thật** — migration `0014` (cột dấu `security.directory_absent_since`), `apply` đóng/gỡ dấu, `plan_delist` đọc dấu của lượt trước, ngưỡng `DIRECTORY_ABSENT_DAYS = 3`. Hai lượt job liên tiếp exit 0: đóng dấu **438** rồi **0**; **A=438 · B=0 · C=0 · D=4**. Cơ chế: [market-data-store §4.4](../20-design/market-data-store.md) | ✅ **Lượt dọn đã chạy 2026-09-03.** Ngưỡng thoả lúc 31/08 19:41 nên job báo đỏ đúng thiết kế ba lượt liên tiếp (01/09, 02/09, 03/09 — chốt chặn 1% từ chối đúng 22,3%, `failed`, không ghi gì). Dọn bằng một lượt chạy tay có người nhìn: `uv run python -m etl refdata --accept-drop` — `ops.etl_run` **run_id 62**, `accept_drop: true`, lật **439** mã sang `delisted` *(438 đo lúc 31/08 19:41; chênh 1 mã, chưa rà nguyên nhân)*. `directory_absent_since` nay bằng **0** trên toàn kho — danh bạ hết đứng ở trạng thái 31/08 |
 
 ### 5.1 ✅ Realtime phái sinh — ĐÃ ĐO 2026-08-26 (phiên chiều)
