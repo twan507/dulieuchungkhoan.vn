@@ -302,3 +302,14 @@ Cần thêm `pyyaml` vào `dependency-groups.dev` để test đọc compose (kh�
 3. AC3 chấp nhận `screener` **exit 1** ngoài phiên là đúng hành vi (guard "có phiên"), và `events` chạy với `--accept-new` trên kho mới.
 4. Cửa sổ ingester `[08:30, 15:05)` thứ 2–6, không lịch nghỉ lễ (giữ như task Windows).
 5. Xoá `dlck-price-backfill` cùng 10 task kia (backfill giá về hưu theo quyết định xoá kho; lát 13 xếp lại nếu cần).
+
+
+---
+
+## Đính chính khi viết plan — 2026-09-08 *(không sửa phần trên: đó là bản duyệt)*
+
+**§5.4 bước 4 sai một nhịp lệnh.** Spec viết *"chạy đúng nhịp `downgrade 0012` → `upgrade head`"* theo `database/README.md` mục Bootstrap. Câu đó **đúng khi head là `0013`** (lúc README viết, 2026-08-28). Head nay là `0020`: `alembic downgrade 0012` lùi **tám** migration — `DROP` `news.article_industry`, `ops.llm_call`, `ops.snapshot_check`, cột `directory_absent_since`… **kèm dữ liệu**. Một bước "tự động khi phát hiện thiếu" mà phá dữ liệu thì không được tồn tại.
+
+**Cách đúng (plan Task 8):** `core.bootstrap` chạy lại **riêng** revision `0013` — `ScriptDirectory.from_config(cfg).get_revision("0013").module`, rồi `downgrade()` + `upgrade()` của module đó trong một transaction dưới `Operations.context(MigrationContext.configure(conn))`. Không đụng `alembic_version`, không đụng migration khác. Alembic 1.19.1 đang cài có cả hai API (kiểm 2026-09-08). Nghiệm thu (161 dòng) không đổi.
+
+**Hệ quả cho tài liệu sống (plan Task 11):** `database/README.md` và `README.md` gốc phải **thay** hướng dẫn `downgrade 0012` bằng cảnh báo — bẫy này nằm sẵn trong tài liệu từ khi head vượt `0013`, lát 12 chỉ tình cờ chạm vào.
