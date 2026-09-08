@@ -249,6 +249,35 @@ def test_quota_below_threshold_stops_before_any_call(seeded):
     assert nc.run(limit=1, client=fake2) == 0 and fake2.calls == 0
 
 
+def test_quota_dung_bang_nguong_van_duoc_chay(seeded):
+    """Biên CHÍNH XÁC: `>=` nên đúng 20 % / 10 % là VẪN chạy, không chặn.
+
+    Rà chuẩn hoá 2026-09-07: hai ca cũ dùng (15, 50) và (50, 9) — cách ngưỡng 5 và 1 điểm,
+    nên đột biến `QUOTA_MIN_INTERVAL_PCT = 20 -> 19` chạy thật vẫn **14 passed**. Cặp
+    đúng-ngưỡng / dưới-một-chút dưới đây khoá đúng điểm chặn.
+    """
+    engine, ids = seeded
+    fake = FakeClient([R1], quota=(20, 10))          # literal: ngưỡng hợp đồng, KHÔNG đọc lại hằng số
+    assert nc.run(limit=1, client=fake) == 0
+    _, st, _ = _run_row(engine)
+    assert not st.get("quota_stop") and fake.calls == 1, "đúng ngưỡng phải chạy (dấu >=)"
+    # 🔴 Hai test này CỐ Ý dùng literal 20/10 chứ không đọc `nc.QUOTA_MIN_*`. Bản đầu đọc hằng
+    # số và vì thế tautological: đổi hằng số thì đầu vào test đổi theo, đột biến 20 -> 19 chạy
+    # thật vẫn 16 passed. Ngưỡng guard là HỢP ĐỒNG, phải ghim bằng số (§4.5.3).
+
+
+def test_quota_duoi_nguong_mot_diem_thi_chan(seeded):
+    """Vế còn lại: thấp hơn ngưỡng đúng MỘT điểm là chặn. Hai test kẹp đúng một điểm."""
+    engine, ids = seeded
+    fake = FakeClient([R1], quota=(19, 50))          # literal — xem ghi chú test trên
+    assert nc.run(limit=1, client=fake) == 0
+    _, st, _ = _run_row(engine)
+    assert st["quota_stop"] is True and fake.calls == 0
+
+    fake2 = FakeClient([R1], quota=(50, 9))
+    assert nc.run(limit=1, client=fake2) == 0 and fake2.calls == 0
+
+
 def test_quota_guard_failure_is_warning_not_stop(seeded):
     # M3: token_plan_remains() ném lỗi (transport hỏng, ví dụ gateway trả HTML) ⇒ guard chỉ CẢNH BÁO, không chặn lượt
     # (spec §4.2-VIII) — và lỗi phải được ghi lại vào st["quota"] để đọc log sau không mù về nguyên nhân.

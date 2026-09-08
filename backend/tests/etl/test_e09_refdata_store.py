@@ -387,6 +387,36 @@ def test_delisted_after_threshold(db):                        # ca chính
                       {"t": tk}).scalar_one() == "delisted"
 
 
+def test_dung_bang_nguong_la_diem_chuyen_trang_thai(db):
+    """Biên CHÍNH XÁC: `<= now() - 3 ngày`, nên vắng đúng 3 ngày là ĐÃ tới hạn.
+
+    Rà chuẩn hoá 2026-09-07: hai test biên cũ dùng 2 ngày và 4 ngày — cách ngưỡng mỗi bên
+    một ngày, nên đột biến `DIRECTORY_ABSENT_DAYS = 3 -> 4` chạy thật vẫn **18 passed**.
+    Cặp 3/gần-3 dưới đây khoá đúng điểm chuyển, đột biến sang 2 hay 4 đều đỏ.
+    """
+    _as_etl(db)
+    t = _target()
+    refdata_store.apply(db, t, [])
+    tk = _no_issuer_stock(t)
+    _mark_age(db, tk, 3)                                      # đúng ngưỡng ⇒ tới hạn
+    delist, _, _ = refdata_store.plan_delist(db, t)
+    assert tk in delist, "vắng đúng DIRECTORY_ABSENT_DAYS ngày phải bị lật (dấu <=)"
+
+
+def test_thieu_mot_chut_so_voi_nguong_thi_chua_toi_han(db):
+    """Vế còn lại của biên: sát dưới ngưỡng thì CHƯA lật. Hai test này kẹp đúng một điểm."""
+    _as_etl(db)
+    t = _target()
+    refdata_store.apply(db, t, [])
+    tk = _no_issuer_stock(t)
+    with db.begin_nested():                                   # 3 ngày TRỪ 1 giờ
+        db.execute(sa.text(
+            "UPDATE market.security SET directory_absent_since = now() - make_interval(days => :d) "
+            "+ interval '1 hour' WHERE ticker = :t"), {"d": refdata_store.DIRECTORY_ABSENT_DAYS, "t": tk})
+    delist, _, _ = refdata_store.plan_delist(db, t)
+    assert tk not in delist
+
+
 def test_etf_and_index_are_never_marked(db):                  # ràng buộc 1
     _as_etl(db)
     t = _target()

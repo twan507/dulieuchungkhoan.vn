@@ -1,5 +1,7 @@
 # Fixture dùng chung cho test ingester.
-# - Mượn container ClickHouse ephemeral + schema rt của bộ test clickhouse.
+# - Container ClickHouse + schema rt: fixture `ch`/`migrated` nằm ở conftest GỐC
+#   (backend/tests/conftest.py) nên dùng chung THẬT — trước 2026-09-07 file này
+#   import lại từ tests/clickhouse/conftest và vì thế dựng container thứ hai.
 # - Redis ephemeral riêng (không đụng Redis dev).
 import socket
 import subprocess
@@ -8,7 +10,6 @@ import uuid
 
 import pytest
 
-from tests.clickhouse.conftest import ch, ch_backup_dir, migrated  # noqa: F401
 
 
 def _free_port() -> int:

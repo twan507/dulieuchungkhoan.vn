@@ -83,7 +83,7 @@ Cả năm đã bị soi một lượt trong vòng rà cuối và **quyết giữ
 |---|---|---|
 | **FCFE tính trùng khấu hao** | công thức gốc của nguồn | *đầu tư vốn gộp = chênh lệch TSCĐ ròng + khấu hao trong kỳ* |
 | **«nội giải»** | thuật ngữ dùng 10 lần trong bản tóm tắt | Lỗi nhận dạng giọng nói — thực ra là *biên độ cây nến*. Xuất hiện đúng 1 lần trong transcript gốc |
-| **"50 ngày = 1 tháng"** | Version đặc biệt | 5 ngày ≈ 1 tuần · 20 ≈ 1 tháng · 50–60 ≈ 1 quý · 200 ≈ nhiều quý |
+| **"50 ngày = 1 tháng"** | Version đặc biệt | **MA9** ≈ 2 tuần · **MA20** = 1 tháng giao dịch · **MA50** = 1 quý · **MA200** = nhiều quý *(bộ tham số thật ở [`technical-indicators.md`](../../backend/agent/skills/vn-stock-knowledge/references/technical-indicators.md) §"Đường MA"; rà lại 2026-09-07 — bản trước ghi "5 ngày · 50–60" không khớp skill)* |
 | **Fama-French 3 nhân tố** | từng bị phát biểu là "Size, Value, Momentum" | Momentum là của **Carhart**. FF3 không có momentum |
 | **P/E cao = kém an toàn** | phát biểu đơn điệu | Phân biệt *P/E cao do tăng trưởng* với *P/E cao do lợi nhuận sụp về gần 0* |
 
