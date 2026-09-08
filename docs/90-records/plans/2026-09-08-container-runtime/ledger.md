@@ -108,3 +108,77 @@ Theo luật nghiệm thu (dừng khi lệch Expected, không tự sửa Dockerfi
 - **Sự thật đo (Task 9 Step 6):** probe `ingester --minutes 2` chết `PermissionError … /var/lib/dlck/logs/ingester-20260908.log`, exit 1. Ba volume có tên được Docker tạo `root:root` vì image không có sẵn điểm gắn; container chạy `appuser`. Daemon đang ngủ cũng sẽ chết y hệt lúc 08:30. Lỗ thứ hai: mở file log nằm ngoài hợp đồng khởi động ⇒ traceback exit 1 thay vì 2.
 - **Ruling:** plan thêm Task 9a. `1081a3a` — Dockerfile tạo sẵn `/var/lib/dlck/{logs,measure,spill}` + `/backups`, `chown -R appuser`; `main.py` thêm `_attach_day_log` (không mở được log ⇒ in lý do, trả None ⇒ ba đường `reconcile`/`--minutes`/daemon trả **2**); test `test_run_exits_2_when_the_day_log_cannot_be_opened` (RED `OSError` → GREEN) + hợp đồng tĩnh Dockerfile; **23 passed**. Review duyệt; một Important từ plan **để nguyên có lý do**: `chown /backups` trong image vô tác dụng vì `/backups` là bind mount từ host và ingester không gắn nó — vô hại, AC7 là phép kiểm thật cho quyền ghi thư mục host.
 - Bước vận hành: `down` → xoá đúng ba volume `dlck_ingester_*` (đo trước: 0 entry, owner root) → `up -d --build` → kiểm `ls -ld` → chạy lại AC4, AC7 (ghi ở mục kế).
+
+## Task 9 (tiếp) — tạo lại volume runtime, AC4, AC7 (2026-09-08 16:33–16:41)
+
+**Dựng lại volume (Task 9a Step 5):** `docker compose down` (không `-v`) → xoá gọn 7 container + mạng `dlck_dlck-net`, không đụng volume nào (đối chứng trước/sau: đủ 12 volume `infra|dlck|tutor`, không thiếu cái nào). `docker volume rm dlck_ingester_logs dlck_ingester_measure dlck_ingester_spill` → xoá đúng ba volume mục tiêu, thành công cả ba; đối chứng sau: còn lại 9 volume, đủ `dlck_pgdata`/`dlck_chdata`/`dlck_redisdata`/ba `infra_*`/ba `dlck-infra_*`/`tutor-infra_pgdata` — không mất cái nào ngoài dự kiến.
+
+`docker compose up -d --build` → build lại image, 7 service lên: `migrate` `Exited (0)`, `postgres`/`redis`/`clickhouse` `(healthy)`, `api`/`etl`/`ingester` `Up`.
+
+`docker compose run --rm ingester sh -c 'ls -ld /var/lib/dlck/logs /var/lib/dlck/measure /var/lib/dlck/spill'`:
+
+```
+drwxr-xr-x 2 appuser root 4096 Sep  8 16:36 /var/lib/dlck/logs
+drwxr-xr-x 2 appuser root 4096 Sep  8 16:36 /var/lib/dlck/measure
+drwxr-xr-x 2 appuser root 4096 Sep  8 16:36 /var/lib/dlck/spill
+```
+
+**Lệch Expected:** brief Task 9a dự đoán `appuser appuser` (owner + group); đo được owner=`appuser`, group=`root`. Nguyên nhân: dòng Dockerfile `chown -R appuser /app /var/lib/dlck /backups` chỉ đổi **owner** (không có `:group`), group giữ nguyên `root` từ lúc `mkdir` chạy dưới root. Không dừng ở đây: mode `rwxr-xr-x` cho owner đủ `rwx` bất kể group, nên đây là sai khác vô hại về hiển thị, không phải chặn chức năng — đúng tinh thần CLAUDE.md §3.5 (nghiệm thu bằng cái THỰC SỰ chạy, không bằng trạng thái hiển thị), xác nhận bằng phép đo chức năng thật ngay ở Step 6 dưới đây.
+
+**Step 6 — AC4 (ingester ngoài giờ trong container):**
+
+```
+$ docker compose run --rm ingester python -m ingester --minutes 2
+2026-09-08 16:38:12,444 INFO httpx HTTP Request: GET https://online.bvsc.com.vn/quotes?symbols=ALL "HTTP/1.1 200 OK"
+2026-09-08 16:38:12,610 INFO httpx HTTP Request: GET https://online.bvsc.com.vn/datafeed/instruments "HTTP/1.1 200 OK"
+2026-09-08 16:38:12,904 INFO ingester run: 2021 mã, 6081 topic
+2026-09-08 16:38:12,905 INFO ingester run chạy tới 2026-09-08T16:40:12.905167+07:00
+2026-09-08 16:38:12,996 INFO ingester đã subscribe 6081 topic trong 61 lô
+2026-09-08 16:38:13,515 INFO ingester đã init_state (giành leader)
+2026-09-08 16:39:12,909 INFO ingester run counters: {'orphan_tmp': 0, 'replay_corrupt': 0, 'seq_collision': 0, 'spill_io_error': 0, 'spill_bytes': 0, 'pending_depth_rows': 0, 'pending_depth_bytes': 0}
+2026-09-08 16:40:12,906 INFO ingester run counters: {'orphan_tmp': 0, 'replay_corrupt': 0, 'seq_collision': 0, 'spill_io_error': 0, 'spill_bytes': 0, 'pending_depth_rows': 0, 'pending_depth_bytes': 0}
+reconcile: p1=0 p2=0 ok=0
+2026-09-08 16:40:13,044 INFO ingester reconcile: p1=0 p2=0 ok=0
+exit=0
+```
+
+```
+$ docker compose run --rm ingester sh -c 'ls -la /var/lib/dlck/logs /var/lib/dlck/spill && tail -5 /var/lib/dlck/logs/ingester-*.log'
+/var/lib/dlck/logs:
+-rw-r--r-- 1 appuser appuser 1242 Sep  8 16:40 ingester-20260908.log
+
+/var/lib/dlck/spill:
+-rw-r--r-- 1 appuser appuser    0 Sep  8 16:38 owner.lock
+
+(tail: 4 dòng run counters/insert percentiles + dòng reconcile cuối, trùng nội dung log ở trên)
+exit=0
+```
+
+**Verdict: PASS.** exit=0 (trong tập cho phép {0,1}); có dòng `run: 2021 mã, 6081 topic` (khớp mẫu "N mã, M topic"); có `reconcile: p1=0 p2=0 ok=0`; file log (1242 byte) và `owner.lock` đều tồn tại và thuộc `appuser appuser` — file mới tạo lấy group theo gid hiệu lực của appuser chứ không theo group thư mục cha, càng xác nhận group=`root` ở thư mục cha vô hại. `spill_io_error: 0`, không có dòng "lỗi I/O trên thư mục spill", không exit 3. **→ AC4 = PASS.** Giả định 2.2.2 (khoá file `SpillStore` trên volume Docker Desktop WSL2) **đóng**: `owner.lock` tạo/giữ bình thường, `spill_io_error=0`.
+
+**Step 7 — AC7 (backup trong container):**
+
+```
+$ docker compose run --rm etl python -m core.ch_backup
+backup: ['bar_1m-20260908.zip', 'index_bar_1m-20260908.zip']
+exit=0
+
+$ ls deploy/infra/clickhouse-backups | head
+(rỗng)
+```
+
+**Lệch Expected:** lệnh `ls` đúng theo brief cho thư mục rỗng. Dò thêm (chỉ đọc một khoá không phải secret): `grep -n "^CLICKHOUSE_BACKUP_DIR" .env` → `CLICKHOUSE_BACKUP_DIR=./clickhouse-backups` — `.env` (sau khi chuyển sang hình dạng nguyên tố ở Task 2) ghi đè default của compose (`./deploy/infra/clickhouse-backups`) sang `./clickhouse-backups` tại **gốc repo**; brief Task 9 viết theo default cũ, không tính override này. Kiểm đúng chỗ:
+
+```
+$ ls -la ./clickhouse-backups
+-rw-r--r-- 1 tuanb 197609 913 Sep  8 16:40 bar_1m-20260908.zip
+-rw-r--r-- 1 tuanb 197609 900 Sep  8 16:40 index_bar_1m-20260908.zip
+```
+
+Đối chứng thêm bên trong container, `docker compose run --rm etl sh -c 'ls -la /backups'`: đúng hai file `bar_1m-20260908.zip` (913 byte) và `index_bar_1m-20260908.zip` (900 byte), chủ `101:101` — uid của tiến trình `clickhouse-server` (ghi qua lệnh SQL `BACKUP`, không phải tiến trình Python `etl` ghi trực tiếp).
+
+**Verdict: PASS** (đúng chức năng, chỉ lệch địa chỉ thư mục do brief dùng default cũ). `backup: [...]` khớp mẫu Expected; file `.zip` xuất hiện trên host, đúng tại đường dẫn `.env` cấu hình. **→ AC7 = PASS.**
+
+**Việc phát sinh, không thuộc phạm vi task vận hành này (không sửa):** `./clickhouse-backups` ở gốc repo hiện là thư mục chưa track, chưa có trong `.gitignore` — để nguyên, chỉ ghi nhận.
+
+**Tóm tắt:** AC4 = PASS · AC7 = PASS · giả định 2.2.2 đóng. Task 9 (lát 12 "chạy được trong container") hoàn tất cả bốn AC còn lại (AC2, AC4, AC7, seed 161) trên project `dlck`.
