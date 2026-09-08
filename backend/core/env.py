@@ -52,6 +52,8 @@ OPTIONAL_KEYS = frozenset(DEFAULTS) | {
     "LLM_API", "LLM_BASE_URL", "LLM_MODEL", "LLM_TIMEOUT_S", "FRED_API",
     "COMPOSE_FILE", "COMPOSE_PROJECT_NAME"}
 KNOWN_KEYS = REQUIRED_KEYS | OPTIONAL_KEYS
+# Giá trị giữ chỗ của .env.example (cả 6 mật khẩu) — copy nguyên rồi `up -d` không được phép báo xanh.
+WEAK_VALUES = frozenset({"change-me", "changeme"})
 
 _PLACEHOLDER = re.compile(r"{(\w+)}")
 
@@ -90,22 +92,33 @@ def load_dotenv(path: Path | None = None) -> None:
 
 
 def check(path: Path | None = None, out=sys.stdout) -> int:
-    """In TÊN biến bắt buộc còn thiếu và biến lạ của file `.env` — không bao giờ in giá trị.
-    0 = đủ · 1 = thiếu · 2 = không có file."""
+    """In TÊN biến bắt buộc còn thiếu, giá trị còn giữ chỗ (YẾU, vd `change-me`) và biến lạ — không
+    bao giờ in giá trị. Khoá khai nhưng RỖNG bị coi là thiếu, đồng bộ với `compose_urls` (vốn cũng
+    coi rỗng = không có). Không có file `.env` ⇒ rơi về `os.environ` thay vì trả 2 — image trong
+    container không mang `.env` (`.dockerignore`), compose bơm nguyên tố qua `env_file`; khi đó bỏ
+    qua kiểm "biến lạ" vì tiến trình luôn có sẵn biến hệ điều hành khác không thuộc hợp đồng `.env`.
+    0 = đủ · 1 = thiếu hoặc còn giữ chỗ."""
     p = path or (REPO_ROOT / ".env")
-    if not p.is_file():
-        print(f"không thấy {p}", file=out)
-        return 2
-    keys = set(parse_dotenv(p.read_text(encoding="utf-8")))
-    missing = sorted(REQUIRED_KEYS - keys)
-    unknown = sorted(keys - KNOWN_KEYS)
+    if p.is_file():
+        parsed = parse_dotenv(p.read_text(encoding="utf-8"))
+        print(f"nguồn: {p}", file=out)
+        unknown = sorted(set(parsed) - KNOWN_KEYS)
+    else:
+        parsed = dict(os.environ)
+        print(f"nguồn: môi trường (không có {p})", file=out)
+        unknown = []
+    present = {k for k, v in parsed.items() if v}
+    missing = sorted(REQUIRED_KEYS - present)
+    weak = sorted(k for k in (REQUIRED_KEYS & present) if parsed[k] in WEAK_VALUES)
     for k in missing:
         print(f"THIẾU  {k}", file=out)
+    for k in weak:
+        print(f"YẾU  {k}", file=out)
     for k in unknown:
         print(f"LẠ     {k}", file=out)
-    if not missing and not unknown:
+    if not missing and not weak and not unknown:
         print(f"đủ {len(REQUIRED_KEYS)} biến bắt buộc, không biến lạ", file=out)
-    return 1 if missing else 0
+    return 1 if (missing or weak) else 0
 
 
 if __name__ == "__main__":

@@ -97,3 +97,44 @@ def test_check_exits_0_when_every_required_key_is_present(tmp_path):
     out = io.StringIO()
     assert check(f, out=out) == 0
     assert "đủ" in out.getvalue()
+
+
+def test_check_treats_a_declared_but_empty_key_as_missing(tmp_path):
+    """`compose_urls` đã coi rỗng = không có (env.get trả falsy); `check` phải đồng ý, không chỉ nhìn tên khoá."""
+    f = tmp_path / ".env"
+    lines = [f"{k}=x" for k in sorted(REQUIRED_KEYS) if k != "POSTGRES_PASSWORD"]
+    lines.append("POSTGRES_PASSWORD=")
+    f.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    out = io.StringIO()
+    rc = check(f, out=out)
+    text = out.getvalue()
+    assert rc == 1
+    assert "THIẾU  POSTGRES_PASSWORD" in text
+
+
+def test_check_flags_placeholder_values_as_weak_and_exits_1(tmp_path):
+    """`.env.example` đặt `change-me` cho cả 6 mật khẩu — copy nguyên rồi `up -d` không được phép báo xanh."""
+    f = tmp_path / ".env"
+    lines = [f"{k}=x" for k in sorted(REQUIRED_KEYS) if k != "POSTGRES_PASSWORD"]
+    lines.append("POSTGRES_PASSWORD=change-me")
+    f.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    out = io.StringIO()
+    rc = check(f, out=out)
+    text = out.getvalue()
+    assert rc == 1
+    assert "YẾU  POSTGRES_PASSWORD" in text
+    assert "change-me" not in text                      # tên biến, không bao giờ giá trị
+
+
+def test_check_falls_back_to_os_environ_when_there_is_no_file(monkeypatch, tmp_path):
+    """Container: image không mang `.env` (`.dockerignore`), compose bơm nguyên tố qua `env_file` —
+    `docker compose run --rm --no-deps migrate python -m core.env check` phải chạy được, không trả 2."""
+    for k in REQUIRED_KEYS:
+        monkeypatch.setenv(k, "x")
+    missing_path = tmp_path / "khong-co.env"
+    out = io.StringIO()
+    rc = check(missing_path, out=out)
+    text = out.getvalue()
+    assert rc == 0
+    assert f"nguồn: môi trường (không có {missing_path})" in text
+    assert "đủ" in text
