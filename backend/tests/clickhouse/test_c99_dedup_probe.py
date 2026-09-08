@@ -24,7 +24,7 @@ TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 COLS = ["symbol", "ts", "seq", "price", "volume", "side", "change",
         "cum_volume", "cum_value", "received_at"]
 
-# Trần cứng docker của hồ sơ VPS — khớp deploy/infra/docker-compose.vps.yml service clickhouse
+# Trần cứng docker của hồ sơ VPS — khớp docker-compose.vps.yml service clickhouse
 # (mem_limit: 2600m, memswap_limit: 2600m, cpus: 2.0).
 VPS_MEM_LIMIT = "2600m"
 VPS_CPUS = "2.0"
@@ -87,7 +87,7 @@ def test_probe_dedup_and_pickle_size(migrated):
 # dev thật sẽ ghi rác vào kho thật). Thay vào đó, fixture `vps_ch` dưới đây tự dựng MỘT
 # container CH ephemeral riêng, giống hệt cách `ch`/`migrated` trong conftest.py dựng,
 # cộng thêm: mount deploy/infra/clickhouse/memory-vps.xml (hồ sơ RAM hẹp) và trần
-# memory/cpu docker khớp deploy/infra/docker-compose.vps.yml.
+# memory/cpu docker khớp docker-compose.vps.yml.
 
 @pytest.fixture(scope="session")
 def vps_ch(tmp_path_factory):
