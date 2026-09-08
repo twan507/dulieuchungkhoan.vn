@@ -94,3 +94,21 @@ ruff check --select F    All checks passed!
 container ClickHouse một lượt chạy: 2 -> 1
 6/6 phép đột biến cho kết quả đúng như dự đoán, cả trước lẫn sau khi sửa
 ```
+
+---
+
+## Đóng nhóm D — 2026-09-08
+
+*Ghi thêm, không sửa bảng trên: bảng trên là ảnh chụp lúc vòng 3 kết thúc.*
+
+Sáu nợ đi qua §4.8, hồ sơ ở [`decision-unify-jobs-2026-09-08.md`](decision-unify-jobs-2026-09-08.md).
+Kết cục:
+
+| Nợ vòng 3 | Kết cục |
+|---|---|
+| `GuardRefused` 6 bản | ✅ **gộp** — `etl/guard_common.py`, canh bằng `tests/etl/test_e65_guard_refused_contract.py` |
+| `Fetcher` "lặp ba bản" | ⚪ **không gộp** — đo lại: `price` 91 dòng, chỉ trùng 16/91; trùng thật chỉ `snapshot`↔`fundamentals` (31/36), cả hai đã có test riêng |
+| `MAX_BAD_SHAPE` vs `MAX_SHAPE` | ⚪ **giữ nguyên** — cả bốn file đang đặt tên đúng theo trường nó canh; giá trị 0,05 bằng nhau là trùng hợp, không phải một sự thật chung |
+| `MAX_CONSECUTIVE_FAILED` 5 vs 10 | ✅ **đã ghi lý do** tại `news_classify.py` |
+| `snapshot_store` không ghi `raw_payload` | ✅ **đã ghi lý do** tại `snapshot_store.py` |
+| `omo_store` SELECT-rồi-INSERT | 🟡 **hoãn có chủ đích** — chọn O1 (UNIQUE + `ON CONFLICT`), nhưng phải đếm dòng trùng trên kho thật trước. Việc mở đầu lát 13 |

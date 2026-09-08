@@ -179,7 +179,14 @@ lát 12  chạy được trong container  🔜 TIẾP THEO — **lát MỚI, ch�
 lát 13  scheduler trong container  bảng lịch trong code + chạy bù + chặn chạy chồng + thứ tự phụ thuộc (`fundamentals` sau `events`
                                    18:10 và sau `snapshot`; `snapshot` KHÔNG trước ~15:20 — số đo lát 11), thay 11 task Windows, bật
                                    lại [4d]; `classify` chạy ĐỘC LẬP với `news` kiểu quét sàn (chủ dự án chốt 2026-09-07 — xem điểm
-                                   vào lát 12 §4); rồi CẢ HỆ chạy thử trên máy dev vài ngày
+                                   vào lát 12 §4); rồi CẢ HỆ chạy thử trên máy dev vài ngày.
+                                   🔴 **Việc MỞ ĐẦU lát này, làm trước bảng lịch:** `omo_store.store()` chống ghi trùng bằng
+                                   SELECT-rồi-INSERT chứ không bằng ràng buộc DB — cơ chế yếu nhất trong 6 loại idempotency, và
+                                   `restart`/chạy bù của chính lát này là thứ làm nó vỡ. Quyết định §4.8 ngày 2026-09-08 chọn thêm
+                                   `UNIQUE (session_date)` + `ON CONFLICT DO NOTHING`, nhưng **phải đếm dòng trùng trên kho thật
+                                   trước** (`SELECT session_date, count(*) FROM macro.omo_session GROUP BY 1 HAVING count(*) > 1;`)
+                                   — không rỗng thì cách gộp mới là quyết định thật. Hồ sơ:
+                                   [decision-unify-jobs-2026-09-08.md](../90-records/plans/2026-09-07-audit-drift-cleanup/decision-unify-jobs-2026-09-08.md)
 lát 14  giám sát hợp đồng        contract_snapshot + source_build + series_health (market-data-store §7.1) — phủ MỌI nguồn một lần.
                                    **Số cũ là "lát 12"; dời xuống SAU scheduler ngày 2026-09-07** — lý do ở bảng ánh xạ
 lát 15  lên VPS                  **số cũ là "lát 14"**; chỉ khi lát 13 đã ổn vài ngày — hồ sơ docker-compose.vps.yml
