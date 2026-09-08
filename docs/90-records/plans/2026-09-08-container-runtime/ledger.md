@@ -352,3 +352,23 @@ cd .. && docker compose up -d                               # tạo lại servic
 ```
 
 Ghi output (không giá trị) vào ledger là AC6 đạt.
+
+## Task 11 — tài liệu sống, "Điểm vào cho lát 13", AC8 cả bộ (2026-09-08 20:20–20:50, implementer Sonnet)
+
+- `e8a190f` — bảy file tài liệu sống theo spec §8 (`README.md` · `backend/README.md` · `database/README.md` · `service-topology.md` · `roadmap.md` · `CLAUDE.md` · `docs/90-records/README.md`) + href lịch sử ở `docs/90-records/` (kể cả 6 link trong chính `plan.md` lát này — bảng hướng dẫn Task 10a bị test đọc như link thật, sửa href theo luật lịch sử). Ba phán quyết mang vào brief: ngày thật `2026-09-08` thay `2026-09-0x`; **11 task Windows vẫn còn đăng ký** (đếm 20:15: 10 `Disabled` + `dlck-price-backfill` `Ready`) và 6 volume cũ còn nguyên ⇒ tài liệu viết "về hưu — gỡ ở Task 12", không viết "đã gỡ"; danh sách link chết lấy từ test (19 mục) thay bảng dòng cũ trong plan.
+- Implementer tự khai ba lệch có lý do: `docs/90-records/README.md` ghi AC1–AC5/AC7/AC8 đạt, AC6/AC9 chờ (không chép "AC1–AC9 đạt" của brief vì chưa đúng); sửa thêm một câu tham chiếu "bước 3" ở `database/README.md` bị chính Step 3(c) làm lệch; sửa cảnh báo `register-tasks.ps1` thì hiện tại ở `roadmap.md` §0 dòng 30. Phép kiểm §1.7 (grep chín cụm) → mọi hit còn lại là câu "về hưu" có ngày hoặc cảnh báo "đừng dùng `downgrade 0012`".
+- **AC8 — cả bộ test, `.env` nguyên tố, kho `dlck`:** `cd backend && uv run pytest tests -q` → **`1109 passed, 3 skipped in 86.27s`**, 0 failed. Skip thứ ba (so với 2 của Task 0) là test SIGTERM tiến trình thật của chính lát này (`test_shutdown.py`, chỉ chạy POSIX). Số này do `database/README.md` sở hữu, ghi kèm ngày. `tests/docs` xanh trở lại (link chết 19 → 0). **→ AC8: PASS.**
+
+## Task 12 — khép lát (bắt đầu 2026-09-08 20:50)
+
+**Step 4 — AC1, build sạch từ clone mới (20:52):** `git clone --quiet . "$CLONE"` vào scratchpad lần đầu **vỡ** `Filename too long` ở `docs/30-skills/corpus/HP2…`/`HP4…` — `git config --global core.longpaths` **chưa bật** (CLAUDE.md §5 ghi "đã bật": chỉ đúng cho config cục bộ của repo, không theo tiến trình clone). Chạy lại `git clone -c core.longpaths=true --quiet . "$CLONE"` → clone HEAD `e8a190f`, `cp .env` vào clone (gitignore, không commit):
+
+```
+config: OK
+ dlck-backend  Built
+clone build: OK
+image: OK        # test ! -e /app/.env && test ! -e /app/backend/tests && test ! -e /app/docs && test -f /app/database/alembic.ini && test -f /app/backend/etl/data/feeds.json
+clone removed: yes
+```
+
+**→ AC1: PASS.** Ghi chú môi trường: lệnh clone ở §5.8/README nên kèm `-c core.longpaths=true` trên Windows khi chưa bật global — để Task 12 Step 5 rà.
