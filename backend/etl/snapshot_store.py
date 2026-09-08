@@ -282,6 +282,11 @@ def upsert_domain_state(engine, watermark: str) -> None:
             {"d": DOMAIN, "s": SOURCE, "w": watermark})
 
 
+# 🔴 Vì sao họ này KHÔNG ghi `staging.raw_payload` khi lượt THÀNH CÔNG, khác `fundamentals_store`
+# vốn "y khuôn": `market.snapshot_daily.payload` đã giữ **nguyên văn JSON gốc** (xem `apply`), nên
+# một bản thứ hai ở `staging` là dư thừa. `fundamentals` thì chuẩn hoá vào cột kiểu nên mất hình
+# dạng gốc — vì thế nó phải ghi bằng chứng khi hash đổi. Dưới đây chỉ ghi khi guard TỪ CHỐI, lúc
+# lượt chính đã rollback và không còn gì trong domain table. *(Đối chiếu 2026-09-07.)*
 def store_refusal_evidence(engine, fetched: list[Fetched], run_id: int, verdict: Verdict) -> None:
     """Bằng chứng ở giao dịch RIÊNG — lượt chính đã rollback. Ưu tiên bản ghi của nhóm quét sàn."""
     picked = [f for f in fetched if f.target.found_by == "floor"][:MAX_EVIDENCE] or fetched[:MAX_EVIDENCE]
