@@ -29,12 +29,27 @@ load_dotenv()
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
+def assert_test_db_name(test_db: str, prod_db: str) -> None:
+    """Bán kính của `DROP DATABASE ... WITH (FORCE)` dưới đây (Chuẩn I3, review toàn nhánh lát 12).
+
+    Trước lát 12, tên DB test là hằng số `dulieu_test` viết cứng trong code. Nay nó đến từ
+    `POSTGRES_TEST_DB` trong `.env` — một dòng cấu hình có thể gõ sai. "Là identifier sạch" (regex cũ)
+    không đủ: `dulieu_test == dulieu` (identifier sạch) vẫn cho phép cấu hình sai trỏ `TEST_DATABASE_URL`
+    thẳng vào kho thật. Ba điều kiện: identifier sạch (ghép trực tiếp vào DDL) · khác `prod_db` · có
+    đuôi `_test` (quy ước đặt tên duy nhất coi là "chắc chắn là DB test").
+    """
+    assert re.fullmatch(r"[a-z_][a-z0-9_]*", test_db), f"POSTGRES_TEST_DB không phải identifier sạch: {test_db!r}"
+    assert test_db != prod_db, f"POSTGRES_TEST_DB trùng POSTGRES_DB ({test_db!r}) — sẽ DROP kho thật"
+    assert test_db.endswith("_test"), f"POSTGRES_TEST_DB thiếu đuôi _test: {test_db!r}"
+
+
 @pytest.fixture(scope="session")
 def migrated_engine():
     test_url = os.environ["TEST_DATABASE_URL"]                 # ráp từ nguyên tố: .../<POSTGRES_TEST_DB>
     test_db = test_url.rsplit("/", 1)[1]
-    assert re.fullmatch(r"[a-z_][a-z0-9_]*", test_db), test_db  # ghép vào DDL nên phải là identifier sạch
-    admin_url = test_url.rsplit("/", 1)[0] + "/" + os.environ.get("POSTGRES_DB", "dulieu")  # DB owner có sẵn
+    prod_db = os.environ.get("POSTGRES_DB", "dulieu")
+    assert_test_db_name(test_db, prod_db)                       # bán kính DROP DATABASE — xem hàm trên
+    admin_url = test_url.rsplit("/", 1)[0] + "/" + prod_db      # DB owner có sẵn
     admin = sa.create_engine(admin_url, isolation_level="AUTOCOMMIT")
     with admin.connect() as c:
         c.execute(sa.text(f"DROP DATABASE IF EXISTS {test_db} WITH (FORCE)"))

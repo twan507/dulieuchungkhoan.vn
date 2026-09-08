@@ -194,6 +194,8 @@ def load_doc() -> tuple[dict, list[str]]:
 
 
 def build(doc: dict | None = None, tier_x: list[str] | None = None) -> list[Series]:
+    if (doc is None) != (tier_x is None):
+        raise RegistryError("build(): doc và tier_x phải cùng có hoặc cùng None")
     if doc is None:
         doc, tier_x = load_doc()
     tier_x = list(tier_x or [])

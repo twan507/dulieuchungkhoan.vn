@@ -45,6 +45,25 @@ def test_provision_rejects_a_name_that_is_not_an_identifier(migrated_engine):
         bootstrap.provision_postgres(migrated_engine, [("bad name; --", "x", "dlck_etl")])
 
 
+def test_provision_raises_a_clear_error_naming_the_role_when_the_target_role_is_missing(migrated_engine):
+    """`provision_postgres` không tự validate role đích tồn tại (chỉ `_ident` canh identifier sạch) —
+    câu `GRANT` cuối cùng chết ở Postgres. Đo thật 2026-09-08: `psycopg.errors.UndefinedObject`
+    (subclass của `psycopg.Error`), message đã nêu sẵn tên role, KHÔNG bị bootstrap.py nuốt hay bọc
+    lại thành lỗi mơ hồ, và cũng không tạo login role bừa — cả giao dịch rollback cùng nhau (đã đo:
+    role login không còn tồn tại sau exception). Không cần sửa code, chỉ chốt hồi quy bằng test."""
+    import psycopg
+    import pytest
+    name = "zz_test_missing_role_login"
+    try:
+        with pytest.raises(psycopg.Error, match="zz_test_missing_role_target"):
+            bootstrap.provision_postgres(migrated_engine, [(name, "pw-x", "zz_test_missing_role_target")])
+        with migrated_engine.connect() as c:
+            assert c.execute(sa.text("SELECT 1 FROM pg_roles WHERE rolname = :n"), {"n": name}).fetchone() is None
+    finally:
+        with migrated_engine.begin() as c:
+            c.execute(sa.text(f"DROP ROLE IF EXISTS {name}"))
+
+
 def test_reseed_skips_when_security_is_empty(migrated_engine):
     cfg = bootstrap.alembic_config(os.environ["TEST_DATABASE_URL"])
     assert bootstrap.reseed_industry_if_needed(migrated_engine, cfg) == ("skipped:security-rong", 0)

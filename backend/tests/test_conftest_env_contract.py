@@ -18,14 +18,35 @@ agent.__main__`, hay chỉ cần thêm một thư mục test sắp trước `age
 """
 from __future__ import annotations
 
+import importlib.util
 import os
 import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 TESTS = Path(__file__).resolve().parent
 CONFTEST = TESTS / "conftest.py"
 BACKEND = TESTS.parent
+
+
+def _root_conftest():
+    """Nạp `tests/conftest.py` bằng ĐƯỜNG DẪN tường minh, không qua `import conftest`.
+
+    🔴 `sys.modules['conftest']` không đáng tin khi chạy CẢ BỘ: bốn `conftest.py` (`tests/`,
+    `tests/agent/`, `tests/clickhouse/`, `tests/ingester/`) không nằm trong package (không
+    `__init__.py`) nên pytest coi mỗi file là module TRẦN cùng tên `conftest` — file nạp SAU CÙNG
+    trong thứ tự thu thập đè `sys.modules['conftest']`. Đo được 2026-09-08: `pytest tests/
+    test_conftest_env_contract.py` một mình thì `from conftest import assert_test_db_name` chạy
+    đúng, nhưng `pytest tests -q` (cả bộ) cho `ImportError: cannot import name 'assert_test_db_name'
+    from 'conftest' (.../tests/ingester/conftest.py)` — đúng bẫy mà chính file này đã cảnh báo ở
+    docstring đầu file, lần này cắn vào một test MỚI thêm sau.
+    """
+    spec = importlib.util.spec_from_file_location("_dlck_root_conftest_probe", CONFTEST)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_conftest_tu_nap_dotenv_truoc_khi_doc_bien():
@@ -56,3 +77,19 @@ def test_dotenv_that_su_cung_cap_bien_khi_shell_khong_co():
     assert r.stdout.strip() == "CO", (
         f"load_dotenv() một mình không dựng được TEST_DATABASE_URL (nhận {r.stdout.strip()!r}) "
         "— hoặc .env gốc repo thiếu biến, hoặc REPO_ROOT của core.env trỏ sai")
+
+
+def test_assert_test_db_name_rejects_test_db_equal_to_prod_db():
+    """Tên DB test nay đến từ `.env` (`POSTGRES_TEST_DB`), không còn là hằng số `dulieu_test` trong
+    code — regex 'là identifier sạch' không đủ để khoá bán kính `DROP DATABASE ... WITH (FORCE)`."""
+    with pytest.raises(AssertionError):
+        _root_conftest().assert_test_db_name("dulieu", "dulieu")
+
+
+def test_assert_test_db_name_rejects_a_name_without_the_test_suffix():
+    with pytest.raises(AssertionError):
+        _root_conftest().assert_test_db_name("dulieu_prod", "dulieu")
+
+
+def test_assert_test_db_name_accepts_a_proper_test_db_name():
+    _root_conftest().assert_test_db_name("dulieu_test", "dulieu")   # không raise là đạt

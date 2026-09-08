@@ -97,7 +97,8 @@ def _daily(engine, tickers: list[str] | None) -> int:
     try:
         cl = _codes_or_raise(engine, tickers)
         by_organ = {c.organ_code: c for c in cl.codes}
-        log.info(f"bắt đầu {datetime.now(VN):%H:%M} · {len(cl.codes)} mã · ước ~{len(cl.codes) * 1.5 / 60:.0f} phút")
+        log.info("bắt đầu %s · %d mã · ước ~%.0f phút",
+                 f"{datetime.now(VN):%H:%M}", len(cl.codes), len(cl.codes) * 1.5 / 60)
         with price_fetch.open_fetcher() as f:
             res = f.many([c.organ_code for c in cl.codes], max_pages=1)
             retries = f.retries
@@ -205,8 +206,10 @@ def _backfill(engine, tickers: list[str] | None, max_minutes: float | None,
                              cursor, todo[0].ticker)
         else:
             stats["subset"] = True
-        log.info(f"bắt đầu {datetime.now(VN):%H:%M} · con trỏ {(cursor or 'đầu danh sách') if tickers is None else '(--codes)'}"
-                 f" · còn {len(todo)} mã · hạn {_short(stop_at)}")
+        log.info("bắt đầu %s · con trỏ %s · còn %d mã · hạn %s",
+                 f"{datetime.now(VN):%H:%M}",
+                 (cursor or "đầu danh sách") if tickers is None else "(--codes)",
+                 len(todo), _short(stop_at))
         with price_fetch.open_fetcher() as f:
             pauses = 0                  # số lần nghỉ LIÊN TIẾP chưa có mã nào qua; về 0 khi một mã tải được
             for i, c in enumerate(todo, 1):

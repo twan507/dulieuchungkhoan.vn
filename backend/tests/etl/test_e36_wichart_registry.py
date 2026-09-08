@@ -69,6 +69,13 @@ def test_build_raises_when_doc_collects_a_series_the_module_lacks(monkeypatch):
         wr.build()
 
 
+def test_build_raises_when_doc_is_given_without_tier_x():
+    """doc và tier_x phải đi CÙNG NHAU: truyền doc mà quên tier_x từng bị nuốt im lặng —
+    `tier_x = list(None or [])` = `[]`, mọi key thành tier mặc định, không một tiếng động (Chuẩn M7)."""
+    with pytest.raises(wr.RegistryError, match="tier_x"):
+        wr.build(doc={})
+
+
 def test_key_groups_lists_each_key_once_with_its_namespace():
     kg = dict(wr.key_groups(wr.build()))
     assert len(kg) == 68

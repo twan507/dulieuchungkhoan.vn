@@ -52,7 +52,8 @@ def provision_postgres(engine: sa.Engine, users) -> list[str]:
     with engine.begin() as conn:
         raw = conn.connection.driver_connection          # psycopg.Connection — để ghép identifier/literal an toàn
         for name, password, role in users:
-            _ident(name), _ident(role)
+            _ident(name)
+            _ident(role)
             with raw.cursor() as cur:
                 cur.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", (name,))
                 if cur.fetchone() is None:
@@ -70,7 +71,8 @@ def _ch_literal(s: str) -> str:
 def provision_clickhouse(client, users) -> list[str]:
     done: list[str] = []
     for name, password, role in users:
-        _ident(name), _ident(role)
+        _ident(name)
+        _ident(role)
         client.command(f"CREATE USER IF NOT EXISTS {name} IDENTIFIED WITH sha256_password BY {_ch_literal(password)}")
         client.command(f"ALTER USER {name} IDENTIFIED WITH sha256_password BY {_ch_literal(password)}")
         client.command(f"GRANT {role} TO {name}")
@@ -100,7 +102,12 @@ def _rerun_seed_revision(engine: sa.Engine, cfg: Config) -> None:
 
 def reseed_industry_if_needed(engine: sa.Engine, cfg: Config) -> tuple[str, int]:
     """Kho mới: `0013` chạy lúc `market.security` rỗng ⇒ lớp 2 0 dòng, không báo. Khi security đã có
-    dòng mà override rỗng thì chạy lại riêng `0013` (xem `_rerun_seed_revision`)."""
+    dòng mà override rỗng thì chạy lại riêng `0013` (xem `_rerun_seed_revision`).
+
+    Hàm này kiểm sau reseed override **> 0** dòng, KHÔNG kiểm **= 161** như spec §5.4 bước 4 viết —
+    161 là kích thước hiện tại của bảng ánh xạ (`docs/20-design/industry-mapping.json`), số đó do
+    `database/README.md` sở hữu và kiểm tay ở bước 4 của "Bootstrap DB mới"; hardcode `161` ở đây sẽ
+    vỡ ngay khi bảng ánh xạ lớn thêm, và mâu thuẫn với seam §6 (ca "1 ticker ⇒ 1 dòng" của test)."""
     q_sec = sa.text("SELECT count(*) FROM market.security WHERE issuer_id IS NOT NULL")
     q_ovr = sa.text("SELECT count(*) FROM market.issuer_industry_override")
     with engine.connect() as c:
@@ -120,6 +127,9 @@ def reseed_industry_if_needed(engine: sa.Engine, cfg: Config) -> tuple[str, int]
 def main(argv: list[str] | None = None) -> int:
     load_dotenv()
     logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    # `provision_clickhouse` ghép mật khẩu vào THÂN câu SQL (`ALTER USER ... IDENTIFIED WITH ... BY '<mật khẩu>'`,
+    # xem `_ch_literal`) — chặn ở đây để một `LOG_LEVEL=DEBUG` sau này không làm driver log DEBUG in nó ra.
+    logging.getLogger("clickhouse_connect").setLevel(logging.INFO)
     missing = [k for k in REQUIRED if not os.environ.get(k)]
     if missing:
         print("bootstrap: thiếu env: " + ", ".join(missing), file=sys.stderr)
