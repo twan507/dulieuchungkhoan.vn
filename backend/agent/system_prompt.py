@@ -19,6 +19,7 @@ from __future__ import annotations
 import datetime as dt
 
 from agent.skills import load_l1
+from core.clock import today_vn
 
 SCOPE_GUARD = """Bạn chỉ trả lời trong lĩnh vực chứng khoán, tài chính và kinh tế: thị trường và cổ phiếu, doanh nghiệp niêm yết, vĩ mô, chính sách tiền tệ và tài khoá, các loại tài sản tài chính và quan hệ giữa chúng.
 
@@ -50,7 +51,7 @@ def build_tool_rules(hom_nay: dt.date | None = None) -> str:
     trả lời "mốc cập nhật gần nhất của tôi là tháng 1/2026" ⇒ trả lời sai trong khi kho có
     đúng số đó. Neo ngày hiện tại và bắt tra trước khi phủ định là cách rẻ nhất đóng ca này.
     """
-    return TOOL_RULES_MAU.format(hom_nay=(hom_nay or dt.date.today()).strftime("%d/%m/%Y"))
+    return TOOL_RULES_MAU.format(hom_nay=(hom_nay or today_vn()).strftime("%d/%m/%Y"))
 
 
 def build_system_blocks(hom_nay: dt.date | None = None) -> list[dict]:

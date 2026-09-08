@@ -10,6 +10,8 @@ import re
 from datetime import date
 from pathlib import Path
 
+from core.clock import today_vn
+
 BAR_TABLES = ["bar_1m", "index_bar_1m"]
 FRAME_TABLES = ["trade", "quote", "snapshot_delta", "index_delta", "pt_match"]
 _PART_RE = re.compile(r"^\d{6}$")
@@ -36,7 +38,7 @@ def _prune_bars(backup_dir: Path, table: str, keep: int = 7) -> list[str]:
 
 
 def run_backup(client, backup_dir: Path, today: date | None = None) -> list[str]:
-    today = today or date.today()
+    today = today or today_vn()
     stamp = today.strftime("%Y%m%d")
     cur_month = today.strftime("%Y%m")
     actions: list[str] = []
