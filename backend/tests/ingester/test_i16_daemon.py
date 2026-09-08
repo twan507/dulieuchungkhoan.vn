@@ -1,0 +1,125 @@
+"""Daemon: ngoài phiên ngủ, trong phiên chạy, lỗi khởi động (≥ 2) thoát để Docker khởi động lại (spec §5.5)."""
+import asyncio
+from datetime import datetime, timedelta
+
+from ingester.main import SESSION_END_MEASURE, SESSION_END_RUN, SESSION_START, TZ, daemon, next_window
+
+
+def vn(y, m, d, h, mi):
+    return datetime(y, m, d, h, mi, tzinfo=TZ)
+
+
+# 2026-09-08 là thứ 3 · 11/09 thứ 6 · 12/09 thứ 7 · 14/09 thứ 2
+def test_next_window_friday_evening_rolls_to_monday():
+    assert next_window(vn(2026, 9, 11, 16, 0), SESSION_START, SESSION_END_RUN) == (vn(2026, 9, 14, 8, 30), vn(2026, 9, 14, 15, 5))
+
+
+def test_next_window_saturday_rolls_to_monday():
+    assert next_window(vn(2026, 9, 12, 10, 0), SESSION_START, SESSION_END_RUN) == (vn(2026, 9, 14, 8, 30), vn(2026, 9, 14, 15, 5))
+
+
+def test_next_window_early_morning_is_the_same_day():
+    assert next_window(vn(2026, 9, 8, 7, 0), SESSION_START, SESSION_END_RUN) == (vn(2026, 9, 8, 8, 30), vn(2026, 9, 8, 15, 5))
+
+
+def test_next_window_inside_session_returns_the_open_window():
+    assert next_window(vn(2026, 9, 8, 9, 0), SESSION_START, SESSION_END_RUN) == (vn(2026, 9, 8, 8, 30), vn(2026, 9, 8, 15, 5))
+
+
+def test_next_window_at_15_05_is_already_tomorrow():
+    assert next_window(vn(2026, 9, 8, 15, 5), SESSION_START, SESSION_END_RUN)[0] == vn(2026, 9, 9, 8, 30)
+
+
+def test_measure_window_ends_15_10():
+    assert next_window(vn(2026, 9, 8, 9, 0), SESSION_START, SESSION_END_MEASURE)[1] == vn(2026, 9, 8, 15, 10)
+
+
+class FakeClock:
+    def __init__(self, start):
+        self.t = start
+        self.sleeps = []
+
+    def now(self):
+        return self.t
+
+    async def sleep(self, s):
+        self.sleeps.append(s)
+        self.t += timedelta(seconds=s)
+
+
+def test_daemon_sleeps_until_08_30_then_runs_one_session():
+    fc = FakeClock(vn(2026, 9, 8, 7, 0))
+    stop = asyncio.Event()
+    calls = []
+
+    async def session():
+        calls.append(fc.now())
+        fc.t = vn(2026, 9, 8, 15, 5)      # phiên chạy tới deadline như `_run_run`
+        stop.set()
+        return 0
+
+    rc = asyncio.run(daemon("run", session, clock=fc.now, sleep=fc.sleep, stop=stop, end_hm=SESSION_END_RUN))
+    assert rc == 0
+    assert calls == [vn(2026, 9, 8, 8, 30)]
+    assert max(fc.sleeps) <= 60 and sum(fc.sleeps) == 90 * 60
+
+
+def test_daemon_runs_immediately_when_inside_the_window_and_exits_on_startup_failure():
+    fc = FakeClock(vn(2026, 9, 8, 9, 0))
+    calls = []
+
+    async def session():
+        calls.append(fc.now())
+        return 3                          # hợp đồng khởi động hỏng ⇒ thoát để Docker restart
+
+    rc = asyncio.run(daemon("run", session, clock=fc.now, sleep=fc.sleep, stop=asyncio.Event(), end_hm=SESSION_END_RUN))
+    assert rc == 3 and calls == [vn(2026, 9, 8, 9, 0)] and fc.sleeps == []
+
+
+def test_daemon_after_a_clean_session_waits_for_the_next_window():
+    fc = FakeClock(vn(2026, 9, 8, 9, 0))
+    stop = asyncio.Event()
+    calls = []
+
+    async def session():
+        calls.append(fc.now())
+        fc.t = vn(2026, 9, 8, 15, 5)
+        if len(calls) == 2:
+            stop.set()
+        return 1                          # đối chứng lệch = phiên vẫn kết thúc bình thường, không thoát
+
+    asyncio.run(daemon("run", session, clock=fc.now, sleep=fc.sleep, stop=stop, end_hm=SESSION_END_RUN))
+    assert calls == [vn(2026, 9, 8, 9, 0), vn(2026, 9, 9, 8, 30)]
+
+
+import signal
+import sys
+
+from ingester.main import install_loop_stop
+
+
+def test_install_loop_stop_declines_on_windows_and_arms_on_posix():
+    async def scenario():
+        stop = asyncio.Event()
+        armed = install_loop_stop(stop)
+        if sys.platform == "win32":
+            assert armed is False and not stop.is_set()
+            return
+        assert armed is True
+        signal.raise_signal(signal.SIGTERM)
+        await asyncio.sleep(0.05)          # handler chạy ở vòng lặp kế
+        assert stop.is_set()
+    asyncio.run(scenario())
+
+
+def test_daemon_returns_right_after_a_session_ended_by_signal():
+    fc = FakeClock(vn(2026, 9, 8, 10, 0))
+    stop = asyncio.Event()
+
+    async def session():
+        fc.t = vn(2026, 9, 8, 10, 5)
+        stop.set()                          # tín hiệu đến giữa phiên: _run_run đóng phiên rồi trả về
+        return 0
+
+    rc = asyncio.run(daemon("run", session, clock=fc.now, sleep=fc.sleep, stop=stop, end_hm=SESSION_END_RUN))
+    assert rc == 0 and fc.sleeps == []      # không ngủ tới phiên kế — thoát ngay để container dừng
