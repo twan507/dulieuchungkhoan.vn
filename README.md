@@ -75,11 +75,18 @@ dulieuchungkhoan.vn/
 
 ## Dựng trên máy mới — dev hay VPS cùng một đường (lát 12, 2026-09-08)
 
-1. `git clone -c core.longpaths=true <url>` *(cờ vô hại trên Linux; cần trên Windows vì đường dẫn dài trong `docs/30-skills/corpus/`)*, rồi `cp .env.example .env` và điền — **chỉ nguyên tố** (host · port · db · user · password), bảy URL được `backend/core/env.py` ráp lúc chạy. Kiểm tên biến, không in giá trị — **chính** là dạng container (VPS không cài uv/Python), biến thể dev native chạy được cả trước lẫn sau `up`:
+1. `git clone -c core.longpaths=true <url>` *(cờ vô hại trên Linux; cần trên Windows vì đường dẫn dài trong `docs/30-skills/corpus/`)*, rồi `cp .env.example .env` và điền — **chỉ nguyên tố** (host · port · db · user · password), bảy URL được `backend/core/env.py` ráp lúc chạy. Rồi kiểm tên biến — lệnh chỉ in TÊN, không bao giờ in giá trị.
+
+   Cách **chính**, trong container (VPS không cần cài uv/Python):
 
    ```bash
-   docker compose run --rm --no-deps migrate python -m core.env check   # chính — VPS không cần cài gì
-   cd backend && uv run python -m core.env check                        # biến thể dev native
+   docker compose run --rm --no-deps migrate python -m core.env check
+   ```
+
+   Biến thể **dev native**, chạy được cả trước lẫn sau `up`:
+
+   ```bash
+   cd backend && uv run python -m core.env check
    ```
 
 2. **Một lệnh lên cả hệ** — kho (Postgres · Redis · ClickHouse), `migrate` one-shot (alembic head · `ch_migrate` · cấp 4 user login · tự seed ngành lớp 2), `api`, `etl` (vỏ job, heartbeat tới lát 13), `ingester` (daemon, tự ngủ ngoài phiên):
