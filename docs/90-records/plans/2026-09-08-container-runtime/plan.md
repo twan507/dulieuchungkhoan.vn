@@ -1128,6 +1128,72 @@ def install_loop_stop(stop: asyncio.Event) -> bool:
 
 Run: `cd backend && PYTHONIOENCODING=utf-8 uv run pytest tests/ingester/test_i16_daemon.py tests/ingester/test_i10_main.py -q` — Expected: xanh (trên Windows test đầu đi nhánh `False`).
 
+- [ ] **Step 3c — BỔ SUNG theo phán quyết 2026-09-08 (báo cáo implementer Task 6): tách `shutdown` khỏi `stop` của phiên; test cũ gọi phiên có hạn.**
+
+Hai lỗi Step 3b để lại: (a) `session_timer` của `_run_run`/`_run_measure` cũng `stop.set()` lúc tới mốc giờ, mà daemon dùng chính event đó để biết "có tín hiệu" ⇒ phiên bình thường kết thúc là daemon thoát, nhánh "chờ phiên kế" không bao giờ chạy thật; (b) ba test cũ gọi `run("run")` không `minutes` nay đi qua daemon và **ngủ tới 08:30** nếu chạy ngoài giờ.
+
+Sửa trong `backend/ingester/main.py`:
+
+```python
+async def _relay(src: asyncio.Event, dst: asyncio.Event) -> None:
+    """Chuyển tín hiệu dừng (event `shutdown` của cả tiến trình) vào `stop` của PHIÊN đang chạy."""
+    await src.wait()
+    dst.set()
+
+
+async def _session_with_relay(shutdown: asyncio.Event, factory) -> int:
+    """Mỗi phiên một `stop` mới (mốc giờ chỉ đóng phiên đó, không đóng daemon); tín hiệu thì đóng cả hai.
+    Relay huỷ khi phiên xong để `stop` cũ không bị đụng."""
+    stop = asyncio.Event()
+    relay = asyncio.create_task(_relay(shutdown, stop))
+    try:
+        return await factory(stop)
+    finally:
+        relay.cancel()
+```
+
+Trong `run()`: event của tín hiệu đặt tên `shutdown` (`shutdown = asyncio.Event(); install_loop_stop(shutdown)`); đường `--minutes`: `return await _session_with_relay(shutdown, lambda stop: _run_run(cfg, minutes, stop=stop))` (measure tương tự với `_run_measure(minutes, out, stop=stop)`); trong daemon, `session()` gọi `_session_with_relay(shutdown, lambda stop: _run_run(cfg, None, stop=stop))` (measure tương tự); `daemon(..., stop=shutdown, ...)`. `daemon()` giữ `if stop.is_set(): return rc`. Docstring `install_loop_stop` nói rõ nó bật `shutdown`, relay đưa vào phiên.
+
+Test thêm vào `test_i16_daemon.py` (đỏ trước — `ImportError: _relay`):
+
+```python
+from ingester.main import _relay, _session_with_relay
+
+
+def test_relay_sets_the_session_stop_when_shutdown_fires():
+    async def scenario():
+        shutdown, stop = asyncio.Event(), asyncio.Event()
+        task = asyncio.create_task(_relay(shutdown, stop))
+        await asyncio.sleep(0)
+        assert not stop.is_set()
+        shutdown.set()
+        await asyncio.sleep(0.01)
+        assert stop.is_set()
+        await task
+    asyncio.run(scenario())
+
+
+def test_each_session_gets_a_fresh_stop_and_the_relay_is_cancelled_after_it():
+    async def scenario():
+        shutdown, seen = asyncio.Event(), []
+
+        async def factory(stop):
+            seen.append(stop)
+            return 7
+
+        assert await _session_with_relay(shutdown, factory) == 7
+        assert await _session_with_relay(shutdown, factory) == 7
+        assert seen[0] is not seen[1] and not seen[0].is_set() and not seen[1].is_set()
+        shutdown.set()                      # relay đã huỷ: bật shutdown sau khi phiên xong không đụng stop cũ
+        await asyncio.sleep(0.01)
+        assert not seen[1].is_set()
+    asyncio.run(scenario())
+```
+
+Ba test cũ đổi sang phiên có hạn (thêm chú thích `# minutes=: một phiên có hạn, không qua daemon (lát 12)`): `tests/ingester/test_i10_main.py::test_run_mode_returns_exit_3_when_clickhouse_unreachable` (`asyncio.run(run("run", minutes=1))`) và hai lời gọi trong `tests/ingester/test_i15_recovery_drain.py` (`asyncio.run(run("run", minutes=1)) == 3`).
+
+Run: `cd backend && PYTHONIOENCODING=utf-8 uv run pytest tests/ingester/test_i16_daemon.py tests/ingester/test_i10_main.py tests/ingester/test_i15_recovery_drain.py -q` — Expected: xanh. Commit riêng: `fix(ingester): separate the shutdown signal from the session deadline; bounded runs in tests`.
+
 - [ ] **Step 4: Commit**
 
 ```bash
