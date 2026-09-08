@@ -339,7 +339,8 @@ git commit -m "feat(core): assemble the seven connection URLs from elemental .en
 """`.env.example` ↔ `core.env` ↔ code phải cùng nói một chuyện (spec lát 12 §6, CLAUDE.md §1.7).
 
 Ba vế: (1) mọi khoá trong `.env.example` đều là khoá `core.env` biết; (2) mọi khoá bắt buộc
-có mặt và KHÔNG bị comment; (3) không khoá `*_URL` nào — URL là thứ ráp, không phải thứ khai.
+có mặt và KHÔNG bị comment; (3) không khai khoá nào trong bảy URL RÁP (`ASSEMBLED_KEYS`) — URL kết nối là thứ ráp,
+không phải thứ khai; khoá `*_URL` khác (vd `LLM_BASE_URL`) hợp lệ khi thuộc `KNOWN_KEYS`.
 Vế 4 soi CODE: mọi tên env đọc bằng literal trong code sản phẩm phải là khoá biết hoặc khoá ráp.
 """
 from __future__ import annotations
