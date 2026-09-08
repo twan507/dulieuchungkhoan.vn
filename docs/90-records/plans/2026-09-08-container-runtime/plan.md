@@ -374,11 +374,13 @@ def test_example_has_every_required_key_uncommented():
     assert REQUIRED_KEYS <= active, sorted(REQUIRED_KEYS - active)
 
 
-def test_example_declares_no_url():
+def test_example_declares_no_assembled_url():
+    """URL kết nối là thứ RÁP, không phải thứ khai. (Ruling khi thực thi 2026-09-08: bản đầu còn cấm mọi
+    khoá đuôi `_URL` — sai, vì `LLM_BASE_URL` là endpoint API tuỳ chọn hợp lệ trong `OPTIONAL_KEYS`;
+    khoá lạ đuôi `_URL` đã bị vế `test_example_only_contains_keys_core_env_knows` chặn.)"""
     active, commented = _example_keys()
     keys = active | commented
     assert not (keys & ASSEMBLED_KEYS), sorted(keys & ASSEMBLED_KEYS)
-    assert not [k for k in keys if k.endswith("_URL")]
 
 
 def test_every_env_name_read_in_code_is_a_known_or_assembled_key():
