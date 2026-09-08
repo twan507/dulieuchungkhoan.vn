@@ -178,7 +178,9 @@ lát 12  chạy được trong container  🔜 TIẾP THEO — **lát MỚI, ch�
                                    thật, `down` rồi `up` không mất gì.** Chưa có scheduler. **Phạm vi chốt 2026-09-08 (chủ dự án):**
                                    MỌI THỨ chạy bằng Docker — kể cả migration hai kho và `ingester` — đóng gói để lên VPS
                                    **một lệnh `docker compose up` là chạy, không cài gì thêm**; tiêu chí nghiệm thu chi tiết chốt
-                                   trong spec, không chốt trước; `ruff` KHÔNG thuộc lát này. Điểm vào bên dưới
+                                   trong spec, không chốt trước; `ruff` KHÔNG thuộc lát này. Điểm vào bên dưới.
+                                   🟡 **ĐANG THỰC THI** — nhánh `feat/container-runtime`, Task 0–9a xong; dừng 2026-09-08 giữa
+                                   Task 10; nối ở [ledger](../90-records/plans/2026-09-08-container-runtime/ledger.md)
 lát 13  scheduler trong container  bảng lịch trong code + chạy bù + chặn chạy chồng + thứ tự phụ thuộc (`fundamentals` sau `events`
                                    18:10 và sau `snapshot`; `snapshot` KHÔNG trước ~15:20 — số đo lát 11), thay 11 task Windows, bật
                                    lại [4d]; `classify` chạy ĐỘC LẬP với `news` kiểu quét sàn (chủ dự án chốt 2026-09-07 — xem điểm

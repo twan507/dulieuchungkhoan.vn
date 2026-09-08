@@ -194,3 +194,29 @@ $ ls -la ./clickhouse-backups
 **Sau đó:** Task 11 (tài liệu sống + "Điểm vào cho lát 13" + cả bộ test = AC8 + số vào `database/README.md`), Task 12 (review toàn nhánh hai trục, gỡ 11 task Windows — chủ dự án, xoá 6 volume cũ `infra_*`/`dlck-infra_*` — không đụng `tutor-infra_pgdata`, build sạch từ clone, khép nhánh).
 
 **Trạng thái máy lúc dừng:** project `dlck` đang chạy (7 service, `migrate` Exited 0); ba container `infra-*` cũ đã gỡ, sáu volume cũ còn nguyên; `.env` hình dạng nguyên tố (`CLICKHOUSE_BACKUP_DIR=./deploy/infra/clickhouse-backups`), bản cũ `.env.bak-2026-09-08`; sổ SDD (brief/report/gói diff) ở scratchpad phiên `24deb585-…`, không trong repo.
+
+## Sổ phán quyết — gom từ sổ SDD (mọi quyết định trợ lý tự ra thay chủ dự án, theo thứ tự)
+
+| # | Ở đâu | Phán quyết | Nếu sai thì mất gì |
+|---|---|---|---|
+| 1 | Viết plan | Spec §5.4 nói `downgrade 0012 → upgrade head`; head `0020` ⇒ lệnh đó xoá dữ liệu tám migration. Bootstrap chạy **riêng revision `0013`** qua `Operations.context`; spec có đính chính | Cách seed khác chữ README cũ — Task 11 thay README |
+| 2 | Tiền kiểm SDD | `.env` là việc chủ dự án, không chặn Task 1–8; sau đó chủ dự án **uỷ quyền trợ lý sửa thẳng** (16:00), chuyển bằng script không in giá trị | — |
+| 3 | Task 2 | Bỏ vế cấm mọi khoá đuôi `_URL` (`LLM_BASE_URL` hợp lệ), giữ vế `ASSEMBLED_KEYS`; docstring sửa theo | Khoá `*_URL` mới chỉ bị chặn nếu chưa có trong `KNOWN_KEYS` |
+| 4 | Task 3 | Thêm `path_separator = os` vào `alembic.ini` (alembic 1.19 cảnh báo deprecation mỗi lượt) | — |
+| 5 | Task 4 | Docstring `core/clock.py` không viết nguyên `date.today()` (phép kiểm quét cả docstring); import module-level ở `ch_backup` | — |
+| 6 | Task 5 | Hit grep còn lại là `backend/README.md` (docs, Task 11); gỡ import `sys` mồ côi; docstring `core/shutdown.py` **thu hẹp** vì ingester không có `except KeyboardInterrupt` — đường dừng tử tế chuyển sang Task 6 (`install_loop_stop`), spec có đính chính | — |
+| 7 | Task 6 | Step 3c: tách event `shutdown` (tín hiệu) khỏi `stop` của từng phiên (mốc giờ), relay mỗi phiên; ba test cũ gọi `run("run", minutes=1)`. Step 3d: chỉ cài `install_loop_stop` ở `run`/`measure` để `count`/`reconcile` còn ngắt được | Thêm một task relay mỗi phiên |
+| 8 | Task 9 | Chặn ở AC4 ⇒ Task 9a: Dockerfile tạo sẵn và `chown` ba thư mục runtime + `/backups`; mở file log vào hợp đồng exit 2; xoá ba volume `dlck_ingester_*` rỗng rồi tạo lại | Volume tạo lại một lần (rỗng) |
+| 9 | Task 9a | `chown /backups` trong image vô tác dụng (bind mount) — **giữ, vô hại**; AC7 là phép kiểm thật | Một thư mục thừa trong image |
+| 10 | Sau AC7 | `.env` cũ `CLICKHOUSE_BACKUP_DIR=./clickhouse-backups` (gốc `deploy/infra` cũ) ⇒ sửa về `./deploy/infra/clickhouse-backups`, dời zip, tạo lại service | — |
+
+**Minor để dành cho review toàn nhánh (Task 12), không mở vòng sửa:** T1 import giữa file `test_env.py`; `check()` coi khoá khai rỗng là có; T2 contract test không có fixture phản ví dụ, hai docstring nói cùng ý; T3 `resolve_backup_dir` thiếu ca `""`/`"."`; T4 năm chỗ `datetime.now(VN).date()` có sẵn chưa dùng `today_vn`, `today_vn()` không đối số chưa test đồng hồ giả; T5 `install_signal_handlers` để lại handler trong test in-process, danh sách test hồi quy của brief thiếu 7 file CLI (reviewer đã chạy: 48 passed); T6 docstring `daemon()` thiếu nhánh thoát theo tín hiệu, ba khối import rải trong `test_i16`, `shutdown` tạo cả cho `count`/`reconcile`; T7 contract compose không chặn `profiles` quay lại, **rác có sẵn** `test_c99_dedup_probe.py:20` import ba tên đã dời (chỉ vỡ khi `RUN_PROBE=1`); T8 `main()` chưa test trực tiếp, `_ch_literal` chưa test mật khẩu có quote; T9a regex Dockerfile không ghim `/backups` trong `chown`, hai dấu cách trước `&&`.
+
+## Hướng dẫn nối phiên (đọc trước khi làm gì)
+
+1. Nhánh `feat/container-runtime`, HEAD là commit ledger này; **chưa merge, chưa push**. Điểm dừng ở mục ⏸️ phía trên; việc còn lại = plan Task 10 (từ họ `events`), AC6, Task 11, Task 12.
+2. Quy trình: `superpowers:subagent-driven-development` với plan [`plan.md`](plan.md); **mọi subagent model `sonnet`** (review toàn nhánh Task 12 nâng `opus`); workspace SDD đặt ở **scratchpad ngoài repo** (không tạo `.superpowers/`); brief từng task trích lại bằng `scripts/task-brief plan.md <N> <file>` của skill; harness **không có SendMessage** ⇒ mỗi vòng sửa là một implementer mới mang brief + report + findings.
+3. **`tests/docs` đang đỏ có chủ đích** (link chết tới file đã xoá ở Task 5/7) cho tới Task 11 Step 7b; đừng "sửa" bằng cách nới test. Cả bộ `pytest tests -q` chỉ chạy ở Task 11 Step 8 và Task 12.
+4. Chủ dự án đã **uỷ quyền sửa `.env`** (AC6 dùng quyền này: đổi `ETL_DB_PASSWORD`, `docker compose run --rm migrate`, `run --rm etl python -m etl omo`). Không bao giờ in giá trị.
+5. Kho dev là **disposable** (chủ dự án chốt xoá dựng lại); stack `dlck` để nguyên là được — `docker compose run --rm etl …` tự chạy lại `migrate` (idempotent) qua `depends_on`.
+6. Sáu volume cũ `infra_*`/`dlck-infra_*` chỉ xoá ở Task 12 sau khi mọi AC xanh; **không đụng `tutor-infra_pgdata`**. 11 task Windows: chủ dự án gỡ bằng một lệnh PowerShell ở Task 12 Step 2.
