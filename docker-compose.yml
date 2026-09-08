@@ -4,6 +4,19 @@
 # Job: docker compose run --rm etl python -m etl <job> [cờ]   ·  REPL: docker compose run --rm agent
 name: dlck
 
+# Bảy biến chung mọi service app. CLICKHOUSE_BACKUP_DIR KHÔNG nằm ở đây (review toàn nhánh 2026-09-08,
+# bất đồng nhẹ với phán quyết #9): chỉ `etl` mount /backups, bốn service kia mang biến trỏ vào một
+# đường không mount là vô nghĩa — lỡ chạy core.ch_backup ở đó sẽ ghi vào lớp ghi của container rồi
+# biến mất khi container bị recreate, im lặng và tưởng là thành công.
+x-app-env: &app-env
+  POSTGRES_HOST: postgres
+  REDIS_HOST: redis
+  CLICKHOUSE_HOST: clickhouse
+  TZ: Asia/Ho_Chi_Minh
+  INGESTER_LOG_DIR: /var/lib/dlck/logs
+  INGESTER_MEASURE_DIR: /var/lib/dlck/measure
+  INGESTER_SPILL_DIR: /var/lib/dlck/spill
+
 x-app: &app
   build:
     context: .
@@ -11,14 +24,7 @@ x-app: &app
   image: dlck-backend
   env_file: .env
   environment:
-    POSTGRES_HOST: postgres
-    REDIS_HOST: redis
-    CLICKHOUSE_HOST: clickhouse
-    TZ: Asia/Ho_Chi_Minh
-    INGESTER_LOG_DIR: /var/lib/dlck/logs
-    INGESTER_MEASURE_DIR: /var/lib/dlck/measure
-    INGESTER_SPILL_DIR: /var/lib/dlck/spill
-    CLICKHOUSE_BACKUP_DIR: /backups
+    <<: *app-env
   networks:
     - dlck-net
 
@@ -114,6 +120,9 @@ services:
     restart: unless-stopped
     command: ["python", "-m", "etl"]
     stop_grace_period: 60s
+    environment:
+      <<: *app-env
+      CLICKHOUSE_BACKUP_DIR: /backups
     volumes:
       - ${CLICKHOUSE_BACKUP_DIR:-./deploy/infra/clickhouse-backups}:/backups
     depends_on:
@@ -125,6 +134,11 @@ services:
     <<: *app
     restart: unless-stopped
     command: ["python", "-m", "ingester"]
+    # 90s phủ đuôi dừng bình thường: wait_for(socket_task, 30s) + xả hàng đợi (_drain_for_verdict) +
+    # đối chứng reconcile thường. CỐ Ý không phủ timeout mặc định 300s của driver ClickHouse lúc
+    # reconcile (rc_client riêng, xem comment tại chỗ ở ingester/main.py) — nếu 90s không đủ, hàng
+    # chưa insert đã nằm ở spill và được _replay_startup_debt phát lại phiên sau; cái mất chỉ là
+    # dòng phán quyết reconcile của phiên đó (Chuẩn M9, review toàn nhánh 2026-09-08).
     stop_grace_period: 90s
     volumes:
       - ingester_logs:/var/lib/dlck/logs
