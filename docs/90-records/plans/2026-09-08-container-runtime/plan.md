@@ -553,7 +553,10 @@ def main() -> None:
 ```ini
 script_location = database/migrations
 prepend_sys_path = backend
+path_separator = os
 ```
+
+(`path_separator = os` — bổ sung khi thực thi 2026-09-08: thiếu nó alembic 1.19 in `DeprecationWarning` mỗi lượt, vi phạm luật output test sạch.)
 
 và `database/migrations/env.py` thành:
 
