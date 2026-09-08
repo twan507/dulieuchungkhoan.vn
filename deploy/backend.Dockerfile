@@ -9,7 +9,9 @@ COPY backend/ /app/backend/
 COPY database/ /app/database/
 ENV PATH="/app/backend/.venv/bin:$PATH"
 # REPO_ROOT của core/env.py = parents[2] của /app/backend/core/env.py = /app — đúng cấp với native.
-RUN useradd -m appuser && chown -R appuser /app
+# Điểm gắn volume phải có sẵn và thuộc appuser: Docker chép quyền của thư mục trong image sang volume mới;
+# không có sẵn thì volume ra đời root:root và tiến trình non-root không ghi được (AC4 lát 12, 2026-09-08).
+RUN mkdir -p /var/lib/dlck/logs /var/lib/dlck/measure /var/lib/dlck/spill /backups  && useradd -m appuser && chown -R appuser /app /var/lib/dlck /backups
 USER appuser
 EXPOSE 8000
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]

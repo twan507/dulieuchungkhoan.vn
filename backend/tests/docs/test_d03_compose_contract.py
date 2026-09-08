@@ -5,6 +5,7 @@ Danh sách biến compose được đè là TOÀN BỘ danh sách §5.2: thêm/b
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import yaml
@@ -66,3 +67,11 @@ def test_image_never_carries_secrets_or_tests():
     ignore = (REPO / ".dockerignore").read_text(encoding="utf-8").splitlines()
     assert ".env" in ignore and ".env.*" in ignore and "backend/tests" in ignore
     assert not (REPO / "backend" / ".dockerignore").exists()
+
+
+def test_image_owns_the_runtime_dirs_for_appuser():
+    """Volume có tên lấy quyền từ thư mục điểm gắn trong image; không có sẵn thì Docker tạo root:root và appuser không ghi được (AC4 lát 12)."""
+    dockerfile = (REPO / "deploy" / "backend.Dockerfile").read_text(encoding="utf-8")
+    for d in ("/var/lib/dlck/logs", "/var/lib/dlck/measure", "/var/lib/dlck/spill", "/backups"):
+        assert d in dockerfile, d
+    assert re.search(r"chown -R appuser [^\n]*/var/lib/dlck", dockerfile)

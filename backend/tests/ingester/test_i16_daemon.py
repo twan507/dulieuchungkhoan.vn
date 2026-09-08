@@ -180,3 +180,17 @@ def test_loop_stop_is_armed_only_for_run_and_measure(monkeypatch):
     assert armed == []                                        # count: giữ đường KeyboardInterrupt
     assert asyncio.run(main_mod.run("run", minutes=1)) == 0
     assert len(armed) == 1                                    # run: một lần, trước khi rẽ
+
+
+from ingester.config import Config as IngesterConfig
+
+
+def test_run_exits_2_when_the_day_log_cannot_be_opened(tmp_path, monkeypatch, capsys):
+    """Mở file log là điều kiện khởi động: volume sai quyền, ổ đầy ⇒ exit 2 có lý do, không traceback exit 1."""
+    blocker = tmp_path / "logs"
+    blocker.write_text("file, không phải thư mục", encoding="utf-8")
+    cfg = IngesterConfig(clickhouse_url="fake://", redis_url="redis://x",
+                         log_dir=blocker, measure_dir=tmp_path, spill_dir=tmp_path)
+    monkeypatch.setattr(main_mod.config, "load", lambda need_db: cfg)
+    assert asyncio.run(main_mod.run("run", minutes=1)) == 2
+    assert "không ghi được log" in capsys.readouterr().err

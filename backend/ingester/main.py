@@ -757,6 +757,18 @@ def _day_log_handler(cfg: config.Config) -> logging.Handler:
     return h
 
 
+def _attach_day_log(cfg: config.Config) -> logging.Handler | None:
+    """Gắn file log theo ngày vào root logger. Không mở được (volume sai quyền, ổ đầy…) ⇒ in lý do, trả None —
+    caller trả 2 theo hợp đồng "thiếu điều kiện khởi động ⇒ exit 2" (AC4 lát 12: volume root:root)."""
+    try:
+        h = _day_log_handler(cfg)
+    except OSError as e:
+        print(f"ingester: không ghi được log trong {cfg.log_dir}: {e}", file=sys.stderr)
+        return None
+    logging.getLogger().addHandler(h)
+    return h
+
+
 async def run(mode: str, minutes: float | None = None, out: str | None = None, d=None,
               count: str | None = None, t_from: str | None = None, t_to: str | None = None,
               use_db: bool = False) -> int:
@@ -776,18 +788,21 @@ async def run(mode: str, minutes: float | None = None, out: str | None = None, d
 
     cfg = config.load(need_db=True)
     if mode == "reconcile":
-        logging.getLogger().addHandler(_day_log_handler(cfg))
+        if _attach_day_log(cfg) is None:
+            return 2
         return await _run_reconcile(cfg, d)
     if mode == "run":
         install_loop_stop(shutdown)
         if minutes is not None:                               # đường nghiệm thu / chạy tay: N phút rồi thoát
-            logging.getLogger().addHandler(_day_log_handler(cfg))
+            if _attach_day_log(cfg) is None:
+                return 2
             return await _session_with_relay(shutdown, lambda stop: _run_run(cfg, minutes, stop=stop))
 
         async def session() -> int:                           # mỗi phiên một file log theo ngày
-            h = _day_log_handler(cfg)
+            h = _attach_day_log(cfg)
+            if h is None:
+                return 2
             root = logging.getLogger()
-            root.addHandler(h)
             try:
                 return await _session_with_relay(shutdown, lambda stop: _run_run(cfg, None, stop=stop))
             finally:
