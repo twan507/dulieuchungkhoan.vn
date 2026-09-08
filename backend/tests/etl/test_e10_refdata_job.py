@@ -12,7 +12,8 @@ def _raw():
 
 
 def _patch(monkeypatch, migrated_engine, raw):
-    monkeypatch.setattr(job_mod.refdata_fetch, "fetch", lambda: raw)
+    # fetch() trả (payload, số lần thử lại) từ 2026-09-07 — xem test_e62
+    monkeypatch.setattr(job_mod.refdata_fetch, "fetch", lambda: (raw, 0))
     # KHÔNG dùng str(engine.url) — SQLAlchemy che mật khẩu thành '***' trong repr
     monkeypatch.setenv("ETL_DATABASE_URL", os.environ["TEST_DATABASE_URL"])
     monkeypatch.setattr(job_mod, "load_dotenv", lambda: None)   # .env thật không được đè env test

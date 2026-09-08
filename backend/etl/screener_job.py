@@ -32,7 +32,7 @@ def run() -> int:
     if not url:
         log.error("thiếu ETL_DATABASE_URL")
         return 2
-    engine = sa.create_engine(url)
+    engine = sa.create_engine(url, pool_pre_ping=True)  # pool_pre_ping: kết nối trong pool chết sau khi máy ngủ giữa lượt (bài học price_job 2026-09-04)
     run_id = omo_store.open_run(engine, JOB)
     try:
         pages, retries = screener_fetch.fetch()
