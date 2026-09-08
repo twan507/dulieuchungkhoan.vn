@@ -33,6 +33,9 @@ Hệ thống có bốn thứ có thể "quyết định" nội dung câu trả l
 | 3 | `ANSWER_RULES` | không | **Luật trình bày của tầng sản phẩm**: số dẫn xuất phải kèm phép tính bằng số · phân biệt số tra được với giả định của đề · cấm nêu tỷ trọng, điểm mua/bán, vùng giá cụ thể |
 | 4 | `TOOL_RULES` | **có** — mang ngày hôm nay | Cách dùng công cụ, neo thời gian |
 
+🔴 **Vì sao khối 4 tồn tại — ca đã đo, đừng gỡ khi thấy nó thừa** *(đo 2026-09-07)*: hỏi CPI tháng 8/2026, model **không gọi công cụ nào** mà trả lời *"mốc cập nhật gần nhất của tôi là tháng 1/2026"* — sai, trong khi kho có đúng con số đó. Tri thức tự nhớ của model cũ hơn kho rất nhiều, nên nó phủ định sự tồn tại của dữ liệu thay vì đi tra. Neo ngày hôm nay + bắt tra trước khi phủ định là cách rẻ nhất đóng ca này. *(Lý do này trước 2026-09-07 chỉ nằm trong docstring `build_tool_rules()`; đưa lên đây theo §1.1 — tài liệu sống phải tường minh.)*
+
+
 Hai lý do `ANSWER_RULES` **không** nhập vào `TOOL_RULES`: tên khối kia tự khai *"chỉ nói cách dùng công cụ"* nên nhét luật trình bày vào là làm chú thích nói dối; và khối kia **đổi mỗi ngày**, gói luật ổn định vào đó là tự huỷ tiền tố cache MiniMax mỗi ngày một lần mà không được gì. Ba block đầu bất biến ⇒ tiền tố cache dài ra.
 
 ⚠️ `ANSWER_RULES` là **tầng sản phẩm, không phải nội dung skill** — nó nói *cách trình bày*, không nói *phân tích thế nào*. Ranh giới bốn tầng ở bảng trên giữ nguyên.
@@ -67,7 +70,9 @@ load_knowledge_reference(topic)   # Literal đóng 9 giá trị — đường v�
 
 **Vì sao không cho sinh SQL tự do:** chính xác hơn, tránh quét toàn bảng, kiểm soát được chi phí. Lý do này đã ghi ở [§6.3 kho dữ liệu](market-data-store.md) và giữ nguyên hiệu lực cho cả 9 function.
 
-## 2b. Sáu hình dạng kết quả — hợp đồng chung của cả 9 function
+## 2b. Sáu hình dạng kết quả — hợp đồng chung của **8 function tra dữ liệu**
+
+🔴 **`load_knowledge_reference` KHÔNG theo hợp đồng này, có chủ đích.** Nó không tra kho nên không có khái niệm "mã không tồn tại" hay "khoảng rỗng" để mà cần sáu hình dạng: thành công trả `{chu_de, noi_dung}`, chỉ nhánh chủ đề lạ mới dùng hình #5 (`loi`). Đây là hàm duy nhất trong 9 không dùng khuôn `agent/tools/_shared.py` *(rà 2026-09-07 — trước đó mục này tự nhận bao trùm "cả 9 function", không đúng)*.
 
 *(Đo thật 2026-09-07 bằng cách gọi từng hàm, không suy từ code. Đây là **nhà** của hợp đồng này: bản gốc bốn hình dạng nằm trong hồ sơ lát 10 ở `90-records/` — vùng bản-ghi-tại-thời-điểm không sửa được — nên mọi thay đổi về sau ghi ở đây.)*
 

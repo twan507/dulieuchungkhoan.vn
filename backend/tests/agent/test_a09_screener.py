@@ -11,7 +11,8 @@ import json
 
 import sqlalchemy as sa
 
-from agent.tools.compare_peers import so_sanh_cung_nganh
+from agent.labels import LABELS
+from agent.tools.compare_peers import TRAN_CHI_TIEU, so_sanh_cung_nganh
 from agent.tools.screen_stocks import loc_co_phieu
 
 
@@ -346,3 +347,29 @@ def test_compare_industry_code_la_bi_tu_choi_khong_ra_0_dong_cam(db, kho):
     out = json.loads(so_sanh_cung_nganh(db, industry_code="KHONGCO", metric_codes=["rtd21"]))
     assert out["loi"] is True
     assert "NGANHANG" in out["industry_code_hop_le"]
+
+
+def test_cat_bot_chi_tieu_phai_bao_co_khong_duoc_cat_cam(db, kho):
+    """`metric_codes` vượt `TRAN_CHI_TIEU` thì phải có cờ — luật 🔴 "Không bao giờ cắt câm".
+
+    Rà chuẩn hoá 2026-09-07: `TRAN_MA` (mã) có cả một cơ chế `da_cat_dau_vao` công phu kèm
+    comment giải thích cách tránh dương tính giả, nhưng `TRAN_CHI_TIEU` (chỉ tiêu) thì
+    `codes = codes[:TRAN_CHI_TIEU]` — cắt câm. Model xin 21 chỉ tiêu, nhận 15, và không có
+    trường nào nói 6 cái kia đã bị bỏ ⇒ nó kết luận "doanh nghiệp không có dữ liệu" cho
+    những chỉ tiêu chưa từng được truy vấn. Đúng ca đã trả giá ở `get_corporate_events`
+    (20/177 sự kiện) mà chatbot-semantic-layer §2b ghi lại.
+    """
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    xin = sorted(LABELS)                                     # 21 mã, đều hợp lệ
+    assert len(xin) > TRAN_CHI_TIEU                          # canh tiền đề của chính test này
+    out = json.loads(so_sanh_cung_nganh(db, tickers=["HPG"], metric_codes=xin))
+    assert out["da_cat_chi_tieu"] is True
+    assert out["so_chi_tieu_nhan"] == len(xin) and out["tran_chi_tieu"] == TRAN_CHI_TIEU
+
+
+def test_khong_cat_thi_khong_bao_co_cat(db, kho):
+    """Cờ phải tính từ việc CÓ CẮT THẬT, không phải từ "người gọi xin nhiều" — đúng bài học
+    `da_cat` dương tính giả đã ghi ở đầu `compare_peers.py`."""
+    db.execute(sa.text("SET LOCAL ROLE dlck_api"))
+    out = json.loads(so_sanh_cung_nganh(db, tickers=["HPG"], metric_codes=["rtd21", "rtq12"]))
+    assert "da_cat_chi_tieu" not in out and "tran_chi_tieu" not in out

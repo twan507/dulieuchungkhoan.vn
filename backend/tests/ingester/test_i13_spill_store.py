@@ -8,6 +8,7 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from zoneinfo import ZoneInfo
+import pytest
 
 from ingester.spill import SpillStore
 
@@ -245,3 +246,40 @@ def test_lock_excludes_second_process(tmp_path):
     r = subprocess.run([sys.executable, "-c", code, str(tmp_path)],
                        capture_output=True, cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
     assert r.returncode == 0, r.stderr.decode()
+
+
+# --- Hai nhánh của try_acquire mà docstring 🔴 mô tả nhưng không test nào canh ---
+# Rà chuẩn hoá 2026-09-07: chạy đột biến thật trên `spill.py` — (a) đặt `owned = True` TRƯỚC
+# `_scan()`, (b) bỏ `except OSError: self._release(); raise` — cả hai lượt đều **13 passed**.
+# Tức hai nhánh đã trả giá, đã hiểu, đã viết ra tám dòng docstring, mà không có gì giữ.
+
+def test_scan_hong_thi_nha_khoa_va_nem_tiep_khong_thanh_zombie(tmp_path, monkeypatch):
+    """`_scan()` ném OSError ⇒ phải NHẢ khoá rồi ném tiếp.
+
+    Ôm khoá mà `owned` vẫn False là tiến trình zombie: chính nó thử lại mãi không giành lại
+    được (khoá xung đột theo handle/OFD kể cả trong cùng tiến trình), tiến trình khác cũng
+    không nhận nuôi được. Bằng chứng nhả sạch: một store THỨ HAI giành được ngay sau đó.
+    """
+    s = SpillStore(tmp_path, cap_bytes=10**9)
+    monkeypatch.setattr(SpillStore, "_scan", lambda self: (_ for _ in ()).throw(OSError("ZZ quét hỏng")))
+    with pytest.raises(OSError):
+        s.try_acquire()
+    assert s.owned is False
+    monkeypatch.undo()
+    assert SpillStore(tmp_path, cap_bytes=10**9).try_acquire() is True   # khoá đã được nhả thật
+
+
+def test_owned_chi_bat_SAU_khi_scan_xong(tmp_path, monkeypatch):
+    """`owned` phải là False trong suốt lúc `_scan()` đang chạy.
+
+    Đặt nó trước `_scan()` mở khe cho một block xuống đĩa khi `seq`/`bytes_used` còn là giá
+    trị khởi tạo (1 và 0) — đo trên bản lỗi: file thứ hai ra đời TRÙNG seq mà `seq_collision`
+    không tăng, và trần đĩa nới ra bằng đúng khối nợ đang nằm sẵn.
+    """
+    thay = []
+    goc = SpillStore._scan
+    monkeypatch.setattr(SpillStore, "_scan", lambda self: (thay.append(self.owned), goc(self))[1])
+    s = SpillStore(tmp_path, cap_bytes=10**9)
+    assert s.try_acquire() is True
+    assert thay == [False], "owned đã bật TRƯỚC khi _scan() xong — đúng bug docstring mô tả"
+    assert s.owned is True

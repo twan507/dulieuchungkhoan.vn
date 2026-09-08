@@ -60,6 +60,11 @@ def so_sanh_cung_nganh(conn: sa.Connection, tickers: list[str] | None = None,
     la = [c for c in codes if c not in LABELS]
     if la:
         return to_json({"loi": True, "ly_do": f"ma chi tieu ngoai bang nhan: {la}", "ma_hop_le": sorted(LABELS)})
+    # Cắt thì PHẢI báo cờ (§2b: "Không bao giờ cắt câm"). Cờ tính từ việc có cắt THẬT,
+    # không từ việc người gọi xin nhiều — cùng bài học dương tính giả của `da_cat` ở trên.
+    da_cat_chi_tieu = len(codes) > TRAN_CHI_TIEU
+    canh_bao_chi_tieu = ({"da_cat_chi_tieu": True, "so_chi_tieu_nhan": len(codes),
+                          "tran_chi_tieu": TRAN_CHI_TIEU} if da_cat_chi_tieu else {})
     codes = codes[:TRAN_CHI_TIEU]
     mas_xin_goc = [t.upper() for t in (tickers or [])]
     if not mas_xin_goc and not industry_code:
@@ -104,13 +109,13 @@ def so_sanh_cung_nganh(conn: sa.Connection, tickers: list[str] | None = None,
         goi_y = {t: tra[t]["goi_y"] for t in khong_ton_tai}
         return to_json({"tim_thay": False, "khong_tim_thay": khong_ton_tai, "goi_y": goi_y,
                         "ly_do": "không mã nào trong danh sách tồn tại trong danh bạ",
-                        **canh_bao_dau_vao})
+                        **canh_bao_dau_vao, **canh_bao_chi_tieu})
 
     ma_hop_le = ma_hop_le_full[:TRAN_MA]
 
     ngay = conn.execute(sa.text("SELECT max(trading_date) FROM market.screener_daily")).scalar()
     if ngay is None:
-        return to_json({**rong(), "ngay_du_lieu": None, **canh_bao_dau_vao})
+        return to_json({**rong(), "ngay_du_lieu": None, **canh_bao_dau_vao, **canh_bao_chi_tieu})
     rows = conn.execute(sa.text("""
         SELECT s.ticker, ind.name_vi AS nganh, sd.payload->'stockScreenerItem' AS item
         FROM market.screener_daily sd
@@ -124,7 +129,7 @@ def so_sanh_cung_nganh(conn: sa.Connection, tickers: list[str] | None = None,
         LIMIT :lim
     """), {"ngay": ngay, "mas": ma_hop_le, "nganh": industry_code, "lim": TRAN_MA}).all()
     if not rows:
-        out_rong = {**rong(), "ngay_du_lieu": str(ngay), **canh_bao_dau_vao}
+        out_rong = {**rong(), "ngay_du_lieu": str(ngay), **canh_bao_dau_vao, **canh_bao_chi_tieu}
         if khong_ton_tai:
             # B3 (review lát 10): mọi nhánh có mã trượt phải kèm goi_y của ĐÚNG những mã đó —
             # cùng khuôn với nhánh "không mã nào hợp lệ" ở trên (F1), không chỉ liệt tên suông.
@@ -163,7 +168,7 @@ def so_sanh_cung_nganh(conn: sa.Connection, tickers: list[str] | None = None,
     #   lệ (không hơn) và tất cả đều có phiên screener thì rows == TRAN_MA dù KHÔNG có gì bị cắt
     #   (kết quả đã bị chặn bởi chính danh sách mas_xin, không phải bởi LIMIT).
     da_cat = len(ma_hop_le_full) > TRAN_MA or (not mas_xin and len(rows) >= TRAN_MA)
-    extra = {"ngay_du_lieu": str(ngay), "da_cat": da_cat, **canh_bao_dau_vao}
+    extra = {"ngay_du_lieu": str(ngay), "da_cat": da_cat, **canh_bao_dau_vao, **canh_bao_chi_tieu}
     if khong_ton_tai:
         extra["khong_tim_thay"] = khong_ton_tai
         # B3: đồng bộ với nhánh "if not rows" ở trên — mã trượt luôn kèm gợi ý của chính nó.

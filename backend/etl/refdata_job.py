@@ -38,10 +38,10 @@ def run(accept_drop: bool = False) -> int:
     if not url:
         log.error("thiếu ETL_DATABASE_URL")
         return 2
-    engine = sa.create_engine(url)
+    engine = sa.create_engine(url, pool_pre_ping=True)  # pool_pre_ping: kết nối trong pool chết sau khi máy ngủ giữa lượt (bài học price_job 2026-09-04)
     run_id = omo_store.open_run(engine, JOB)
     try:
-        raw = refdata_fetch.fetch()
+        raw, retries = refdata_fetch.fetch()
         n = refdata_normalize.normalize(raw)
         t = refdata_merge.merge(n)
         counts = {"quotes": len(n.quotes), "organization": len(n.orgs), "icb": len(n.icb)}
@@ -60,7 +60,7 @@ def run(accept_drop: bool = False) -> int:
             omo_store.close_run(engine, run_id, "failed", error=f"guard refused: {'; '.join(e.reasons)}")
             log.error("refdata từ chối: %s", e.reasons)
             return 1
-        stats = {**apply_stats, "counts": counts, **t.counters}
+        stats = {**apply_stats, "counts": counts, "retries": retries, **t.counters}
         if accept_drop:
             stats["accept_drop"] = True
         omo_store.close_run(engine, run_id, "success", stats)
@@ -75,6 +75,8 @@ def run(accept_drop: bool = False) -> int:
     except Exception as e:  # noqa: BLE001 — job biên ngoài: mọi lỗi đều phải vào etl_run
         omo_store.close_run(engine, run_id, "failed", error=f"{type(e).__name__}: {e}")
         log.exception("refdata thất bại")
-        return 1
+        # 2 = lỗi thật; 1 ở trên đã dành cho GuardRefused. Dùng chung một mã cho hai tình
+        # huống ngược nhau khiến người trực không phân biệt được "ngưỡng vượt" với "job hỏng".
+        return 2
     finally:
         engine.dispose()

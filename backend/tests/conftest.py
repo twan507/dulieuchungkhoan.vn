@@ -54,3 +54,77 @@ def expect_violation(conn, sql, params=None):
     except IntegrityError:
         nested.rollback()
         return True
+
+
+# --- ClickHouse ephemeral: MỘT container cho cả tests/clickhouse lẫn tests/ingester ---
+# Đặt ở conftest GỐC (tổ tiên chung) chứ không ở conftest con: import lại vào conftest
+# anh em tạo hai FixtureDef, đo được 2 container/lượt (rà 2026-09-07). Cùng bài học với
+# `migrated_engine` của Postgres — test-strategy.md §6.
+import os
+import socket
+import subprocess
+import time
+import uuid
+from pathlib import Path
+
+import clickhouse_connect
+
+IMAGE = "clickhouse/clickhouse-server:26.3.22.7"
+# KHÔNG tái định nghĩa REPO_ROOT (dòng 18 đã có, alembic dùng nó). Ở đây file nằm sâu
+# hơn một cấp so với chỗ cũ `tests/clickhouse/` nên parents[3] sẽ trỏ RA NGOÀI repo:
+# volume mount lặng lẽ rỗng, container mất backups.xml, 6 test backup đỏ (đã gặp thật).
+CH_CONF_DIR = Path(REPO_ROOT) / "deploy" / "infra" / "clickhouse"
+
+
+def _free_port() -> int:
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+@pytest.fixture(scope="session")
+def ch_backup_dir(tmp_path_factory):
+    return tmp_path_factory.mktemp("ch-backups")
+
+
+@pytest.fixture(scope="session")
+def ch(ch_backup_dir):
+    """Container ClickHouse ephemeral — không đụng CH dev. Xoá khi hết session."""
+    name = f"ch-test-{uuid.uuid4().hex[:8]}"
+    port = _free_port()
+    cmd = [
+        "docker", "run", "-d", "--name", name,
+        "--ulimit", "nofile=262144:262144",
+        "-e", "CLICKHOUSE_PASSWORD=testpass",
+        "-e", "CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1",
+        "-e", "TZ=Asia/Ho_Chi_Minh",
+        "-v", f"{CH_CONF_DIR / 'backups.xml'}:/etc/clickhouse-server/config.d/backups.xml:ro",
+        "-v", f"{ch_backup_dir}:/backups",
+        "-p", f"127.0.0.1:{port}:8123",
+        IMAGE,
+    ]
+    subprocess.run(cmd, check=True, capture_output=True)
+    url = f"http://default:testpass@127.0.0.1:{port}"
+    client = None
+    try:
+        for _ in range(60):
+            try:
+                client = clickhouse_connect.get_client(dsn=url)
+                client.command("SELECT 1")
+                break
+            except Exception:
+                time.sleep(1)
+        else:
+            raise RuntimeError("ClickHouse test container không lên sau 60s")
+        os.environ["CLICKHOUSE_URL"] = url
+        yield client
+    finally:
+        subprocess.run(["docker", "rm", "-f", name], capture_output=True)
+
+
+@pytest.fixture()
+def migrated(ch):
+    """Đảm bảo đã upgrade (idempotent — chạy lại là no-op). Test dùng symbol riêng để cách ly."""
+    from core import ch_migrate
+    ch_migrate.upgrade(ch)
+    return ch
