@@ -763,8 +763,8 @@ async def run(mode: str, minutes: float | None = None, out: str | None = None, d
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
     shutdown = asyncio.Event()
-    install_loop_stop(shutdown)
     if mode == "measure":
+        install_loop_stop(shutdown)
         if minutes is None:                                   # daemon: cửa sổ đo 08:30–15:10 mỗi ngày làm việc
             return await daemon("measure",
                                 lambda: _session_with_relay(
@@ -779,6 +779,7 @@ async def run(mode: str, minutes: float | None = None, out: str | None = None, d
         logging.getLogger().addHandler(_day_log_handler(cfg))
         return await _run_reconcile(cfg, d)
     if mode == "run":
+        install_loop_stop(shutdown)
         if minutes is not None:                               # đường nghiệm thu / chạy tay: N phút rồi thoát
             logging.getLogger().addHandler(_day_log_handler(cfg))
             return await _session_with_relay(shutdown, lambda stop: _run_run(cfg, minutes, stop=stop))

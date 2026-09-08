@@ -1,5 +1,6 @@
 """Daemon: ngoài phiên ngủ, trong phiên chạy, lỗi khởi động (≥ 2) thoát để Docker khởi động lại (spec §5.5)."""
 import asyncio
+import logging
 from datetime import datetime, timedelta
 
 from ingester.main import SESSION_END_MEASURE, SESSION_END_RUN, SESSION_START, TZ, daemon, next_window
@@ -156,3 +157,26 @@ def test_each_session_gets_a_fresh_stop_and_the_relay_is_cancelled_after_it():
         await asyncio.sleep(0.01)
         assert not seen[1].is_set()
     asyncio.run(scenario())
+
+
+import ingester.main as main_mod
+
+
+def test_loop_stop_is_armed_only_for_run_and_measure(monkeypatch):
+    armed = []
+    monkeypatch.setattr(main_mod, "install_loop_stop", lambda ev: armed.append(ev) or True)
+
+    async def fake_count(*a, **k):
+        return 0
+
+    async def fake_run(cfg, minutes, stop=None):
+        return 0
+
+    monkeypatch.setattr(main_mod, "_run_count", fake_count)
+    monkeypatch.setattr(main_mod, "_run_run", fake_run)
+    monkeypatch.setattr(main_mod.config, "load", lambda need_db: object())
+    monkeypatch.setattr(main_mod, "_day_log_handler", lambda cfg: logging.NullHandler())
+    assert asyncio.run(main_mod.run("count", count="20260908")) == 0
+    assert armed == []                                        # count: giữ đường KeyboardInterrupt
+    assert asyncio.run(main_mod.run("run", minutes=1)) == 0
+    assert len(armed) == 1                                    # run: một lần, trước khi rẽ
