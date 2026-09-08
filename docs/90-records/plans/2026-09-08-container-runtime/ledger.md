@@ -253,3 +253,19 @@ FileNotFoundError: [Errno 2] No such file or directory: '/app/docs/10-sources/ma
 **Step 3 — AC5:** đếm TRƯỚC `ops.etl_run`=**6** · `market.security`=**2017** · `rt.schema_migrations`=**2**; danh sách 6 volume `dlck_*` (`chdata` `ingester_logs` `ingester_measure` `ingester_spill` `pgdata` `redisdata`) lưu file; `docker compose down && docker compose up -d` (không `-v`): 7 container + mạng gỡ rồi tạo lại, `migrate` `Exited (0) 6 seconds ago`; đếm SAU ngay lập tức, không job nào chen: **6 · 2017 · 2** — bằng cả ba; `diff` danh sách volume rỗng → `volume: không đổi`. **→ AC5: PASS.**
 
 Bảng 15 họ ghi một lần ở "Task 10 (tiếp)" sau khi chạy nốt; tới lúc này: `refdata` ✓ · `events` ✓ · `price` ✓ · `snapshot` ✓ · `fundamentals` ✗ exit 2 · 10 họ chưa chạy.
+
+## Task 10a — code không đọc `docs/`: dữ liệu tra cứu dời vào code (2026-09-08 19:15–19:47)
+
+- **Chỉ đạo chủ dự án (~19:05):** code không được đọc `docs/`; tri thức code cần thì viết lại vào code (`backend/`/`database/`); không đưa `docs/` vào image. `.dockerignore` giữ nguyên. Plan Task 10a `e20071f`, spec có đính chính.
+- `7875ac3` — `git mv` ba JSON sang `backend/etl/data/` (`field-dictionary.json` · `feeds.json` · `market-field-selection.json`, nội dung không đổi — `git diff -M` rỗng); khối Python §9 của `wichart.md` (dòng 611–798) thành `backend/etl/wichart_source.py` **nguyên văn** (`diff` byte-identical; import ngoài pytest: `WICHART 72 keys; TIER_X 20`); `wichart_registry` import module thay `exec` markdown, `load_doc()` không đối số, `build(doc=None, tier_x=None)`; `database/gen_price_columns.py`, `docs/20-design/gen_field_selection.py`, `docs/10-sources/macro/verify_wichart.py` trỏ đường mới (chạy thật `gen_price_columns.py` → 34 cột); `.gitattributes` theo. Test tĩnh `test_production_code_never_reads_docs` (`tests/docs/test_d03`): **RED đúng 5 hit** (`fundamentals_store:37` · `news_registry:13` · `screener_normalize:29` · `wichart_registry:15` · `gen_price_columns:17`) → GREEN `9 passed`; `test_e36` viết lại không đọc md; hồi quy `tests/etl` **600 passed**, 5 file liên quan 51 passed, `test_d01` 7/8 — chỉ `test_no_dead_internal_links` còn đỏ (nợ Task 11), danh sách link chết **không thêm cái nào**: `diff` trước/sau chỉ là hai link cũ ở `backend/README.md` lệch +2 dòng do đoạn `etl/data/` chèn phía trên (Ruling: cosmetic, chấp nhận). `git grep` đường dẫn `docs/` trong code ngoài test → **0**.
+- Tài liệu: 11 file sống trong brief + 3 file ngoài bảng brief (`docs/README.md`, `docs/20-design/market-data-store.md`, `docs/10-sources/market/05-fiin-financial-statements.md`) đổi link/câu chữ theo thanh kiểm Step 6 (0 hit đường cũ ngoài vùng lịch sử); 6 file `docs/90-records/` vỡ link do lượt dời → **chỉ href**, giữ nhãn. `wichart.md` §9 còn tiêu đề + đoạn trỏ tới module (`-190/+1`).
+- **Vận hành:** `docker compose up -d --build` → 7 service, `migrate` `Exited (0)`; `docker run --rm dlck-backend sh -c 'test ! -e /app/docs && test -f /app/backend/etl/data/… && test -f /app/backend/etl/wichart_source.py'` → `image-data: OK`; `docker compose run --rm etl python -m etl fundamentals --codes FPT --kinds bs` →
+
+```
+2026-09-08 19:45:34,047 INFO etl.fundamentals từ điển 729 mã; tới hạn: 1 target (0 theo sự kiện)
+2026-09-08 19:45:40,379 INFO etl.fundamentals fundamentals xong: {'tally': {'attempted': 1, 'failed': 0, … 'first': 1 …}, 'rows_written': 15904, 'calls': 1, 'retries': 0, … 'dictionary_rows': 729, 'remaining': 1522 …}
+exit=0
+```
+
+  `ops.etl_run`: run 7 `market.fundamentals | success` (run 5 `failed | FileNotFoundError…` giữ làm bằng chứng). **→ họ `fundamentals` trong container: PASS.** Task 10 nối từ `screener`.
+- Implementer tự khai: `roadmap.md:468–472` vẫn dẫn `[wichart.md §9]` làm link bằng chứng (đích còn tồn tại, §9 nay là đoạn trỏ) và `:467` giữ vế lịch sử "`verify_wichart.py` đã đọc được khối này bằng `exec`" (neo ngày 2026-08-12) — để Task 11/12 rà cùng lượt roadmap.
