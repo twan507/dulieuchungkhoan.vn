@@ -220,3 +220,5 @@ $ ls -la ./clickhouse-backups
 4. Chủ dự án đã **uỷ quyền sửa `.env`** (AC6 dùng quyền này: đổi `ETL_DB_PASSWORD`, `docker compose run --rm migrate`, `run --rm etl python -m etl omo`). Không bao giờ in giá trị.
 5. Kho dev là **disposable** (chủ dự án chốt xoá dựng lại); stack `dlck` để nguyên là được — `docker compose run --rm etl …` tự chạy lại `migrate` (idempotent) qua `depends_on`.
 6. Sáu volume cũ `infra_*`/`dlck-infra_*` chỉ xoá ở Task 12 sau khi mọi AC xanh; **không đụng `tutor-infra_pgdata`**. 11 task Windows: chủ dự án gỡ bằng một lệnh PowerShell ở Task 12 Step 2.
+
+**Cập nhật lúc khép phiên:** họ `events` đã tự kết thúc `success` sau khi operator bị ngắt — Task 10 nối từ họ `price`.
