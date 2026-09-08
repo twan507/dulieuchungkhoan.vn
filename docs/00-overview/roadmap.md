@@ -175,7 +175,7 @@ lát 12  chạy được trong container  ✅ XONG 2026-09-08 (AC6 chờ chủ d
                                    migrate hai kho + cấp 4 user login + tự seed ngành lớp 2 mỗi lần `up`; `ingester` thành daemon
                                    tự ngủ ngoài phiên; múi giờ ba lớp. Đồ Windows về hưu trong code (`console.py`,
                                    `register-tasks.ps1`, `stack.mjs` xoá) — 11 task Windows còn đăng ký, gỡ ở Task 12 (chủ dự án,
-                                   cuối lát này). Cả 15 họ job chạy thật trong container (AC3), Ctrl+C/`docker stop` cùng đường
+                                   cuối lát này). Cả 15 họ job chạy thật trong container (AC3), Ctrl+C/`docker stop` với job `etl` cùng đường
                                    đóng sổ (exit 130), `down`/`up` không mất gì, `ch_backup` ghi ra host, native vẫn chạy. Hồ sơ:
                                    [plans/2026-09-08-container-runtime/](../90-records/plans/2026-09-08-container-runtime/). TIẾP: lát 13
 lát 13  scheduler trong container  bảng lịch trong code + chạy bù + chặn chạy chồng + thứ tự phụ thuộc (`fundamentals` sau `events`

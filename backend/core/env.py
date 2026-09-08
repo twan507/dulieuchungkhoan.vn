@@ -103,10 +103,12 @@ def check(path: Path | None = None, out=sys.stdout) -> int:
         parsed = parse_dotenv(p.read_text(encoding="utf-8"))
         print(f"nguồn: {p}", file=out)
         unknown = sorted(set(parsed) - KNOWN_KEYS)
+        checked_unknown = True
     else:
         parsed = dict(os.environ)
         print(f"nguồn: môi trường (không có {p})", file=out)
         unknown = []
+        checked_unknown = False
     present = {k for k, v in parsed.items() if v}
     missing = sorted(REQUIRED_KEYS - present)
     weak = sorted(k for k in (REQUIRED_KEYS & present) if parsed[k] in WEAK_VALUES)
@@ -117,7 +119,8 @@ def check(path: Path | None = None, out=sys.stdout) -> int:
     for k in unknown:
         print(f"LẠ     {k}", file=out)
     if not missing and not weak and not unknown:
-        print(f"đủ {len(REQUIRED_KEYS)} biến bắt buộc, không biến lạ", file=out)
+        tail = ", không biến lạ" if checked_unknown else " (không kiểm biến lạ trên môi trường)"
+        print(f"đủ {len(REQUIRED_KEYS)} biến bắt buộc{tail}", file=out)
     return 1 if (missing or weak) else 0
 
 

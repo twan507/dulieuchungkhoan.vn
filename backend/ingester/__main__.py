@@ -8,9 +8,9 @@ from ingester.main import run
 
 def main() -> int:
     install_signal_handlers()         # lưới cho Windows và cho khúc trước khi loop chạy; đường dừng thật
-                                       # của ingester là install_loop_stop (SIGTERM/SIGINT → stop.set(),
-                                       # phiên đóng đúng đường deadline: xả + đối chứng, exit 0/1, không
-                                       # ghi ops.etl_run)
+                                      # của ingester là install_loop_stop (SIGTERM/SIGINT → stop.set(),
+                                      # phiên đóng đúng đường deadline: xả + đối chứng, exit 0/1, không
+                                      # ghi ops.etl_run)
     ap = argparse.ArgumentParser("ingester")
     ap.add_argument("--measure", action="store_true")
     ap.add_argument("--out", default=None, help="thư mục frame đo (default INGESTER_MEASURE_DIR)")

@@ -77,7 +77,6 @@ def test_ingester_runtime_dirs_are_named_volumes_and_stop_grace_is_generous():
 
 
 def test_image_never_carries_secrets_or_tests():
-    dockerfile = (REPO / "deploy" / "backend.Dockerfile").read_text(encoding="utf-8")
     ignore = (REPO / ".dockerignore").read_text(encoding="utf-8").splitlines()
     assert ".env" in ignore and ".env.*" in ignore and "backend/tests" in ignore
     assert not (REPO / "backend" / ".dockerignore").exists()
