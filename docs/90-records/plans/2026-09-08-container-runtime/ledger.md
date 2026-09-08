@@ -102,3 +102,9 @@ drwxr-xr-x 2 root root 4096 Sep  8 16:06 .
 Theo luật nghiệm thu (dừng khi lệch Expected, không tự sửa Dockerfile/code), **dừng tại Step 6** — không chạy Step 7. **→ AC7: CHƯA KIỂM** (bị chặn bởi Step 6, không phải do backup tự nó có vấn đề).
 
 **Việc cần làm tiếp (ngoài phạm vi task này):** `deploy/backend.Dockerfile` cần tạo + `chown -R appuser` ba thư mục `/var/lib/dlck/{logs,measure,spill}` trước dòng `USER appuser` (cùng cách đang làm với `/app`), hoặc một bước chown khi container khởi động. Không sửa ở đây theo đúng ràng buộc "không đổi code ứng dụng" của task vận hành này.
+
+## Task 9a — volume runtime thuộc root, appuser không ghi được (2026-09-08, sau khi Task 9 chặn ở AC4)
+
+- **Sự thật đo (Task 9 Step 6):** probe `ingester --minutes 2` chết `PermissionError … /var/lib/dlck/logs/ingester-20260908.log`, exit 1. Ba volume có tên được Docker tạo `root:root` vì image không có sẵn điểm gắn; container chạy `appuser`. Daemon đang ngủ cũng sẽ chết y hệt lúc 08:30. Lỗ thứ hai: mở file log nằm ngoài hợp đồng khởi động ⇒ traceback exit 1 thay vì 2.
+- **Ruling:** plan thêm Task 9a. `1081a3a` — Dockerfile tạo sẵn `/var/lib/dlck/{logs,measure,spill}` + `/backups`, `chown -R appuser`; `main.py` thêm `_attach_day_log` (không mở được log ⇒ in lý do, trả None ⇒ ba đường `reconcile`/`--minutes`/daemon trả **2**); test `test_run_exits_2_when_the_day_log_cannot_be_opened` (RED `OSError` → GREEN) + hợp đồng tĩnh Dockerfile; **23 passed**. Review duyệt; một Important từ plan **để nguyên có lý do**: `chown /backups` trong image vô tác dụng vì `/backups` là bind mount từ host và ingester không gắn nó — vô hại, AC7 là phép kiểm thật cho quyền ghi thư mục host.
+- Bước vận hành: `down` → xoá đúng ba volume `dlck_ingester_*` (đo trước: 0 entry, owner root) → `up -d --build` → kiểm `ls -ld` → chạy lại AC4, AC7 (ghi ở mục kế).
