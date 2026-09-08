@@ -4,6 +4,7 @@ import json
 import os
 import pathlib
 
+import pytest
 import sqlalchemy as sa
 
 from core import bootstrap
@@ -40,7 +41,6 @@ def test_provision_creates_login_user_in_role_and_rotates_password(migrated_engi
 
 
 def test_provision_rejects_a_name_that_is_not_an_identifier(migrated_engine):
-    import pytest
     with pytest.raises(ValueError):
         bootstrap.provision_postgres(migrated_engine, [("bad name; --", "x", "dlck_etl")])
 
@@ -52,7 +52,6 @@ def test_provision_raises_a_clear_error_naming_the_role_when_the_target_role_is_
     lại thành lỗi mơ hồ, và cũng không tạo login role bừa — cả giao dịch rollback cùng nhau (đã đo:
     role login không còn tồn tại sau exception). Không cần sửa code, chỉ chốt hồi quy bằng test."""
     import psycopg
-    import pytest
     name = "zz_test_missing_role_login"
     try:
         with pytest.raises(psycopg.Error, match="zz_test_missing_role_target"):
@@ -64,12 +63,24 @@ def test_provision_raises_a_clear_error_naming_the_role_when_the_target_role_is_
             c.execute(sa.text(f"DROP ROLE IF EXISTS {name}"))
 
 
-def test_reseed_skips_when_security_is_empty(migrated_engine):
+@pytest.fixture(scope="module")
+def empty_security(migrated_engine):
+    """Nhóm test reseed cần `market.security` RỖNG lúc bắt đầu. Bộ test dùng một DB phiên tích luỹ
+    (các module ETL cố ý commit dòng), nên chạy `tests/etl` trước `tests/core` để lại security ⇒
+    nhánh "skipped:security-rong" không bao giờ xảy ra và nhánh seed đếm thừa (đo 2026-09-09:
+    `('seeded', 2)`). Tự dựng tiền đề thay vì trông vào thứ tự chạy: dọn CASCADE, chỉ trên DB đuôi
+    `_test`; không module nào được dựa vào dòng của module khác nên không mất gì của ai."""
+    assert migrated_engine.url.database.endswith("_test"), migrated_engine.url.database
+    with migrated_engine.begin() as c:
+        c.execute(sa.text("TRUNCATE market.issuer_industry_override, market.security CASCADE"))
+
+
+def test_reseed_skips_when_security_is_empty(migrated_engine, empty_security):
     cfg = bootstrap.configure_alembic_for(os.environ["TEST_DATABASE_URL"])
     assert bootstrap.reseed_industry_if_needed(migrated_engine, cfg) == ("skipped:security-rong", 0)
 
 
-def test_reseed_seeds_the_matching_ticker_then_skips(migrated_engine):
+def test_reseed_seeds_the_matching_ticker_then_skips(migrated_engine, empty_security):
     ticker = json.loads(MAP_JSON.read_text(encoding="utf-8"))["layer2"][0]["ticker"]   # đọc từ chủ, không hardcode
     with migrated_engine.begin() as c:
         iid = c.execute(sa.text(
