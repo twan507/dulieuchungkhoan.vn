@@ -85,3 +85,19 @@ def test_ghi_trung_ten_backup_bi_chan(migrated, ch_backup_dir):
     with pytest.raises(Exception, match="ALREADY_EXISTS"):
         migrated.command(f"BACKUP TABLE rt.trade TO Disk('backups', '{fname}')")
     (ch_backup_dir / fname).unlink()                          # dọn để không lẫn vào các test prune
+
+
+from pathlib import Path
+
+from core.ch_backup import resolve_backup_dir
+from core.env import REPO_ROOT
+
+
+def test_relative_backup_dir_resolves_against_repo_root():
+    """Compose ở GỐC repo giải đường dẫn tương đối theo gốc — code phải cùng gốc, không phải deploy/infra."""
+    assert resolve_backup_dir("./deploy/infra/clickhouse-backups") == REPO_ROOT / "deploy" / "infra" / "clickhouse-backups"
+
+
+def test_absolute_backup_dir_is_kept():
+    p = Path("/backups") if Path("/backups").is_absolute() else Path("C:/backups")
+    assert resolve_backup_dir(str(p)) == p

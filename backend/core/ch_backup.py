@@ -74,12 +74,18 @@ def run_backup(client, backup_dir: Path, today: date | None = None) -> list[str]
     return actions
 
 
+def resolve_backup_dir(value: str) -> Path:
+    """Tương đối = theo GỐC repo (cùng gốc với docker-compose.yml từ lát 12); tuyệt đối giữ nguyên."""
+    from core.env import REPO_ROOT
+    p = Path(value)
+    return p if p.is_absolute() else (REPO_ROOT / p)
+
+
 def main() -> None:
     from core.ch_migrate import get_client
-    from core.ch_migrate import REPO_ROOT
-    p = Path(os.environ["CLICKHOUSE_BACKUP_DIR"])
-    # Quy ước: đường dẫn tương đối giải theo deploy/infra — cùng gốc với docker-compose.yml
-    backup_dir = p if p.is_absolute() else (REPO_ROOT / "deploy" / "infra" / p)
+    from core.env import load_dotenv
+    load_dotenv()
+    backup_dir = resolve_backup_dir(os.environ["CLICKHOUSE_BACKUP_DIR"])
     acts = run_backup(get_client(), backup_dir)
     print(f"backup: {acts or 'không có gì mới'}")
 

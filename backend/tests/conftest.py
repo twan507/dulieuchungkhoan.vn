@@ -8,6 +8,7 @@ dựng + migrate database test hai lần, và lần dựng lại thứ hai từn
 Đọc biến môi trường LÚC fixture chạy, không lúc import: `tests/clickhouse`/`tests/ingester` không cần Postgres.
 """
 import os
+import re
 
 import pytest
 import sqlalchemy as sa
@@ -30,15 +31,17 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 @pytest.fixture(scope="session")
 def migrated_engine():
-    test_url = os.environ["TEST_DATABASE_URL"]          # ...:5432/dulieu_test
-    admin_url = test_url.rsplit("/", 1)[0] + "/dulieu"  # DB có sẵn để CREATE DATABASE
+    test_url = os.environ["TEST_DATABASE_URL"]                 # ráp từ nguyên tố: .../<POSTGRES_TEST_DB>
+    test_db = test_url.rsplit("/", 1)[1]
+    assert re.fullmatch(r"[a-z_][a-z0-9_]*", test_db), test_db  # ghép vào DDL nên phải là identifier sạch
+    admin_url = test_url.rsplit("/", 1)[0] + "/" + os.environ.get("POSTGRES_DB", "dulieu")  # DB owner có sẵn
     admin = sa.create_engine(admin_url, isolation_level="AUTOCOMMIT")
     with admin.connect() as c:
-        c.execute(sa.text("DROP DATABASE IF EXISTS dulieu_test WITH (FORCE)"))
-        c.execute(sa.text("CREATE DATABASE dulieu_test"))
+        c.execute(sa.text(f"DROP DATABASE IF EXISTS {test_db} WITH (FORCE)"))
+        c.execute(sa.text(f"CREATE DATABASE {test_db}"))
     admin.dispose()
     cfg = Config(os.path.join(REPO_ROOT, "database", "alembic.ini"))
-    os.environ["DATA_DATABASE_URL"] = test_url      # migrations/env.py đọc biến này
+    os.environ["DATA_DATABASE_URL"] = test_url      # migrations/env.py đọc biến này — GÁN, không setdefault
     os.chdir(REPO_ROOT)                             # script_location trong ini là đường dẫn tương đối gốc repo
     command.upgrade(cfg, "head")
     engine = sa.create_engine(test_url)
