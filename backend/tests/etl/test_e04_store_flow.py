@@ -1,6 +1,9 @@
+import threading
+import time
 from datetime import date
 from decimal import Decimal
 
+import pytest
 import sqlalchemy as sa
 
 from etl.omo_flow import rebuild
@@ -166,3 +169,70 @@ def test_close_run_still_overwrites_stats_when_given_new_ones(migrated_engine):
                           {"r": run_id}).scalar_one()
         c.execute(sa.text("DELETE FROM ops.etl_run WHERE run_id = :r"), {"r": run_id})
     assert stats == {"b": 2}
+
+
+def test_store_khong_no_khi_tien_trinh_khac_dang_ghi_dung_phien_do(migrated_engine):
+    """Cửa sổ giữa kiểm-tồn-tại và ghi của `store()`, ở ĐÚNG mức cô lập production dùng.
+
+    🔴 Vì sao có test này (rà chuẩn hoá 2026-09-08): `store()` từng `SELECT 1 ... WHERE
+    session_date` rồi mới `INSERT`. Tiến trình B đi qua `SELECT` trong lúc A **chưa commit** sẽ
+    thấy trống, đi thẳng vào `INSERT`, chờ A, rồi đụng `omo_session_pkey` — lượt chạy chết với
+    mã 2 như thể nguồn hỏng, trong khi phiên đó đã có người ghi đúng. Lát 13 đặt job vào
+    container `restart: unless-stopped` kèm chạy bù, nên hai lượt chồng lấn là chuyện thường.
+
+    🔴 Phải dùng luồng thật, KHÔNG mô phỏng bằng `REPEATABLE READ`: cách đó tái hiện được cửa
+    sổ, nhưng `ON CONFLICT DO NOTHING` dưới `REPEATABLE READ` ném `SerializationFailure` — một
+    hành vi đúng của Postgres mà production **không bao giờ chạm** vì job chạy ở
+    `READ COMMITTED` mặc định. Đo được 2026-09-08 khi thử đúng cách đó: test đỏ vì một lý do
+    KHÁC hẳn lý do cần bắt.
+
+    Không có `sleep` mù: chờ tới khi B **thật sự bị khoá** (`pg_stat_activity`) rồi mới commit A.
+    """
+    d = R1.session_date
+    ket_qua: dict = {}
+
+    def tien_trinh_b():
+        b = migrated_engine.connect()
+        try:
+            with b.begin():
+                ket_qua["ra"] = store(R1, "x", b)
+        except Exception as e:                       # noqa: BLE001 - ghi lại để assert ở luồng chính
+            ket_qua["loi"] = e
+        finally:
+            b.close()
+
+    a = migrated_engine.connect()
+    tx_a = a.begin()
+    try:
+        a.execute(sa.text(
+            "INSERT INTO macro.omo_session (session_date, crawled_at, has_reverse_repo,"
+            " has_repo, has_outright_sale) VALUES (:d, now(), true, false, false)"), {"d": d})
+
+        t = threading.Thread(target=tien_trinh_b, daemon=True)
+        t.start()
+        han = time.monotonic() + 15
+        while time.monotonic() < han:
+            with migrated_engine.connect() as w:
+                bi_khoa = w.execute(sa.text(
+                    "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock'"
+                    " AND query LIKE '%omo_session%'")).scalar_one()
+            if bi_khoa:
+                break
+            time.sleep(0.05)
+        else:
+            pytest.fail("B không bao giờ bị khoá — phép tái hiện không còn bắt đúng cửa sổ")
+
+        tx_a.commit()
+        t.join(15)
+        assert not t.is_alive()
+        assert "loi" not in ket_qua, f"B nổ thay vì bỏ qua: {ket_qua.get('loi')!r}"
+        assert ket_qua["ra"] == {"skipped": True}
+        n = a.execute(sa.text(
+            "SELECT count(*) FROM macro.omo_auction WHERE session_date = :d"),
+            {"d": d}).scalar_one()
+        assert n == 0                                # bỏ TRỌN lượt, không ghi nửa vời
+    finally:
+        a.close()
+        with migrated_engine.begin() as c:           # dọn dòng đã commit của chính test này
+            c.execute(sa.text("DELETE FROM macro.omo_auction WHERE session_date = :d"), {"d": d})
+            c.execute(sa.text("DELETE FROM macro.omo_session WHERE session_date = :d"), {"d": d})
