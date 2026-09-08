@@ -698,7 +698,8 @@ Expected: `test_clock` đỏ `ModuleNotFoundError: core.clock`; `test_tz_contrac
 """Đồng hồ dự án: mọi phép "hôm nay" tính theo giờ Việt Nam, không dựa vào TZ của tiến trình (spec lát 12 §5.6).
 
 Bài học 2026-09-05: `recrawl_codes` lấy `current_date` phía Postgres (UTC) ⇒ hai test đỏ mỗi ngày
-00:00–07:00 giờ VN. Container mặc định UTC nên `date.today()` trần rơi đúng bẫy đó mỗi đêm.
+00:00–07:00 giờ VN. Container mặc định UTC nên `date.today` gọi trần rơi đúng bẫy đó mỗi đêm.
+(Đổi chữ khi thực thi 2026-09-08: docstring không được viết nguyên `date.today()` vì phép kiểm tĩnh quét cả docstring.)
 """
 from __future__ import annotations
 
