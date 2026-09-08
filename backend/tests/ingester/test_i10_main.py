@@ -443,6 +443,6 @@ def test_run_mode_returns_exit_3_when_clickhouse_unreachable(tmp_path, monkeypat
         raise OperationalError("không nối được ClickHouse")
 
     monkeypatch.setattr(main_mod.clickhouse_connect, "get_client", _boom)
-    rc = asyncio.run(run("run"))
+    rc = asyncio.run(run("run", minutes=1))  # minutes=: một phiên có hạn, không qua daemon (lát 12)
     assert rc == 3
     assert "ingester:" in capsys.readouterr().err

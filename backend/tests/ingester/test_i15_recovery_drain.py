@@ -440,7 +440,7 @@ def test_boot_spill_io_error_returns_exit_3_not_a_bare_traceback(tmp_path, monke
             raise PermissionError("không tạo được thư mục spill")
 
     monkeypatch.setattr(main_mod.spill_mod, "SpillStore", _BoomStore)
-    assert asyncio.run(run("run")) == 3
+    assert asyncio.run(run("run", minutes=1)) == 3  # minutes=: một phiên có hạn, không qua daemon (lát 12)
     assert "ingester:" in capsys.readouterr().err
 
     class _BoomAcquireStore:                # ca 2: `try_acquire`/`_scan` hỏng
@@ -451,7 +451,7 @@ def test_boot_spill_io_error_returns_exit_3_not_a_bare_traceback(tmp_path, monke
             raise PermissionError("AV giữ .tmp mồ côi — unlink hỏng")
 
     monkeypatch.setattr(main_mod.spill_mod, "SpillStore", _BoomAcquireStore)
-    assert asyncio.run(run("run")) == 3
+    assert asyncio.run(run("run", minutes=1)) == 3  # minutes=: một phiên có hạn, không qua daemon (lát 12)
     assert "ingester:" in capsys.readouterr().err
 
 

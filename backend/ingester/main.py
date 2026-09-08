@@ -347,10 +347,12 @@ async def daemon(mode: str, run_session, *, clock=lambda: datetime.now(TZ), slee
 
 
 def install_loop_stop(stop: asyncio.Event) -> bool:
-    """SIGTERM/SIGINT → `stop.set()` trên loop đang chạy: phiên đóng đúng đường deadline (xả hàng đợi,
-    đối chứng) thay vì `KeyboardInterrupt` cắt ngang `await` (review Task 5 lát 12: `_run_run` không có
-    `except KeyboardInterrupt`, đuôi phiên không chạy). Windows (Proactor) không hỗ trợ ⇒ False, giữ
-    đường KeyboardInterrupt của `core.shutdown` (mã thoát như Ctrl+C, không xả)."""
+    """SIGTERM/SIGINT → `stop.set()` trên loop đang chạy. `stop` ở đây là `shutdown` của CẢ TIẾN
+    TRÌNH (đặt tên trong `run()`) — không phải `stop` riêng của một phiên; `_session_with_relay` là
+    cầu nối đưa tín hiệu này vào phiên đang chạy, để phiên đóng đúng đường deadline (xả hàng đợi,
+    đối chứng) thay vì `KeyboardInterrupt` cắt ngang `await` (review Task 5 lát 12: `_run_run` không
+    có `except KeyboardInterrupt`, đuôi phiên không chạy). Windows (Proactor) không hỗ trợ ⇒ False,
+    giữ đường KeyboardInterrupt của `core.shutdown` (mã thoát như Ctrl+C, không xả)."""
     loop = asyncio.get_running_loop()
     try:
         for sig in (signal.SIGTERM, signal.SIGINT):
@@ -358,6 +360,23 @@ def install_loop_stop(stop: asyncio.Event) -> bool:
     except (NotImplementedError, RuntimeError):
         return False
     return True
+
+
+async def _relay(src: asyncio.Event, dst: asyncio.Event) -> None:
+    """Chuyển tín hiệu dừng (event `shutdown` của cả tiến trình) vào `stop` của PHIÊN đang chạy."""
+    await src.wait()
+    dst.set()
+
+
+async def _session_with_relay(shutdown: asyncio.Event, factory) -> int:
+    """Mỗi phiên một `stop` mới (mốc giờ chỉ đóng phiên đó, không đóng daemon); tín hiệu thì đóng cả hai.
+    Relay huỷ khi phiên xong để `stop` cũ không bị đụng."""
+    stop = asyncio.Event()
+    relay = asyncio.create_task(_relay(shutdown, stop))
+    try:
+        return await factory(stop)
+    finally:
+        relay.cancel()
 
 
 def _print_reconcile(result) -> None:
@@ -743,13 +762,15 @@ async def run(mode: str, minutes: float | None = None, out: str | None = None, d
               use_db: bool = False) -> int:
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
-    stop = asyncio.Event()
-    install_loop_stop(stop)
+    shutdown = asyncio.Event()
+    install_loop_stop(shutdown)
     if mode == "measure":
         if minutes is None:                                   # daemon: cửa sổ đo 08:30–15:10 mỗi ngày làm việc
-            return await daemon("measure", lambda: _run_measure(None, out, stop=stop),
-                                stop=stop, end_hm=SESSION_END_MEASURE)
-        return await _run_measure(minutes, out, stop=stop)
+            return await daemon("measure",
+                                lambda: _session_with_relay(
+                                    shutdown, lambda stop: _run_measure(None, out, stop=stop)),
+                                stop=shutdown, end_hm=SESSION_END_MEASURE)
+        return await _session_with_relay(shutdown, lambda stop: _run_measure(minutes, out, stop=stop))
     if mode == "count":
         return await _run_count(count, t_from, t_to, use_db)
 
@@ -760,18 +781,18 @@ async def run(mode: str, minutes: float | None = None, out: str | None = None, d
     if mode == "run":
         if minutes is not None:                               # đường nghiệm thu / chạy tay: N phút rồi thoát
             logging.getLogger().addHandler(_day_log_handler(cfg))
-            return await _run_run(cfg, minutes, stop=stop)
+            return await _session_with_relay(shutdown, lambda stop: _run_run(cfg, minutes, stop=stop))
 
         async def session() -> int:                           # mỗi phiên một file log theo ngày
             h = _day_log_handler(cfg)
             root = logging.getLogger()
             root.addHandler(h)
             try:
-                return await _run_run(cfg, None, stop=stop)
+                return await _session_with_relay(shutdown, lambda stop: _run_run(cfg, None, stop=stop))
             finally:
                 root.removeHandler(h)
                 h.close()
 
-        return await daemon("run", session, stop=stop, end_hm=SESSION_END_RUN)
+        return await daemon("run", session, stop=shutdown, end_hm=SESSION_END_RUN)
     print(f"ingester: mode không biết: {mode!r}")
     return 4

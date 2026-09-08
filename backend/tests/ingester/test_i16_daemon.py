@@ -123,3 +123,36 @@ def test_daemon_returns_right_after_a_session_ended_by_signal():
 
     rc = asyncio.run(daemon("run", session, clock=fc.now, sleep=fc.sleep, stop=stop, end_hm=SESSION_END_RUN))
     assert rc == 0 and fc.sleeps == []      # không ngủ tới phiên kế — thoát ngay để container dừng
+
+
+from ingester.main import _relay, _session_with_relay
+
+
+def test_relay_sets_the_session_stop_when_shutdown_fires():
+    async def scenario():
+        shutdown, stop = asyncio.Event(), asyncio.Event()
+        task = asyncio.create_task(_relay(shutdown, stop))
+        await asyncio.sleep(0)
+        assert not stop.is_set()
+        shutdown.set()
+        await asyncio.sleep(0.01)
+        assert stop.is_set()
+        await task
+    asyncio.run(scenario())
+
+
+def test_each_session_gets_a_fresh_stop_and_the_relay_is_cancelled_after_it():
+    async def scenario():
+        shutdown, seen = asyncio.Event(), []
+
+        async def factory(stop):
+            seen.append(stop)
+            return 7
+
+        assert await _session_with_relay(shutdown, factory) == 7
+        assert await _session_with_relay(shutdown, factory) == 7
+        assert seen[0] is not seen[1] and not seen[0].is_set() and not seen[1].is_set()
+        shutdown.set()                      # relay đã huỷ: bật shutdown sau khi phiên xong không đụng stop cũ
+        await asyncio.sleep(0.01)
+        assert not seen[1].is_set()
+    asyncio.run(scenario())
