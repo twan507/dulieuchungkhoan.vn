@@ -1,6 +1,6 @@
 # Spec — lát 12: chạy được trong container (một `.env` nguyên tố · một compose gốc · một lệnh lên)
 
-**Ngày:** 2026-09-08 · **Trạng thái:** ⏳ CHỜ CHỦ DỰ ÁN DUYỆT · **Nhánh:** `feat/container-runtime`
+**Ngày:** 2026-09-08 · **Trạng thái:** ✅ **DUYỆT 2026-09-08** — chủ dự án: *"tất cả cứ như bạn đề xuất"* (cả năm điểm §9) · **Nhánh:** `feat/container-runtime`
 **Điểm vào:** [roadmap §3 "Điểm vào cho lát 12"](../../../00-overview/roadmap.md) (đọc §0 ở đó trước — bảy quyết định 2026-09-08 và dữ kiện code) · **Hồ sơ tiền nhiệm:** [`2026-09-07-audit-drift-cleanup/`](../2026-09-07-audit-drift-cleanup/) (đợt chuẩn hoá 15 họ job, quyết định không gộp `Fetcher`)
 
 ---
