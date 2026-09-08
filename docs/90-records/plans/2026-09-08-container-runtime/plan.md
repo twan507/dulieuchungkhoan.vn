@@ -1964,6 +1964,82 @@ git commit -m "docs(ledger): fresh store up on project dlck — AC2, AC4, AC7 an
 
 ---
 
+### Task 9a — BỔ SUNG theo phán quyết 2026-09-08 (Task 9 chặn ở AC4): volume runtime thuộc root, appuser không ghi được
+
+**Sự thật đo:** `docker compose run --rm ingester python -m ingester --minutes 2` chết `PermissionError: [Errno 13] Permission denied: '/var/lib/dlck/logs/ingester-20260908.log'`, exit **1**. Ba volume có tên gắn vào `/var/lib/dlck/{logs,measure,spill}` được Docker tạo `root:root 755` vì image không có sẵn thư mục đó; container chạy `appuser` (uid 1000). Daemon `dlck-ingester-1` đang ngủ cũng sẽ chết y hệt lúc mở phiên. Lỗ thứ hai: mở file log nằm ngoài hợp đồng khởi động nên thoát 1 (traceback trần) thay vì 2.
+
+**Files:** Modify `deploy/backend.Dockerfile`, `backend/ingester/main.py`, `backend/tests/ingester/test_i16_daemon.py`, `backend/tests/docs/test_d03_compose_contract.py`.
+
+- [ ] **Step 1: Test đỏ.** Thêm vào `backend/tests/docs/test_d03_compose_contract.py` (thêm `import re` đầu file):
+
+```python
+def test_image_owns_the_runtime_dirs_for_appuser():
+    """Volume có tên lấy quyền từ thư mục điểm gắn trong image; không có sẵn thì Docker tạo root:root và appuser không ghi được (AC4 lát 12)."""
+    dockerfile = (REPO / "deploy" / "backend.Dockerfile").read_text(encoding="utf-8")
+    for d in ("/var/lib/dlck/logs", "/var/lib/dlck/measure", "/var/lib/dlck/spill", "/backups"):
+        assert d in dockerfile, d
+    assert re.search(r"chown -R appuser [^
+]*/var/lib/dlck", dockerfile)
+```
+
+và vào `backend/tests/ingester/test_i16_daemon.py` (thêm `from ingester.config import Config as IngesterConfig`):
+
+```python
+def test_run_exits_2_when_the_day_log_cannot_be_opened(tmp_path, monkeypatch, capsys):
+    """Mở file log là điều kiện khởi động: volume sai quyền, ổ đầy ⇒ exit 2 có lý do, không traceback exit 1."""
+    blocker = tmp_path / "logs"
+    blocker.write_text("file, không phải thư mục", encoding="utf-8")
+    cfg = IngesterConfig(clickhouse_url="fake://", redis_url="redis://x",
+                         log_dir=blocker, measure_dir=tmp_path, spill_dir=tmp_path)
+    monkeypatch.setattr(main_mod.config, "load", lambda need_db: cfg)
+    assert asyncio.run(main_mod.run("run", minutes=1)) == 2
+    assert "không ghi được log" in capsys.readouterr().err
+```
+
+Run: `cd backend && PYTHONIOENCODING=utf-8 uv run pytest tests/docs/test_d03_compose_contract.py tests/ingester/test_i16_daemon.py -q` — Expected: hai test mới đỏ (Dockerfile chưa có thư mục; `run` ném `OSError` thay vì trả 2).
+
+- [ ] **Step 2: Dockerfile** — thay dòng `RUN useradd -m appuser && chown -R appuser /app` bằng:
+
+```dockerfile
+# Điểm gắn volume phải có sẵn và thuộc appuser: Docker chép quyền của thư mục trong image sang volume mới;
+# không có sẵn thì volume ra đời root:root và tiến trình non-root không ghi được (AC4 lát 12, 2026-09-08).
+RUN mkdir -p /var/lib/dlck/logs /var/lib/dlck/measure /var/lib/dlck/spill /backups  && useradd -m appuser && chown -R appuser /app /var/lib/dlck /backups
+```
+
+- [ ] **Step 3: `ingester/main.py`** — giữ `_day_log_handler(cfg)` (tạo handler, ném `OSError`), thêm ngay dưới nó:
+
+```python
+def _attach_day_log(cfg: config.Config) -> logging.Handler | None:
+    """Gắn file log theo ngày vào root logger. Không mở được (volume sai quyền, ổ đầy…) ⇒ in lý do, trả None —
+    caller trả 2 theo hợp đồng "thiếu điều kiện khởi động ⇒ exit 2" (AC4 lát 12: volume root:root)."""
+    try:
+        h = _day_log_handler(cfg)
+    except OSError as e:
+        print(f"ingester: không ghi được log trong {cfg.log_dir}: {e}", file=sys.stderr)
+        return None
+    logging.getLogger().addHandler(h)
+    return h
+```
+
+Ba chỗ dùng: `reconcile` — `if _attach_day_log(cfg) is None: return 2`; `run --minutes` — như trên trước khi gọi `_session_with_relay`; daemon `session()` — `h = _attach_day_log(cfg)`, `if h is None: return 2`, `try: … finally: root.removeHandler(h); h.close()`.
+
+- [ ] **Step 4: Xanh + commit**
+
+Run: lệnh Step 1 — Expected: xanh. Commit: `fix(deploy,ingester): runtime dirs owned by appuser in the image; unopenable day log exits 2`.
+
+- [ ] **Step 5 (vận hành, sau review): dựng lại volume runtime rỗng và tiếp Task 9 từ Step 6.** Ba volume `dlck_ingester_*` mới tạo hôm nay, chưa có gì (daemon chưa mở phiên, probe chết trước khi ghi) — xoá để Docker tạo lại với quyền từ image:
+
+```bash
+docker compose down
+docker volume rm dlck_ingester_logs dlck_ingester_measure dlck_ingester_spill
+docker compose up -d --build
+docker compose run --rm ingester sh -c 'ls -ld /var/lib/dlck/logs /var/lib/dlck/measure /var/lib/dlck/spill'
+```
+
+Expected: ba dòng `drwxr-xr-x … appuser appuser …`. Rồi chạy Task 9 Step 6 (AC4) và Step 7 (AC7) như brief Task 9; ghi ledger. Ghi chú giả định 2.2.1: lượt `up` thứ hai **recreate** container one-shot nên `docker compose logs migrate` chỉ giữ log lượt mới — bằng chứng là mốc `Exited (0)` mới, không phải `grep -c … == 2`.
+
+---
+
 ### Task 10: AC3 — 15 họ job trong container · AC-SIGTERM · AC5 · AC6 · AC8
 
 **Files:** ledger.
