@@ -65,7 +65,7 @@ Không có tham số giới hạn kỳ, phân trang, hay lọc theo năm.
 
 Hậu tố `a` / `b` phân biệt bộ chỉ tiêu **phi ngân hàng** (`a`) và **ngân hàng** (`b`). Doanh nghiệp ngân hàng có các trường `bsb*` được điền, `bsa*` phần lớn `null` và ngược lại.
 
-Tra nghĩa từng mã: [Phụ lục A §A.5](appendix-A-field-codes.md) — **729 mã đã giải mã, độ phủ 100% trên response thật**, kèm bảng [field-dictionary.json](field-dictionary.json).
+Tra nghĩa từng mã: [Phụ lục A §A.5](appendix-A-field-codes.md) — **729 mã đã giải mã, độ phủ 100% trên response thật**, kèm bảng [field-dictionary.json](../../../backend/etl/data/field-dictionary.json).
 
 ### Ghi chú & bẫy
 

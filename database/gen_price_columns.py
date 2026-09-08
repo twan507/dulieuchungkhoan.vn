@@ -14,7 +14,8 @@ HAND_WRITTEN = {"close_adj", "close_raw", "open_value", "highest_value", "lowest
 # (bẫy thật: 'PRIOR_PRICE' với regex ngây thơ thành 'p_r_i_o_r__p_r_i_c_e')
 snake = lambda s: re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", s).lower()
 rows = json.loads(
-    pathlib.Path("docs/20-design/market-field-selection.json").read_text(encoding="utf-8")
+    (pathlib.Path(__file__).resolve().parents[1] / "backend" / "etl" / "data" / "market-field-selection.json")
+    .read_text(encoding="utf-8")
 )
 cols = [snake(r["code"]) for r in rows if r.get("keep") and r.get("nguon_chuan") == "BVSC"]
 cols = [c for c in dict.fromkeys(cols) if c not in HAND_WRITTEN]

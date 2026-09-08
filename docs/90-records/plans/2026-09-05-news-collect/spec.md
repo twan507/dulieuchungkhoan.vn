@@ -1,7 +1,7 @@
 # Spec — lát 8: thu thập tin tức không AI (47 feed + 6 crawl → `news.*`, dedupe không-AI, gắn mã tầng 1–2, backfill sitemap TinnhanhCK)
 
 **Ngày:** 2026-09-05 tối · **Nhánh:** `feat/news-collect` · **Trạng thái:** chủ dự án duyệt thiết kế tóm tắt 2026-09-05 tối ("ok triển khai đi"); spec này là bản ghi đầy đủ
-**Tiền đề:** [roadmap — Điểm vào cho lát 8](../../../00-overview/roadmap.md) · [news-pipeline.md](../../../20-design/news-pipeline.md) (thiết kế đã duyệt, không thiết kế lại) · [news/README.md](../../../10-sources/news/README.md) · [article-structure.md](../../../10-sources/news/article-structure.md) · [feeds.json](../../../10-sources/news/feeds.json) · migration [`0007_news.py`](../../../../database/migrations/versions/0007_news.py)
+**Tiền đề:** [roadmap — Điểm vào cho lát 8](../../../00-overview/roadmap.md) · [news-pipeline.md](../../../20-design/news-pipeline.md) (thiết kế đã duyệt, không thiết kế lại) · [news/README.md](../../../10-sources/news/README.md) · [article-structure.md](../../../10-sources/news/article-structure.md) · [feeds.json](../../../../backend/etl/data/feeds.json) · migration [`0007_news.py`](../../../../database/migrations/versions/0007_news.py)
 **Brainstorm:** 5 câu, chủ dự án chốt 2026-09-05 tối — ghi ở §4. Số đo trước spec: `measure-news-2026-09-05.txt` *(file này **chưa từng được commit** — rà 2026-09-07; số đo còn lại ở `ledger.md`)*.
 
 Tiêu chí xuyên suốt: **kho là bản ghi nội dung tại thời điểm nhận, bất biến** (news-pipeline §9.1, §9.4); **mọi thứ nguồn tự khai về chính nó đều phải kiểm bằng dữ liệu** (7 cạm bẫy nguồn tin); và **tối ưu tốc độ dev** — lát này chỉ làm phần không có AI, chạy thử 1–2 ngày lấy số dedupe rồi merge.

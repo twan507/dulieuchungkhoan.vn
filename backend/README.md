@@ -12,6 +12,8 @@
 
 **Trạng thái phần code** *(2026-09-06 — năm job REST `screener` · `events` · `price` · `snapshot` · `fundamentals` từ 2026-09-04, job `etl wichart` (vĩ mô · tiền tệ · hàng hoá WiChart → `macro.observation` + `asset.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-05-wichart-macro-etl/)), **năm job quốc tế** `etl fred` · `fx` · `lbma` · `yahoo` · `binance` từ 2026-09-05 chiều ([hồ sơ lát 7](../docs/90-records/plans/2026-09-05-global-etl/)), và job **`etl news`** (47 feed RSS + 6 nguồn crawl HTML → `news.*`, không AI, dedupe URL + tiêu đề 48 giờ, gắn mã tầng 1–2, `--loop`, `--backfill-sitemap` TinnhanhCK) từ 2026-09-06 ([hồ sơ lát 8](../docs/90-records/plans/2026-09-05-news-collect/)), và job **`etl classify`** (lưới AI MiniMax M3 qua `core/llm`: 21 sub + `summary_ai` + mã tầng 3 + gắn 24 ngành, có trần bắt buộc, `ops.llm_call`) từ 2026-09-06 chiều ([hồ sơ lát 9a](../docs/90-records/plans/2026-09-06-news-classify-llm/)), mỗi job một mục dưới)*: `ingester` (socket BVSC → Redis + ClickHouse) · job `etl omo` (crawl OMO của SBV → Postgres) · job `etl refdata` (danh bạ + danh mục mã + cây ICB → Postgres, [hồ sơ](../docs/90-records/plans/2026-08-26-reference-data-etl/)) · job `etl screener` (52 trang `GetScreenerItems` → `market.screener_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-screener-daily-etl/)) · job `etl events` (sáu họ `Calendar/GetCorporate*` → `market.corporate_event`, [hồ sơ](../docs/90-records/plans/2026-09-03-events-daily-etl/)) · job `etl price` (`getPriceData` trang 1 mọi cổ phiếu niêm yết + backfill có con trỏ → `market.price_daily`, [hồ sơ](../docs/90-records/plans/2026-09-03-price-daily-etl/)). Hồ sơ lát ingester/OMO: [`docs/90-records/plans/2026-08-26-ingester-omo-first-slice/`](../docs/90-records/plans/2026-08-26-ingester-omo-first-slice/). `api` chưa bắt đầu.
 
+**`etl/data/`** — dữ liệu tra cứu máy đọc mà job cần lúc chạy: `field-dictionary.json` (729 mã BCTC, `fundamentals`), `feeds.json` (47 feed + 8 crawl + taxonomy, `news`/`classify`), `market-field-selection.json` (chọn trường, `screener`); bảng đo WiChart ở `etl/wichart_source.py`. Dời từ `docs/` vào code 2026-09-08 (lát 12): code không đọc `docs/`, image không mang `docs/`. Tài liệu người đọc vẫn ở `docs/10-sources/`.
+
 ---
 
 ## Chạy `ingester`
@@ -238,7 +240,7 @@ uv run python -m etl fundamentals --backfill --stop-before-open --max-minutes 40
 
 Bốn kind `bs` · `is` · `cf` (→ `market.financial_statement`, dạng dài, **bỏ null**, `metric_code` chữ thường) và `reports`
 (→ `market.financial_report_file`, khoá `source_id`). Mỗi lượt nạp lại từ điển 729 mã vào `market.metric_dictionary` từ
-`docs/10-sources/market/field-dictionary.json` trước khi gọi nguồn — file hỏng thì lượt chết ngay, chưa gọi gì.
+`backend/etl/data/field-dictionary.json` trước khi gọi nguồn — file hỏng thì lượt chết ngay, chưa gọi gì.
 
 **Ghi KHI ĐỔI, hash trên TRỌN payload đã chuẩn hoá** (ba endpoint không có trường tính từ giá). Đổi ⇒ xoá trọn
 `(issuer, statement_type)` rồi chèn lại trong một giao dịch, cộng một dòng `staging.raw_payload` — đó là lịch sử điều

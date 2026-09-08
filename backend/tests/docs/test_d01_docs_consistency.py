@@ -204,7 +204,7 @@ def test_sub_count_matches_code():
 
     # feeds.json tự gọi mình là "bản máy đọc" của taxonomy — nó phải là bản ĐÚNG, không phải
     # bản lạc hậu nhất. Tới 2026-09-07 nó vẫn thiếu `2f` trong khi code và migration đã có.
-    tax = json.loads(_read("docs/10-sources/news/feeds.json"))["taxonomy"]
+    tax = json.loads(_read("backend/etl/data/feeds.json"))["taxonomy"]
     in_json = {g: sorted(v) for g, v in tax.items() if isinstance(v, dict)}
     in_code = {g: sorted(v) for g, v in subs.items() if g != "x"}
     by_group = {k.split("_")[0]: v for k, v in in_json.items()}   # "2_tai_chinh…" -> "2"
@@ -240,7 +240,7 @@ def test_schema_test_count_matches_docs():
 
 def test_crawl_source_count_matches_feeds_json():
     """`feeds.json` là chủ sở hữu số nguồn crawl; tài liệu không được nói một con số thứ ba."""
-    feeds = json.loads(_read("docs/10-sources/news/feeds.json"))
+    feeds = json.loads(_read("backend/etl/data/feeds.json"))
     crawl = feeds["crawl_html"]
     total = len(crawl)
     regular = sum(1 for c in crawl if not c.get("chi_backfill"))

@@ -26,7 +26,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 # Bảng chọn trường là nguồn sự thật "trường này lấy hay bỏ" — không hardcode danh sách ở đây.
-SELECTION_JSON = Path(__file__).resolve().parents[2] / "docs" / "20-design" / "market-field-selection.json"
+SELECTION_JSON = Path(__file__).resolve().parent / "data" / "market-field-selection.json"
 BLOCKS = ("priceInfo", "stockScreenerItem", "performance", "financial", "technical")
 # Thứ tự giành mã khi một khoá có ở nhiều khối — xem docstring. `financial` chỉ nhận
 # những mã mà `stockScreenerItem` KHÔNG có — 5 mã họ tỷ số/thị trường mà BCTC cũng không cấp:

@@ -44,7 +44,7 @@ Bốn tầng, đọc theo số. Mỗi tầng có một loại nội dung và m�
 | [news/](10-sources/news/) | 8 báo điện tử | 47 RSS + 8 nguồn crawl *(6 thường + 2 backfill)* | 2026-08-13, 307 URL · 1.408 tiêu đề · cấu trúc trang bài 2026-08-15, 33 bài |
 | **[llm/](10-sources/llm/)** | **MiniMax M3** — nhà cung cấp LLM duy nhất (Token Plan) | 1 model · 2 giao diện tương thích · endpoint quota | **2026-09-06**, ≈45 lời gọi thật |
 
-Mỗi nguồn tự chứa đủ đồ nghề: `macro/` có [`verify_wichart.py`](10-sources/macro/verify_wichart.py) — tự kiểm 509 khẳng định của tài liệu WiChart với API sống; `news/` có [`feeds.json`](10-sources/news/feeds.json) — 47 feed + taxonomy dạng máy đọc — và [`article-structure.md`](10-sources/news/article-structure.md) — selector container chính cùng luật bỏ boilerplate riêng từng nguồn.
+Mỗi nguồn tự chứa đủ đồ nghề: `macro/` có [`verify_wichart.py`](10-sources/macro/verify_wichart.py) — tự kiểm 509 khẳng định của tài liệu WiChart với API sống; `news/` có [`feeds.json`](../backend/etl/data/feeds.json) — 47 feed + taxonomy dạng máy đọc — và [`article-structure.md`](10-sources/news/article-structure.md) — selector container chính cùng luật bỏ boilerplate riêng từng nguồn.
 
 **`global/` là nhóm mới, lập 2026-08-15.** Lý do tách khỏi `macro/`: chỉ số cổ phiếu quốc tế và crypto không phải vĩ mô. Năm file: [fred.md](10-sources/global/fred.md) · [fx.md](10-sources/global/fx.md) · [yahoo.md](10-sources/global/yahoo.md) · [commodities.md](10-sources/global/commodities.md) · [crypto.md](10-sources/global/crypto.md).
 
@@ -56,7 +56,7 @@ Mục lục chi tiết từng file: [10-sources/README.md](10-sources/README.md)
 
 Vào đó nếu muốn biết: ranh giới process · chiến lược test · kho dữ liệu thị trường · pipeline tin · tầng ngữ nghĩa chatbot · chọn trường ETL · **cây ngành** và **bảng map ngành**.
 
-⚠️ Bốn file trong đó **sinh tự động, cấm sửa tay** — `market-field-selection.*` và `industry-mapping.*`.
+⚠️ Ba file trong đó **sinh tự động, cấm sửa tay** — `market-field-selection.md` và `industry-mapping.*`; bản JSON của market-field-selection cùng luật đó nhưng nay nằm ở `backend/etl/data/` (dời 2026-09-08).
 
 ### 30 · Tri thức chuyên môn
 

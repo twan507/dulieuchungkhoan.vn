@@ -1,18 +1,17 @@
 """Registry WiChart — hai chủ sở hữu ghép lại (spec §4.2).
 
-- `docs/10-sources/macro/wichart.md` §9 (khối Python CUỐI file): sự thật ĐO về nguồn — tên series,
-  đơn vị gốc, `scale`, role, cờ, nhóm, tần suất. Đọc bằng `exec`, đúng cách `verify_wichart.py` làm.
+- `etl/wichart_source.py` (từng là §9 `wichart.md`, dời vào code 2026-09-08): sự thật ĐO về nguồn — tên series,
+  đơn vị gốc, `scale`, role, cờ, nhóm, tần suất.
 - `MACRO` / `ASSET` dưới đây: lựa chọn CỦA MÌNH — mã, tên hiển thị, lớp tài sản, tiền tệ, price_type.
 `build()` ghép hai bên theo (key, idx) và RAISE khi lệch — hợp đồng khởi động, chết trước khi fetch.
 """
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from decimal import Decimal
-from pathlib import Path
 
-WICHART_MD = Path(__file__).resolve().parents[2] / "docs" / "10-sources" / "macro" / "wichart.md"
+from etl import wichart_source
+
 SOURCE = "wichart"
 
 
@@ -189,18 +188,15 @@ LEVEL_FLOOR: dict[str, Decimal] = {
 }
 
 
-def load_doc(md_path: Path = WICHART_MD) -> tuple[dict, list[str]]:
-    """Trả (WICHART, TIER_X) từ khối Python cuối cùng của tài liệu nguồn."""
-    blocks = re.findall(r"```python\n(.*?)```", md_path.read_text(encoding="utf-8"), re.S)
-    if not blocks:
-        raise RegistryError(f"không thấy khối Python trong {md_path}")
-    ns: dict = {}
-    exec(compile(blocks[-1], "wichart_registry_doc", "exec"), ns)  # noqa: S102 — tài liệu trong repo, cùng cách verify_wichart.py
-    return ns["WICHART"], list(ns["TIER_X"])
+def load_doc() -> tuple[dict, list[str]]:
+    """Trả (WICHART, TIER_X) từ bảng đo về nguồn — module `etl.wichart_source` sở hữu (từng là khối §9 wichart.md)."""
+    return wichart_source.WICHART, list(wichart_source.TIER_X)
 
 
-def build(md_path: Path = WICHART_MD) -> list[Series]:
-    doc, tier_x = load_doc(md_path)
+def build(doc: dict | None = None, tier_x: list[str] | None = None) -> list[Series]:
+    if doc is None:
+        doc, tier_x = load_doc()
+    tier_x = list(tier_x or [])
     out: list[Series] = []
     ours: dict[tuple[str, int], str] = {**{k: "macro" for k in MACRO}, **{k: "asset" for k in ASSET}}
     for (key, idx), domain in ours.items():

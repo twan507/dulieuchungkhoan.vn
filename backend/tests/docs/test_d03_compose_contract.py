@@ -75,3 +75,24 @@ def test_image_owns_the_runtime_dirs_for_appuser():
     for d in ("/var/lib/dlck/logs", "/var/lib/dlck/measure", "/var/lib/dlck/spill", "/backups"):
         assert d in dockerfile, d
     assert re.search(r"chown -R appuser [^\n]*/var/lib/dlck", dockerfile)
+
+
+def test_production_code_never_reads_docs():
+    """Image không mang `docs/` (spec §5.3, `.dockerignore`) — mọi tri thức code cần lúc chạy phải nằm trong
+    backend/ hoặc database/ (chỉ đạo chủ dự án 2026-09-08). Task 10 lát 12: `fundamentals` chết exit 2 trong
+    container vì đọc docs/10-sources/…; `news` · `screener` · `wichart` cùng lỗi. Quét tĩnh, không dựng container."""
+    pat = re.compile(r"""["']docs["']\s*/|["']docs/""")
+    skip = {".venv", "__pycache__", ".pytest_cache", "node_modules"}
+    hits = []
+    for root in (REPO / "backend", REPO / "database"):
+        for py in sorted(root.rglob("*.py")):
+            rel = py.relative_to(REPO).as_posix()
+            parts = set(rel.split("/"))
+            if parts & skip or rel.startswith("backend/tests/"):
+                continue
+            for n, line in enumerate(py.read_text(encoding="utf-8").splitlines(), 1):
+                if pat.search(line):
+                    hits.append(f"{rel}:{n}: {line.strip()}")
+    assert not hits, "code ráp đường dẫn vào docs/ — dời tri thức vào backend/ hoặc database/:\n  " + "\n  ".join(hits)
+    ignore = (REPO / ".dockerignore").read_text(encoding="utf-8").splitlines()
+    assert "docs" in ignore                                    # image vẫn không mang docs/

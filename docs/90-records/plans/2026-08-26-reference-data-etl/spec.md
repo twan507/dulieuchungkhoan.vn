@@ -230,7 +230,7 @@ Phân ba loại theo §1.4:
 | Chứng quyền · lô lẻ · trái phiếu | **Loại có chủ đích** | CLAUDE.md §2.2 |
 | `security_external_id` cho dòng FiinTrade-only | **Loại có chủ đích** | §3.2 — không còn gì để gọi; đường FiinTrade đi qua `issuer_external_id` |
 | `getSymbolMapping` (`BVSC /mapping`) | **Đã có đường khác** | Tập con của `/quotes` (cùng 8 trường trừ giá) — `/quotes` phủ hết |
-| `market.metric_dictionary` | **Đã có đường khác** | 729 mã có sẵn trong [`field-dictionary.json`](../../../10-sources/market/field-dictionary.json); nạp là lát riêng |
+| `market.metric_dictionary` | **Đã có đường khác** | 729 mã có sẵn trong [`field-dictionary.json`](../../../../backend/etl/data/field-dictionary.json); nạp là lát riêng |
 | Mã TVC của 15/18 chỉ số | **Chưa kiểm — không bịa** | Chỉ 3 mã đã đo (§3.1); đo thêm thì ghi thêm dòng `external_sub='tvc'` |
 | Phân biệt `etf` với `fund_cert` | **Đã đo 2026-08-27 — CỐ Ý KHÔNG SỬA** | `/datafeed/instruments` có `FundType`, nhưng đo tiếp thì không đáng: trong 31 mã `StockType=3` của `/quotes`, 19 mã `FundType='E'` (đã đúng sẵn), **đúng 1 mã** `'M'` (`FUCVREIT`) là sai, và **11 mã không có mặt** ở instruments nên vẫn treo. Thêm endpoint thứ 5 (3,29 MB/ngày) để sửa 1 dòng trên 2.015 — §4.4.2. Làm cùng lát phái sinh |
 

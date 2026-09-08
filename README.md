@@ -10,7 +10,7 @@ Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập d
 |---|---|---|
 | Tài liệu **9 nguồn** — thị trường · vĩ mô VN · quốc tế · tin | ✅ đo thật bằng lời gọi sống | 131 endpoint VN · 87 key · 307 URL · 6 nguồn mới đo 2026-08-15 |
 | Độ rộng nguồn dữ liệu | ✅ **khép 2026-08-15** — danh sách *"Ngoài phạm vi"* phân rã hết, không còn mục nào chưa có câu trả lời | [phạm vi nguồn](docs/10-sources/README.md) |
-| Từ điển 729 mã trường FiinGroup | ✅ phủ 100% response thật | [field-dictionary.json](docs/10-sources/market/field-dictionary.json) |
+| Từ điển 729 mã trường FiinGroup | ✅ phủ 100% response thật | [field-dictionary.json](backend/etl/data/field-dictionary.json) |
 | Chọn nguồn chuẩn cho từng chỉ tiêu | ✅ đã chốt | [chọn trường cho ETL thị trường](docs/20-design/market-field-selection.md) |
 | Dự án skill | ✅ **đã đóng**, không còn việc treo | [bảo trì skill](docs/30-skills/maintenance.md) |
 | Thiết kế kho dữ liệu · pipeline tin | ✅ đã duyệt, **cả hai đã cài** | kho dữ liệu từ lát 1–7b; pipeline tin lát 8/8b (thu thập) + 9a/9b (lưới AI) |

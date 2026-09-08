@@ -21,7 +21,7 @@ Mọi luật dưới đây **đã được chạy thật** trên chính các tra
 
 ### 1.1 Số nguồn: 8, không phải 10
 
-Tài liệu hiện có ghi *"10 nguồn báo"*. Đếm lại theo host thật trong [`feeds.json`](feeds.json) và [README](README.md) mục 4–5 thì chỉ có **8 host phân biệt**:
+Tài liệu hiện có ghi *"10 nguồn báo"*. Đếm lại theo host thật trong [`feeds.json`](../../../backend/etl/data/feeds.json) và [README](README.md) mục 4–5 thì chỉ có **8 host phân biệt**:
 
 | Host | Feed RSS | Crawler HTML |
 |---|---:|---:|
@@ -345,4 +345,4 @@ Cấu trúc trang sẽ đổi. Ba tín hiệu phát hiện sớm, thêm vào b�
 
 ---
 
-*Tài liệu đi kèm: [danh mục nguồn tin](README.md) · [thiết kế pipeline tin tức](../../20-design/news-pipeline.md) · [`feeds.json`](feeds.json).*
+*Tài liệu đi kèm: [danh mục nguồn tin](README.md) · [thiết kế pipeline tin tức](../../20-design/news-pipeline.md) · [`feeds.json`](../../../backend/etl/data/feeds.json).*

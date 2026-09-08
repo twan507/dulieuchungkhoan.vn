@@ -1,4 +1,4 @@
-"""Registry WiChart: hai chủ sở hữu (khối §9 của wichart.md · bảng mã trong module) phải khớp từng series."""
+"""Registry WiChart: hai chủ sở hữu (bảng đo `etl/wichart_source.py` · bảng mã trong `wichart_registry`) phải khớp từng series."""
 from decimal import Decimal
 
 import pytest
@@ -50,14 +50,16 @@ def test_scale_and_unit_come_from_the_doc_or_ours_as_designed():
     assert m[("chi", 0)].tier == "B"
 
 
-def test_build_raises_when_module_maps_a_series_the_doc_does_not_collect(tmp_path):
-    md = wr.WICHART_MD.read_text(encoding="utf-8")
-    broken = md.replace('("Giá xăng E5","VND/lít",1e3,D,[])', '("Giá xăng E5","VND/lít",1e3,None,["DEAD"])')
-    assert broken != md
-    p = tmp_path / "wichart.md"
-    p.write_text(broken, encoding="utf-8")
+def test_build_raises_when_module_maps_a_series_the_source_table_does_not_collect():
+    import copy
+    from etl import wichart_source as ws
+    broken = copy.deepcopy(ws.WICHART)
+    entries = list(broken["xang_dau"]["s"])
+    assert entries[1][0] == "Giá xăng E5"
+    entries[1] = ("Giá xăng E5", "VND/lít", 1e3, None, ["DEAD"])
+    broken["xang_dau"]["s"] = entries
     with pytest.raises(wr.RegistryError, match=r"xang_dau\[1\]"):
-        wr.build(p)
+        wr.build(doc=broken, tier_x=list(ws.TIER_X))
 
 
 def test_build_raises_when_doc_collects_a_series_the_module_lacks(monkeypatch):

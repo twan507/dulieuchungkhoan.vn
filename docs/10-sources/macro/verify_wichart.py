@@ -2,7 +2,7 @@
 """
 verify_wichart.py — Tự kiểm chứng tài liệu docs/10-sources/macro/wichart.md
 
-Script đọc bảng registry Python NGAY TRONG FILE MD (không gõ lại số nào), rồi
+Script đọc bảng registry từ `backend/etl/wichart_source.py` (dời khỏi file MD 2026-09-08) (không gõ lại số nào), rồi
 đối chiếu từng trường với API WiChart đang chạy. In PASS/FAIL cho mỗi khẳng định.
 
 Kiểm hai nhóm:
@@ -26,7 +26,6 @@ báo về nghĩa là WiGroup vừa đổi đơn vị, đổi nhãn, đổi tần
 
 Kết quả lần chạy gốc: 509 PASS / 0 FAIL (2026-08-12).
 """
-import re
 import statistics
 import sys
 from pathlib import Path
@@ -34,7 +33,9 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 
-MD = Path(__file__).resolve().parent / "wichart.md"
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "backend"))   # gốc repo/backend
+from etl import wichart_source                                              # bảng hardcode nay ở code (2026-09-08)
+
 BASE = "https://api.wichart.vn/vietnambiz/vi-mo"
 ICT = timezone(timedelta(hours=7))
 NOW = datetime.now(ICT)
@@ -81,10 +82,7 @@ BANDS = {
 
 
 def main():
-    md = open(MD, encoding="utf-8").read()
-    blocks = re.findall(r"```python\n(.*?)```", md, re.S)
-    ns = {}
-    exec(compile(blocks[-1], "registry", "exec"), ns)  # khối cuối = bảng hardcode
+    ns = vars(wichart_source)
     W, TIER_X = ns["WICHART"], ns["TIER_X"]
 
     print(f"Đọc registry từ file: {len(W)} key, {len(TIER_X)} key Tier X\n")

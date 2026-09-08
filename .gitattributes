@@ -7,7 +7,7 @@
 # nếu checkout ra CRLF thì lần chạy generator kế tiếp ghi lại LF và git báo TOÀN BỘ
 # file thay đổi dù nội dung không đổi một chữ.
 docs/20-design/market-field-selection.md    text eol=lf
-docs/20-design/market-field-selection.json  text eol=lf
+backend/etl/data/market-field-selection.json  text eol=lf
 
 # Hai file sinh boi docs/20-design/gen_industry_mapping.py — cung ly do nhu tren:
 # generator ghi voi newline LF tuong minh, phai ghim eol=lf de checkout khong tra ve CRLF.
