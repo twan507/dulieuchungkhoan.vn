@@ -209,6 +209,8 @@ $ ls -la ./clickhouse-backups
 | 8 | Task 9 | Chặn ở AC4 ⇒ Task 9a: Dockerfile tạo sẵn và `chown` ba thư mục runtime + `/backups`; mở file log vào hợp đồng exit 2; xoá ba volume `dlck_ingester_*` rỗng rồi tạo lại | Volume tạo lại một lần (rỗng) |
 | 9 | Task 9a | `chown /backups` trong image vô tác dụng (bind mount) — **giữ, vô hại**; AC7 là phép kiểm thật | Một thư mục thừa trong image |
 | 10 | Sau AC7 | `.env` cũ `CLICKHOUSE_BACKUP_DIR=./clickhouse-backups` (gốc `deploy/infra` cũ) ⇒ sửa về `./deploy/infra/clickhouse-backups`, dời zip, tạo lại service | — |
+| 11 | Task 10 dispatch | Họ nào `exit 1` không phải guard ⇒ ghi lại và chạy tiếp họ kế (các họ độc lập, một lượt cho đủ bức tranh); `exit 2` ⇒ dừng ngay. Không kích hoạt vế đầu (lỗi gặp là exit 2) | Vài lượt chạy thừa |
+| 12 | Task 10 → 10a | Trợ lý định đưa `docs/10-sources` + `docs/20-design` vào image; **chủ dự án bác**: code không đọc `docs/`, không đưa `docs/` vào image. Thực thi: ba JSON `git mv` sang `backend/etl/data/`, khối §9 `wichart.md` thành `backend/etl/wichart_source.py`, test tĩnh cấm đường dẫn `docs/` trong code ngoài test; `.dockerignore` giữ nguyên; docs chỉ trỏ tới (một chủ sở hữu) | Nếu sau này thêm file tra cứu mới mà đặt lại dưới `docs/` thì test tĩnh bắt ngay; chi phí là đổi ~20 link tài liệu một lần |
 
 **Minor để dành cho review toàn nhánh (Task 12), không mở vòng sửa:** T1 import giữa file `test_env.py`; `check()` coi khoá khai rỗng là có; T2 contract test không có fixture phản ví dụ, hai docstring nói cùng ý; T3 `resolve_backup_dir` thiếu ca `""`/`"."`; T4 năm chỗ `datetime.now(VN).date()` có sẵn chưa dùng `today_vn`, `today_vn()` không đối số chưa test đồng hồ giả; T5 `install_signal_handlers` để lại handler trong test in-process, danh sách test hồi quy của brief thiếu 7 file CLI (reviewer đã chạy: 48 passed); T6 docstring `daemon()` thiếu nhánh thoát theo tín hiệu, ba khối import rải trong `test_i16`, `shutdown` tạo cả cho `count`/`reconcile`; T7 contract compose không chặn `profiles` quay lại, **rác có sẵn** `test_c99_dedup_probe.py:20` import ba tên đã dời (chỉ vỡ khi `RUN_PROBE=1`); T8 `main()` chưa test trực tiếp, `_ch_literal` chưa test mật khẩu có quote; T9a regex Dockerfile không ghim `/backups` trong `chown`, hai dấu cách trước `&&`.
 
@@ -222,3 +224,32 @@ $ ls -la ./clickhouse-backups
 6. Sáu volume cũ `infra_*`/`dlck-infra_*` chỉ xoá ở Task 12 sau khi mọi AC xanh; **không đụng `tutor-infra_pgdata`**. 11 task Windows: chủ dự án gỡ bằng một lệnh PowerShell ở Task 12 Step 2.
 
 **Cập nhật lúc khép phiên:** họ `events` đã tự kết thúc `success` sau khi operator bị ngắt — Task 10 nối từ họ `price`.
+
+## ▶️ NỐI PHIÊN — 2026-09-08 18:47 (phiên mới, ledger là điểm vào)
+
+Kiểm trước khi làm: stack `dlck` `Up 2 hours` (máy không reboot); `ops.etl_run`: run 1 `market.refdata` success · run 2 `market.events` success (09:47–09:50 UTC) — họ `events` xong; không còn container `run-*`; `python -m core.env check` → `đủ 18 biến bắt buộc, không biến lạ`; `LLM_API` + `FRED_API` có mặt (đếm tên, không in). Sổ SDD ở scratchpad phiên mới (`93c5abe1-…`), kế thừa `progress.md` phiên cũ; brief Task 10 trích lại giống hệt bản cũ.
+
+## Task 10 (phần 1) — AC3 từ `price` · AC-SIGTERM · AC5 (2026-09-08 18:50–18:55, operator Sonnet)
+
+**Step 1 — AC3:** `price --codes FPT,VNM` → `exit=0`, `price xong: {'codes': 2, 'with_data': 2, … 'rows_sent': 120, 'rows_changed': 120, … 'latest_trading_date': '2026-09-08' …}` (run 3, success). `snapshot --codes FPT --kinds snapshot` → `exit=0`, `snapshot xong: {'tally': {'attempted': 1, … 'first': 1 …}, 'rows_written': 1, 'calls': 1 …}` (run 4, success). `fundamentals --codes FPT --kinds bs` → **`exit=2`** (run 5, `failed`):
+
+```
+FileNotFoundError: [Errno 2] No such file or directory: '/app/docs/10-sources/market/field-dictionary.json'
+```
+
+Đúng luật "`exit=2` ⇒ dừng, không tự lách": chuỗi dừng, 10 họ còn lại (`screener` `omo` `wichart` `fred` `fx` `lbma` `yahoo` `binance` `news` `classify`) chưa chạy.
+
+**Chẩn đoán (đọc, không sửa):** `etl/fundamentals_store.py:37` ráp `parents[2]/docs/10-sources/market/field-dictionary.json`; `.dockerignore` (Task 7, chép spec §5.3) loại nguyên `docs`, Dockerfile không `COPY docs/` — image đúng thiết kế, **code sai chỗ đọc**. Grep code ngoài test cho thấy không chỉ một file: `etl/news_registry.py:13` → `docs/10-sources/news/feeds.json` · `etl/screener_normalize.py:29` → `docs/20-design/market-field-selection.json` · `etl/wichart_registry.py:15` → `docs/10-sources/macro/wichart.md` (khối Python §9, `exec`). Bốn họ `fundamentals` `news` `screener` `wichart` cùng chết trong container — lỗi tất định, sẽ tái diễn mọi lượt. Trợ lý định đưa `docs/10-sources` + `docs/20-design` (1,7 MB) vào image; **chủ dự án bác** (~19:05): *code không được đọc docs; tri thức code cần thì viết lại vào code (backend/db); không đưa thứ không kiểm soát được vào image.* **→ AC3: CHƯA ĐẠT (chặn) — Ruling #12 · Task 10a** (mục kế); Task 10 nối lại từ `screener` sau khi image mới chạy được `fundamentals`.
+
+**Step 2 — AC-SIGTERM:** `docker compose run -d --name sigterm-probe etl python -m etl price --backfill --max-minutes 5` → container lên ngay (`-d --name` được chấp nhận); 20 s sau `docker stop -t 60 sigterm-probe`. Log container:
+
+```
+2026-09-08 18:53:03,446 INFO etl.price bắt đầu 18:53 · con trỏ đầu danh sách · còn 1523 mã · hạn 18:58 08/09
+2026-09-08 18:53:32,662 WARNING etl.price backfill dừng tay (Ctrl+C) tại con trỏ A32
+```
+
+`docker inspect --format '{{.State.ExitCode}}'` → **`130`**. `ops.etl_run` (`market.price_backfill`, run 6): `failed | dừng tay (Ctrl+C)`. Khớp Expected nguyên văn — `SIGTERM` trong container đi đúng đường Ctrl+C (`core/shutdown.py`), PID 1 là Python nhận tín hiệu trực tiếp. **→ AC-SIGTERM: PASS.**
+
+**Step 3 — AC5:** đếm TRƯỚC `ops.etl_run`=**6** · `market.security`=**2017** · `rt.schema_migrations`=**2**; danh sách 6 volume `dlck_*` (`chdata` `ingester_logs` `ingester_measure` `ingester_spill` `pgdata` `redisdata`) lưu file; `docker compose down && docker compose up -d` (không `-v`): 7 container + mạng gỡ rồi tạo lại, `migrate` `Exited (0) 6 seconds ago`; đếm SAU ngay lập tức, không job nào chen: **6 · 2017 · 2** — bằng cả ba; `diff` danh sách volume rỗng → `volume: không đổi`. **→ AC5: PASS.**
+
+Bảng 15 họ ghi một lần ở "Task 10 (tiếp)" sau khi chạy nốt; tới lúc này: `refdata` ✓ · `events` ✓ · `price` ✓ · `snapshot` ✓ · `fundamentals` ✗ exit 2 · 10 họ chưa chạy.
