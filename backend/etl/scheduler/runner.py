@@ -108,6 +108,9 @@ class Runner:
         # R26: planner re-issue cùng job mỗi nhịp trong lúc con còn sống ⇒ không in lại dòng từ chối
         # cho mỗi lần gọi, chỉ một dòng cho mỗi CON đang sống (§5.9 "log một dòng").
         self._dup_logged: set[str] = set()
+        # M1: cùng lý do, cho dòng hạ nhiệt — giá trị là `failed_at` của cửa sổ đã in, nên lần thoát
+        # lỗi SAU (failed_at mới) lại được in một dòng, còn mọi nhịp trong cùng cửa sổ thì im.
+        self._cooldown_logged: dict[str, datetime] = {}
 
     # ---- trạng thái ------------------------------------------------------
     def alive(self, name: str) -> bool:
@@ -144,8 +147,10 @@ class Runner:
             if failed is not None:
                 rc, failed_at = failed
                 if now < failed_at + timedelta(minutes=RETRY_AFTER_MIN):
-                    print(f"[{now:%Y-%m-%d %H:%M:%S}] {spec.name} vừa thoát mã {rc} lúc {failed_at:%H:%M}, "
-                          f"chờ {RETRY_AFTER_MIN} phút ({reason})", flush=True)
+                    if self._cooldown_logged.get(spec.name) != failed_at:
+                        print(f"[{now:%Y-%m-%d %H:%M:%S}] {spec.name} vừa thoát mã {rc} lúc {failed_at:%H:%M}, "
+                              f"chờ {RETRY_AFTER_MIN} phút ({reason})", flush=True)
+                        self._cooldown_logged[spec.name] = failed_at
                     return None
         if spec.kind != "daemon" and len(self._live_non_daemon_children()) >= self.max_children:
             print(f"[{now:%Y-%m-%d %H:%M:%S}] {spec.name} hoãn: đủ {self.max_children} tiến trình con ({reason})", flush=True)
@@ -163,6 +168,7 @@ class Runner:
         self._children[spec.name] = child
         self._last_spawn[spec.name] = now
         self._dup_logged.discard(spec.name)
+        self._cooldown_logged.pop(spec.name, None)
         return child
 
     def reconcile(self, tasks: list[Task], now: datetime) -> list[str]:

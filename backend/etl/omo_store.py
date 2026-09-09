@@ -108,7 +108,11 @@ def open_run(engine, job: str) -> int:
     job nên không sửa file job nào; exit 1 đúng hợp đồng "dữ liệu lành, không cần người".
     """
     lock = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
-    got = lock.execute(sa.text("SELECT pg_try_advisory_lock(hashtext(:j))"), {"j": job}).scalar_one()
+    try:
+        got = lock.execute(sa.text("SELECT pg_try_advisory_lock(hashtext(:j))"), {"j": job}).scalar_one()
+    except BaseException:                 # M3: lệnh giành khoá tự ném (kho chớp tắt) ⇒ đóng connection riêng, đừng rò pool
+        lock.close()
+        raise
     if not got:
         lock.execute(
             sa.text("INSERT INTO ops.etl_run (job, status, finished_at, error, stats)"

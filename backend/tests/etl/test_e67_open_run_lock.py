@@ -104,3 +104,33 @@ def test_close_run_refused_flags_stats(clean):
     omo_store.close_run_refused(clean, rid2, "model down")
     assert _rows(clean)[1].stats == {"guard_refused": True}
 
+
+def test_open_run_closes_the_lock_connection_when_the_acquire_itself_raises():
+    """M3: `pg_try_advisory_lock` tự nó ném (kho chớp tắt, connection chết trong pool) thì connection
+    RIÊNG vừa lấy ra chưa ai đóng — rò một chỗ trong pool mỗi lần. Không cần kho thật: seam là đúng
+    hai lời gọi `engine.connect()` → `execution_options()` → `execute()`."""
+
+    class FakeConn:
+        def __init__(self):
+            self.closed = 0
+
+        def execution_options(self, **_kw):
+            return self
+
+        def execute(self, *_a, **_k):
+            raise RuntimeError("kho chớp tắt")
+
+        def close(self):
+            self.closed += 1
+
+    class FakeEngine:
+        def __init__(self, conn):
+            self.conn = conn
+
+        def connect(self):
+            return self.conn
+
+    conn = FakeConn()
+    with pytest.raises(RuntimeError, match="kho chớp tắt"):
+        omo_store.open_run(FakeEngine(conn), JOB)
+    assert conn.closed == 1

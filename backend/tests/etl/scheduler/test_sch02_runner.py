@@ -129,6 +129,27 @@ def test_non_zero_exit_blocks_respawn_for_ten_minutes_then_allows(tmp_path):
     assert len(log) == 2
 
 
+def test_cooldown_refusal_line_prints_once_per_window(tmp_path, capsys):
+    """M1 (review toàn nhánh lát 13): dòng từ chối vì hạ nhiệt KHÔNG có chống lặp, trong khi R24
+    sinh ra nó cho đúng cảnh con chết trước `open_run` — planner cấp lại mốc mỗi nhịp 20 s, nên
+    một sự cố 10 phút in ~30 dòng. `tick_intraday` cũng đi qua đây (`_last_spawn` không được cập
+    nhật khi spawn bị từ chối). Đúng như dòng "đang chạy, bỏ qua lượt": một dòng cho mỗi CỬA SỔ
+    hạ nhiệt, không phải mỗi lần từ chối."""
+    log = []
+    r = Runner(tmp_path, spawn_fn=lambda cmd, **kw: log.append(cmd) or FakePopen(0, rc=2), clock=lambda: vn(15, 40, 0))
+    assert r.spawn(PRICE, vn(15, 40, 0), "mốc 15:40") is not None
+    assert r.poll(vn(15, 40, 20)) == [Finished("market.price_daily", 2, 20, "mốc 15:40")]
+    capsys.readouterr()                                   # bỏ dòng báo con thoát
+
+    assert r.spawn(PRICE, vn(15, 41, 0), "nhịp tick") is None
+    assert r.spawn(PRICE, vn(15, 42, 0), "nhịp tick") is None
+    assert r.spawn(PRICE, vn(15, 43, 0), "nhịp tick") is None
+    assert capsys.readouterr().out.count("vừa thoát mã 2") == 1
+
+    assert r.spawn(PRICE, vn(15, 50, 20), "mốc 15:40 lại") is not None    # hết 10 phút: chạy lại được
+    assert len(log) == 2
+
+
 def test_clean_exit_does_not_block_respawn(tmp_path):
     log = []
     r = Runner(tmp_path, spawn_fn=lambda cmd, **kw: log.append(cmd) or FakePopen(0, rc=0), clock=lambda: vn(15, 40, 0))
