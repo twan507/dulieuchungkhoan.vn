@@ -1,23 +1,15 @@
 import argparse
 import sys
-import time
-from datetime import datetime, timezone
 
 from core.shutdown import install_signal_handlers
-from etl.heartbeat import heartbeat
-
-
-def _heartbeat_loop() -> int:
-    while True:
-        print(heartbeat(datetime.now(timezone.utc)), flush=True)
-        time.sleep(15)
 
 
 def main(argv: list[str] | None = None) -> int:
     install_signal_handlers()         # SIGTERM của `docker stop` đi cùng đường Ctrl+C (đóng sổ, exit 130)
     args = sys.argv[1:] if argv is None else argv
     if not args:
-        return _heartbeat_loop()          # giữ tương thích compose deploy/app
+        from etl.scheduler.loop import main as loop_main
+        return loop_main()                # `python -m etl` trần = scheduler (lát 13, compose `etl`)
     if args[0] == "omo":
         parser = argparse.ArgumentParser(prog="etl omo")
         parser.add_argument("--seed", metavar="CSV", help="nạp lịch sử từ CSV FiinProX (spec lát 13 §5.1)")

@@ -49,3 +49,9 @@ def test_events_subcommand_passes_accept_new_through(monkeypatch, capsys):
     assert main(["events", "--accept-new"]) == 0 and seen["accept_new"] is True
     assert main(["events"]) == 0 and seen["accept_new"] is False
     assert main(["nope"]) == 2 and "events" in capsys.readouterr().err
+
+
+def test_no_args_runs_the_scheduler_loop(monkeypatch):
+    import etl.scheduler.loop
+    monkeypatch.setattr(etl.scheduler.loop, "main", lambda argv=None: 7)
+    assert main([]) == 7
