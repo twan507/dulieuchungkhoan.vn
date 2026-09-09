@@ -11,14 +11,14 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime
 
 import sqlalchemy as sa
 
+from core.clock import today_vn
 from core.env import load_dotenv
 from etl import omo_store, wichart_fetch, wichart_guard, wichart_normalize, wichart_registry, wichart_store
 from etl.wichart_fetch import BadShape, FetchError
-from etl.wichart_normalize import VN, SeriesError
+from etl.wichart_normalize import SeriesError
 
 log = logging.getLogger("etl.wichart")
 JOB = wichart_store.JOB
@@ -106,7 +106,7 @@ def run(keys=None, dry_run=False, intraday=False, get=None, sleep=time.sleep) ->
         points, tally, errors = _normalize_all(series, docs, failed, bad)
         tally.keys_total, tally.keys_failed, tally.keys_bad_shape = len(groups), len(failed), len(bad)
         verdict = wichart_guard.check(tally) if not subset else wichart_guard.Verdict(ok=True)
-        run_date = datetime.now(VN).date()
+        run_date = today_vn()
         stats = {"tally": vars(tally), "calls": calls, "retries": retries, "points": len(points),
                  "run_date": run_date.isoformat(), "errors": errors[:MAX_ERRORS_IN_STATS],
                  "failed_keys": failed, "bad_shape_keys": bad}

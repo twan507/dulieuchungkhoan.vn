@@ -14,17 +14,16 @@ import sys
 import time
 from collections.abc import Iterable
 from datetime import date, datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
 
+from core.clock import VN, today_vn
 from core.env import load_dotenv
 from etl import news_extract, news_fetch, news_registry, news_store, news_tag, omo_store
 from etl.news_parse import PARSERS, Item, ParseError
 from etl.price_job import _next_open
 
 log = logging.getLogger("etl.news")
-VN = ZoneInfo("Asia/Ho_Chi_Minh")
 JOB = "news.collect"
 LEGACY_JOB = "news.backfill_sitemap"          # lát 8: chỉ TinnhanhCK, một job — 8b đọc thêm để không mất con trỏ
 CYCLE_SECONDS = 300
@@ -293,7 +292,7 @@ def periods_desc(source: str, from_month: str, to_month: str, today: date | None
         m -= 1
         if m == 0:
             y, m = y - 1, 12
-    today = today or datetime.now(VN).date()
+    today = today or today_vn()
     months = [ym for ym in months if ym <= today.strftime("%Y-%m")]       # không sinh kỳ tương lai (cả nguồn tháng lẫn ngày)
     if news_registry.SITEMAPS[source].period == "month":
         return months

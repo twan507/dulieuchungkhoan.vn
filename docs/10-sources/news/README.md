@@ -18,7 +18,7 @@ Tài liệu này mô tả **nguồn tin có gì và cư xử thế nào** — 47
 > | **13 Khối lượng đã đo** | **file này** |
 > | Cấu trúc trang bài và luật bỏ boilerplate *(đo 15/08/2026, 8 nguồn)* | [article-structure.md](article-structure.md) |
 
-**File máy đọc đi kèm:** [`feeds.json`](feeds.json) — 47 feed, taxonomy 21 sub, nhật ký loại bỏ.
+**File máy đọc đi kèm:** [`feeds.json`](../../../backend/etl/data/feeds.json) — 47 feed, taxonomy 21 sub, nhật ký loại bỏ (nằm trong code từ 2026-09-08).
 
 ---
 

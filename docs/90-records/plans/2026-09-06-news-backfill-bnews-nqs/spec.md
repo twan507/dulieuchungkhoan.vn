@@ -159,7 +159,7 @@ Giữ nguyên lát 8 (I2, §4.6-VII, cầu chì 10 bài, Ctrl+C ⇒ 130, excepti
 - [ ] [news/README.md](../../../10-sources/news/README.md) *(đo 2026-09-06)*: §5 "Sáu nguồn crawl" → tám; **§5.4 BNews — sitemap tháng** (mẫu URL, 3 phần tử đầu, giảm dần, `lastmod` = giờ đăng, lùi tới 2015-08, ~4.000 bài/tháng); **§5.5 NguoiQuanSat — sitemap ngày** (mẫu URL, không phần tử trang chủ, giảm dần, `lastmod` = giờ đăng, lùi tới 2021-07-16, 25 → 200 bài/ngày, 🔴 403 chập chờn không theo UA, `sitemap-news/category` 403); "Trạng thái" ⇒ "lát 8b".
 - [ ] [article-structure.md](../../../10-sources/news/article-structure.md) *(đo 2026-09-06)*: §2.7 NguoiQuanSat thêm **template cũ** (bài ≤ 2024: `h1.c-detail-head__title`, `span.c-detail-head__time` `%d-%m-%Y %H:%M`, không sapo trong head); §2.6 BNews thêm "Kiểm lại 06/09 trên bài 2015/2020: rule còn đúng; trang có ld+json `datePublished`".
 - [ ] [news-pipeline.md](../../../20-design/news-pipeline.md) §9.6: dòng BNews/NguoiQuanSat *(đo 2026-09-06)*: dạng sitemap, `lastmod` = giờ đăng, độ sâu; §14 mục 6 ✅ cả ba.
-- [ ] [feeds.json](../../../10-sources/news/feeds.json): hai dòng + `_meta`.
+- [ ] [feeds.json](../../../../backend/etl/data/feeds.json): hai dòng + `_meta`.
 - [ ] [backend/README.md](../../../../backend/README.md): mục job news — `--source`, job name theo nguồn, ước tải, quy ước một tiến trình/nguồn.
 - [ ] [roadmap.md](../../../00-overview/roadmap.md): lát 8b ✅ trong bảng lát, gạch "Điểm vào cho lát 8b", việc gấp [5] cập nhật, số test.
 - [ ] `90-records/README.md`: dòng plan này; `ledger.md`.

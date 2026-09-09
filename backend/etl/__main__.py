@@ -3,7 +3,7 @@ import sys
 import time
 from datetime import datetime, timezone
 
-from core.console import lock_if_scheduled
+from core.shutdown import install_signal_handlers
 from etl.heartbeat import heartbeat
 
 
@@ -14,8 +14,7 @@ def _heartbeat_loop() -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    if lock_if_scheduled():           # cửa sổ task Interactive: bấm nhầm X không giết được job
-        print("[dlck] nút X của cửa sổ đã khoá — dừng bằng Ctrl+C hoặc Stop-ScheduledTask", file=sys.stderr)
+    install_signal_handlers()         # SIGTERM của `docker stop` đi cùng đường Ctrl+C (đóng sổ, exit 130)
     args = sys.argv[1:] if argv is None else argv
     if not args:
         return _heartbeat_loop()          # giữ tương thích compose deploy/app

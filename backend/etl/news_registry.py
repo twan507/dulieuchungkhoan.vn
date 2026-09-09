@@ -1,5 +1,5 @@
-"""Registry nguồn tin (spec lát 8 §5.1): 47 feed RSS đọc từ docs/10-sources/news/feeds.json (chủ duy nhất của danh sách feed,
-như wichart_registry đọc khối Python trong wichart.md) + 8 nguồn crawl (3 sitemap: TinnhanhCK vá lỗ, BNews/NguoiQuanSat chỉ
+"""Registry nguồn tin (spec lát 8 §5.1): 47 feed RSS đọc từ `etl/data/feeds.json` (chủ duy nhất của danh sách feed — dời
+từ `docs/` vào code 2026-09-08, lát 12 Task 10a) + 8 nguồn crawl (3 sitemap: TinnhanhCK vá lỗ, BNews/NguoiQuanSat chỉ
 backfill — lát 8b); phần "của mình" là tên báo chuẩn, kind, feed_slug, group_from_feed. Số đếm phải khớp `_meta` — lệch là
 chết trước fetch (hợp đồng khởi động)."""
 from __future__ import annotations
@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
 
-FEEDS_JSON = Path(__file__).resolve().parents[2] / "docs" / "10-sources" / "news" / "feeds.json"
+FEEDS_JSON = Path(__file__).resolve().parent / "data" / "feeds.json"
 SOURCES = ("cafef", "vietstock", "vneconomy", "vietnambiz", "bnews", "nguoiquansat", "baochinhphu", "tinnhanhck")
 KINDS = ("rss", "cafef_cbtt", "tnck_category", "sitemap", "bcp_list")
 GROUP_KEYS = (("1_vi_mo_trong_nuoc", 1), ("2_tai_chinh_quoc_te", 2), ("3_doanh_nghiep_niem_yet", 3))

@@ -4,7 +4,7 @@
 **Trạng thái:** ✅ đã chốt ·
 **Trải từ quyết định chọn nguồn ngày 2026-08-14**
 
-**File sinh tự động** từ [`gen_field_selection.py`](gen_field_selection.py) — sửa qua script rồi chạy lại, không sửa tay. Bản [`market-field-selection.json`](market-field-selection.json) sinh cùng nguồn.
+**File sinh tự động** từ [`gen_field_selection.py`](gen_field_selection.py) — sửa qua script rồi chạy lại, không sửa tay. Bản [`market-field-selection.json`](../../backend/etl/data/market-field-selection.json) sinh cùng nguồn.
 
 Tài liệu này trả lời đúng một câu hỏi của người viết ETL: **trường này lấy hay bỏ, nguồn chuẩn là ai, vì sao.**
 Lý do ghi thẳng tại từng dòng — không phải tra chỗ khác, không phải diễn giải lại quyết định của ai.
@@ -24,7 +24,7 @@ tiêu đề là đếm sai của tài liệu, đã sửa)* · mã trường Scre
 
 Nguồn dẫn của từng bảng: [10 — Từ điển mã trường & Bộ sàng lọc](../10-sources/market/10-fiin-dictionary.md) ·
 [Phụ lục A — mã trường](../10-sources/market/appendix-A-field-codes.md) ·
-[field-dictionary.json](../10-sources/market/field-dictionary.json) ·
+[field-dictionary.json](../../backend/etl/data/field-dictionary.json) ·
 [04 — Hồ sơ doanh nghiệp](../10-sources/market/04-fiin-company-profile.md) ·
 [01 — BVSC REST](../10-sources/market/01-bvsc-rest.md) ·
 [Phụ lục B — độ phủ](../10-sources/market/appendix-B-coverage.md).
@@ -628,7 +628,7 @@ Screener có và giữ cả hai (§4.1), nên bỏ ở đây là bỏ đúng. C�
 **BCTC đầy đủ — giữ nguyên vẹn 556 mã.** Mọi mã tiền tố `bs*` `is*` `cf*` `no*` đều **lấy**, nguồn chuẩn là
 bộ báo cáo tài chính đầy đủ. Không trải từng dòng ở đây vì quyết định là *theo họ mã*, không có trường hợp
 ngoại lệ nào phải cân nhắc riêng; danh sách máy đọc đủ 556 mã kèm tên và đơn vị đã có sẵn ở
-[field-dictionary.json](../10-sources/market/field-dictionary.json). Hệ quả trực tiếp: mọi mã `bs*` `is*`
+[field-dictionary.json](../../backend/etl/data/field-dictionary.json). Hệ quả trực tiếp: mọi mã `bs*` `is*`
 `cf*` `no*` xuất hiện ở Screener hay Snapshot đều **bỏ** — đã ghi ở §4.2 và §5.2.
 
 **MoneyFlow — giữ FiinTrade, BVSC không có.** Ba endpoint: `getForeign` (chuỗi khối ngoại intraday — BVSC

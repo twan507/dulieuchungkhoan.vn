@@ -1,0 +1,189 @@
+# MỘT compose cho cả kho lẫn app (lát 12, 2026-09-08). Trên VPS: `.env` đặt
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.vps.yml
+# rồi `docker compose up -d --build` là đủ. Trên dev: cùng lệnh, không overlay.
+# Job: docker compose run --rm etl python -m etl <job> [cờ]   ·  REPL: docker compose run --rm agent
+name: dlck
+
+# Bảy biến chung mọi service app. CLICKHOUSE_BACKUP_DIR KHÔNG nằm ở đây (review toàn nhánh 2026-09-08,
+# bất đồng nhẹ với phán quyết #9): chỉ `etl` mount /backups, bốn service kia mang biến trỏ vào một
+# đường không mount là vô nghĩa — lỡ chạy core.ch_backup ở đó sẽ ghi vào lớp ghi của container rồi
+# biến mất khi container bị recreate, im lặng và tưởng là thành công.
+x-app-env: &app-env
+  POSTGRES_HOST: postgres
+  REDIS_HOST: redis
+  CLICKHOUSE_HOST: clickhouse
+  TZ: Asia/Ho_Chi_Minh
+  INGESTER_LOG_DIR: /var/lib/dlck/logs
+  INGESTER_MEASURE_DIR: /var/lib/dlck/measure
+  INGESTER_SPILL_DIR: /var/lib/dlck/spill
+
+x-app: &app
+  build:
+    context: .
+    dockerfile: deploy/backend.Dockerfile
+  image: dlck-backend
+  env_file: .env
+  environment:
+    <<: *app-env
+  networks:
+    - dlck-net
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dulieu}
+      POSTGRES_USER: ${POSTGRES_USER:-dulieu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD phải đặt trong .env}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dulieu} -d ${POSTGRES_DB:-dulieu}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - dlck-net
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - dlck-net
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.3.22.7
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?CLICKHOUSE_PASSWORD phải đặt trong .env}
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    ports:
+      - "127.0.0.1:${CLICKHOUSE_PORT:-8123}:8123"
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - chdata:/var/lib/clickhouse
+      - ./deploy/infra/clickhouse/backups.xml:/etc/clickhouse-server/config.d/backups.xml:ro
+      - ./deploy/infra/clickhouse/system-logs.xml:/etc/clickhouse-server/config.d/system-logs.xml:ro
+      - ./deploy/infra/clickhouse/memory.xml:/etc/clickhouse-server/config.d/memory.xml:ro
+      - ${CLICKHOUSE_BACKUP_DIR:-./deploy/infra/clickhouse-backups}:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "clickhouse-client --password \"$$CLICKHOUSE_PASSWORD\" -q 'SELECT 1'"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - dlck-net
+
+  # One-shot: alembic head · ch_migrate · 4 user login · tự seed ngành lớp 2. Chạy lại mỗi `up` (idempotent).
+  migrate:
+    <<: *app
+    restart: "no"
+    command: ["python", "-m", "core.bootstrap"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+
+  api:
+    <<: *app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # Vỏ job: lát 12 giữ heartbeat; lát 13 thay `command` bằng scheduler. Job lẻ chạy qua `docker compose run --rm etl …`.
+  etl:
+    <<: *app
+    restart: unless-stopped
+    command: ["python", "-m", "etl"]
+    stop_grace_period: 60s
+    environment:
+      <<: *app-env
+      CLICKHOUSE_BACKUP_DIR: /backups
+    volumes:
+      - ${CLICKHOUSE_BACKUP_DIR:-./deploy/infra/clickhouse-backups}:/backups
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # Daemon: ngoài phiên ngủ, 08:30–15:05 giờ VN ghi thật. Exit 3 (hợp đồng khởi động) ⇒ Docker khởi động lại có giãn cách.
+  ingester:
+    <<: *app
+    restart: unless-stopped
+    command: ["python", "-m", "ingester"]
+    # 90s phủ đuôi dừng bình thường: wait_for(socket_task, 30s) + xả hàng đợi (_drain_for_verdict) +
+    # đối chứng reconcile thường. CỐ Ý không phủ timeout mặc định 300s của driver ClickHouse lúc
+    # reconcile (rc_client riêng, xem comment tại chỗ ở ingester/main.py) — nếu 90s không đủ, hàng
+    # chưa insert đã nằm ở spill và được _replay_startup_debt phát lại phiên sau; cái mất chỉ là
+    # dòng phán quyết reconcile của phiên đó (Chuẩn M9, review toàn nhánh 2026-09-08).
+    stop_grace_period: 90s
+    volumes:
+      - ingester_logs:/var/lib/dlck/logs
+      - ingester_measure:/var/lib/dlck/measure
+      - ingester_spill:/var/lib/dlck/spill
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      clickhouse:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Lưới an toàn frame thô (tuỳ chọn): docker compose --profile measure up -d ingester-measure
+  ingester-measure:
+    <<: *app
+    profiles: ["measure"]
+    restart: unless-stopped
+    command: ["python", "-m", "ingester", "--measure"]
+    stop_grace_period: 30s
+    volumes:
+      - ingester_logs:/var/lib/dlck/logs
+      - ingester_measure:/var/lib/dlck/measure
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # REPL tầng ngữ nghĩa: docker compose run --rm agent
+  agent:
+    <<: *app
+    profiles: ["tools"]
+    command: ["python", "-m", "agent"]
+    stdin_open: true
+    tty: true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  redisdata:
+  chdata:
+  ingester_logs:
+  ingester_measure:
+  ingester_spill:
+
+networks:
+  dlck-net:

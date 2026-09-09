@@ -209,7 +209,7 @@ Task Scheduler 4 mốc 11:30 · 15:30 · 18:00 · 21:30 (Thứ Hai–Thứ Sáu)
 
 | Biến env (thêm vào `.env.example` cùng lượt) | Dùng bởi | Ghi chú |
 |---|---|---|
-| `CLICKHOUSE_INGESTER_URL` | ingester | user login `ingester_worker` gắn role `dlck_ingester` (tạo per-môi-trường theo [create_users.sql.example](../../../../database/clickhouse/create_users.sql.example)); KHÔNG dùng user quản trị để ghi |
+| `CLICKHOUSE_INGESTER_URL` | ingester | user login `ingester_worker` gắn role `dlck_ingester` (tạo per-môi-trường theo [create_users.sql.example](../../../../backend/core/bootstrap.py)); KHÔNG dùng user quản trị để ghi |
 | `REDIS_URL` | ingester | `redis://127.0.0.1:6379/0` (host/port đã có trong `.env.example` dạng rời — gộp thành URL, giữ hai biến cũ cho compose) |
 | `ETL_DATABASE_URL` | job omo | user login `etl_worker IN ROLE dlck_etl` (per-môi-trường — lệnh mẫu ở [database/README.md](../../../../database/README.md)) |
 | `INGESTER_LOG_DIR` / `INGESTER_MEASURE_DIR` | ingester | thư mục ngoài repo; default chốt ở plan |

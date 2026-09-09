@@ -387,17 +387,14 @@ class _FakeCHClient:
         self.closed = True
 
 
-class _FrozenNow:
-    """`datetime` giả CHỈ có `now` — đóng băng "hôm nay" để mốc so sánh của test là literal
-    bất biến, không phải ngày chạy test (CLAUDE.md §4.4.4: tiêu chí phải còn đúng sau 3 tháng)."""
-
-    @staticmethod
-    def now(tz):
-        return datetime(2026, 8, 27, 8, 0, tzinfo=tz)
+FROZEN_TODAY = date(2026, 8, 27)
+"""Đóng băng "hôm nay" để mốc so sánh của test là literal bất biến, không phải ngày chạy test
+(CLAUDE.md §4.4.4: tiêu chí phải còn đúng sau 3 tháng). Seam là `today_vn` nhập vào `ingester.main`
+— trước 2026-09-08 là `main_mod.datetime` giả, đổi khi hằng múi giờ gom về `core.clock` (A4)."""
 
 
 def test_startup_debt_reconciles_only_days_before_today(monkeypatch):
-    monkeypatch.setattr(main_mod, "datetime", _FrozenNow)
+    monkeypatch.setattr(main_mod, "today_vn", lambda: FROZEN_TODAY)
     today, yday, d2 = date(2026, 8, 27), date(2026, 8, 26), date(2026, 8, 24)
     seen, clients = [], []
 
@@ -440,7 +437,7 @@ def test_boot_spill_io_error_returns_exit_3_not_a_bare_traceback(tmp_path, monke
             raise PermissionError("không tạo được thư mục spill")
 
     monkeypatch.setattr(main_mod.spill_mod, "SpillStore", _BoomStore)
-    assert asyncio.run(run("run")) == 3
+    assert asyncio.run(run("run", minutes=1)) == 3  # minutes=: một phiên có hạn, không qua daemon (lát 12)
     assert "ingester:" in capsys.readouterr().err
 
     class _BoomAcquireStore:                # ca 2: `try_acquire`/`_scan` hỏng
@@ -451,7 +448,7 @@ def test_boot_spill_io_error_returns_exit_3_not_a_bare_traceback(tmp_path, monke
             raise PermissionError("AV giữ .tmp mồ côi — unlink hỏng")
 
     monkeypatch.setattr(main_mod.spill_mod, "SpillStore", _BoomAcquireStore)
-    assert asyncio.run(run("run")) == 3
+    assert asyncio.run(run("run", minutes=1)) == 3  # minutes=: một phiên có hạn, không qua daemon (lát 12)
     assert "ingester:" in capsys.readouterr().err
 
 
@@ -502,7 +499,7 @@ def test_startup_debt_does_not_reconcile_when_the_debt_did_not_fully_drain(monke
     lại MỘT PHẦN — chạy đối chứng trên tập đó là in một phán quyết tự tin ĐÈ LÊN phán quyết
     "KHÔNG ĐÁNG TIN" trung thực của đêm qua, trong khi kho vẫn còn thiếu đúng phần nợ chưa
     xả. Nợ chưa sạch ⇒ không đối chứng, phán quyết cũ đứng nguyên."""
-    monkeypatch.setattr(main_mod, "datetime", _FrozenNow)
+    monkeypatch.setattr(main_mod, "today_vn", lambda: FROZEN_TODAY)
     seen = []
 
     def _fake_reconcile(client, d):

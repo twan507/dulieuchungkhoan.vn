@@ -1,15 +1,16 @@
 import argparse
 import asyncio
-import sys
 from datetime import date
 
-from core.console import lock_if_scheduled
+from core.shutdown import install_signal_handlers
 from ingester.main import run
 
 
 def main() -> int:
-    if lock_if_scheduled():           # cửa sổ task Interactive: bấm nhầm X là mất tick — khoá nút X
-        print("[dlck] nút X của cửa sổ đã khoá — dừng bằng Ctrl+C hoặc Stop-ScheduledTask", file=sys.stderr)
+    install_signal_handlers()         # lưới cho Windows và cho khúc trước khi loop chạy; đường dừng thật
+                                      # của ingester là install_loop_stop (SIGTERM/SIGINT → stop.set(),
+                                      # phiên đóng đúng đường deadline: xả + đối chứng, exit 0/1, không
+                                      # ghi ops.etl_run)
     ap = argparse.ArgumentParser("ingester")
     ap.add_argument("--measure", action="store_true")
     ap.add_argument("--out", default=None, help="thư mục frame đo (default INGESTER_MEASURE_DIR)")

@@ -1,18 +1,17 @@
 """Registry WiChart — hai chủ sở hữu ghép lại (spec §4.2).
 
-- `docs/10-sources/macro/wichart.md` §9 (khối Python CUỐI file): sự thật ĐO về nguồn — tên series,
-  đơn vị gốc, `scale`, role, cờ, nhóm, tần suất. Đọc bằng `exec`, đúng cách `verify_wichart.py` làm.
+- `etl/wichart_source.py` (từng là §9 `wichart.md`, dời vào code 2026-09-08): sự thật ĐO về nguồn — tên series,
+  đơn vị gốc, `scale`, role, cờ, nhóm, tần suất.
 - `MACRO` / `ASSET` dưới đây: lựa chọn CỦA MÌNH — mã, tên hiển thị, lớp tài sản, tiền tệ, price_type.
 `build()` ghép hai bên theo (key, idx) và RAISE khi lệch — hợp đồng khởi động, chết trước khi fetch.
 """
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from decimal import Decimal
-from pathlib import Path
 
-WICHART_MD = Path(__file__).resolve().parents[2] / "docs" / "10-sources" / "macro" / "wichart.md"
+from etl import wichart_source
+
 SOURCE = "wichart"
 
 
@@ -27,11 +26,11 @@ class Series:
     group: str                      # 'vi_mo' | 'hang_hoa'
     domain: str                     # 'macro' | 'asset'
     code: str                       # mã của mình
-    doc_name: str                   # tên series theo §9 (để đối chiếu với API)
+    doc_name: str                   # tên series theo bảng đo (`wichart_source`), để đối chiếu với API
     name_vi: str
-    unit: str                       # macro: đơn vị gốc §9 · asset: đơn vị của mình (Phụ lục A)
-    scale: Decimal                  # §9 — nhân raw để về đơn vị gốc
-    freq: str                       # §9 — bằng tần suất thật đã đo
+    unit: str                       # macro: đơn vị gốc theo bảng đo (`wichart_source`) · asset: đơn vị của mình (Phụ lục A)
+    scale: Decimal                  # bảng đo (`wichart_source`) — nhân raw để về đơn vị gốc
+    freq: str                       # bảng đo (`wichart_source`) — bằng tần suất thật đã đo
     role: str                       # 'data' | 'growth_ref'
     flags: tuple[str, ...]
     asset_class: str | None = None
@@ -39,8 +38,8 @@ class Series:
     price_type: str | None = None
     region: str = "vn"
     calendar: str | None = None      # chỉ asset có lịch (asset.asset.calendar); macro để None
-    tier: str = "A"                  # §9, cấp KEY (không phải cấp series)
-    key_flags: tuple[str, ...] = ()  # §9, cấp KEY (vd WIN2Y, FREQMIS) — khác flags cấp series
+    tier: str = "A"                  # bảng đo (`wichart_source`), cấp KEY (không phải cấp series)
+    key_flags: tuple[str, ...] = ()  # bảng đo (`wichart_source`), cấp KEY (vd WIN2Y, FREQMIS) — khác flags cấp series
 
     @property
     def external_sub(self) -> str:
@@ -57,7 +56,7 @@ class Series:
                 "key_flags": list(self.key_flags)}
 
 
-# (key, idx) -> (code, name_vi). Tăng trưởng = <code>.growth, role growth_ref (theo §9).
+# (key, idx) -> (code, name_vi). Tăng trưởng = <code>.growth, role growth_ref (theo bảng đo (`wichart_source`)).
 MACRO: dict[tuple[str, int], tuple[str, str]] = {
     ("gdp", 0): ("vn.gdp.nominal", "GDP giá hiện hành"),
     ("gdp", 1): ("vn.gdp.real", "GDP giá so sánh"),
@@ -189,29 +188,28 @@ LEVEL_FLOOR: dict[str, Decimal] = {
 }
 
 
-def load_doc(md_path: Path = WICHART_MD) -> tuple[dict, list[str]]:
-    """Trả (WICHART, TIER_X) từ khối Python cuối cùng của tài liệu nguồn."""
-    blocks = re.findall(r"```python\n(.*?)```", md_path.read_text(encoding="utf-8"), re.S)
-    if not blocks:
-        raise RegistryError(f"không thấy khối Python trong {md_path}")
-    ns: dict = {}
-    exec(compile(blocks[-1], "wichart_registry_doc", "exec"), ns)  # noqa: S102 — tài liệu trong repo, cùng cách verify_wichart.py
-    return ns["WICHART"], list(ns["TIER_X"])
+def load_doc() -> tuple[dict, list[str]]:
+    """Trả (WICHART, TIER_X) từ bảng đo về nguồn — module `etl.wichart_source` sở hữu (từng là khối §9 wichart.md)."""
+    return wichart_source.WICHART, list(wichart_source.TIER_X)
 
 
-def build(md_path: Path = WICHART_MD) -> list[Series]:
-    doc, tier_x = load_doc(md_path)
+def build(doc: dict | None = None, tier_x: list[str] | None = None) -> list[Series]:
+    if (doc is None) != (tier_x is None):
+        raise RegistryError("build(): doc và tier_x phải cùng có hoặc cùng None")
+    if doc is None:
+        doc, tier_x = load_doc()
+    tier_x = list(tier_x or [])
     out: list[Series] = []
     ours: dict[tuple[str, int], str] = {**{k: "macro" for k in MACRO}, **{k: "asset" for k in ASSET}}
     for (key, idx), domain in ours.items():
         meta = doc.get(key)
         if meta is None or meta.get("tier") == "X" or key in tier_x:
-            raise RegistryError(f"{key}[{idx}] có trong module nhưng §9 không thu thập (thiếu hoặc Tier X)")
+            raise RegistryError(f"{key}[{idx}] có trong module nhưng bảng đo (wichart_source) không thu thập (thiếu hoặc Tier X)")
         if idx >= len(meta["s"]):
-            raise RegistryError(f"{key}[{idx}] vượt số series §9 ({len(meta['s'])})")
+            raise RegistryError(f"{key}[{idx}] vượt số series của bảng đo (wichart_source): {len(meta['s'])}")
         doc_name, unit_doc, scale, role, flags = meta["s"][idx]
         if role is None:
-            raise RegistryError(f"{key}[{idx}] §9 đánh dấu không nạp (role None) mà module vẫn map")
+            raise RegistryError(f"{key}[{idx}] bảng đo (wichart_source) đánh dấu không nạp (role None) mà module vẫn map")
         common = dict(key=key, idx=idx, group=meta["g"], domain=domain, doc_name=doc_name,
                       scale=Decimal(str(scale)), freq=meta.get("freq") or "d", role=role, flags=tuple(flags),
                       tier=meta.get("tier", "A"), key_flags=tuple(meta.get("flags", [])))
@@ -227,7 +225,7 @@ def build(md_path: Path = WICHART_MD) -> list[Series]:
             continue
         for idx, s in enumerate(meta["s"]):
             if s[3] is not None and (key, idx) not in ours:
-                raise RegistryError(f"§9 thu thập {key}[{idx}] ({s[0]!r}) mà module chưa map")
+                raise RegistryError(f"bảng đo (wichart_source) thu thập {key}[{idx}] ({s[0]!r}) mà module chưa map")
     if len({s.code for s in out}) != len(out):
         raise RegistryError("mã trùng trong module")
     return out

@@ -6,7 +6,7 @@ Tài liệu này ghi **lựa chọn của dulieuchungkhoan.vn**: kiến trúc x�
 
 > **Đánh số mục kế thừa tài liệu gốc v3** và cố ý không đánh lại, vì hàng chục tham chiếu chéo dạng *"xem mục 6.5"* nằm rải trong cả hai file. Mục 4, 5, 6, 11.1–11.3 và 13 nằm ở [danh mục nguồn tin](../10-sources/news/README.md); các mục còn lại ở file này.
 
-**File máy đọc đi kèm:** [`news/feeds.json`](../10-sources/news/feeds.json).
+**File máy đọc đi kèm:** [`news/feeds.json`](../../backend/etl/data/feeds.json).
 
 ---
 
@@ -430,9 +430,9 @@ Lưu tiêu đề + link để tham chiếu là một chuyện, lưu toàn văn l
 |---|---|
 | `docs/20-design/news-pipeline.md` | tài liệu này — lựa chọn thiết kế |
 | `docs/10-sources/news/README.md` | danh mục nguồn và đặc tính kỹ thuật |
-| `docs/10-sources/news/feeds.json` | 47 feed + taxonomy + nhật ký loại bỏ, dạng máy đọc |
+| `backend/etl/data/feeds.json` | 47 feed + taxonomy + nhật ký loại bỏ, dạng máy đọc |
 
-> Tài liệu gốc một file `THIET_KE_PIPELINE.md` v3 đã được tách làm hai theo ranh giới *dữ kiện về nguồn* / *lựa chọn của dulieuchungkhoan.vn*; `feeds_config_v3.json` đổi tên thành `docs/10-sources/news/feeds.json`. Nội dung không đổi một chữ nào.
+> Tài liệu gốc một file `THIET_KE_PIPELINE.md` v3 đã được tách làm hai theo ranh giới *dữ kiện về nguồn* / *lựa chọn của dulieuchungkhoan.vn*; `feeds_config_v3.json` đổi tên thành `docs/10-sources/news/feeds.json` (dời tiếp vào `backend/etl/data/feeds.json` ngày 2026-09-08 — code không đọc `docs/`). Nội dung không đổi một chữ nào.
 
 ### Việc tiếp theo khi quay lại
 
@@ -453,4 +453,4 @@ Bảy cạm bẫy trong tài liệu này đều đã gặp thật, không phải
 
 ---
 
-*Tài liệu này đi kèm [`news/feeds.json`](../10-sources/news/feeds.json) — danh sách 47 feed ở dạng máy đọc được.*
+*Tài liệu này đi kèm [`news/feeds.json`](../../backend/etl/data/feeds.json) — danh sách 47 feed ở dạng máy đọc được.*

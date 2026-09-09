@@ -9,16 +9,15 @@ import datetime as dt
 import json
 import logging
 from dataclasses import dataclass
-from zoneinfo import ZoneInfo
 
 import sqlalchemy as sa
 
+from core.clock import today_vn
 from etl.snapshot_fetch import KINDS, Target
 from etl.snapshot_guard import Tally, Verdict
 from etl.snapshot_normalize import keep_hash
 
 log = logging.getLogger("etl.snapshot")
-VN = ZoneInfo("Asia/Ho_Chi_Minh")
 
 JOB = "market.snapshot"
 DOMAIN = "market.snapshot"
@@ -260,7 +259,7 @@ def recrawl_codes(conn, days: int = 3, today: dt.date | None = None) -> list[str
     là AGM; lọc lại còn đúng 2 mã (RYG, TCH) thật sự cần backfill trọn ~12,5 năm lịch sử.
     """
     if today is None:
-        today = dt.datetime.now(VN).date()
+        today = today_vn()
     rows = conn.execute(sa.text(
         _UNIVERSE + """
         SELECT DISTINCT u.ticker FROM uni u

@@ -2,7 +2,7 @@
 
 Dữ liệu FiinTrade dùng **mã trường viết tắt** thay cho tên có nghĩa (`rtd11`, `rtq12`, `bsa1`, `isa22`…). Phụ lục này giải mã chúng.
 
-**Tổng cộng 729 mã — 98,5% có tên tiếng Việt, 98,5% có tên tiếng Anh.** Bảng đầy đủ dạng máy đọc: [field-dictionary.json](field-dictionary.json).
+**Tổng cộng 729 mã — 98,5% có tên tiếng Việt, 98,5% có tên tiếng Anh.** Bảng đầy đủ dạng máy đọc: [field-dictionary.json](../../../backend/etl/data/field-dictionary.json).
 
 Hai nguồn giải mã:
 
@@ -230,7 +230,7 @@ Bảng A.3 phủ các mã xuất hiện trong `Snapshot`, `GetAllScore`, `GetVal
 
 ## A.5 Từ điển đầy đủ — 729 mã
 
-**Đo ngày 2026-08-14.** Bảng đầy đủ ở dạng máy đọc: [field-dictionary.json](field-dictionary.json) — **729 mã, 98,5% có tên tiếng Việt**.
+**Đo ngày 2026-08-14.** Bảng đầy đủ ở dạng máy đọc: [field-dictionary.json](../../../backend/etl/data/field-dictionary.json) — **729 mã, 98,5% có tên tiếng Việt**.
 
 > **Kiểm chứng độ phủ:** quét **21 response thật** trên BID · HPG · SSI · BVH · VNM, tổng **2.852 lần xuất hiện mã** — **không còn mã nào nằm ngoài từ điển**. Đây là điều kiện dừng: mọi mã mà API thực sự trả về đều tra được.
 

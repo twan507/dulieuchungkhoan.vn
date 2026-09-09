@@ -120,7 +120,7 @@ Mẫu trong tài liệu ghi `"status": 0` *(đo 2026-08-10)*; đo lại hôm nay
 
 ## 6. Bổ sung chiều 2026-09-04 — 12 lời gọi trước khi mở lát 5
 
-**Tải:** 3 endpoint × 4 mã có kỳ quý (BAB `NASB` · AAS `HAMIS` · VNM · HPG), giãn cách 0,5 s, không lời gọi nào ngoài kế hoạch. Bản thô: [`periods-raw.json`](periods-raw.json). Cộng một phép đối chiếu cục bộ giữa `measurements-raw.json` và [`field-dictionary.json`](../../../10-sources/market/field-dictionary.json).
+**Tải:** 3 endpoint × 4 mã có kỳ quý (BAB `NASB` · AAS `HAMIS` · VNM · HPG), giãn cách 0,5 s, không lời gọi nào ngoài kế hoạch. Bản thô: [`periods-raw.json`](periods-raw.json). Cộng một phép đối chiếu cục bộ giữa `measurements-raw.json` và [`field-dictionary.json`](../../../../backend/etl/data/field-dictionary.json).
 
 ### 6.1 `quarterReport` của ba endpoint số liệu chỉ có NĂM giá trị
 

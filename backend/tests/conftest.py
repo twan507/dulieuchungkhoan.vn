@@ -8,6 +8,7 @@ dựng + migrate database test hai lần, và lần dựng lại thứ hai từn
 Đọc biến môi trường LÚC fixture chạy, không lúc import: `tests/clickhouse`/`tests/ingester` không cần Postgres.
 """
 import os
+import re
 
 import pytest
 import sqlalchemy as sa
@@ -28,17 +29,35 @@ load_dotenv()
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
+def assert_test_db_name(test_db: str, prod_db: str) -> str:
+    """Bán kính của `DROP DATABASE ... WITH (FORCE)` dưới đây (Chuẩn I3, review toàn nhánh lát 12).
+
+    Trước lát 12, tên DB test là hằng số `dulieu_test` viết cứng trong code. Nay nó đến từ
+    `POSTGRES_TEST_DB` trong `.env` — một dòng cấu hình có thể gõ sai. "Là identifier sạch" (regex cũ)
+    không đủ: `dulieu_test == dulieu` (identifier sạch) vẫn cho phép cấu hình sai trỏ `TEST_DATABASE_URL`
+    thẳng vào kho thật. Ba điều kiện: identifier sạch (ghép trực tiếp vào DDL) · khác `prod_db` · có
+    đuôi `_test` (quy ước đặt tên duy nhất coi là "chắc chắn là DB test").
+    """
+    assert re.fullmatch(r"[a-z_][a-z0-9_]*", test_db), f"POSTGRES_TEST_DB không phải identifier sạch: {test_db!r}"
+    assert test_db != prod_db, f"POSTGRES_TEST_DB trùng POSTGRES_DB ({test_db!r}) — sẽ DROP kho thật"
+    assert test_db.endswith("_test"), f"POSTGRES_TEST_DB thiếu đuôi _test: {test_db!r}"
+    return test_db                                              # bên gọi ghép DDL từ GIÁ TRỊ ĐÃ QUA KIỂM
+
+
 @pytest.fixture(scope="session")
 def migrated_engine():
-    test_url = os.environ["TEST_DATABASE_URL"]          # ...:5432/dulieu_test
-    admin_url = test_url.rsplit("/", 1)[0] + "/dulieu"  # DB có sẵn để CREATE DATABASE
+    test_url = os.environ["TEST_DATABASE_URL"]                 # ráp từ nguyên tố: .../<POSTGRES_TEST_DB>
+    test_db = test_url.rsplit("/", 1)[1]
+    prod_db = os.environ.get("POSTGRES_DB", "dulieu")
+    test_db = assert_test_db_name(test_db, prod_db)             # bán kính DROP DATABASE — xem hàm trên
+    admin_url = test_url.rsplit("/", 1)[0] + "/" + prod_db      # DB owner có sẵn
     admin = sa.create_engine(admin_url, isolation_level="AUTOCOMMIT")
     with admin.connect() as c:
-        c.execute(sa.text("DROP DATABASE IF EXISTS dulieu_test WITH (FORCE)"))
-        c.execute(sa.text("CREATE DATABASE dulieu_test"))
+        c.execute(sa.text(f"DROP DATABASE IF EXISTS {test_db} WITH (FORCE)"))
+        c.execute(sa.text(f"CREATE DATABASE {test_db}"))
     admin.dispose()
     cfg = Config(os.path.join(REPO_ROOT, "database", "alembic.ini"))
-    os.environ["DATA_DATABASE_URL"] = test_url      # migrations/env.py đọc biến này
+    os.environ["DATA_DATABASE_URL"] = test_url      # migrations/env.py đọc biến này — GÁN, không setdefault
     os.chdir(REPO_ROOT)                             # script_location trong ini là đường dẫn tương đối gốc repo
     command.upgrade(cfg, "head")
     engine = sa.create_engine(test_url)
@@ -99,11 +118,17 @@ def ch_backup_dir(tmp_path_factory):
 
 @pytest.fixture(scope="session")
 def ch(ch_backup_dir):
-    """Container ClickHouse ephemeral — không đụng CH dev. Xoá khi hết session."""
+    """Container ClickHouse ephemeral — không đụng CH dev. Xoá khi hết session.
+
+    🔴 `--rm` (và `-v` lúc dọn) là bắt buộc, không phải trang trí: image ClickHouse khai
+    `VOLUME /var/lib/clickhouse`, nên MỖI container để lại một volume ẩn danh mà `docker rm` trần
+    KHÔNG xoá. Đo 2026-09-08: `docker system df` báo **832 volume, 6 đang dùng** — ~825 cái là rác của
+    chính bộ test này, `docker volume prune` thu hồi 2,4 GB. Một lượt chạy một file = một volume rác.
+    """
     name = f"ch-test-{uuid.uuid4().hex[:8]}"
     port = _free_port()
     cmd = [
-        "docker", "run", "-d", "--name", name,
+        "docker", "run", "-d", "--rm", "--name", name,
         "--ulimit", "nofile=262144:262144",
         "-e", "CLICKHOUSE_PASSWORD=testpass",
         "-e", "CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1",
@@ -129,7 +154,7 @@ def ch(ch_backup_dir):
         os.environ["CLICKHOUSE_URL"] = url
         yield client
     finally:
-        subprocess.run(["docker", "rm", "-f", name], capture_output=True)
+        subprocess.run(["docker", "rm", "-f", "-v", name], capture_output=True)   # -v: cả volume ẩn danh
 
 
 @pytest.fixture()

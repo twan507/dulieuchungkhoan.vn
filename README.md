@@ -2,7 +2,7 @@
 
 Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập dữ liệu thị trường và tin tức từ nhiều nguồn, lưu vào kho riêng, phân phối lại qua REST và SSE, và một chatbot AI trả lời bằng phương pháp phân tích đã được hệ thống hoá thành skill.
 
-**Trạng thái — 2026-09-07:** thiết kế hoàn chỉnh, và **phần thu thập dữ liệu đã chạy thật trong production** (**15 họ job ETL** — 6 REST FiinTrade + OMO + WiChart + 5 nguồn quốc tế + tin + lưới AI phân loại — cộng ingester realtime; roadmap chuẩn hoá thành 15 lát, **lát 1–11 xong**) — nhưng ⏸️ **mọi job ghi đang tạm tắt để ưu tiên dev** ([lộ trình §2 mục 4d](docs/00-overview/roadmap.md)). Mới nhất: **lát 11 đóng hợp đồng tầng ngữ nghĩa, xong 2026-09-07** — chatbot gọi 9 function đọc kho dưới role chỉ-đọc, khối luật `ANSWER_RULES`, bộ hồi quy 15 câu đạt ngưỡng hình dạng 14/15; **tiếp theo lát 12 — đưa mọi job chạy được trong container**. Trước đó: lát 10 tầng ngữ nghĩa, lát 9a/9b lưới AI phân loại tin (MiniMax M3), lát 8/8b thu thập tin, lát 7/7b ETL quốc tế, lát 6 vĩ mô WiChart. Và trước nữa `etl fundamentals` 2026-09-04 (27,3 triệu dòng BCTC cho 1.523 mã), `etl price` (91.165 dòng, 38 phút tuần tự; `closePrice` là giá thô nên `close_raw` điền được cả 12,5 năm) và `etl snapshot` (234 lời gọi/ngày, ghi khi đổi); trước nữa `etl events` 2026-09-03 (sáu họ lịch sự kiện, **110.695 dòng**, 9 lời gọi) và `etl screener` (1.541 dòng/ngày, 52 trang). Ingester bắt tick realtime mỗi phiên *(phiên 28/08: **4.722.406 dòng** vào kho, đối chứng sổ sách **dư = 0** trên cả 5 bảng)*; hai kho đã có schema và dữ liệu thật; bộ test chạy trên Postgres/ClickHouse/Redis thật — **số test và cách chạy do [`database/README.md`](database/README.md) sở hữu**, không chép lại ở đây; 11 task Windows Scheduler đã đăng ký, **10 đang tắt** theo [4d]. `api` và `frontend` **chưa bắt đầu**. Hai skill chứng khoán đã xong; bộ hồi quy hiện hành là **vòng 7** dựng lại ở lát 10 *(bộ 10 câu vòng 6 đã mất khỏi repo — [bảo trì skill §6](docs/30-skills/maintenance.md))*. **Không còn việc chặn nào phụ thuộc bên ngoài** — giấy phép WiFeed đã chốt và rate limit FiinGroup đã kiểm, cùng ngày 2026-08-15. Cùng ngày, một **đợt khảo sát nguồn 9 nguồn / ~400 lời gọi thật** đã khép độ rộng dữ liệu: thêm **6 nguồn mới** và mở **5 khối dữ liệu** trước nay bỏ trống.
+**Trạng thái — 2026-09-07:** thiết kế hoàn chỉnh, và **phần thu thập dữ liệu đã chạy thật trong production** (**15 họ job ETL** — 6 REST FiinTrade + OMO + WiChart + 5 nguồn quốc tế + tin + lưới AI phân loại — cộng ingester realtime; roadmap chuẩn hoá thành 15 lát, **lát 1–11 xong**) — nhưng ⏸️ **mọi job ghi đang tạm tắt để ưu tiên dev** ([lộ trình §2 mục 4d](docs/00-overview/roadmap.md)). Mới nhất: **lát 11 đóng hợp đồng tầng ngữ nghĩa, xong 2026-09-07** — chatbot gọi 9 function đọc kho dưới role chỉ-đọc, khối luật `ANSWER_RULES`, bộ hồi quy 15 câu đạt ngưỡng hình dạng 14/15; **lát 12 xong 2026-09-08, tiếp theo lát 13 — scheduler**. Trước đó: lát 10 tầng ngữ nghĩa, lát 9a/9b lưới AI phân loại tin (MiniMax M3), lát 8/8b thu thập tin, lát 7/7b ETL quốc tế, lát 6 vĩ mô WiChart. Và trước nữa `etl fundamentals` 2026-09-04 (27,3 triệu dòng BCTC cho 1.523 mã), `etl price` (91.165 dòng, 38 phút tuần tự; `closePrice` là giá thô nên `close_raw` điền được cả 12,5 năm) và `etl snapshot` (234 lời gọi/ngày, ghi khi đổi); trước nữa `etl events` 2026-09-03 (sáu họ lịch sự kiện, **110.695 dòng**, 9 lời gọi) và `etl screener` (1.541 dòng/ngày, 52 trang). Ingester bắt tick realtime mỗi phiên *(phiên 28/08: **4.722.406 dòng** vào kho, đối chứng sổ sách **dư = 0** trên cả 5 bảng)*; hai kho đã có schema và dữ liệu thật; bộ test chạy trên Postgres/ClickHouse/Redis thật — **số test và cách chạy do [`database/README.md`](database/README.md) sở hữu**, không chép lại ở đây. `api` và `frontend` **chưa bắt đầu**. Hai skill chứng khoán đã xong; bộ hồi quy hiện hành là **vòng 7** dựng lại ở lát 10 *(bộ 10 câu vòng 6 đã mất khỏi repo — [bảo trì skill §6](docs/30-skills/maintenance.md))*. **Không còn việc chặn nào phụ thuộc bên ngoài** — giấy phép WiFeed đã chốt và rate limit FiinGroup đã kiểm, cùng ngày 2026-08-15. Cùng ngày, một **đợt khảo sát nguồn 9 nguồn / ~400 lời gọi thật** đã khép độ rộng dữ liệu: thêm **6 nguồn mới** và mở **5 khối dữ liệu** trước nay bỏ trống.
 
 **Stack chốt 2026-08-24:** Next.js · Python/FastAPI · Postgres + ClickHouse *(lưu tick thô — [ADR 0007](docs/00-overview/decisions/0007-monorepo-layout-and-stack.md))*.
 
@@ -10,7 +10,7 @@ Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập d
 |---|---|---|
 | Tài liệu **9 nguồn** — thị trường · vĩ mô VN · quốc tế · tin | ✅ đo thật bằng lời gọi sống | 131 endpoint VN · 87 key · 307 URL · 6 nguồn mới đo 2026-08-15 |
 | Độ rộng nguồn dữ liệu | ✅ **khép 2026-08-15** — danh sách *"Ngoài phạm vi"* phân rã hết, không còn mục nào chưa có câu trả lời | [phạm vi nguồn](docs/10-sources/README.md) |
-| Từ điển 729 mã trường FiinGroup | ✅ phủ 100% response thật | [field-dictionary.json](docs/10-sources/market/field-dictionary.json) |
+| Từ điển 729 mã trường FiinGroup | ✅ phủ 100% response thật | [field-dictionary.json](backend/etl/data/field-dictionary.json) |
 | Chọn nguồn chuẩn cho từng chỉ tiêu | ✅ đã chốt | [chọn trường cho ETL thị trường](docs/20-design/market-field-selection.md) |
 | Dự án skill | ✅ **đã đóng**, không còn việc treo | [bảo trì skill](docs/30-skills/maintenance.md) |
 | Thiết kế kho dữ liệu · pipeline tin | ✅ đã duyệt, **cả hai đã cài** | kho dữ liệu từ lát 1–7b; pipeline tin lát 8/8b (thu thập) + 9a/9b (lưới AI) |
@@ -19,7 +19,7 @@ Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập d
 | Repo vào git | ✅ khởi tạo 2026-08-14 | commit đầu tiên |
 | **Hạ tầng + schema hai kho** | ✅ **2026-08-26** | Postgres **20 migration** (alembic) · ClickHouse **2** · compose PG+CH+Redis |
 | **Ingester realtime** | ✅ **ghi thật từ 2026-08-27** — hàng đợi có trần, tràn ra đĩa khi kho trục trặc | 4,72 triệu dòng phiên 28/08 · chưa lần nào phải dùng tới đĩa |
-| **ETL theo lịch** | Chỉ **6/15 họ job** có task: `etl omo` (4 mốc) · `etl refdata` (08:00) · `etl screener` (15:20) · `etl events` (18:10) · `etl price` (15:40) · `etl price --backfill` (thứ 7). Chín họ còn lại ra đời ở lát 6–9, **chưa từng có lịch** — lịch chung thuộc **lát 13**. ⏸️ **tạm tắt, ưu tiên dev** ([lộ trình §2 mục 4d](docs/00-overview/roadmap.md)) | 11 task Scheduler, `LogonType=Interactive` (cửa sổ cmd hiện tên task đang chạy; đảo từ S4U 2026-09-04 để khỏi cần admin); **10 `Disabled`, riêng `dlck-price-backfill` `Ready`** *(đọc trạng thái thật 2026-09-07)* |
+| **ETL theo lịch** | **15/15 họ job chạy được trong container** (lát 12, 2026-09-08) — `docker compose run --rm etl python -m etl <job>`; lịch chung (giờ chạy, chạy bù, chặn chạy chồng) thuộc **lát 13**. 11 task Windows về hưu — gỡ bằng một lệnh PowerShell ở Task 12 (chủ dự án) | 11 task Scheduler, `LogonType=Interactive` (cửa sổ cmd hiện tên task đang chạy; đảo từ S4U 2026-09-04 để khỏi cần admin); **10 `Disabled`, riêng `dlck-price-backfill` `Ready`** *(đọc trạng thái thật 2026-09-07)* |
 | **`api` · `frontend`** | ❌ chưa bắt đầu | |
 
 Bảng đầy đủ kèm bằng chứng: [lộ trình §0](docs/00-overview/roadmap.md).
@@ -70,40 +70,47 @@ dulieuchungkhoan.vn/
 │   ├── agent/           9 function + vòng chat terminal; agent/skills/ = hai skill chứng khoán
 │   └── tests/           chạy trên Postgres/ClickHouse/Redis THẬT — số test ở database/README.md
 ├── database/            migrations: Postgres 20 (alembic) · ClickHouse 2
-├── deploy/infra/        docker compose — Postgres · ClickHouse · Redis
-└── scripts/             register-tasks.ps1 — đăng ký 11 task Windows Scheduler
+└── deploy/              backend.Dockerfile · infra/clickhouse/*.xml — compose nằm ở gốc: docker-compose.yml + docker-compose.vps.yml
 ```
 
-## Dựng trên máy mới
+## Dựng trên máy mới — dev hay VPS cùng một đường (lát 12, 2026-09-08)
 
-Kiến thức dựng lại nằm rải ở nhiều file — đây là chuỗi nối chúng. Chi tiết từng bước ở file được trỏ tới, **không chép lại ở đây**.
+1. `git clone -c core.longpaths=true <url>` *(cờ vô hại trên Linux; cần trên Windows vì đường dẫn dài trong `docs/30-skills/corpus/`)*, rồi `cp .env.example .env` và điền — **chỉ nguyên tố** (host · port · db · user · password), bảy URL được `backend/core/env.py` ráp lúc chạy. Rồi kiểm tên biến — lệnh chỉ in TÊN, không bao giờ in giá trị.
 
-1. `git clone`, rồi tạo `.env` từ [`.env.example`](.env.example).
-2. **Bật hạ tầng.** ClickHouse nằm sau `profiles: ["realtime"]` nên `docker compose up` trần sẽ **không** bật nó:
-
-   ```bash
-   npm run dev-start          # scripts/stack.mjs — đã kèm --profile realtime
-   ```
-
-   ⚠️ **Trên máy dev hiện tại thì KHÔNG chạy lệnh này sau reboot** — stack thật là project `infra` (xem *"Hai bộ volume"* bên dưới), `dev-start` sẽ dựng bộ thứ hai đụng cổng. Sau reboot chỉ cần mở Docker Desktop (không tự khởi động — sự cố 2026-09-03, [service-topology §5](docs/20-design/service-topology.md)); ba container tự lên nhờ `restart: unless-stopped`.
-
-3. **Bootstrap hai kho, đúng ba bước** — [`database/README.md`](database/README.md) mục *Bootstrap DB mới*: `alembic upgrade head` + `core.ch_migrate upgrade` → một lượt `etl refdata` (nạp danh bạ, danh mục mã, cây ICB từ API thật) → `alembic downgrade 0012` rồi `upgrade head`.
-
-   🔴 **Bước ba không được bỏ.** Migration `0013` seed 161 dòng gán ngành tay bằng cách phân giải ticker → `issuer_id` qua `market.security`; bảng đó còn **rỗng** lúc `0013` chạy ở bước một ⇒ nạp **0 dòng, không exception, không cảnh báo nào**, và job `etl refdata` sau đó vẫn báo y hệt trạng thái khoẻ mạnh.
-
-4. `cd backend && uv run pytest tests` — số test kỳ vọng và ý nghĩa hai `skipped` do [`database/README.md`](database/README.md) sở hữu, **không chép lại ở đây** *(§1.7 — con số này từng nằm ở ba chỗ trong chính file README và cả ba nói khác nhau)*.
-
-5. **Chỉ khi muốn máy đó ghi thật** — đăng ký 11 task Windows Scheduler, **không cần admin** *(từ 2026-09-04 task chạy `Interactive`: mỗi job một cửa sổ `cmd` có tiêu đề tên task, nút X bị job khoá — [service-topology §5](docs/20-design/service-topology.md))*. Phải là `pwsh` chứ không phải `powershell` *(file UTF-8 không BOM, PowerShell 5 đọc sai dấu)*:
+   Cách **chính**, trong container (VPS không cần cài uv/Python):
 
    ```bash
-   pwsh scripts/register-tasks.ps1
+   docker compose run --rm --no-deps migrate python -m core.env check
    ```
 
-   Script `-Force` đè và **bật lại** task đang tắt (kể cả `dlck-ingester`) — muốn giữ trạng thái tạm dừng theo [lộ trình §2 mục 4d](docs/00-overview/roadmap.md) thì `Get-ScheduledTask -TaskName "dlck-*" | Disable-ScheduledTask` ngay sau. Máy dev thuần thì bỏ qua bước này.
+   Biến thể **dev native**, chạy được cả trước lẫn sau `up`:
 
-🔴 **Dữ liệu KHÔNG đi theo repo.** Hai kho và Redis nằm trong Docker named volume của máy cũ; log, bản đo và vùng spill nằm ở `dlck-runtime/` **ngoài repo**. Máy mới bắt đầu với kho rỗng và **đó là bình thường cho dev** — mọi thứ dựng lại được bằng chuỗi trên, **trừ ba thứ không backfill được: tick realtime, phiên OMO, và frame thô.** Ba thứ đó mất là mất hẳn.
+   ```bash
+   cd backend && uv run python -m core.env check
+   ```
 
-⚠️ **Hai bộ volume, đừng nhầm — kiểm 2026-08-28 trên máy dev hiện tại.** `scripts/stack.mjs` chạy compose với project `-p dlck-infra` ⇒ volume `dlck-infra_pgdata` · `dlck-infra_chdata` · `dlck-infra_redisdata`. Nhưng stack **đang chạy** trên máy này là project `infra` (dựng bằng `docker compose -f deploy/infra/docker-compose.yml` trần, project lấy theo tên thư mục) ⇒ volume `infra_*`. **Dữ liệu thật nằm ở bộ `infra_`**: `infra_chdata` **1,6 GB** so với `dlck-infra_chdata` **11,5 MB**. Hai bộ là **hai kho khác nhau**; chạy nhầm project thì hoặc đụng cổng (nếu bộ kia đang chạy), hoặc lặng lẽ ghi vào kho rỗng. Trên máy mới thì dùng bộ nào cũng được **miễn là nhất quán**; trên máy này phải biết mình đang nói tới bộ nào.
+2. **Một lệnh lên cả hệ** — kho (Postgres · Redis · ClickHouse), `migrate` one-shot (alembic head · `ch_migrate` · cấp 4 user login · tự seed ngành lớp 2), `api`, `etl` (vỏ job, heartbeat tới lát 13), `ingester` (daemon, tự ngủ ngoài phiên):
+
+   ```bash
+   docker compose up -d --build
+   ```
+
+   VPS: `.env` đặt thêm `COMPOSE_FILE=docker-compose.yml:docker-compose.vps.yml` (trần RAM đã đo — [service-topology §7b](docs/20-design/service-topology.md)) rồi **cùng lệnh trên**, không cài gì khác.
+
+3. **Kho mới — hai lệnh sau `up`:** nạp danh bạ rồi chạy lại `migrate` để nó tự seed 161 dòng ngành lớp 2 (migration `0013` cần `market.security` có dòng; `migrate` phát hiện và làm hộ bước tay cũ):
+
+   ```bash
+   docker compose run --rm etl python -m etl refdata
+   docker compose run --rm migrate
+   ```
+
+4. Job bất kỳ: `docker compose run --rm etl python -m etl <job> [cờ]` — cờ từng họ ở [`backend/README.md`](backend/README.md). REPL: `docker compose run --rm agent`. Backup ClickHouse: `docker compose run --rm etl python -m core.ch_backup`.
+
+5. Dev native **không đổi cách gọi**, cùng `.env`: `cd backend && uv run pytest tests -q` (số test ở [`database/README.md`](database/README.md)), `uv run python -m etl <job>`.
+
+🔴 **Dữ liệu KHÔNG đi theo repo.** Hai kho và Redis nằm trong volume `dlck_*` của máy; log/bản đo/spill của ingester ở ba volume `dlck_ingester_*`. Máy mới bắt đầu với kho rỗng — dựng lại được bằng chuỗi trên, **trừ ba thứ không backfill được: tick realtime, phiên OMO, frame thô.** `docker compose down` giữ volume; chỉ `down -v` mới xoá.
+
+⚠️ Docker Desktop trên máy dev vẫn sống trong session người dùng và không tự khởi động sau reboot ([service-topology §5](docs/20-design/service-topology.md)): sau reboot mở Docker Desktop là cả stack tự lên nhờ `restart: unless-stopped`; `migrate` chạy lại (idempotent).
 
 ## Bốn tầng hệ thống
 

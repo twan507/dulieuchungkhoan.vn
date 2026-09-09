@@ -9,11 +9,10 @@ import statistics
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
-from zoneinfo import ZoneInfo
 
+from core.clock import VN
 from etl.wichart_registry import BANDS, LEVEL_FLOOR, Series
 
-VN = ZoneInfo("Asia/Ho_Chi_Minh")
 QUARTER_END_TO_START = {3: 1, 6: 4, 9: 7, 12: 10}
 NAME_PREFIX = 18
 

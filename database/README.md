@@ -52,25 +52,19 @@ Backup (script `core.ch_backup`, env `CLICKHOUSE_BACKUP_DIR` trỏ thư mục ho
 >
 > Cách làm: R2 nói giao thức S3 và ClickHouse `BACKUP TO Disk(...)` cấu hình được disk kiểu S3 ⇒ **chỉ thêm một khối XML trong `config.d/`**, không sửa `core.ch_backup`. Gói miễn phí R2: **10 GB-tháng + 1 triệu ghi + 10 triệu đọc, băng thông tải ra miễn phí** *(tra 2026-08-26)*; vượt thì $0,015/GB-tháng — mức dùng dự kiến 12–14 GB năm 1 ⇒ **dưới 2.000 đ/tháng**. Giữ **1 bản nến gần nhất tại máy** để khôi phục nhanh, phần còn lại đẩy R2.
 >
-> ⚠️ Khi dựng: nghiệm thu bằng **khôi phục thật** (restore vào database tạm rồi đối chiếu số dòng), không phải bằng "đã upload xong" — luật [CLAUDE.md §3.5](../CLAUDE.md). `CLICKHOUSE_BACKUP_DIR` tương đối được giải theo `deploy/infra/` (cùng gốc với `docker-compose.yml`, cùng chuẩn compose dùng) — nên đặt đường dẫn tuyệt đối khi deploy thật.
+> ⚠️ Khi dựng: nghiệm thu bằng **khôi phục thật** (restore vào database tạm rồi đối chiếu số dòng), không phải bằng "đã upload xong" — luật [CLAUDE.md §3.5](../CLAUDE.md). `CLICKHOUSE_BACKUP_DIR` tương đối được giải theo **gốc repo** (cùng gốc với `docker-compose.yml` từ lát 12, cùng chuẩn compose dùng); để TRỐNG = coi như chưa đặt ⇒ mặc định `deploy/infra/clickhouse-backups` — nên đặt đường dẫn tuyệt đối khi deploy thật.
 
 > **Idempotency dựa trên tên file, không kiểm nội dung:** script coi một partition/ngày là "đã backup" nếu file `.zip` cùng tên đã tồn tại. File `.zip` hỏng do crash giữa chừng (ví dụ mất điện khi đang ghi) vẫn bị coi là đã backup và sẽ không được ghi lại — kiểm toàn vẹn định kỳ là việc vận hành, chưa tự động hoá.
 
 > **Hai role trùng tên `dlck_api` — đừng nhầm hai kho:** Postgres có role `dlck_api` đọc 4 schema miền (`market`/`macro`/`asset`/`news`, xem mục Luật bên dưới); ClickHouse **cũng** có role `dlck_api` (migration `0001_roles.sql`) nhưng chỉ đọc schema `rt`. Hai role sống trên hai engine khác nhau, trùng tên có chủ đích (cùng vai trò "reader cho `api`"), không phải cấu hình chung.
 >
-> User login của ClickHouse tạo **per-môi-trường, ngoài migration**, theo mẫu [`database/clickhouse/create_users.sql.example`](clickhouse/create_users.sql.example) — cùng nguyên tắc với user login Postgres ở mục Luật.
+> User login của ClickHouse do `core.bootstrap` cấp — cùng nguyên tắc với user login Postgres ở mục Luật.
 
 ## Cách chạy
 
-Env (Git Bash, từ gốc repo; `.env` khai `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_DB`):
+`.env` ở gốc repo khai nguyên tố (`POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_HOST`/`POSTGRES_PORT`/`POSTGRES_DB`) — `database/migrations/env.py` tự gọi `core.env.load_dotenv()` để ráp `DATA_DATABASE_URL`, không cần export tay. Trong container: `docker compose run --rm migrate` chạy alembic head + `ch_migrate` + cấp user + seed lớp 2 — xem [`backend/core/bootstrap.py`](../backend/core/bootstrap.py).
 
-```bash
-set -a && . ./.env && set +a
-export DATA_DATABASE_URL="postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:5432/${POSTGRES_DB}"
-export TEST_DATABASE_URL="postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:5432/dulieu_test"
-```
-
-Migrate DB ở `DATA_DATABASE_URL`:
+Migrate DB ở `DATA_DATABASE_URL` (native):
 
 ```bash
 uv run --project backend alembic -c database/alembic.ini upgrade head
@@ -89,13 +83,7 @@ Cả bộ trong một lệnh *(số hiện hành ở ngay dưới — mục này
 cd backend && uv run pytest tests -q
 ```
 
-Ngoài bộ Python còn **một bộ nhỏ bằng Node** cho `scripts/stack.mjs` (7 test: đọc PID cổng, đời Docker, chốt an toàn volume, cấu hình realtime). Chạy từ **gốc repo**, không cần DB:
-
-```bash
-npm test
-```
-
-**Không cần `--env-file`** *(từ 2026-09-08)*: `tests/conftest.py` tự gọi `load_dotenv()`, nên `uv run pytest tests -q` **và mọi lượt chạy một phần** (`pytest tests/etl`, `pytest tests/schema`) đều chạy được trong shell sạch. `load_dotenv` dùng `setdefault` nên biến export sẵn ở shell/CI vẫn thắng. 🔴 *Lịch sử, đừng làm theo:* trước 2026-09-08 `--env-file ../.env` là bắt buộc — chạy trần cho **425 error** `KeyError: 'TEST_DATABASE_URL'`. Rồi test canh đường khởi động của lát 11 vô tình nạp `.env` hộ cả bộ, nên `pytest tests` xanh mà `pytest tests/etl` vẫn đỏ: một sợi dây phụ thuộc thứ tự thu thập, nay đã thay bằng lời gọi tường minh (hợp đồng: `backend/tests/test_conftest_env_contract.py`). Số hiện hành: **1.072 passed, 2 skipped** *(đo 2026-09-08)* *(2026-09-07 sau đợt dọn lệch tài liệu ↔ code: +7 test `tests/docs` thi hành §1.7, +2 test bịt lỗ hổng `phan_ure` và `tn` — phần NguoiQuanSat là assertion chèn vào hàm sẵn có, không thêm hàm mới; 1.029 sau lát 11)*. 🔴 **Đây là chủ sở hữu duy nhất của con số này** — `README.md` gốc và `roadmap.md` §0 cố ý KHÔNG nêu lại (trước 2026-09-07 nó nằm ở bốn chỗ và bốn chỗ nói khác nhau).
+**Không cần `--env-file`** *(từ 2026-09-08)*: `tests/conftest.py` tự gọi `load_dotenv()`, nên `uv run pytest tests -q` **và mọi lượt chạy một phần** (`pytest tests/etl`, `pytest tests/schema`) đều chạy được trong shell sạch. `load_dotenv` dùng `setdefault` nên biến export sẵn ở shell/CI vẫn thắng. 🔴 *Lịch sử, đừng làm theo:* trước 2026-09-08 `--env-file ../.env` là bắt buộc — chạy trần cho **425 error** `KeyError: 'TEST_DATABASE_URL'`. Rồi test canh đường khởi động của lát 11 vô tình nạp `.env` hộ cả bộ, nên `pytest tests` xanh mà `pytest tests/etl` vẫn đỏ: một sợi dây phụ thuộc thứ tự thu thập, nay đã thay bằng lời gọi tường minh (hợp đồng: `backend/tests/test_conftest_env_contract.py`). Số hiện hành: **1.136 passed, 3 skipped** *(đo 2026-09-08 tối, sau đợt dọn nợ cuối lát 12: +8 test — `test_ch_backup_paths.py` **file mới** 4 ca (+2 ròng: hai ca `resolve_backup_dir` dời khỏi `test_t06_backup.py` để khỏi phải dựng container, thêm hai ca biên `""` và `"."`), `test_tz_contract.py` +2 (quét `ast` thay regex: ca `now(VN)` KHÔNG phải vi phạm, ca văn xuôi nhắc `date.today()`), `test_clock.py` +1 (nhánh `today_vn()` không đối số), `test_env_contract.py` +1 (nháy mở/đóng lệch loại), `test_d03_compose_contract.py` +1 (ba kho không được mang `profiles`), `test_bootstrap_postgres.py` +1 (`main()` thiếu env ⇒ trả 2, không chạm kho); 1.128 sau đợt sửa gộp hậu-review toàn nhánh lát 12: +19 test — `test_env.py` +3 (rỗng = thiếu, `change-me` = yếu, fallback `os.environ`), `test_conftest_env_contract.py` +3 (bán kính `DROP DATABASE`), `test_bootstrap_literals.py` +4 file mới (`_ch_literal`), `test_bootstrap_postgres.py` +1 (role đích không tồn tại), `test_e36_wichart_registry.py` +1 (`doc`/`tier_x` phải đi cùng nhau), `test_tz_contract.py` +2 (đối chứng dương + seam âm), `test_env_contract.py` +3 (đối chứng dương `_READ` + `unread_keys`), `test_d03_compose_contract.py` +2 (đối chứng dương `docs/` + tách override `etl`); 1.109 sau khi đóng lát 12 "chạy được trong container" — skip thứ ba là `test_shutdown.py`: Windows không giao SIGTERM cho handler Python, chỉ chạy trên POSIX; "2 skipped" của các mốc dưới đây nay lỗi thời)* *(2026-09-07 sau đợt dọn lệch tài liệu ↔ code: +7 test `tests/docs` thi hành §1.7, +2 test bịt lỗ hổng `phan_ure` và `tn` — phần NguoiQuanSat là assertion chèn vào hàm sẵn có, không thêm hàm mới; 1.029 sau lát 11)*. 🔴 **Đây là chủ sở hữu duy nhất của con số này** — `README.md` gốc và `roadmap.md` §0 cố ý KHÔNG nêu lại (trước 2026-09-07 nó nằm ở bốn chỗ và bốn chỗ nói khác nhau).
 
 🔴 **Đừng chạy hai phiên `pytest` cùng lúc.** Cả bộ dùng **một** DB test `dulieu_test`; hai phiên song song giẫm dữ liệu của nhau và cho ra hàng chục fail/error rải rác ở `tests/etl` — mỗi file chạy riêng lại pass, nên rất dễ tưởng là nợ kỹ thuật có sẵn *(đã gặp thật 2026-09-07: một phiên review chạy song song ⇒ 11 failed + 7 error; chạy lại một mình ⇒ 1.029 passed hai lượt liên tiếp)*.
 
@@ -105,24 +93,20 @@ npm test
 
 - **Sửa DDL qua migration mới** — không sửa file trong `database/migrations/versions/` đã chạy, kể cả trên dev. Phát hiện sai thì viết migration kế tiếp để sửa, không quay lại sửa migration cũ.
 - **Mọi SQL qualify đủ `schema.object`**, không dựa `search_path`. Bốn extension (`unaccent`, `pg_trgm`, `vector`, `fuzzystrmatch`) nằm trong schema `extensions`, không phải `public`: hàm bọc phải qualify (`extensions.unaccent(...)`), opclass viết `extensions.gin_trgm_ops`, operator so khớp mờ của `pg_trgm` viết `OPERATOR(extensions.%)` chứ không phải `%` trần — bẫy đã gặp thật khi viết migration `0007` (tìm kiếm tin theo tên mờ).
-- **Role ứng dụng là `NOLOGIN`, tạo trong migration `0009`:** `dlck_etl` ghi 6 schema (`market`/`macro`/`asset`/`news`/`staging`/`ops`), `dlck_api` chỉ đọc 4 schema miền (`market`/`macro`/`asset`/`news`). User login thật tạo **per-môi-trường, ngoài migration**:
-  ```sql
-  CREATE USER etl_worker   LOGIN PASSWORD '…' IN ROLE dlck_etl;    -- job ETL, biến ETL_DATABASE_URL
-  CREATE USER agent_reader LOGIN PASSWORD '…' IN ROLE dlck_api;    -- tầng ngữ nghĩa lát 10, biến AGENT_DATABASE_URL
-  ```
+- **Role ứng dụng là `NOLOGIN`, tạo trong migration `0009`:** `dlck_etl` ghi 6 schema (`market`/`macro`/`asset`/`news`/`staging`/`ops`), `dlck_api` chỉ đọc 4 schema miền (`market`/`macro`/`asset`/`news`). User login do `core.bootstrap` tạo/đồng bộ từ `.env` (`ETL_DB_*`, `AGENT_DB_*`, `CLICKHOUSE_INGESTER_*`, `CLICKHOUSE_API_*`) mỗi lần `docker compose up`; không còn tạo tay — mặc định `etl_worker IN ROLE dlck_etl` (biến `ETL_DATABASE_URL`) và `agent_reader IN ROLE dlck_api` (biến `AGENT_DATABASE_URL`).
 
-  `agent_reader` tạo 2026-09-07. Tiến trình `python -m agent` gọi `agent.db.assert_read_only()` ngay lúc khởi động: khẳng định `pg_has_role(current_user,'dlck_api','member')` **và** `has_table_privilege('market.security','INSERT') = false`, sai thì chết ngay. Kiểm thật dưới credential production 2026-09-07: `current_user=agent_reader`, thuộc `dlck_api`, `INSERT` bị chặn (`ProgrammingError`).
+  `agent_reader` tạo lần đầu 2026-09-07, nay do bootstrap đồng bộ mật khẩu mỗi lượt `up`. Tiến trình `python -m agent` gọi `agent.db.assert_read_only()` ngay lúc khởi động: khẳng định `pg_has_role(current_user,'dlck_api','member')` **và** `has_table_privilege('market.security','INSERT') = false`, sai thì chết ngay. Kiểm thật dưới credential production 2026-09-07: `current_user=agent_reader`, thuộc `dlck_api`, `INSERT` bị chặn (`ProgrammingError`).
 - ⚠️ **`alembic downgrade <revision>` = revision ĐÍCH, chạy `downgrade()` của migration NGAY SAU revision đó** — nói tắt "downgrade qua X" dễ khiến người đọc lẫn giữa "tới X" và "của X". Hai ca phá dữ liệu ngành thật, nêu rõ từng vế:
   - `alembic downgrade 0002` (tới revision `0002`) chạy `downgrade()` của `0003` → **`DELETE`** sạch `market.industry_icb_map` (bản đồ ICB→ngành lớp 1). Backup bảng này trước khi chạy lệnh này trên DB có dữ liệu thật.
   - `alembic downgrade 0011` (tới revision `0011`) chạy `downgrade()` của `0012` → **`DROP TABLE`** hẳn `market.issuer_industry_override` (161 dòng gán tay lớp 2) — mất luôn cả bảng, không chỉ mất dữ liệu. Backup bảng này trước khi chạy lệnh này trên DB có dữ liệu thật.
 
-  **Không phải cùng lệnh với bước 3 của mục Bootstrap DB mới ngay dưới đây** — bước 3 chạy `alembic downgrade 0012` (tới revision `0012`, chỉ lùi qua `0013`, không đụng `0012`): chạy `downgrade()` của `0013`, chỉ `DELETE` rows do `0013` seed, KHÔNG `DROP` bảng nào — an toàn hơn nhiều so với hai ca DROP/DELETE ở trên.
+  **Không phải cùng lệnh với bước 3 của mục Bootstrap DB mới ngay dưới đây** — bước 3 chạy `docker compose run --rm migrate`, tức `core.bootstrap` tự chạy lại **riêng revision `0013`** qua `Operations.context` (chỉ `DELETE` rồi nạp lại rows do `0013` seed, KHÔNG `DROP` bảng nào) — an toàn hơn nhiều so với hai ca DROP/DELETE ở trên.
 - **Bootstrap DB mới — thứ tự bắt buộc, không được đảo:**
-  1. `uv run --project backend alembic -c database/alembic.ini upgrade head`
-  2. Chạy `etl refdata` một lượt để nạp danh bạ doanh nghiệp (`market.security`, `market.issuer`).
-  3. Seed lại lớp 2: `uv run --project backend alembic -c database/alembic.ini downgrade 0012` rồi `uv run --project backend alembic -c database/alembic.ini upgrade head`.
+  1. `docker compose up -d` — kho + `migrate` chạy alembic head + `ch_migrate` + cấp 4 user login (`0013` seed lớp 2 ra **0 dòng** ở bước này vì `market.security` còn rỗng, đúng thiết kế).
+  2. `docker compose run --rm etl python -m etl refdata` để nạp danh bạ doanh nghiệp (`market.security`, `market.issuer`).
+  3. `docker compose run --rm migrate` — chạy lại: `core.bootstrap` tự phát hiện `market.security` đã có dòng mà `issuer_industry_override` rỗng, và chạy lại riêng revision `0013` để seed lớp 2 (xem cảnh báo dưới).
   4. Kiểm: `select count(*) from market.issuer_industry_override` phải ra **161**.
 
   Vì sao cần bước 3: migration `0013` seed lớp 2 (`market.issuer_industry_override`) bằng cách phân giải **ticker → `issuer_id` qua `market.security`**. Trên DB dựng mới, `market.security` còn rỗng khi `0013` chạy ở bước 1 ⇒ nạp **0 dòng override, không exception** (câu `RAISE NOTICE` báo số dòng khớp cũng không hiện ra vì `alembic` không in `NOTICE`). Job `etl refdata` sau đó vẫn báo `issuers_without_industry` y hệt trạng thái khoẻ mạnh — **không có gì báo động** — trong khi toàn bộ 161 doanh nghiệp lẽ ra được gán tay lại rơi về gán máy (lớp 1), có thể sai ngành hoặc vi phạm luật BCTC.
 
-  Đường `downgrade 0012` → `upgrade head` ở bước 3 an toàn để lặp lại — nó **chỉ** chạm `0013` (đích `0012` giữ nguyên `0012` đã áp dụng, không đụng DDL `CREATE TABLE`/`CREATE VIEW` của `0012`): `downgrade()` của `0013` `DELETE` sạch hai bảng seed (`market.industry_icb_map`, `market.issuer_industry_override`) trước; `upgrade()` của `0013` nạp lại — câu seed lớp 2 dùng `ON CONFLICT (issuer_id) DO NOTHING`, còn câu seed lớp 1 KHÔNG có `ON CONFLICT` nhưng vẫn an toàn vì bảng vừa bị `DELETE` sạch ngay trước đó nên không có gì để trùng.
+  🔴 **KHÔNG dùng `downgrade 0012` nữa** — đúng khi head là `0013`, nay head `0020` nên lệnh đó lùi tám migration và DROP `news.article_industry`, `ops.llm_call`, `ops.snapshot_check`… kèm dữ liệu (phát hiện 2026-09-08 khi viết plan lát 12). Cách đúng là `core.bootstrap` chạy riêng revision `0013` qua `Operations.context`.

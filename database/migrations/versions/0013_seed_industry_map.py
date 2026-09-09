@@ -7,6 +7,11 @@ Create Date: 2026-08-27
 Nội dung do docs/20-design/industry-mapping.json sở hữu (sinh từ
 gen_industry_mapping.py). Hai bảng này KHÔNG có đường ghi runtime nên seed ở
 migration là đúng chỗ — khác market.security, nơi ETL ghi hằng ngày.
+
+⚠️ core.bootstrap chạy LẠI riêng revision này qua Operations.context (hàm
+_rerun_seed_revision) khi override rỗng mà
+security có dòng — giữ upgrade()/downgrade() tương thích với head, đừng đổi
+thành no-op.
 """
 from typing import Sequence, Union
 

@@ -34,7 +34,7 @@ CADENCE_DAYS = 90
 QUOTA = 20                                         # mã/kind/ngày ⇒ 80 lời gọi/ngày, phủ 1.523 mã sau 77 ngày
 INSERT_CHUNK = 5000
 
-DICTIONARY_JSON = Path(__file__).resolve().parents[2] / "docs" / "10-sources" / "market" / "field-dictionary.json"
+DICTIONARY_JSON = Path(__file__).resolve().parent / "data" / "field-dictionary.json"
 DICTIONARY_GROUPS = ("chi_tieu_bao_cao_tai_chinh", "chi_tieu_ty_so_va_thi_truong")
 
 # Vũ trụ: issuer có ÍT NHẤT một cổ phiếu đang niêm yết — nguyên văn snapshot_store._UNIVERSE.

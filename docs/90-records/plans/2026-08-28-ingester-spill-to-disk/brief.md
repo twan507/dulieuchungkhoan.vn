@@ -146,5 +146,5 @@ Phiên 2026-08-27 chạy **song song** `run` (ghi kho) và `--measure` (ghi fram
 
 - [service-topology §7b](../../../20-design/service-topology.md) — ngân sách VPS, và đính chính "427 MB là đầu phiên không phải đỉnh"
 - [market-data-store §3.7](../../../20-design/market-data-store.md) — hợp đồng ghi ClickHouse hiện hành (phân loại lỗi, ngân sách retry, hạn chót chung)
-- [`deploy/infra/docker-compose.vps.yml`](../../../../deploy/infra/docker-compose.vps.yml) — trần cứng/mềm, ngân sách từng service
+- [`deploy/infra/docker-compose.vps.yml`](../../../../docker-compose.vps.yml) — trần cứng/mềm, ngân sách từng service
 - [ledger lát ingester](../2026-08-26-ingester-omo-first-slice/ledger.md) — lịch sử các lỗi đường ghi đã sửa

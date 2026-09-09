@@ -150,7 +150,7 @@ Luật: kiểm **lệnh** chứ không kiểm trạng thái; và test phải ch�
 
 Và một phép kiểm rẻ đứng trên tất cả: **trước khi bật bất cứ job nào chạy tự động, chạy tay chính lệnh đó dưới đúng credential production ít nhất một lần.** Ca thứ ba bắt được đúng bằng cách này — `python -m ingester --minutes 2` ngoài giờ, hai phút, lộ ngay lỗi mà 185 test xanh không thấy.
 
-Cả ba phép kiểm nay đã mã hoá thành code — `Assert-TaskCommand` (kèm `-MustNotContain`) trong `scripts/register-tasks.ps1`, test `test_flow_rebuild_works_under_etl_role`, và `test_assert_migrated_works_under_ingester_role`.
+Cả ba phép kiểm nay đã mã hoá thành code — `Assert-TaskCommand` (kèm `-MustNotContain`) từng nằm trong `scripts/register-tasks.ps1` (script về hưu ở lát 12, 2026-09-08 — bài học giữ), test `test_flow_rebuild_works_under_etl_role`, và `test_assert_migrated_works_under_ingester_role`.
 
 ### 3.6 Kết luận phủ định về toàn nguồn không suy được từ một endpoint
 
@@ -184,9 +184,9 @@ Hồ sơ khảo sát: `docs/90-records/surveys/YYYY-MM-DD-<tên>/`. **Sổ ghi t
 |---|---|---|
 | Nhỏ (sửa 1–2 file, tra cứu, chỉnh config), **hoặc** cần nhìn output rồi quyết ngay (vòng TDD đỏ→xanh của seam mới, dò lỗi, so ảnh render) | **Tự làm** — giao subagent chỉ thêm overhead | — |
 | Tay chân khối lượng lớn theo plan đã chi tiết (nhiều file, khảo sát rộng, lặp, chạy song song được) | **Giao subagent** | **Sonnet** (mặc định) |
-| Thật sự khó/mơ hồ còn sót (thiết kế mở, suy luận nặng, nhiều cách hiểu) | Giao subagent | **escalate Opus** |
+| Thật sự khó/mơ hồ còn sót (thiết kế mở, suy luận nặng, nhiều cách hiểu), **hoặc dài/nhiều mục** (≳ 10 mục hay nhiều file, ước > 20–30 phút, review toàn nhánh, vòng sửa 4–5) | Giao subagent | **Opus ngay từ đầu** |
 
-Mặc định subagent là **Sonnet**: plan chi tiết đã gỡ hết cái khó nên thực thi phần lớn là cơ học — chỉ nâng **Opus** khi đánh giá task còn suy luận nặng thật. Đề bài giao subagent phải **tự đủ** (spec rõ, đường dẫn file, tiêu chí kiểm chứng được) vì subagent không có ngữ cảnh hội thoại; kết quả phải **review trước khi chấp nhận** — kiến trúc sư chịu trách nhiệm cuối.
+Mặc định subagent là **Sonnet** cho việc nhỏ, cơ học, brief chi tiết; **Opus ngay từ đầu** khi task dài/nhiều mục hoặc còn suy xét — Sonnet đi nhiều lượt hơn nên chậm hơn và dễ phải mở vòng sửa, tính theo thời gian thì đắt hơn *(chủ dự án chốt 2026-09-08 tối, sau đợt sửa gộp 20 mục của lát 12 chạy Sonnet mất 57 phút: "mấy task khó với dài thế này lần sau giao opus làm")*. Đề bài giao subagent phải **tự đủ** (spec rõ, đường dẫn file, tiêu chí kiểm chứng được) vì subagent không có ngữ cảnh hội thoại; kết quả phải **review trước khi chấp nhận** — kiến trúc sư chịu trách nhiệm cuối.
 
 🔴 **Quy tắc cứng: tuyệt đối cấm subagent chạy model Fable; sàn thấp nhất là Sonnet — không dùng Haiku.** Mọi lời gọi subagent phải **chỉ định model tường minh** (`sonnet` mặc định · `opus` khi escalate; **không có bậc nào thấp hơn `sonnet`**, kể cả cho việc "chỉ sửa một dòng" hay re-review nhỏ) — bỏ trống là harness kế thừa model của phiên chính (Fable), tức vi phạm ngầm không có gì báo. Áp cho mọi loại agent, kể cả agent đọc-tìm (Explore). *(Sự cố 2026-08-25: một agent khảo sát 8 file được giao không chỉ định model, chạy nhầm Fable. 2026-09-06: skill SDD gợi ý "cheapest tier" cho fix một dòng ⇒ đã dùng Haiku hai lần ở lát 8b; chủ dự án siết: sàn Sonnet.)*
 
@@ -295,9 +295,10 @@ Ghi vào **hồ sơ plan của chính task** (`90-records/plans/<task>/` — tro
 |---|---|
 | Nền tảng | Windows 11, PowerShell + Git Bash |
 | Python | 3.12 — **luôn đặt `PYTHONIOENCODING=utf-8`**, nếu không sẽ crash cp1252 khi in tiếng Việt |
-| Git | `core.longpaths true` *(đã bật — worktree từng lỗi "Filename too long")* |
+| Git | `core.longpaths true` *(bật ở config cục bộ của repo; global CHƯA bật — clone mới cần `git clone -c core.longpaths=true`, đo 2026-09-08 khi build sạch từ clone (AC1 lát 12) vỡ ở `docs/30-skills/corpus/HP…`)* |
 | Bí mật | `.env` ở gốc repo, đã được `.gitignore` che. **Không bao giờ in giá trị khoá ra output hay ghi vào file.** |
 | Email dự án | `dulieuchungkhoan.official@gmail.com` *(tạo 2026-08-24)* — dùng khi đăng ký dịch vụ, khai email liên hệ (User-Agent crawler, API key…). Không phải email cá nhân của chủ dự án |
+| Chạy production | Docker: `docker compose up -d --build` ở gốc repo (lát 12); native `uv run …` chỉ cho dev/test, cùng một `.env` nguyên tố |
 
 ---
 

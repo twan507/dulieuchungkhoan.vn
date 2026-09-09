@@ -3,9 +3,13 @@ import os
 from alembic import context
 from sqlalchemy import create_engine, pool
 
+# `prepend_sys_path = backend` trong alembic.ini (giải theo thư mục làm việc = gốc repo) cho import này.
+from core.env import load_dotenv
+
+load_dotenv()   # ráp DATA_DATABASE_URL từ nguyên tố; biến đã export (conftest trỏ DB test) THẮNG
+
 
 def run_migrations_online() -> None:
-    # Test đặt DATA_DATABASE_URL trỏ DB test trước khi gọi alembic (conftest lo việc này)
     url = os.environ["DATA_DATABASE_URL"]
     engine = create_engine(url, poolclass=pool.NullPool)
     with engine.connect() as connection:

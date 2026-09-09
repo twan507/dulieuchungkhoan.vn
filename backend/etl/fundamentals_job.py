@@ -14,6 +14,7 @@ from datetime import datetime
 
 import sqlalchemy as sa
 
+from core.clock import today_vn
 from core.env import load_dotenv
 from etl import fundamentals_fetch, fundamentals_guard, fundamentals_normalize, fundamentals_store, omo_store
 from etl.fundamentals_fetch import BadShape, FetchError
@@ -88,7 +89,7 @@ def run(codes=None, kinds=None, max_minutes=None, backfill=False, stop_before_op
         stop_at = datetime.fromtimestamp(deadline, VN).isoformat(timespec="minutes") if deadline else None
 
         fetched, failed, bad_shape, stopped, calls, retries = _fetch_all(targets, get, sleep, deadline)
-        run_date = datetime.now(VN).date()
+        run_date = today_vn()
         try:
             with engine.begin() as conn:
                 tally, written = fundamentals_store.apply(conn, fetched, run_id)

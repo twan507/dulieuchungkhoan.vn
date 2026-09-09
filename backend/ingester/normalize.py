@@ -10,9 +10,8 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal, InvalidOperation, ROUND_HALF_EVEN
-from zoneinfo import ZoneInfo
 
-TZ = ZoneInfo("Asia/Ho_Chi_Minh")
+from core.clock import VN as TZ
 
 COLUMNS = {
     "trade": ["symbol", "ts", "seq", "price", "volume", "side", "change",

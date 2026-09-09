@@ -46,7 +46,7 @@ Lát 5 của [7] theo [thứ tự đã chốt](../../../00-overview/roadmap.md):
 
 - Job `python -m etl fundamentals` với bốn kind `bs` · `is` · `cf` · `reports`, cờ `--codes` · `--kinds` · `--max-minutes` · `--backfill` · `--stop-before-open`.
 - Migration `0017` (§4.5).
-- Nạp `metric_dictionary` từ [`field-dictionary.json`](../../../10-sources/market/field-dictionary.json) mỗi lượt (§4.6).
+- Nạp `metric_dictionary` từ [`field-dictionary.json`](../../../../backend/etl/data/field-dictionary.json) mỗi lượt (§4.6).
 - Bảng sổ kiểm `ops.fundamentals_check`; bằng chứng đổi vào `staging.raw_payload`.
 
 ### 3.2 Ngoài phạm vi — phân ba loại *(§1.4)*

@@ -1,7 +1,7 @@
 # Overlay hồ sơ VPS — 6 GiB RAM / 4 core / 60 GB đĩa.
 #
 # Dùng CỘNG THÊM vào compose gốc, không thay thế:
-#   docker compose -f docker-compose.yml -f docker-compose.vps.yml --profile realtime up -d
+#   .env đặt COMPOSE_FILE=docker-compose.yml:docker-compose.vps.yml  rồi:  docker compose up -d --build
 #
 # Vì sao là overlay chứ không sửa file gốc: máy dev có 64 GB, ép nó xuống hồ sơ VPS
 # chỉ làm test chậm đi mà không phát hiện thêm điều gì. Hai môi trường, hai hồ sơ,
@@ -77,4 +77,4 @@ services:
     volumes:
       # Đè memory.xml của dev bằng hồ sơ VPS. Cùng đường dẫn đích nên bản dev
       # không được nạp — không có chuyện hai file cùng khai một tham số.
-      - ./clickhouse/memory-vps.xml:/etc/clickhouse-server/config.d/memory.xml:ro
+      - ./deploy/infra/clickhouse/memory-vps.xml:/etc/clickhouse-server/config.d/memory.xml:ro

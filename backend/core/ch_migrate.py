@@ -89,6 +89,8 @@ def assert_migrated(client, required: str = REQUIRED_CH_MIGRATION) -> None:
 
 
 def main() -> None:
+    from core.env import load_dotenv
+    load_dotenv()                    # ráp CLICKHOUSE_URL từ nguyên tố (lát 12)
     cmd = sys.argv[1] if len(sys.argv) > 1 else "status"
     client = get_client()
     if cmd == "upgrade":

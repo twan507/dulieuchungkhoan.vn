@@ -10,10 +10,10 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from datetime import date
 
 import sqlalchemy as sa
 
+from core.clock import today_vn
 from core.env import load_dotenv
 from etl import omo_store, refdata_fetch, refdata_guard, refdata_merge, refdata_normalize, refdata_store
 from etl.guard_common import GuardRefused
@@ -57,7 +57,7 @@ def run(accept_drop: bool = False) -> int:
         if accept_drop:
             stats["accept_drop"] = True
         omo_store.close_run(engine, run_id, "success", stats)
-        refdata_store.upsert_domain_state(engine, date.today().isoformat())
+        refdata_store.upsert_domain_state(engine, today_vn().isoformat())
         log.info("refdata xong: %s", stats)
         return 0
     except KeyboardInterrupt:

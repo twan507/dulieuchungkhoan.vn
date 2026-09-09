@@ -10,6 +10,10 @@ import re
 from datetime import date
 from pathlib import Path
 
+from core.clock import today_vn
+from core.env import REPO_ROOT
+
+DEFAULT_BACKUP_DIR = Path("deploy") / "infra" / "clickhouse-backups"   # khớp mặc định của docker-compose.yml
 BAR_TABLES = ["bar_1m", "index_bar_1m"]
 FRAME_TABLES = ["trade", "quote", "snapshot_delta", "index_delta", "pt_match"]
 _PART_RE = re.compile(r"^\d{6}$")
@@ -36,7 +40,7 @@ def _prune_bars(backup_dir: Path, table: str, keep: int = 7) -> list[str]:
 
 
 def run_backup(client, backup_dir: Path, today: date | None = None) -> list[str]:
-    today = today or date.today()
+    today = today or today_vn()
     stamp = today.strftime("%Y%m%d")
     cur_month = today.strftime("%Y%m")
     actions: list[str] = []
@@ -74,12 +78,20 @@ def run_backup(client, backup_dir: Path, today: date | None = None) -> list[str]
     return actions
 
 
+def resolve_backup_dir(value: str) -> Path:
+    """Tương đối = theo GỐC repo (cùng gốc với docker-compose.yml từ lát 12); tuyệt đối giữ nguyên.
+
+    RỖNG = coi như CHƯA ĐẶT ⇒ mặc định `deploy/infra/clickhouse-backups`, đúng nghĩa `:-` mà compose
+    dùng cho `${CLICKHOUSE_BACKUP_DIR:-...}`. Trước 2026-09-08 rỗng giải ra chính gốc repo (T3)."""
+    p = Path(value) if value else DEFAULT_BACKUP_DIR
+    return p if p.is_absolute() else (REPO_ROOT / p)
+
+
 def main() -> None:
     from core.ch_migrate import get_client
-    from core.ch_migrate import REPO_ROOT
-    p = Path(os.environ["CLICKHOUSE_BACKUP_DIR"])
-    # Quy ước: đường dẫn tương đối giải theo deploy/infra — cùng gốc với docker-compose.yml
-    backup_dir = p if p.is_absolute() else (REPO_ROOT / "deploy" / "infra" / p)
+    from core.env import load_dotenv
+    load_dotenv()
+    backup_dir = resolve_backup_dir(os.environ["CLICKHOUSE_BACKUP_DIR"])
     acts = run_backup(get_client(), backup_dir)
     print(f"backup: {acts or 'không có gì mới'}")
 

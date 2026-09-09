@@ -10,11 +10,11 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import signal
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, time as dtime, timedelta
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 import clickhouse_connect
 from clickhouse_connect.driver.exceptions import ClickHouseError
@@ -22,6 +22,7 @@ import redis.asyncio as aioredis
 import websockets
 
 from core import ch_migrate
+from core.clock import VN as TZ, today_vn
 from ingester import catalog as cat
 from ingester import config, eio
 from ingester import leader as leader_mod
@@ -35,9 +36,9 @@ from ingester.pipeline import process_record
 from ingester.reconcile import reconcile
 
 log = logging.getLogger("ingester")
-TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 SESSION_END_MEASURE = (15, 10)   # đo tới 15:10 — trọn đuôi phiên + PLO
 SESSION_END_RUN = (15, 5)        # ghi thật dừng đúng 15:05 — spec §2.1
+SESSION_START = (8, 30)          # mốc task Windows cũ 08:30 — daemon nối socket từ đây (spec lát 12 §5.5)
 EVENTS = {"i", "t", "o", "idx", "ptm"}     # 5 topic có normalize (spec §3.3)
 ALL20 = ["i", "i_ol", "o10", "o_ol10", "o", "o_ol", "t", "t_ol", "tm", "e", "e_ol",
          "im", "e_im", "om", "idx", "pth", "ptm", "p", "u", "d"]
@@ -118,7 +119,7 @@ def _measure_deadline(minutes: float | None) -> datetime:
     return end if end > now else now + timedelta(minutes=5)
 
 
-async def _run_measure(minutes: float | None, out: str | None) -> int:
+async def _run_measure(minutes: float | None, out: str | None, stop: asyncio.Event | None = None) -> int:
     cfg = config.load(need_db=False)
     removed = prune_old(cfg.measure_dir)
     if removed:
@@ -130,7 +131,7 @@ async def _run_measure(minutes: float | None, out: str | None) -> int:
     log.info("measure: %d mã CP/ETF, %d mã phái sinh, %d topic, ghi vào %s",
              len(catalog.symbols), len(deriv), len(topics), out_dir)
     writer = MeasureWriter(out_dir)
-    stop = asyncio.Event()
+    stop = stop or asyncio.Event()
     counters: dict[str, int] = {}
 
     def on_packet(raw: str) -> None:
@@ -307,6 +308,80 @@ def _run_deadline(minutes: float | None, end_hm: tuple[int, int]) -> datetime:
     return end if end > now else now
 
 
+def next_window(now: datetime, start_hm: tuple[int, int], end_hm: tuple[int, int]) -> tuple[datetime, datetime]:
+    """Cửa sổ phiên đang mở hoặc kế tiếp, thứ 2–6, giờ VN. `start <= now < end` khi đang trong phiên."""
+    day = now.date()
+    for _ in range(8):
+        if day.weekday() < 5:
+            start = datetime.combine(day, dtime(*start_hm), tzinfo=now.tzinfo)
+            end = datetime.combine(day, dtime(*end_hm), tzinfo=now.tzinfo)
+            if now < end:
+                return start, end
+        day += timedelta(days=1)
+    raise AssertionError("không tìm được cửa sổ phiên trong 8 ngày")
+
+
+async def daemon(mode: str, run_session, *, clock=lambda: datetime.now(TZ), sleep=asyncio.sleep,
+                 stop: asyncio.Event | None = None, end_hm: tuple[int, int] = SESSION_END_RUN) -> int:
+    """Vòng cửa sổ phiên: ngoài phiên ngủ (lát ≤ 60 s), trong phiên gọi `run_session` một lần.
+    Mã ≥ 2 (hợp đồng khởi động hỏng) ⇒ thoát để Docker khởi động lại có giãn cách; 0/1 ⇒ chờ phiên kế.
+
+    Nhánh thoát thứ ba — theo TÍN HIỆU: `stop` (chính là `shutdown` của tiến trình, do `install_loop_stop`
+    bật khi SIGTERM/SIGINT) set ⇒ trả về NGAY sau phiên đang chạy, không ngủ tới phiên kế, để `docker stop`
+    không phải chờ hết grace period. Vòng ngủ cũng tỉnh theo `stop`."""
+    stop = stop or asyncio.Event()
+    while not stop.is_set():
+        now = clock()
+        start, end = next_window(now, SESSION_START, end_hm)
+        if now < start:
+            log.info("%s: ngoài phiên, chờ tới %s", mode, start.isoformat())
+            while (now := clock()) < start and not stop.is_set():
+                await sleep(min(60.0, (start - now).total_seconds()))
+            continue
+        rc = await run_session()
+        log.info("%s: phiên đóng lúc %s, mã %d", mode, clock().isoformat(), rc)
+        if stop.is_set():
+            return rc
+        if rc >= 2:
+            return rc
+        while (now := clock()) < end and not stop.is_set():   # phiên trả sớm thì đợi qua `end`, không chạy lại cùng phiên
+            await sleep(min(60.0, (end - now).total_seconds()))
+    return 0
+
+
+def install_loop_stop(stop: asyncio.Event) -> bool:
+    """SIGTERM/SIGINT → `stop.set()` trên loop đang chạy. `stop` ở đây là `shutdown` của CẢ TIẾN
+    TRÌNH (đặt tên trong `run()`) — không phải `stop` riêng của một phiên; `_session_with_relay` là
+    cầu nối đưa tín hiệu này vào phiên đang chạy, để phiên đóng đúng đường deadline (xả hàng đợi,
+    đối chứng) thay vì `KeyboardInterrupt` cắt ngang `await` (review Task 5 lát 12: `_run_run` không
+    có `except KeyboardInterrupt`, đuôi phiên không chạy). Windows (Proactor) không hỗ trợ ⇒ False,
+    giữ đường KeyboardInterrupt của `core.shutdown` (mã thoát như Ctrl+C, không xả)."""
+    loop = asyncio.get_running_loop()
+    try:
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            loop.add_signal_handler(sig, stop.set)
+    except (NotImplementedError, RuntimeError):
+        return False
+    return True
+
+
+async def _relay(src: asyncio.Event, dst: asyncio.Event) -> None:
+    """Chuyển tín hiệu dừng (event `shutdown` của cả tiến trình) vào `stop` của PHIÊN đang chạy."""
+    await src.wait()
+    dst.set()
+
+
+async def _session_with_relay(shutdown: asyncio.Event, factory) -> int:
+    """Mỗi phiên một `stop` mới (mốc giờ chỉ đóng phiên đó, không đóng daemon); tín hiệu thì đóng cả hai.
+    Relay huỷ khi phiên xong để `stop` cũ không bị đụng."""
+    stop = asyncio.Event()
+    relay = asyncio.create_task(_relay(shutdown, stop))
+    try:
+        return await factory(stop)
+    finally:
+        relay.cancel()
+
+
 def _print_reconcile(result) -> None:
     msg = f"reconcile: p1={len(result.p1)} p2={len(result.p2)} ok={result.ok}"
     print(msg)
@@ -375,7 +450,7 @@ async def _leader_state_watcher(is_leader: asyncio.Event, sink: state_mod.RedisS
 
 async def _run_reconcile(cfg: config.Config, d) -> int:
     client = clickhouse_connect.get_client(dsn=cfg.clickhouse_url)
-    day = d or datetime.now(TZ).date()
+    day = d or today_vn()
     result = reconcile(client, day)
     _print_reconcile(result)
     return 1 if (result.p1 or result.p2) else 0
@@ -501,7 +576,7 @@ async def _replay_startup_debt(writer, store, rc_client_factory) -> list:
                     "phiên xả tiếp (gauge `spill_bytes` cho khối nợ còn lại)",
                     sorted(str(d) for d in debt_days))
         return []
-    days = sorted(d for d in debt_days if d < datetime.now(TZ).date())
+    days = sorted(d for d in debt_days if d < today_vn())
     for dd in days:
         log.info("nợ đĩa ngày %s đã phát lại — chạy lại đối chứng thay cho phán quyết "
                  "'KHÔNG ĐÁNG TIN' của phiên trước", dd)
@@ -533,7 +608,7 @@ CH_IO_TIMEOUT_S = 20
 RECONCILE_IO_TIMEOUT_S = 120
 
 
-async def _run_run(cfg: config.Config, minutes: float | None) -> int:
+async def _run_run(cfg: config.Config, minutes: float | None, stop: asyncio.Event | None = None) -> int:
     try:
         # get_client PHẢI nằm trong try: autoconnect nối ngay, nên ClickHouse sập lúc khởi
         # động ném ngay tại đây — ngoài try thì thoát ra traceback trần exit 1, đi vòng
@@ -584,7 +659,7 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
     metrics = Metrics()
     is_leader = asyncio.Event()
     redis_queue: asyncio.Queue = asyncio.Queue()
-    stop = asyncio.Event()
+    stop = stop or asyncio.Event()
     leader_lock = leader_mod.LeaderLock(redis)
     loop = asyncio.get_running_loop()
 
@@ -667,7 +742,7 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
     # ghi sẽ biến một phiên sạch thành exit 1 vì hết giờ đọc, dù dữ liệu đã vào đủ.
     rc_client = clickhouse_connect.get_client(dsn=cfg.clickhouse_url)
     try:
-        result = reconcile(rc_client, datetime.now(TZ).date())
+        result = reconcile(rc_client, today_vn())
     finally:
         rc_client.close()
     _print_reconcile(result)
@@ -679,25 +754,64 @@ async def _run_run(cfg: config.Config, minutes: float | None) -> int:
     return 1 if (result.p1 or result.p2) else 0
 
 
+def _day_log_handler(cfg: config.Config) -> logging.Handler:
+    h = logging.FileHandler(cfg.log_dir / f"ingester-{datetime.now(TZ):%Y%m%d}.log", encoding="utf-8")
+    h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
+    return h
+
+
+def _attach_day_log(cfg: config.Config) -> logging.Handler | None:
+    """Gắn file log theo ngày vào root logger. Không mở được (volume sai quyền, ổ đầy…) ⇒ in lý do, trả None —
+    caller trả 2 theo hợp đồng "thiếu điều kiện khởi động ⇒ exit 2" (AC4 lát 12: volume root:root)."""
+    try:
+        h = _day_log_handler(cfg)
+    except OSError as e:
+        print(f"ingester: không ghi được log trong {cfg.log_dir}: {e}", file=sys.stderr)
+        return None
+    logging.getLogger().addHandler(h)
+    return h
+
+
 async def run(mode: str, minutes: float | None = None, out: str | None = None, d=None,
-             count: str | None = None, t_from: str | None = None, t_to: str | None = None,
-             use_db: bool = False) -> int:
+              count: str | None = None, t_from: str | None = None, t_to: str | None = None,
+              use_db: bool = False) -> int:
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    shutdown = asyncio.Event()
     if mode == "measure":
-        return await _run_measure(minutes, out)
+        install_loop_stop(shutdown)
+        if minutes is None:                                   # daemon: cửa sổ đo 08:30–15:10 mỗi ngày làm việc
+            return await daemon("measure",
+                                lambda: _session_with_relay(
+                                    shutdown, lambda stop: _run_measure(None, out, stop=stop)),
+                                stop=shutdown, end_hm=SESSION_END_MEASURE)
+        return await _session_with_relay(shutdown, lambda stop: _run_measure(minutes, out, stop=stop))
     if mode == "count":
         return await _run_count(count, t_from, t_to, use_db)
 
     cfg = config.load(need_db=True)
-    file_handler = logging.FileHandler(
-        cfg.log_dir / f"ingester-{datetime.now(TZ):%Y%m%d}.log", encoding="utf-8")
-    file_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
-    logging.getLogger().addHandler(file_handler)
-
     if mode == "reconcile":
+        if _attach_day_log(cfg) is None:
+            return 2
         return await _run_reconcile(cfg, d)
     if mode == "run":
-        return await _run_run(cfg, minutes)
+        install_loop_stop(shutdown)
+        if minutes is not None:                               # đường nghiệm thu / chạy tay: N phút rồi thoát
+            if _attach_day_log(cfg) is None:
+                return 2
+            return await _session_with_relay(shutdown, lambda stop: _run_run(cfg, minutes, stop=stop))
+
+        async def session() -> int:                           # mỗi phiên một file log theo ngày
+            h = _attach_day_log(cfg)
+            if h is None:
+                return 2
+            root = logging.getLogger()
+            try:
+                return await _session_with_relay(shutdown, lambda stop: _run_run(cfg, None, stop=stop))
+            finally:
+                root.removeHandler(h)
+                h.close()
+
+        return await daemon("run", session, stop=shutdown, end_hm=SESSION_END_RUN)
     print(f"ingester: mode không biết: {mode!r}")
     return 4
