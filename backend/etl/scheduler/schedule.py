@@ -54,8 +54,9 @@ SCHEDULE: list[JobSpec] = [
     JobSpec("news.classify", ("classify", "--limit", "1000"), "daily", weekdays=ALL_DAYS,
             times=((7, 0), (9, 0), (11, 0), (13, 0), (15, 0), (17, 0), (19, 0), (21, 0))),
     JobSpec("news.collect", ("news", "--loop"), "daemon"),
-    JobSpec("market.price_backfill", ("price", "--backfill", "--stop-before-open"), "weekly_once",
-            weekdays=SAT, times=((0, 5),), once_until_flag="pass_complete"),
+    # Backfill chạy 24/7 như daemon tới khi xong VÒNG ĐẦU (`pass_complete`), rồi thôi hẳn: nguồn nghẽn
+    # ~4–9 mã mỗi giờ ở mọi giờ (đo 2026-09-10) nên không có "giờ đẹp" để hẹn, cứ chạy và nghỉ dài dần.
+    JobSpec("market.price_backfill", ("price", "--backfill"), "daemon", once_until_flag="pass_complete"),
     # lát 14: một dòng JobSpec giám sát tại đây
 ]
 

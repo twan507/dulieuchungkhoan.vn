@@ -129,3 +129,15 @@ def test_run_once_spawns_daemon_intraday_then_due_marks_in_order(clean, tmp_path
     out = loop.run_once(clean, runner, vn(9, 8, 18), schedule=schedule)
     assert out["spawned"] == ["zz.loop.b"] and [f.name for f in out["finished"]] == ["zz.loop.a"]
     assert spawned == ["news", "yahoo", "omo", "omo"]
+
+
+def test_run_once_does_not_respawn_a_daemon_that_already_finished_its_pass(clean, tmp_path):
+    """Backfill là daemon 24/7 nhưng có `once_until_flag`: thoát 0 với `pass_complete` xong thì thôi hẳn.
+    `once_done` phải được đọc TRƯỚC bước daemon, không thì nhịp kế tiếp bật lại đúng cái vừa xong."""
+    _insert(clean, "zz.loop.bf", vn(9, 0, 5), stats={"pass_complete": True})
+    schedule = [JobSpec("zz.loop.bf", ("price", "--backfill"), "daemon", once_until_flag="pass_complete"),
+                JobSpec("zz.loop.d", ("news", "--loop"), "daemon")]
+    spawned = []
+    runner = Runner(tmp_path, spawn_fn=lambda cmd, **kw: spawned.append(cmd[3]) or FakePopen(), clock=lambda: vn(9, 8, 16))
+    out = loop.run_once(clean, runner, vn(9, 8, 16), schedule=schedule)
+    assert out["spawned"] == ["zz.loop.d"] and spawned == ["news"]

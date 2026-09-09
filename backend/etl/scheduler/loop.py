@@ -121,12 +121,15 @@ def run_once(engine, runner: Runner, now_vn: datetime, *, schedule: list[JobSpec
     `poll` chạy MỌI nhịp: con đã thoát chỉ rời khỏi "đang sống" khi được thu hoạch.
     """
     spawned: list[str] = []
+    # Đọc `once_done` TRƯỚC bước daemon: backfill là daemon nhưng thoát hẳn khi xong vòng đầu —
+    # nhịp ngay sau đó phải thấy nó trong danh sách "đã xong", không thì `ensure_daemon` bật lại.
+    done = once_done(engine)
     for spec in schedule:
-        if spec.kind == "daemon" and runner.ensure_daemon(spec, now_vn):
+        if spec.kind == "daemon" and spec.name not in done and runner.ensure_daemon(spec, now_vn):
             spawned.append(spec.name)
     spawned += runner.tick_intraday([s for s in schedule if s.kind == "intraday"], now_vn)
     ledger = read_today(engine, now_vn, job_names(schedule))
-    spawned += runner.reconcile(due(schedule, now_vn, ledger, once_done(engine)), now_vn)
+    spawned += runner.reconcile(due(schedule, now_vn, ledger, done), now_vn)
     finished = runner.poll(now_vn)
     runner.prune_old_logs(now_vn)
     return {"spawned": spawned, "finished": finished}

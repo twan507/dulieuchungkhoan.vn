@@ -103,7 +103,9 @@ def test_intraday_and_daemon_never_appear():
 
 def test_schedule_is_the_spec_table():
     assert len(SCHEDULE) == 19
-    assert [s.name for s in SCHEDULE if s.kind == "daemon"] == ["news.collect"]
+    assert [s.name for s in SCHEDULE if s.kind == "daemon"] == ["news.collect", "market.price_backfill"]
+    assert not [s for s in SCHEDULE if s.kind == "weekly_once"]
+    assert next(s for s in SCHEDULE if s.name == "market.price_backfill").once_until_flag == "pass_complete"
     assert [s.interval_s for s in SCHEDULE if s.kind == "intraday"] == [600, 300, 300]
     classify = next(s for s in SCHEDULE if s.name == "news.classify")
     assert classify.times == ((7, 0), (9, 0), (11, 0), (13, 0), (15, 0), (17, 0), (19, 0), (21, 0)) and classify.weekdays == ALL_DAYS
