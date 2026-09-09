@@ -46,7 +46,7 @@ def run() -> int:
                 apply_stats = screener_store.apply(conn, mapped)
         except GuardRefused as e:
             screener_store.store_refusal_evidence(engine, pages, run_id, e.reasons)
-            omo_store.close_run(engine, run_id, "failed", error=f"guard refused: {'; '.join(e.reasons)}")
+            omo_store.close_run_refused(engine, run_id, f"guard refused: {'; '.join(e.reasons)}")
             log.error("screener từ chối: %s", e.reasons)
             return 1
         trading_date = max(r.trading_date for r in n.rows).isoformat()

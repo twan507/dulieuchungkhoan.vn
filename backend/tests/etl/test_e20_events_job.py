@@ -201,6 +201,7 @@ def test_job_runs_under_the_etl_role(events_db, monkeypatch):
         @sa.event.listens_for(eng, "connect")
         def _set_role(dbapi_conn, _rec):
             cur = dbapi_conn.cursor(); cur.execute("SET ROLE dlck_etl"); cur.close()
+            dbapi_conn.commit()   # đóng transaction do SET ROLE mở: `open_run` xin AUTOCOMMIT trên connection này (lát 13)
 
         return eng
 

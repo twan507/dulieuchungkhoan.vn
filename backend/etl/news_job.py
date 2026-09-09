@@ -428,7 +428,7 @@ def run_backfill(from_month, to_month=None, max_minutes=None, stop_before_open=F
         log.info("news backfill xong: %s", st)
         return 0
     except SourceDown as e:
-        omo_store.close_run(engine, run_id, "failed", e.stats, error=str(e))
+        omo_store.close_run_refused(engine, run_id, str(e), e.stats)
         log.error("%s", e)
         return 1
     except KeyboardInterrupt:

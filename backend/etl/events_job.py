@@ -45,8 +45,7 @@ def run(accept_new: bool = False) -> int:
         except GuardRefused as e:
             events_store.store_refusal_evidence(engine, pages, run_id, e.verdict,
                                                 n.counts, n.collected)
-            omo_store.close_run(engine, run_id, "failed",
-                                error="guard refused: " + "; ".join(e.verdict.reasons))
+            omo_store.close_run_refused(engine, run_id, "guard refused: " + "; ".join(e.verdict.reasons))
             log.error("events từ chối: %s", e.verdict.reasons)
             return 1
         watermark = max(r.public_date for r in n.rows if r.public_date).isoformat()

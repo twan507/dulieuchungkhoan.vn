@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 
 import sqlalchemy as sa
 
@@ -80,13 +81,33 @@ def store_seed(result: OmoResult, conn, *, crawled_at, note: str) -> dict:
     return {"sessions": 1, "auctions": len(result.rows)}
 
 
+_LOCK_CONNS: dict[int, tuple[sa.Connection, str]] = {}   # run_id -> (connection AUTOCOMMIT giữ advisory lock suốt đời lượt, job)
+LOCK_BUSY_ERROR = "lock busy: lượt khác đang chạy"
+
+
 def open_run(engine, job: str) -> int:
-    with engine.connect() as c:
-        rid = c.execute(
-            sa.text("INSERT INTO ops.etl_run (job) VALUES (:j) RETURNING run_id"), {"j": job}
-        ).scalar_one()
-        c.commit()
-        return rid
+    """Mở sổ + giành khoá theo tên job (spec lát 13 §5.9). Khoá session-level trên connection riêng AUTOCOMMIT:
+    sống tới `close_run`, tự nhả khi tiến trình chết (Postgres nhả theo phiên). Bận ⇒ ghi một dòng `failed`
+    mang `guard_refused` (planner không bù lại mốc đó trong ngày) rồi SystemExit(1) — ném TRƯỚC `try` của mọi
+    job nên không sửa file job nào; exit 1 đúng hợp đồng "dữ liệu lành, không cần người".
+    """
+    lock = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    got = lock.execute(sa.text("SELECT pg_try_advisory_lock(hashtext(:j))"), {"j": job}).scalar_one()
+    if not got:
+        lock.execute(
+            sa.text("INSERT INTO ops.etl_run (job, status, finished_at, error, stats)"
+                    " VALUES (:j, 'failed', now(), :e, cast(:s AS jsonb))"),
+            {"j": job, "e": LOCK_BUSY_ERROR,
+             "s": json.dumps({"lock_busy": True, "guard_refused": True})},
+        )
+        lock.close()
+        print(f"{job}: {LOCK_BUSY_ERROR} — bỏ lượt này", file=sys.stderr, flush=True)
+        raise SystemExit(1)
+    rid = lock.execute(
+        sa.text("INSERT INTO ops.etl_run (job) VALUES (:j) RETURNING run_id"), {"j": job}
+    ).scalar_one()
+    _LOCK_CONNS[rid] = (lock, job)
+    return rid
 
 
 def close_run(engine, run_id: int, status: str, stats: dict | None = None,
@@ -99,6 +120,9 @@ def close_run(engine, run_id: int, status: str, stats: dict | None = None,
     `stats=None` — không có `coalesce` thì lượt đó **mất trắng** counts/rows_written/watermark
     của phần việc đã ghi xong. Kết cục đúng là `status='failed'` mà VẪN GIỮ stats: thấy được
     đã ghi những gì, và biết có thứ hỏng sau đó. Seam: `test_e04_store_flow.py`.
+
+    Sau UPDATE: nhả khoá và đóng connection giữ khoá (lát 13). `pg_advisory_unlock` phải gọi TƯỜNG MINH —
+    connection trả về pool mà chưa nhả thì vẫn giữ khoá, lượt sau của cùng job sẽ chết oan. Seam: `test_e67`.
     """
     with engine.connect() as c:
         c.execute(
@@ -109,6 +133,20 @@ def close_run(engine, run_id: int, status: str, stats: dict | None = None,
              "e": error, "r": run_id},
         )
         c.commit()
+    held = _LOCK_CONNS.pop(run_id, None)
+    if held is not None:
+        lock, job = held
+        try:
+            lock.execute(sa.text("SELECT pg_advisory_unlock(hashtext(:j))"), {"j": job})
+        finally:
+            lock.close()
+
+
+def close_run_refused(engine, run_id: int, error: str, stats: dict | None = None) -> None:
+    """Đóng sổ một lượt exit 1 — chốt chặn từ chối, nguồn/model chết, khoá bận: cờ `guard_refused` cho planner."""
+    st = dict(stats or {})
+    st["guard_refused"] = True
+    close_run(engine, run_id, "failed", st, error=error)
 
 
 def upsert_domain_state(engine, watermark: str) -> None:

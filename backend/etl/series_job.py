@@ -140,7 +140,7 @@ def run(spec: SourceSpec, keys=None, dry_run=False, backfill=False, intraday=Fal
             return 0 if verdict.ok else 1
         if not verdict.ok:
             series_store.store_refusal_evidence(engine, spec.source, texts, run_id, verdict.reasons)
-            omo_store.close_run(engine, run_id, "failed", stats, error="guard refused: " + "; ".join(verdict.reasons))
+            omo_store.close_run_refused(engine, run_id, "guard refused: " + "; ".join(verdict.reasons), stats)
             log.error("%s từ chối: %s", spec.log_name, verdict.reasons)
             return 1
         if backfill:

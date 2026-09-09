@@ -366,6 +366,9 @@ def run(limit: int | None = None, per_group: int | None = None, thinking: str = 
             log.info("classify dry-run xong: %s", st)
             return 0
         except ModelDown as e:
+            # Miễn hợp đồng `close_run_refused(` của test_e68: dry-run chạy với `run_id=None`, KHÔNG mở sổ
+            # `ops.etl_run` — không có lượt nào để đóng. Cùng loại miễn với `return 0 if verdict.ok else 1`
+            # ở series/wichart (scanner miễn theo hình dạng); ở đây miễn phải ghi ra vì hình dạng giống nhánh thật.
             log.error("%s — stats %s", e, e.stats)
             return 1
         except LLMError as e:
@@ -387,7 +390,7 @@ def run(limit: int | None = None, per_group: int | None = None, thinking: str = 
         log.info("classify xong: %s", st)
         return 0
     except ModelDown as e:
-        omo_store.close_run(engine, run_id, "failed", e.stats, error=str(e))
+        omo_store.close_run_refused(engine, run_id, str(e), e.stats)
         log.error("%s", e)
         return 1
     except KeyboardInterrupt as e:

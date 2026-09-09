@@ -123,7 +123,7 @@ def run(keys=None, dry_run=False, intraday=False, get=None, sleep=time.sleep) ->
             return 0 if verdict.ok else 1
         if not verdict.ok:
             wichart_store.store_refusal_evidence(engine, texts, run_id, verdict)
-            omo_store.close_run(engine, run_id, "failed", stats, error="guard refused: " + "; ".join(verdict.reasons))
+            omo_store.close_run_refused(engine, run_id, "guard refused: " + "; ".join(verdict.reasons), stats)
             log.error("wichart từ chối: %s", verdict.reasons)
             return 1
 

@@ -138,8 +138,7 @@ def _daily(engine, tickers: list[str] | None) -> int:
                 mism, sample = price_store.raw_close_mismatches(conn, bounds)
         except GuardRefused as e:
             price_store.store_refusal_evidence(engine, run_id, e.verdict.reasons, stats, res.pages)
-            omo_store.close_run(engine, run_id, "failed", stats,
-                                error="guard refused: " + "; ".join(e.verdict.reasons))
+            omo_store.close_run_refused(engine, run_id, "guard refused: " + "; ".join(e.verdict.reasons), stats)
             log.error("price từ chối: %s", e.verdict.reasons)
             return 1
         stats.update({"rows_sent": sent, "rows_changed": changed, "dup_dates": dups,
