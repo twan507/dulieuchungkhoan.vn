@@ -108,7 +108,7 @@ _SELECT = """
 SELECT a.article_id, a.primary_source, a.feed, a.group_from_feed, a.ticker_step_ran, a.canonical_url, r.title, r.sapo, r.content
 FROM news.article a
 JOIN LATERAL (SELECT title, sapo, content FROM news.article_revision r WHERE r.article_id = a.article_id ORDER BY version DESC LIMIT 1) r ON true
-WHERE a.classified_from IS NULL AND {bucket}
+WHERE a.classified_from IS NULL AND a.classify_attempts < :max_attempts AND {bucket}
 ORDER BY a.published_at DESC NULLS LAST, a.article_id DESC
 LIMIT :n"""
 
@@ -132,12 +132,18 @@ def select_articles(conn, *, limit: int | None = None, per_group: int | None = N
         raise ValueError("cần đúng một trong limit / per_group")
     out: list[Row] = []
     if limit is not None:
-        rows = conn.execute(sa.text(_SELECT.format(bucket="true")), {"n": limit}).all()
+        rows = conn.execute(sa.text(_SELECT.format(bucket="true")), {"n": limit, "max_attempts": MAX_ATTEMPTS}).all()
         return [Row(*r) for r in rows]
     for hint in (1, 2, 3, None):
-        rows = conn.execute(sa.text(_SELECT.format(bucket=_bucket_sql(hint))), {"n": per_group, "g": hint}).all()
+        rows = conn.execute(sa.text(_SELECT.format(bucket=_bucket_sql(hint))), {"n": per_group, "g": hint, "max_attempts": MAX_ATTEMPTS}).all()
         out.extend(Row(*r) for r in rows)
     return out
+
+
+def count_skipped_attempts(conn) -> int:
+    """Bài chưa phân loại nhưng đã thử đủ MAX_ATTEMPTS lần — không còn được select_articles chọn nữa (lát 13 §5.4)."""
+    return conn.execute(sa.text("SELECT count(*) FROM news.article WHERE classified_from IS NULL AND classify_attempts >= :m"),
+                        {"m": MAX_ATTEMPTS}).scalar_one()
 
 
 def apply(conn, row: Row, value, *, content_chars: int, classified_from: str, listed: dict[str, int], industry_ids: dict[str, int]) -> dict:
@@ -203,6 +209,7 @@ def log_call(conn, *, run_id, article_id, model: str, thinking: str, status: str
 
 log = logging.getLogger("etl.classify")
 JOB = "news.classify"
+MAX_ATTEMPTS = 3        # bài lỗi đủ số lần này thì select_articles bỏ qua (lát 13 §5.4) — hằng, không CHECK ở DB
 QUOTA_EVERY = 25
 QUOTA_MIN_INTERVAL_PCT = 20       # cửa sổ 5 giờ — giữ phần cho chatbot/dev (brainstorm §4.4)
 QUOTA_MIN_WEEKLY_PCT = 10
@@ -228,7 +235,7 @@ def _empty_stats(thinking: str, cap: int, selected: int) -> dict:
             "groups": {"1": 0, "2": 0, "3": 0, "x": 0}, "overridden": 0, "title_only": 0, "tickers_url": 0, "tickers_lookup": 0,
             "tickers_ai": 0, "tickers_ai_dropped": 0, "tickers_ai_capped": 0, "industries_ai": 0, "industries_ticker": 0,
             "tokens": {"input": 0, "cache_read": 0, "output": 0, "thinking": 0}, "latency_s": {"p50": None, "p90": None, "max": None, "total": 0.0},
-            "usd_estimate": 0.0, "quota": {}, "quota_stop": False, "budget_hit": False, "model_down": False, "warnings": []}
+            "usd_estimate": 0.0, "quota": {}, "quota_stop": False, "budget_hit": False, "model_down": False, "warnings": [], "skipped_attempts": 0}
 
 
 def _quota_ok(client, st: dict, key: str) -> bool:
@@ -248,9 +255,11 @@ def _pct(xs: list[float], p: float) -> float:
 
 
 def classify_run(engine, client, rows: list[Row], *, run_id, schema, system: str, thinking: str, listed: dict, industry_ids: dict,
-                 dry_run: bool = False, out=None, max_minutes: float | None = None, cap: int = CAP_CHARS, clock=time.monotonic) -> dict:
+                 dry_run: bool = False, out=None, max_minutes: float | None = None, cap: int = CAP_CHARS, clock=time.monotonic,
+                 skipped_attempts: int = 0) -> dict:
     t0 = clock()
     st = _empty_stats(thinking, cap, len(rows))
+    st["skipped_attempts"] = skipped_attempts
     lat: list[float] = []
     tok = Usage()
     try:
@@ -277,6 +286,7 @@ def classify_run(engine, client, rows: list[Row], *, run_id, schema, system: str
                     with engine.begin() as c:
                         log_call(c, run_id=run_id, article_id=row.article_id, model=client.settings.model, thinking=thinking, status="failed",
                                  usage=getattr(e, "usage", None), latency_s=clock() - t1, error=str(e))   # M5: schema error vẫn tốn token
+                        c.execute(sa.text("UPDATE news.article SET classify_attempts = classify_attempts + 1 WHERE article_id = :a"), {"a": row.article_id})
                 log.warning("bài %s: %s", row.article_id, e)
                 if e.reason == "auth":
                     raise
@@ -337,6 +347,7 @@ def run(limit: int | None = None, per_group: int | None = None, thinking: str = 
                 raise RuntimeError(f"market.industry level 2 có {len(inds)} mã, mong 24 (industry-tree.md)")
             listed = news_store.load_listed(c)
             rows = select_articles(c, limit=limit, per_group=per_group, ids=ids)
+            skipped = count_skipped_attempts(c)
     except (RuntimeError, ValueError, LLMConfigError, sa.exc.SQLAlchemyError) as e:   # M15: lỗi kết nối DB lúc khởi động cũng phải đóng gọn, không văng traceback
         log.error("%s", e)
         if engine is not None:                     # lỗi sau khi đã mở engine — đừng rò pool (news_job.run_backfill cùng khuôn)
@@ -346,7 +357,8 @@ def run(limit: int | None = None, per_group: int | None = None, thinking: str = 
     system = system_prompt([(r.code, r.name_vi) for r in inds])
     industry_ids = {r.code: r.industry_id for r in inds}
     log.info("classify: %s bài, thinking %s, dry_run %s, trần %s ký tự", len(rows), thinking, dry_run, cap)
-    kw = dict(schema=schema, system=system, thinking=thinking, listed=listed, industry_ids=industry_ids, max_minutes=max_minutes, cap=cap, clock=clock)
+    kw = dict(schema=schema, system=system, thinking=thinking, listed=listed, industry_ids=industry_ids, max_minutes=max_minutes, cap=cap, clock=clock,
+              skipped_attempts=skipped)
     if dry_run:
         fh = open(out, "w", encoding="utf-8") if out else sys.stdout
         try:
