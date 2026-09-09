@@ -213,3 +213,21 @@ docker compose config --quiet     → rc=0
 ```
 
 **Task 13 bước 3 (merge) chờ AC9** — ba ngày chạy thử 10–12/09 + AC4–AC7/AC10 trong container (Task 11). Điểm nối lại: memory `slice-13-in-progress` và mục này.
+
+## Sáng 10/09 06:40 — đọc lượt chạy đêm native (17:48:13 → còn chạy, tự dừng ~07:18)
+
+| Mục | Số đo *(đo 2026-09-10 06:40)* |
+|---|---|
+| Con thoát | **398 lượt, tất cả rc=0**; 0 mã ≠ 0, 0 lỗi nhịp, 0 dòng cooldown, 0 giết cứng |
+| Intraday | binance 155 · wichart 154 · yahoo 77 lượt, đúng nhịp 300/300/600 s suốt đêm |
+| Mốc daily | omo 18:00 + 21:30 · events 18:10 · snapshot 18:15 (chuỗi sau events) · fundamentals 19:33 (chuỗi sau snapshot, 0 lời gọi vì watermark) · fred 20:00 + 05:00 · ecb + lbma 22:30 · classify 17:48/20:59/23:45 — **không sót mốc nào** |
+| `news --loop` | 134 vòng, sống liên tục từ 17:48 |
+| Tóm tắt 06:00 | in đúng lúc 06:00 (giữa 05:59:27 và 06:01:47), 20 dòng job + dòng daemon |
+| Sổ | 3 dòng `running` = đúng 3 con đang sống lúc đo (collect, yahoo, wichart intraday); không dòng mồ côi |
+| Log | 18 file `<job>-2026090{9,10}.log` ở `dlck-runtime/etl-logs` |
+
+**Classify (3 lượt × `--limit 1000`):** 3.000 lời gọi MiniMax, 8,05 triệu token vào + 2,55 triệu ra, 5 bài hỏng ở lượt đầu; quota Token Plan tuần 87 % → 80 %. Tồn đọng `news.article` chưa phân loại 4.396 → **1.356**, hết trong ngày với 8 mốc.
+
+**Hai việc ngoài scheduler:** (1) container backfill giá cũ (run 35) **`failed` lúc 02:02** — `SourceDown: 10 mã liên tiếp hỏng` sau 194 mã, con trỏ `CK8`, 68 mã hỏng, 1.099 retry, 4 lần tạm nghỉ vì nguồn: `getPriceData` FiinTrade nghẽn cả đêm, không phải lỗi scheduler; con trỏ còn, lượt thứ 7 (`weekly_once`) hoặc chạy tay nối tiếp. (2) run 111 `price_backfill` lồng của snapshot 18:15 (re-crawl DIG/HUB/ITC/VPI): `budget_hit` 20 phút, 41 retry, HUB hỏng — cùng nguyên nhân nghẽn nguồn.
+
+Kết luận: đường scheduler chạy 13 giờ không lỗi; điểm yếu duy nhất đêm qua nằm ở nguồn FiinTrade giá. Tiếp: chờ native tự dừng 07:18 → Task 11 Step 1 `docker compose up -d --build` ~07:30.
