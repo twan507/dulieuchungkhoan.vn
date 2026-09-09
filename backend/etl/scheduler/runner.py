@@ -102,6 +102,12 @@ class Runner:
     def _live_children(self) -> list[Child]:
         return [c for c in self._children.values() if c.proc.returncode is None]
 
+    def _live_non_daemon_children(self) -> list[Child]:
+        """Trần §5.9 chỉ áp cho task thường: daemon được đảm bảo sống riêng (§5.10), không chiếm
+        một trong sáu chỗ — nếu tính cả daemon, trần thực tế còn 5."""
+        return [c for c in self._children.values()
+                if c.proc.returncode is None and c.spec.kind != "daemon"]
+
     def log_path(self, name: str, now: datetime) -> Path:
         return self.log_dir / f"{name}-{now:%Y%m%d}.log"
 
@@ -115,13 +121,18 @@ class Runner:
         if self.alive(spec.name):
             print(f"[{now:%Y-%m-%d %H:%M:%S}] {spec.name} đang chạy, bỏ qua lượt ({reason})", flush=True)
             return None
-        if spec.kind != "daemon" and len(self._live_children()) >= self.max_children:
+        if spec.kind != "daemon" and len(self._live_non_daemon_children()) >= self.max_children:
             print(f"[{now:%Y-%m-%d %H:%M:%S}] {spec.name} hoãn: đủ {self.max_children} tiến trình con ({reason})", flush=True)
             return None
         fh = self.log_path(spec.name, now).open("a", encoding="utf-8")
         cmd = [self.python, "-m", "etl", *spec.cmd]
-        proc = self.spawn_fn(cmd, cwd=BACKEND_DIR, env=os.environ.copy(),
-                             stdout=fh, stderr=subprocess.STDOUT, **_platform_kwargs())
+        try:
+            proc = self.spawn_fn(cmd, cwd=BACKEND_DIR, env=os.environ.copy(),
+                                 stdout=fh, stderr=subprocess.STDOUT, **_platform_kwargs())
+        except OSError as exc:
+            fh.close()
+            print(f"[{now:%Y-%m-%d %H:%M:%S}] {spec.name} lỗi khởi động: {exc} ({reason})", flush=True)
+            return None
         child = Child(spec, proc, now, fh, reason)
         self._children[spec.name] = child
         self._last_spawn[spec.name] = now

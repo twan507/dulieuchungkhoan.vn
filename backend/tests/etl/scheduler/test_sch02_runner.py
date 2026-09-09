@@ -121,6 +121,52 @@ def test_daemon_backoff_30_60_120_and_reset(tmp_path):
     assert r.ensure_daemon(DAEMON, fc.now()) is True
 
 
+def test_cap_of_six_excludes_an_already_alive_daemon(tmp_path):
+    # F1 (review): daemon giành chỗ trước (§5.10) rồi mới reconcile task thường — trần 6 vẫn phải
+    # để đủ 6 task thường spawn, daemon không ăn vào một trong sáu chỗ đó.
+    r, log = _runner(tmp_path, lambda: vn(9, 15, 40))
+    assert r.ensure_daemon(DAEMON, vn(9, 15, 40)) is True
+    specs = [JobSpec(f"zz.j{i}", ("omo",), "daily", times=((15, 40),)) for i in range(7)]
+    spawned = r.reconcile([Task(s, "mốc 15:40") for s in specs], vn(9, 15, 40))
+    assert spawned == [f"zz.j{i}" for i in range(6)]
+    assert len(log) == 7                                                    # 1 daemon + 6 task thường
+
+
+def test_daemon_backoff_resets_to_30s_after_a_healthy_run(tmp_path):
+    # F2 (review): bản cũ của test backoff không thực sự chạy tới nhánh reset (con đã bị thu hoạch
+    # trước khi tới đoạn "sống quá 300s"). Test này spawn daemon thật, cho nó chết ngay một lần để
+    # đẩy giãn cách lên 60s cho lần sau, rồi cho nó SỐNG hơn 300s trước khi chết lần hai — nếu reset
+    # đúng, giãn cách quay về 30s (chờ 30s là đủ); nếu không reset, giãn cách vẫn là 60s (30s chưa đủ).
+    fc = FakeClock(vn(9, 12, 0))
+    r, log = _runner(tmp_path, fc.now, exits_after=None)
+    assert r.ensure_daemon(DAEMON, fc.now()) is True
+    r._children["news.collect"].proc.left = 0
+    r.poll(fc.now())                                       # chết ngay (0s) -> chờ=30s, giãn kế=60s
+    fc.t += timedelta(seconds=30)
+    assert r.ensure_daemon(DAEMON, fc.now()) is True        # spawn lại đúng lúc hết 30s chờ
+    fc.t += timedelta(seconds=400)                          # sống > 300s -> lần chết sau phải reset
+    r._children["news.collect"].proc.left = 0
+    r.poll(fc.now())
+    fc.t += timedelta(seconds=30)
+    assert r.ensure_daemon(DAEMON, fc.now()) is True        # đúng 30s là đủ; 60s (chưa reset) sẽ False
+
+
+def test_spawn_failure_closes_log_handle_and_returns_none(tmp_path):
+    # F3 (review): spawn_fn ném lỗi (vd. thiếu file thực thi) không được văng ra ngoài caller, và
+    # handle log đã mở phải được đóng lại — không rò.
+    def boom(cmd, **kw):
+        raise OSError("boom")
+
+    r = Runner(tmp_path, spawn_fn=boom, clock=lambda: vn(9, 15, 40))
+    result = r.spawn(PRICE, vn(9, 15, 40), "mốc 15:40")
+    assert result is None
+    assert r.alive("market.price_daily") is False
+    assert "market.price_daily" not in r._children
+    log_file = tmp_path / "market.price_daily-20260909.log"
+    assert log_file.exists()
+    log_file.unlink()                                       # handle còn mở thì unlink lỗi trên Windows
+
+
 def test_shutdown_terminates_then_kills_after_grace(tmp_path):
     r, _ = _runner(tmp_path, lambda: vn(9, 15, 40), exits_after=None)
     r.spawn(PRICE, vn(9, 15, 40), "mốc 15:40")
