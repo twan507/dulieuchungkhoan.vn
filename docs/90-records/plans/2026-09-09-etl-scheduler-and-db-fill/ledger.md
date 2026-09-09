@@ -67,3 +67,16 @@ Dữ kiện danh mục: `market.security` có 1.962 mã `listed` nhưng 439 mã 
 - Sitemap tin (run 32–34): `article` 174 → 382 trước khi bị giết; con trỏ nối lại được.
 - 13:10 khởi động lại: `dlck-fill-price-backfill` (nối sau ACC, còn 1.506 mã) · `dlck-fill-fundamentals` · ba `dlck-fill-news-*` · **lượt thử tải 1 `dlck-fill-price-daily-1` chạy ngay** (13:10, phiên chiều, ba luồng FiinTrade) · lượt 2 hẹn 14:30 (script nền `price-load-test.sh`, log `scratchpad/price-load-test-2b.log`).
 - 13:12 giao lại Task 1 (Sonnet).
+
+## Task 1–2 (2026-09-09 13:12–13:25)
+
+- **Task 1** parser gộp dòng cùng kỳ hạn — `048c514`, review sạch (2 Minor để review cuối: chưa test nhánh None của thành viên; quét O(n) tìm dòng cùng kỳ hạn).
+- **Task 2** seed OMO từ CSV — `2ad2126`, 46 test seam + 612 test `tests/etl` xanh. CSV chuyển từ xlsx bằng script dùng một lần (openpyxl, Python hệ thống) → `C:\Users\tuanb\Downloads\omo-fiinprox-20250908-20260907.csv`, 826 dòng, ngoài repo.
+- **AC1 nửa đầu — chạy khô trên kho thật 13:23** (`uv run python -m etl omo --seed <csv> --dry-run`, native):
+
+```
+sessions_new=248 sessions_skipped=0 auctions=823 rows_merged=3 min_session_date=2025-09-08 max_session_date=2026-09-07 flow_rows=317 outstanding_2026-09-07=250778.26 outstanding_2026-09-08=249363.44
+rc=0
+```
+
+  Khớp từng số với dự đoán trong spec §2.1 (250.778,26 và 249.363,44 tỷ). `auctions=823` = 826 dòng − 3 dòng gộp. Lượt ghi thật chạy sau khi review Task 2 xanh.
