@@ -165,13 +165,20 @@ def main(argv: list[str] | None = None) -> int:      # noqa: ARG001 — không n
     try:
         while not stop.is_set():
             now = now_vn()
-            run_once(engine, runner, now)
+            try:
+                run_once(engine, runner, now)
+            except Exception:
+                # Một sự cố thoáng qua (vd Postgres rớt giữa nhịp) không được kéo chết cả vòng
+                # supervisor: log rồi thử lại ở nhịp sau, không backoff, không đếm.
+                log.exception("scheduler: nhịp lỗi, thử lại sau %ss", TICK_SECONDS)
             if (now.hour, now.minute) >= SUMMARY_AT and today_vn(now) != summary_printed_on:
                 for line in summary_lines(engine, now) + _daemon_alive_line(runner, SCHEDULE):
                     print(line, flush=True)
                 summary_printed_on = today_vn(now)
             stop.wait(TICK_SECONDS)
     finally:
-        runner.shutdown()
-        engine.dispose()
+        try:
+            runner.shutdown()
+        finally:
+            engine.dispose()
     return 0

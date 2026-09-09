@@ -17,11 +17,11 @@ def vn(d, h, mi):
     return datetime(2026, 9, d, h, mi, tzinfo=VN)
 
 
-def _insert(engine, job, started, status="success", stats=None):
+def _insert(engine, job, started, status="success", stats=None, error=None):
     with engine.begin() as c:
-        c.execute(sa.text("INSERT INTO ops.etl_run (job, started_at, finished_at, status, stats)"
-                          " VALUES (:j, :s, :s, :st, cast(:x AS jsonb))"),
-                  {"j": job, "s": started, "st": status, "x": json.dumps(stats or {})})
+        c.execute(sa.text("INSERT INTO ops.etl_run (job, started_at, finished_at, status, stats, error)"
+                          " VALUES (:j, :s, :s, :st, cast(:x AS jsonb), :e)"),
+                  {"j": job, "s": started, "st": status, "x": json.dumps(stats or {}), "e": error})
 
 
 @pytest.fixture()
@@ -58,8 +58,11 @@ def test_summary_lines_count_last_24h_by_outcome(clean):
     _insert(clean, JOB, vn(9, 8, 5))
     _insert(clean, JOB, vn(9, 8, 6), "failed", {"guard_refused": True})
     _insert(clean, JOB, vn(9, 8, 7), "failed", {"guard_refused": True, "lock_busy": True})
+    _insert(clean, JOB, vn(9, 8, 8), "failed", error="dừng tay (Ctrl+C)")
+    _insert(clean, JOB, vn(9, 8, 9), "failed")
+    _insert(clean, JOB, vn(8, 8, 59))                    # ngoài cửa sổ 24h tính từ vn(9, 9, 0)
     lines = loop.summary_lines(clean, vn(9, 9, 0))
-    assert "zz.loop.a success=1 refused=2 lock_busy=1 failed=0 interrupted=0" in lines
+    assert "zz.loop.a success=1 refused=2 lock_busy=1 failed=1 interrupted=1" in lines
 
 
 class FakePopen:
