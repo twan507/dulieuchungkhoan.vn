@@ -105,6 +105,9 @@ class Runner:
         self._daemon_last_exit: datetime | None = None
         self._daemon_wait_s = 0             # giãn cách đang áp cho lần chết vừa rồi
         self._daemon_backoff_s = DAEMON_BACKOFF_START_S   # giãn cách cho lần chết TIẾP THEO
+        # R26: planner re-issue cùng job mỗi nhịp trong lúc con còn sống ⇒ không in lại dòng từ chối
+        # cho mỗi lần gọi, chỉ một dòng cho mỗi CON đang sống (§5.9 "log một dòng").
+        self._dup_logged: set[str] = set()
 
     # ---- trạng thái ------------------------------------------------------
     def alive(self, name: str) -> bool:
@@ -132,7 +135,9 @@ class Runner:
         được đảm bảo trước (§5.10) và có backoff riêng của nó.
         """
         if self.alive(spec.name):
-            print(f"[{now:%Y-%m-%d %H:%M:%S}] {spec.name} đang chạy, bỏ qua lượt ({reason})", flush=True)
+            if spec.name not in self._dup_logged:
+                print(f"[{now:%Y-%m-%d %H:%M:%S}] {spec.name} đang chạy, bỏ qua lượt ({reason})", flush=True)
+                self._dup_logged.add(spec.name)
             return None
         if spec.kind != "daemon":
             failed = self._last_failed.get(spec.name)
@@ -157,6 +162,7 @@ class Runner:
         child = Child(spec, proc, now, fh, reason)
         self._children[spec.name] = child
         self._last_spawn[spec.name] = now
+        self._dup_logged.discard(spec.name)
         return child
 
     def reconcile(self, tasks: list[Task], now: datetime) -> list[str]:
@@ -210,6 +216,7 @@ class Runner:
                 continue
             seconds = int((now - child.started_at).total_seconds())
             child.log_fh.close()
+            self._dup_logged.discard(name)
             if child.spec.kind == "daemon":
                 self._daemon_died(now, seconds)
             elif rc != 0:

@@ -64,6 +64,32 @@ def test_spawn_writes_a_daily_log_file_and_blocks_duplicates(tmp_path):
     assert r.spawn(PRICE, vn(9, 15, 41), "mốc 15:40") is None and len(spawned) == 1
 
 
+def test_duplicate_refusal_line_prints_once_per_living_child(tmp_path, capsys):
+    # R26: planner re-issue cùng job mỗi nhịp 20s trong lúc con còn sống (đo lượt thật: ~360
+    # dòng/ngày chỉ riêng `price`) — spec §5.9 "log một dòng" nghĩa là một dòng mỗi CON, không phải
+    # mỗi lần từ chối.
+    r, _ = _runner(tmp_path, lambda: vn(9, 15, 40), exits_after=None)
+    child1 = r.spawn(PRICE, vn(9, 15, 40), "mốc 15:40")
+    assert child1 is not None
+    capsys.readouterr()   # bỏ output của lần spawn thành công (không in dòng "đang chạy")
+
+    assert r.spawn(PRICE, vn(9, 16, 0), "nhịp tick") is None
+    assert r.spawn(PRICE, vn(9, 16, 20), "nhịp tick") is None
+    assert r.spawn(PRICE, vn(9, 16, 40), "nhịp tick") is None
+    out = capsys.readouterr().out
+    assert out.count("đang chạy, bỏ qua lượt") == 1
+
+    child1.proc.left = 0                                    # con thoát
+    fin = r.poll(vn(9, 16, 41))
+    assert fin != []
+    child2 = r.spawn(PRICE, vn(9, 16, 42), "mốc 15:40 lại")
+    assert child2 is not None
+
+    assert r.spawn(PRICE, vn(9, 17, 0), "nhịp tick") is None
+    out2 = capsys.readouterr().out
+    assert out2.count("đang chạy, bỏ qua lượt") == 1         # tổng cả bài test: đúng 2 dòng
+
+
 def _runner(tmp_path, clock, exits_after=None, log=None):
     log = [] if log is None else log
     return Runner(tmp_path, spawn_fn=lambda cmd, **kw: log.append(cmd) or FakePopen(exits_after), clock=clock), log

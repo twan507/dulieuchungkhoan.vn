@@ -43,13 +43,18 @@ def test_install_stop_handlers_registers_sigbreak_and_sigint():
     sentinel = lambda signum, frame: None  # noqa: E731 — chỉ cần một identity riêng để so `is`
     old_sigint = signal.getsignal(signal.SIGINT)
     old_sigbreak = signal.getsignal(signal.SIGBREAK)
+    old_sigterm = signal.getsignal(signal.SIGTERM) if hasattr(signal, "SIGTERM") else None
     try:
         loop._install_stop_handlers(sentinel)
         assert signal.getsignal(signal.SIGBREAK) is sentinel
         assert signal.getsignal(signal.SIGINT) is sentinel
+        if hasattr(signal, "SIGTERM"):
+            assert signal.getsignal(signal.SIGTERM) is sentinel
     finally:
         signal.signal(signal.SIGINT, old_sigint)
         signal.signal(signal.SIGBREAK, old_sigbreak)
+        if hasattr(signal, "SIGTERM"):
+            signal.signal(signal.SIGTERM, old_sigterm)
 
 
 def test_read_today_filters_by_vn_day_and_drops_intraday_subset_dry_run(clean):
