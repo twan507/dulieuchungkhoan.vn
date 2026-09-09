@@ -175,4 +175,41 @@ Dự đoán ghi trước ở sổ SDD lúc 17:25; sai một điểm: `omo` khôn
 
 **Đính chính spec cần ghi ở Task 12:** §5.8 (mọi lần thoát có dòng sổ — sai khi chết trước `open_run`; nay có cooldown RAM), §5.10 (prune theo ngày trong tên file, không phải mtime; Windows cần `SIGBREAK`).
 
-**Quan sát chưa giải thích (để review cuối):** run 49 `market.price_backfill` 17:30:16 success `subset: true`, 4 mã, `stop_at 17:50` — không do controller khởi động; nghi một test spawn CLI thật với `.env` cung cấp `ETL_DATABASE_URL` (`test_e63` đã trỏ sang `TEST_DATABASE_URL`, cần tìm test khác). Vô hại (planner loại `subset`), nhưng phải giải thích trước khi merge. Run 50 `fundamentals` (script khép ngày) success 0 lời gọi vì watermark đã là 2026-09-09 sau backfill — đúng.
+**Run 49 — đã giải thích ở review toàn nhánh (18:20):** run 49 `market.price_backfill` 17:30:16 success `subset: true`, 4 mã DIG/HUB/ITC/VPI, `stop_at` +20 phút **là lượt re-crawl lồng trong tiến trình của run 48 `market.snapshot`** (`snapshot_job._recrawl` → `price_job.run(backfill=True, codes=…, max_minutes=20)`, mã có ngày giao dịch không hưởng quyền trong cửa sổ; `stats.recrawl` của run 48 = `{"exit": 0, "codes": ["DIG","HUB","ITC","VPI"]}`; hai run đóng cùng giây 17:35:07). **Không phải test ghi vào kho dev** — mọi test chạm DB đều ghim `ETL_DATABASE_URL` sang DB test (30 chỗ), `load_dotenv` chỉ `setdefault`. Giả thuyết "nghi một test" ghi ở bản 17:50 của mục này là **sai**, sửa cùng lượt ở roadmap và README (M12). Hệ quả kỹ thuật: chính lồng ghép này là đường để `SystemExit(1)` khoá bận từ `open_run` giết cả tiến trình cha ⇒ I1 của review cuối (R28). Run 50 `fundamentals` (script khép ngày) success 0 lời gọi vì watermark đã là 2026-09-09 sau backfill — đúng.
+
+## Khép phiên tối 09/09 — review toàn nhánh, đợt sửa, verify
+
+**Task 12 (docs)** — `86c0cf7`, Opus một lượt, review Sonnet sạch; ba test `tests/docs` về xanh (21 migration · 16 file / 66 test seam · hàng index cho hồ sơ này). Roadmap **không** ghi ✅ cho lát 13.
+
+**Task 13 bước 1 — review toàn nhánh `56a71ec..86c0cf7` (Opus, hai trục, báo riêng):**
+
+| Trục | Kết luận |
+|---|---|
+| **Chuẩn** | 0 Critical · **2 Important** · 12 Minor. I1: `SystemExit(1)` khoá bận từ `open_run` là `BaseException`, lọt qua `except Exception` của `snapshot_job._recrawl` (gọi `price_job.run(backfill=True, codes=…, max_minutes=20)` trong tiến trình) và của vòng `news --loop --classify` ⇒ khoá `price_backfill` bận (thứ 7, hoặc lượt tay như cả ngày 09/09) giết cả tiến trình `snapshot`, dòng `market.snapshot` treo `running` không cờ. I2: `SHUTDOWN_GRACE_S` 60 = `stop_grace_period` 60s ⇒ không có biên độ trong container. |
+| **Spec** | Đủ, kể cả bốn đính chính; không scope creep đáng kể; hai edge case §6 chưa có test (khoá nhả khi dispose; con treo `poll()`); luật phụ thuộc chặt hơn câu spec ("success con phải ≥ success mới nhất của cha") chưa được ghim ⇒ ghim bằng test. |
+| **Run 49** | **Đã giải thích** — re-crawl lồng của run 48 `market.snapshot` (xem mục trên). Vệ sinh kho dev nguyên vẹn. |
+| **Triage Minor để dành** | 8 mục DONE trong nhánh, còn lại CAN WAIT sang lát 14 (bảng đầy đủ ở sổ SDD phiên). |
+
+**Đợt sửa duy nhất (Opus) `86c0cf7..bc66bfa`, re-review Opus sạch:**
+
+| Commit | Nội dung | Phán quyết |
+|---|---|---|
+| `aac01f2` | `omo_store.LockBusy(SystemExit)`, raise `LockBusy(1)`; `_recrawl` bắt ⇒ `stats.recrawl = {"codes", "lock_busy": true}`, snapshot đóng `success`; `news --loop --classify` bắt và đi tiếp; test e30/e56/e67 | **R28** |
+| `13a0ad7` | dòng cooldown in một lần mỗi cửa sổ `(name, failed_at)`; `open_run` đóng connection khoá nếu chính lệnh acquire ném | M1, M3 |
+| `31f7077` | compose `etl.stop_grace_period: 90s` (như ingester), `test_d03` ghim 90s, runner giữ 60 | **R27** (thay R20) |
+| `753a192` | README: định dạng dòng thoát thật `[<ts>] <job> rc=<rc> <s>s (<lý do>)`; đoạn "dòng `subset` lồng từ snapshot"; roadmap sửa run 49; spec thêm một dòng đính chính | M8, M12 |
+| `bc66bfa` | test ghim luật phụ thuộc chặt (con success 18:05 < cha 18:12 ⇒ vẫn tới hạn; 18:20 ⇒ không) | Spec |
+
+Re-review ghi thêm ngoài phạm vi (để lát 14): `engine.connect()`/`execution_options` còn ngoài `try` của M3; `stats.recrawl` có 4 hình chưa ghim; test e56 chỉ ghim một vòng. Controller tự thêm dòng đính chính I2 vào spec (§4.1 việc một dòng).
+
+**Chạy đêm 09→10/09 (R25):** scheduler native từ 17:48:13 — tiến trình scheduler nạp cây tại `019f97b` (có SIGBREAK, cooldown, dedupe; **chưa** có `LockBusy`/R27 vì hai vá đó vào sau 18:26), còn mỗi job con là interpreter mới đọc cây hiện tại nên đã mang `LockBusy`, wrapper tự gửi CTRL_BREAK ~07:18; tới 18:36 chỉ có rc=0 (intraday đúng nhịp 300/600 s), chưa có mã ≠ 0. Sáng 10/09 đọc `trial-night.log` + `ops.etl_run` từ run 63 trước khi `docker compose up -d --build`.
+
+**Task 13 bước 2 — verify tại `bc66bfa` (controller chạy, output thật):**
+
+```
+uv run pytest tests -q            → 1206 passed, 3 skipped in 98.69s (0:01:38)
+git grep -c "\[DEBUG-" -- backend → 0 hit
+docker compose config --quiet     → rc=0
+```
+
+**Task 13 bước 3 (merge) chờ AC9** — ba ngày chạy thử 10–12/09 + AC4–AC7/AC10 trong container (Task 11). Điểm nối lại: memory `slice-13-in-progress` và mục này.

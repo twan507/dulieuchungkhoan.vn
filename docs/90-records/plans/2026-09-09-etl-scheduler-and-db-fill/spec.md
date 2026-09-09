@@ -318,6 +318,8 @@ Runner spawn nếu chưa có hoặc đã chết; giãn cách khởi động lạ
 
 **§5.10 dòng con thoát in đúng dạng `[<ts>] <job> rc=<rc> <s>s (<lý do>)`** *(2026-09-09, review toàn nhánh)* — bản trước ghi `<job> mã <rc> sau <s>s`, không phải chuỗi `runner.py` thật in ra; `backend/README.md` đã sửa theo để grep được.
 
+**§2.1 / §5.12 `stop_grace_period` của `etl` = 60 s → 90 s (đính chính 2026-09-09 tối, review toàn nhánh I2, phán quyết R27).** `SHUTDOWN_GRACE_S = 60` của runner bằng đúng thời hạn `docker compose stop` ⇒ con nào cần ~59 s để đóng sổ sẽ bị SIGKILL cùng PID 1, sinh dòng `running` mồ côi. Compose nâng lên 90s (cùng ingester), runner giữ 60 s; `test_d03` ghim 90s.
+
 ## 9. Điểm cần chủ dự án duyệt tường minh
 
 1. Sáu điểm tự chốt §4.3 — đặc biệt (1) dòng `running` mồ côi để lát 14, (6) seed đọc CSV chuyển từ xlsx, không thêm `openpyxl`.
