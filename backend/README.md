@@ -16,6 +16,134 @@
 
 ---
 
+## Scheduler — `python -m etl` không tham số *(lát 13, 2026-09-09)*
+
+Chạy `python -m etl` **không tham số** là bật **scheduler**: một vòng lặp nhịp **20 giây**, mỗi nhịp đọc sổ
+`ops.etl_run` của ngày hôm nay (biên ngày giờ VN), tính mốc nào tới hạn, rồi spawn `python -m etl <job>` làm
+**tiến trình con**. Lỗi của một job không kéo đổ job khác; ngoại lệ trong một nhịp chỉ được log, vòng lặp chạy tiếp.
+
+```bash
+cd backend
+uv run python -m etl        # native dev: MỘT cửa sổ cho cả hệ; Ctrl+C dừng sạch
+```
+
+Trong container: service `etl` của `docker-compose.yml` chạy đúng lệnh này (`docker compose up -d`), log vào
+volume `etl_logs` tại `/var/lib/dlck/etl-logs`. **Mã thoát của chính scheduler:** `2` khi thiếu
+`ETL_DATABASE_URL` (chết trước khi chạm kho) · `0` khi dừng sạch.
+
+### Bảng lịch — giờ VN, chép từ `etl/scheduler/schedule.py`
+
+| Tên job (`ops.etl_run.job`) | Lệnh sau `python -m etl` | Loại | Mốc / nhịp | Ngày |
+|---|---|---|---|---|
+| `market.refdata` | `refdata` | daily | 08:00 | T2–T6 |
+| `market.screener` | `screener` | daily | 15:20 | T2–T6 |
+| `market.price_daily` | `price` | daily | 15:40 | T2–T6 |
+| `market.events` | `events` | daily | 18:10 | T2–T6 |
+| `market.snapshot` | `snapshot` | daily | **sau khi `market.events` success** | T2–T6 |
+| `market.fundamentals` | `fundamentals` | daily | **sau khi `market.snapshot` success** | T2–T6 |
+| `macro.omo_crawl` | `omo` | daily | 11:30 · 15:30 · 18:00 · 21:30 | cả tuần |
+| `macro.wichart` | `wichart` | daily | 08:15 | cả tuần |
+| `global.yahoo` | `yahoo` | daily | 11:00 | cả tuần |
+| `global.binance` | `binance` | daily | 07:15 | cả tuần |
+| `global.fred` | `fred` | daily | 05:00 · 20:00 | cả tuần |
+| `global.ecb` | `fx` | daily | 22:30 | cả tuần |
+| `global.lbma` | `lbma` | daily | 22:30 | cả tuần |
+| `global.yahoo` | `yahoo --intraday` | intraday | mỗi **600 s** | cả tuần |
+| `global.binance` | `binance --intraday` | intraday | mỗi **300 s** | cả tuần |
+| `macro.wichart` | `wichart --intraday` | intraday | mỗi **300 s** | cả tuần |
+| `news.classify` | `classify --limit 1000` | daily | **8 mốc**: 07 · 09 · 11 · 13 · 15 · 17 · 19 · 21 giờ | cả tuần |
+| `news.collect` | `news --loop` | daemon | giữ sống liên tục | cả tuần |
+| `market.price_backfill` | `price --backfill --stop-before-open` | weekly_once | thứ 7 00:05 | T7 |
+
+Một **tên job** được phép có nhiều dòng (bản trọn ngày và bản `--intraday`): tên là khoá của `ops.etl_run`, còn
+chống chạy chồng do runner lo theo tên. Ba dòng `--intraday` mang `weekdays=ALL_DAYS` — chúng chạy 24/7 theo đồng
+hồ của runner, để mặc định T2–T6 sẽ đọc nhầm thành chỉ chạy ngày thường.
+
+Hằng số cùng file: `MAX_CONCURRENT_CHILDREN = 6` · `RETRY_AFTER_MIN = 10` · `TICK_SECONDS = 20` ·
+`SHUTDOWN_GRACE_S = 60` · `LOG_KEEP_DAYS = 30` · `SUMMARY_AT = (6, 0)`.
+
+### Sáu luật chạy bù (`etl/scheduler/planner.py` — thuần, 0 I/O)
+
+1. **Mốc đã qua hôm nay mà chưa có `success`** kể từ mốc đó ⇒ chạy bù ngay nhịp kế. Tắt máy qua 15:40 rồi bật lúc
+   17:00 thì `price` chạy lúc 17:00, không chờ sang mai.
+2. **Chỉ mốc của HÔM NAY.** Sổ đọc theo biên ngày VN; mốc hôm qua không bao giờ được bù — chạy bù muộn một ngày
+   với dữ liệu theo ngày là ghi nhầm ngày, không phải cứu.
+3. **`intraday` và `daemon` planner bỏ qua.** Runner tự lo: intraday theo `interval_s` bằng đồng hồ của nó (RAM,
+   mất khi khởi động lại — vô hại), daemon thì giữ sống.
+4. **Nhiều mốc cùng tên tự đúng.** OMO 4 mốc, FRED 2 mốc, `classify` 8 mốc: chỉ xét **mốc gần nhất đã qua**, một
+   `success` có `started_at ≥` mốc đó là đủ.
+5. **exit 1 không thử lại; exit 2 thử lại đúng một lần sau 10 phút.** Trong các dòng `failed` kể từ mốc: có dòng
+   mang `stats.guard_refused = true` ⇒ thôi (chốt chặn từ chối là *hành vi đúng*, chạy lại chỉ tốn nguồn); không
+   có, đúng một dòng, và `now ≥ started_at + 10 phút` ⇒ thử lại; từ hai dòng trở lên ⇒ thôi tới ngày sau.
+6. **`weekly_once` tắt vĩnh viễn** khi có bất kỳ `success` nào mang `stats.pass_complete = true` — backfill giá đi
+   hết một vòng thì không tự mở vòng mới.
+
+Sổ đọc mỗi nhịp **loại** các dòng mang `stats.intraday` / `stats.subset` / `stats.dry_run` = `true`: lượt hẹp và
+lượt khô không được tính là "mốc hôm nay đã chạy".
+
+### Runner — trần, chặn trùng, hạ nhiệt
+
+- **Trần 6 tiến trình con.** `daemon` được đảm bảo trước và **không chiếm slot**; task dư không spawn nhịp này,
+  nhịp sau `due()` tính lại.
+- **Con cùng tên còn sống ⇒ không spawn** (lớp ngoài của chống chạy chồng). Dòng log `đang chạy, bỏ qua lượt` in
+  **một lần cho mỗi con đang sống**, không phải mỗi nhịp — bản đầu in mỗi 20 s, riêng `price` đã ~360 dòng/ngày.
+- 🔴 **Hạ nhiệt 10 phút sau khi con thoát mã ≠ 0.** Job chết **trước** khi kịp `open_run` (ví dụ kho chưa áp
+  migration) **không để lại dòng nào trong sổ**, nên planner cấp lại mốc đó mỗi nhịp và đập nguồn mỗi 40 giây.
+  Runner nhớ trong RAM và từ chối spawn lại **cùng tên** trong 10 phút *(đo 2026-09-09 17:35 với `news.classify`
+  khi kho dev chưa áp migration `0021` — spawn lặp 17:36:04 · 17:36:44 · 17:37:24)*. Daemon có backoff riêng.
+- **Daemon `news --loop`**: chết thì khởi động lại sau 30 s, nhân đôi tới trần 300 s; sống quá 5 phút thì đếm lại
+  từ 30 s.
+
+### Log — một file mỗi job mỗi ngày
+
+stdout + stderr của con vào `ETL_LOG_DIR/<job>-YYYYMMDD.log` (mở chế độ nối). Native mặc định
+`<repo>/../dlck-runtime/etl-logs`; container `/var/lib/dlck/etl-logs` (volume `etl_logs`). Con thoát thì scheduler
+in một dòng `<job> mã <rc> sau <s>s (<lý do>)`.
+
+🔴 **Dọn log theo NGÀY TRONG TÊN FILE** (`<job>-YYYYMMDD.log` cũ hơn 30 ngày), không theo `mtime`: file của ngày cũ
+vẫn có thể được ghi thêm, và `mtime` bị mọi thao tác chép/khôi phục làm mới.
+
+**Tóm tắt sáng 06:00** in ra stdout: bảng đếm 24 giờ qua theo job (success · exit 1 · exit 2 · 130) và dòng
+`news --loop đang sống từ HH:MM`. Khởi động **sau** 06:00 thì bảng này in luôn một lần lúc khởi động.
+
+### Dừng — và cái bẫy Windows
+
+`SIGTERM` / `SIGINT` / `SIGBREAK` chỉ **đặt cờ**; nhịp kế mọi con đang sống nhận `SIGTERM` (POSIX) hoặc
+`CTRL_BREAK_EVENT` (Windows), chờ tối đa **60 s**, còn sống thì `kill()`; scheduler thoát `0`.
+`stop_grace_period` của service `etl` cũng là 60 s.
+
+🔴 **Windows: con phải bắt `SIGBREAK`, không chỉ `SIGINT`.** Python ánh xạ `CTRL_BREAK_EVENT` sang `SIGBREAK`; con
+chỉ cài handler `SIGINT` sẽ **chết với mã `0xC000013A`, không đi qua `except KeyboardInterrupt`** và để lại dòng
+`running` treo trong sổ *(đo 2026-09-09 bằng một cặp script cha/con)*. Vì thế
+`core.shutdown.install_signal_handlers` **và** vòng lặp scheduler cùng ánh xạ `SIGBREAK` về đúng đường Ctrl+C khi
+nền tảng có thuộc tính đó. Linux không có `SIGBREAK` ⇒ không đổi gì.
+
+### Hai lớp chặn chạy chồng, và mã thoát 1 khi khoá bận
+
+**Lớp trong — khoá advisory Postgres.** `open_run` (điểm nghẽn chung của cả 15 họ job) mở một connection **riêng,
+sống suốt đời lượt chạy** và giữ `pg_try_advisory_lock(hashtext(<tên job>))`. `close_run` đóng connection đó trong
+`finally` ⇒ khoá nhả kể cả khi tiến trình bị giết cứng (phiên đóng là khoá tự nhả).
+
+Khoá bận ⇒ job ghi một dòng `failed` với `error = lock busy: lượt khác đang chạy`, `stats = {"lock_busy": true,
+"guard_refused": true}`, in một dòng stderr rồi **thoát 1** — ném trước cả `try` của job, nên không job nào phải sửa.
+
+**Hợp đồng mã thoát chung cho mọi họ job** *(mở rộng bảng của `screener` dưới đây)*:
+
+| Mã | Nghĩa |
+|---:|---|
+| `0` | ghi xong, `etl_run.status = success` |
+| `1` | **chốt chặn từ chối** *hoặc* **khoá bận** — dữ liệu lành, không cần người; dòng `failed` luôn mang `stats.guard_refused = true`, riêng khoá bận thêm `stats.lock_busy = true` |
+| `2` | lỗi thật (thiếu biến môi trường, nguồn hỏng sau retry, DB lỗi) — không ghi kho |
+| `130` | dừng tay: Ctrl+C · `docker stop` · scheduler tắt con — sổ đóng `failed: dừng tay (Ctrl+C)` |
+
+### Chạy thử native 10 phút — 2026-09-09 17:35:24 → 17:45:45
+
+Bù đúng bốn mốc đã lỡ ngay nhịp đầu (`refdata` 08:00 · `price` 15:40 · `classify` 17:00 · `yahoo` 11:00) và **chạm
+trần 6**; `yahoo` bản ngày bị chính con `--intraday` cùng tên chặn, rồi chạy ngay khi con kia nhả tên. Chạy chồng
+cố ý (`python -m etl price` lúc 17:36 trong lúc lượt 15:40 còn chạy) ⇒ `lock busy`, **exit 1**, một dòng `failed`
+mang `lock_busy`. Dừng bằng CTRL_BREAK lúc 17:45:24 ⇒ scheduler thoát `0` sau **21 s**, ba con đóng sổ `dừng tay
+(Ctrl+C)`, **0 lần giết cứng, 0 dòng `running` mồ côi**.
+
 ## Chạy `ingester`
 
 Cần: stack `docker compose up -d` ở gốc repo (kho + migrate), `.env` nguyên tố (bootstrap đã cấp `ingester_worker`).
@@ -49,9 +177,12 @@ Chế độ `run` (chạy ghi thật) còn dùng **`INGESTER_SPILL_DIR`** (mặc
 ```bash
 cd backend
 uv run python -m etl omo            # một lần chạy, ghi rồi thoát
+uv run python -m etl omo --seed <file.csv> [--dry-run]   # nạp một lần lịch sử phiên từ bản xuất FiinProX
 ```
 
 Cần `ETL_DATABASE_URL` (user thuộc role `dlck_etl`). Job idempotent theo **ngày trong tiêu đề bài của SBV**: ngày đã có trong `macro.omo_session` thì bỏ qua, không ghi đè. Bị WAF chặn → `ops.etl_run` ghi `failed`, **không** ghi kho lẫn staging.
+
+**`--seed` — nạp lịch sử một lần từ CSV.** SBV chỉ hiện phiên mới nhất nên chuỗi lịch sử phải nhập từ ngoài: bản xuất FiinProX (xlsx → CSV, chuyển bằng công cụ ngoài repo — job **không** đọc xlsx). Mỗi dòng CSV là một dòng trúng thầu; job gộp các dòng **cùng phiên + cùng kỳ hạn** thành một dòng `omo_auction` (khối lượng cộng lại, `note` ghi rõ đã gộp), bỏ qua phiên đã có trong kho (chạy lại ⇒ 0 phiên mới), và **dừng ngay** khi hai dòng cùng kỳ hạn có lãi suất khác nhau hoặc CSV có cột lạ. `--dry-run` in đủ `sessions_new` / `auctions` / `rows_merged` / `outstanding_*` mà không ghi gì. Lượt thật 2026-09-09: **248 phiên** 2025-09-08 → 2026-09-07 nối khít phiên SBV 08/09, 823 dòng đấu thầu, 3 dòng gộp; `macro.omo_flow.outstanding_vnd` 07/09 = **250.778,26 tỷ**, 08/09 = **249.363,44 tỷ** — khớp tới từng đồng với cột lưu hành của FiinProX.
 
 ## Chạy job refdata (danh bạ + danh mục mã + cây ICB)
 
@@ -163,14 +294,15 @@ trong pool suốt 38 phút fetch chết sau giấc ngủ — `pool_pre_ping=True
 giờ giao dịch; con trỏ đã lưu sau từng mã nên lượt sau nối tiếp. Giữ máy thức bằng `SetThreadExecutionState` **không** dùng được: nó chỉ chặn ngủ do nhàn rỗi, không chặn được lệnh
 suspend theo lịch.
 
-**Backfill chạy bằng task Scheduler `dlck-price-backfill`, không chạy tay trong phiên chat** *(quyết định chủ dự án
-2026-09-04)*: lệnh `etl price --backfill --stop-before-open`, trigger **thứ 7 00:05**, giới hạn chạy 3 ngày, đăng ký
-`Disabled` cùng cả đội. Hai cách dùng: kích hoạt tay buổi tối bất kỳ (`Start-ScheduledTask dlck-price-backfill`) —
-`--stop-before-open` tính hạn **08:45 của ngày giao dịch kế tiếp** ngay lúc bắt đầu nên tối thứ 3 dừng trước phiên
-sáng thứ 4; hoặc bật task để tự chạy thứ 7 và đi liền tới sáng thứ 2 (~20 giờ đủ trọn vòng). Máy ngủ 02:00 giữa
-chừng: job sống qua và chạy tiếp tới hạn; con trỏ nối các lượt. ⚠️ Hết vòng (`pass_complete`) thì lượt kế là **vòng
-mới** — làm mới toàn bộ chuỗi điều chỉnh (~20 giờ gọi mỗi cuối tuần): giữ task bật nếu muốn làm mới định kỳ, tắt
-nếu chỉ cần một vòng rồi re-crawl theo sự kiện quyền bằng `--codes` (lát 4). Tiến độ: `stats.cursor` /
+**Backfill do scheduler chạy, không chạy tay trong phiên chat** *(quyết định chủ dự án 2026-09-04; chủ lịch đổi từ
+task Windows sang scheduler ở lát 13)*: dòng `market.price_backfill` kiểu `weekly_once` — `price --backfill
+--stop-before-open`, **thứ 7 00:05**, và **tắt vĩnh viễn** khi đã có một lượt `success` mang
+`stats.pass_complete = true`. Chạy tay buổi tối bất kỳ vẫn được (`uv run python -m etl price --backfill
+--stop-before-open`): `--stop-before-open` tính hạn **08:45 của ngày giao dịch kế tiếp** ngay lúc bắt đầu nên tối
+thứ 3 dừng trước phiên sáng thứ 4; còn lượt thứ 7 đi liền tới sáng thứ 2. Máy ngủ 02:00 giữa
+chừng: job sống qua và chạy tiếp tới hạn; con trỏ nối các lượt. ⚠️ Hết vòng (`pass_complete`) thì scheduler **thôi hẳn** dòng
+này; muốn làm mới toàn bộ chuỗi điều chỉnh (~20 giờ gọi) thì chạy tay một lượt, còn cập nhật thường ngày đi bằng
+re-crawl theo sự kiện quyền với `--codes` (lát 4). Tiến độ: `stats.cursor` /
 `codes_done` / `stop_at` của job `market.price_backfill` trong `ops.etl_run`.
 
 Lượt `--codes` ghi `stats.subset = true`: **không** làm mốc cho guard (ii)/(iv), **không** đụng
@@ -188,13 +320,18 @@ là idempotent, không cần vế "có phiên không" như Screener).
 
 ```bash
 uv run python -m etl snapshot                       # lượt bình thường: trigger + quét sàn cuốn chiếu
-uv run python -m etl snapshot --codes A32,BAB       # ép một tập mã, mọi kind, bỏ qua nhịp và quota
+uv run python -m etl snapshot --codes A32,BAB       # ép một tập mã, mọi kind, bỏ qua nhịp
 uv run python -m etl snapshot --kinds dividend      # chỉ một vài kind
 uv run python -m etl snapshot --max-minutes 5       # trần thời gian, dừng sau target đang dở
 ```
 
-Bốn kind `snapshot` · `valuation` · `ownership` · `dividend` vào `market.snapshot_daily`. Ngân sách **234 lời gọi/ngày**
-(quota 24 + 70 + 70 + 70), phần fetch ~2 phút.
+Bốn kind `snapshot` · `valuation` · `ownership` · `dividend` vào `market.snapshot_daily`.
+
+**Quét sàn chạy theo NHỊP, không theo trần ngày** *(bỏ trần 2026-09-09, lát 13)*: mỗi lượt lấy **mọi** cặp
+`(issuer, kind)` đã tới nhịp — `snapshot` 90 ngày, `valuation` · `ownership` · `dividend` 30 ngày — thay vì cắt
+theo một hạn mức lời gọi mỗi ngày. Ngày thường vẫn cỡ **234 lời gọi** (fetch ~2 phút) vì nhịp tự rải đều; ngày mà
+một khối lớn cùng tới nhịp thì lượt đó quét trọn khối, chấp nhận dài hơn. Trần duy nhất còn lại là
+`--max-minutes` (dừng sau target đang dở, `checked_at` giữ chỗ) và trần **300 issuer** của nhánh trigger.
 
 **Kho chỉ nhận dòng KHI NỘI DUNG ĐỔI** — họ này không có trường nào đổi theo ngày. Phép so tính hash trên
 **danh sách trắng theo kind**, cố tình bỏ ngoài mọi trường tính từ giá (`rtd11` `rtd21` `rtd25`,
@@ -227,8 +364,10 @@ theo từng kind làm ca này nổ **dễ hơn** (100% của `ownership`), còn 
 Cần vài tháng số thật của `changed_floor` mới quyết được. Gặp ca này: đọc `stats.tally` của lượt bị từ chối, nếu
 phần đổi dồn hết vào một kind thì chạy tay từng kind bằng `--kinds` để đi tiếp, và ghi số vào hồ sơ lát 4.
 
-⚠️ **Chưa đăng ký task Scheduler** — lịch của job này thuộc lát 13 (scheduler trong container `etl`). Chạy tay,
-hoặc để lát 13 gọi. Vị trí trong ngày: **sau `events` 18:10**, vì trigger đọc đúng bảng mà `events` vừa ghi.
+**Lịch:** scheduler chạy job này **ngay sau khi `market.events` thành công** (kiểu `depends_on`, xem mục
+Scheduler ở đầu file) — trigger đọc đúng bảng mà `events` 18:10 vừa ghi, nên thứ tự này là ràng buộc, không phải
+sở thích. Không xếp `snapshot` trước ~15:20: trong phiên thì `valuation` đổi theo P/E·P/B nhóm ngành nên lượt nào
+cũng "đổi" (số đo lát 4/11).
 
 ## Chạy job fundamentals (báo cáo tài chính + danh sách PDF + từ điển)
 
@@ -263,7 +402,7 @@ khác 0 là nguồn đổi hình dạng (đã gặp: `"quarterly": null` thay ch
 rơi vào mã vừa có kỳ mới mà lịch sự kiện sót. Đọc `stats.tally`, chạy tay `--kinds` để đi tiếp, ghi số vào hồ sơ lát 5;
 **không** nới ngưỡng.
 
-⚠️ **Chưa đăng ký task Scheduler** — lát 13 (scheduler trong `etl`). Vị trí trong ngày: **sau `events` 18:10 và sau `snapshot`**.
+**Lịch:** scheduler chạy job này **ngay sau khi `market.snapshot` thành công**, tức chuỗi `events` 18:10 → `snapshot` → `fundamentals` trong cùng buổi tối (mục Scheduler ở đầu file).
 
 ## Chạy job wichart (vĩ mô · tiền tệ · giá hàng hoá WiChart)
 
@@ -302,7 +441,7 @@ series ngoài dải > 5 % ⇒ `failed`, bằng chứng = body của **các key f
 rồi soi rồi chạy `--keys` sau khi hiểu vì sao. **Mốc nước** = ngày VN của lượt, hai dòng `data_domain_state`
 (`macro.indicator`/`wichart` và `asset`/`wichart`), chỉ tiến ở lượt đầy đủ.
 
-⚠️ **Chưa đăng ký task Scheduler** — lát 13. Giờ nạp của nguồn chưa đo (giả định trước 08:00 giờ VN); nên xếp **08:15**, chạy cả cuối tuần.
+**Lịch:** scheduler chạy `wichart` **08:15 mỗi ngày, kể cả cuối tuần**, và `wichart --intraday` mỗi **300 s** 24/7. Giờ nạp thật của nguồn **vẫn chưa đo** (giả định trước 08:00 giờ VN) — ba ngày chạy thử của lát 13 là dịp đo.
 
 ## Chạy 5 job quốc tế (FRED · ECB · LBMA · Yahoo · Binance)
 
@@ -325,7 +464,7 @@ uv run python -m etl wichart --intraday          # 47 key tần suất ngày (fr
 
 Đo 2026-09-05: cả 5 lượt hằng ngày **66 lời gọi ≈ 2 phút**, 0 retry; backfill Yahoo 37 lời gọi / 335.601 nến, Binance 39 lời gọi / 30.951 nến. Tải `--intraday` (17:20–17:39 VN): Yahoo 216 lời gọi/16 phút, WiChart 296 lời gọi/19 phút, cả hai **0 lỗi** — mức đó an toàn cho nhịp kế hoạch. Test sau lát 7b: **729 passed, 2 skipped** (+20 so với lát 7). Hồ sơ: [`docs/90-records/plans/2026-09-05-global-etl/`](../docs/90-records/plans/2026-09-05-global-etl/) (spec §5 luật từng nguồn, 6 file đo, ledger nghiệm thu) · [`docs/90-records/plans/2026-09-05-intraday-refresh/`](../docs/90-records/plans/2026-09-05-intraday-refresh/) (lát 7b: `--intraday`, 17 cặp FX Yahoo, CNY về ECB).
 
-**Bảng nhịp gợi ý cho lát 13 (chưa đăng ký task):** `yahoo --intraday` mỗi 10 phút · `binance --intraday` mỗi 5 phút · `wichart --intraday` mỗi 5 phút — cả ba **24/7**, không chia tuần/cuối tuần; `fred` 2 lượt/ngày 05:00 + 20:00 VN; `fx` (ECB) và `lbma` 22:30 VN (fixing 14:15 CET / 15:00–12:00 London). Ruling "xếp `yahoo` sau 11:00 VN vì DXY" của lát 7 hết hiệu lực — nến DXY vào kho ngay trong lượt `--intraday`.
+**Lịch đang chạy** *(bảng đầy đủ ở mục Scheduler đầu file)*: `yahoo --intraday` mỗi 10 phút · `binance --intraday` mỗi 5 phút · `wichart --intraday` mỗi 5 phút — cả ba **24/7**, không chia tuần/cuối tuần; bản trọn ngày `yahoo` 11:00 · `binance` 07:15; `fred` 2 lượt/ngày 05:00 + 20:00 VN; `fx` (ECB) và `lbma` 22:30 VN (fixing 14:15 CET / 15:00–12:00 London). Ruling "xếp `yahoo` sau 11:00 VN vì DXY" của lát 7 hết hiệu lực — nến DXY vào kho ngay trong lượt `--intraday`.
 
 **Cùng khuôn với `wichart`, tham số hoá:** phần không phụ thuộc nguồn nằm ở `etl/registry.py` (`Series`, `load_registry(conn, series, source)` — đường ghi duy nhất vào 4 bảng registry, **xoá ánh xạ vắng mặt theo đúng `source`** nên lượt FRED không đụng dòng WiChart), `etl/series_store.py` (UPSERT chỉ-khi-đổi cho `observation`/`price_daily`/`ohlc_daily`, mẫu ≤ 50 dòng đổi `(mã, ngày, cũ, mới)` trong `stats.changes_sample` — thước đo vá hồi tố của FRED), `etl/series_guard.py` và `etl/series_job.py` (`SourceSpec`). Mỗi nguồn chỉ có `<src>_registry.py` (bảng mã của mình + `band` + `max_lag_days` theo series), `<src>_fetch.py` (URL + `classify`), `<src>_normalize.py` (luật thời gian + cổng), `<src>_job.py` (10 dòng).
 
@@ -359,7 +498,7 @@ uv run python -m etl news --backfill-sitemap [--source tinnhanhck|bnews|nguoiqua
 
 **Bằng chứng:** không lưu HTML bài thành công; `raw_payload` chỉ giữ XML/HTML danh sách khi hash đổi và HTML bài khi bóc bị từ chối (`meta.refused`).
 
-⚠️ **Chạy `--loop` trong cửa sổ riêng** (giống `ingester`) — tiến trình sống nhiều giờ/ngày liên tục, Ctrl+C dừng sạch, không để dòng `running` treo. Lịch chạy tự động thuộc lát 13 — chưa đăng ký task Scheduler cho `news`. Backfill sitemap ước tính **~1,5 giờ/tháng**.
+**Lịch:** `news --loop` là **daemon của scheduler** (`news.collect`) — scheduler giữ nó sống liên tục, chết thì khởi động lại sau 30 s, nhân đôi tới trần 300 s. Muốn chạy tay thì chạy trong **cửa sổ riêng** (giống `ingester`): tiến trình sống nhiều giờ, Ctrl+C dừng sạch, không để dòng `running` treo — và **đừng chạy song song với scheduler**, khoá advisory theo `news.collect` sẽ cho lượt thứ hai exit 1 `lock busy`. Backfill sitemap (job tên khác, không đi qua scheduler) ước tính **~1,5 giờ/tháng**.
 
 Test sau lát 8 (2026-09-06): **791 passed, 2 skipped** (+53 so với lát 7b). Hồ sơ: [`docs/90-records/plans/2026-09-05-news-collect/`](../docs/90-records/plans/2026-09-05-news-collect/) (spec · plan · ledger · `measure-news-2026-09-05.txt`).
 
@@ -374,6 +513,14 @@ uv run python -m etl classify --dry-run --per-group 3 --out x.jsonl  # gọi mod
 uv run python -m etl classify --limit 20 --thinking disabled         # tắt thinking (mặc định adaptive); --cap-chars 4000 đổi trần cắt thân bài (mặc định 3000)
 ```
 
+**Ba lần là thôi — `news.article.classify_attempts`** *(migration `0021`, lát 13)*: bài lỗi được `+1` trong cùng
+giao dịch với dòng `ops.llm_call`, và câu chọn bài thêm `AND a.classify_attempts < 3` ⇒ một bài hỏng vì nội dung
+(không phải vì model chết) không quay lại ăn quota mãi. `stats.skipped_attempts` đếm số bài đang bị bỏ qua vì lý
+do này — con số đó tăng đều là dấu hiệu phải đọc tay vài bài. Bốn trạng thái đọc thẳng từ bảng: chưa xử lý
+(`classified_from IS NULL`, `attempts < 3`) · bỏ cuộc (`NULL`, `attempts ≥ 3`) · không xếp được nhóm (`labels` có
+`x`) · không có mã (`ticker_step_ran` mà không dòng `article_ticker`). Đường `--ids-file` (bộ gold) **cố ý không
+lọc** theo `attempts`. Lượt `--dry-run` không tăng bộ đếm.
+
 Một bài = một giao dịch: `UPDATE news.article` (`group_no/sub/confidence/classified_from/content_chars/group_overridden/labels`; nhãn `x` ⇒ `group_no NULL` + `labels {x}`), `summary_ai` vào revision mới nhất, mã tầng 3 (`article_ticker via='ai'`, **lọc `market.security listed`** — model bịa `VFM`), tầng 1–2 chạy **bù** cho bài backfill được xếp nhóm 3, ngành hai đường vào `news.article_industry` (`via='ai'` từ model ≤ 3 ngành · `via='ticker'` suy từ mọi mã của bài qua `market.v_issuer_industry`), và một dòng **`ops.llm_call`** (token 4 loại, độ trễ, `ok/repaired/failed`). Bài lỗi giữ nguyên NULL, được chọn lại lượt sau; bài đã có `classified_from` **không bao giờ** chọn lại (chưa có `--force`).
 
 **Guard:** quota Token Plan (`GET /v1/token_plan/remains`) kiểm trước lượt và mỗi 25 bài — dừng (`quota_stop`, vẫn `success`) khi cửa sổ 5 giờ < 20 % hoặc tuần < 10 % (**`success` + `quota_stop=True` + `classified=0` là dạng bình thường** của lượt bị chặn ngay đầu — quota kiểm sau `open_run` để lần chặn có dấu trong sổ); guard hỏng (HTTP ≠ 200, body lỗi) ⇒ `warnings` + `quota.{before,after}={"error":…}`, không chặn; 5 lời gọi liên tiếp lỗi thử-lại-được ⇒ `ModelDown` (exit 1, `failed` kèm stats); lỗi `auth` ⇒ exit 2 ngay. Thiếu `LLM_API` ⇒ exit 2 trước khi mở `etl_run`.
@@ -382,7 +529,7 @@ Một bài = một giao dịch: `UPDATE news.article` (`group_no/sub/confidence/
 
 **Số đo thật** (2026-09-06, [ledger §2](../docs/90-records/plans/2026-09-06-news-classify-llm/ledger.md), 230 bài adaptive + 100 disabled): adaptive **p50 8 s / p90 16,5 s**, ≈ 3,0k token vào (cache trúng ≈ 50 %), ≈ 745 ra (≈ 330 thinking), **≈ $0,0019/bài quy giá, ≈ 6 bài/phút**; disabled p50 3,6 s, 294 ra, $0,0013/bài. 350 bài/ngày adaptive ≈ 1 giờ ≈ 6–7 % cửa sổ quota 5 giờ. Kho còn 7.797 bài chưa phân loại ≈ 22 giờ / ≈ $15 / 3 cửa sổ — chỉ chạy khi chủ dự án gọi tên.
 
-⚠️ `ops.llm_call` tham chiếu `ops.etl_run` và `news.article` (FK không `ON DELETE`): **mọi lệnh dọn `news.article` / `ops.etl_run` (kể cả `TRUNCATE` trong test) phải dọn `news.article_industry` + `ops.llm_call` trước** — test e05/e55/e56 đã sửa theo. ⚠️ Chạy lượt > 10 phút **tách tiến trình** (`Start-Process cmd`), theo dõi qua `ops.etl_run`. Chưa gắn vào `--loop`, chưa có task Scheduler — bật chạy tự động chỉ sau khi có bộ đánh giá gán tay ([news-pipeline §12](../docs/20-design/news-pipeline.md)).
+⚠️ `ops.llm_call` tham chiếu `ops.etl_run` và `news.article` (FK không `ON DELETE`): **mọi lệnh dọn `news.article` / `ops.etl_run` (kể cả `TRUNCATE` trong test) phải dọn `news.article_industry` + `ops.llm_call` trước** — test e05/e55/e56 đã sửa theo. ⚠️ Chạy lượt > 10 phút **tách tiến trình** (`Start-Process cmd`), theo dõi qua `ops.etl_run`. **Lịch:** scheduler chạy `classify --limit 1000` ở **8 mốc/ngày** (07 · 09 · 11 · 13 · 15 · 17 · 19 · 21 giờ VN, cả cuối tuần) — độc lập với `news --loop`, kiểu quét sàn, không gắn cờ `--classify` vào vòng thu thập ([news-pipeline §12](../docs/20-design/news-pipeline.md)).
 
 ## Chạy vòng chat (`agent` — lát 10, 2026-09-07)
 
@@ -400,4 +547,4 @@ Cần biến môi trường mới **`AGENT_DATABASE_URL`** — user login `agent
 
 ## Chạy trong container (lát 12 — 2026-09-08)
 
-Cùng image, cùng code: `docker compose run --rm etl python -m etl <job> [cờ]` (mọi cờ ở các mục trên). `ingester` là service daemon riêng (`docker compose up -d ingester`), lưới đo `docker compose --profile measure up -d ingester-measure`. `docker stop`/`compose down` gửi `SIGTERM`, nhưng job `etl` và `ingester` KHÔNG đi cùng một đường: job `etl` đi đường Ctrl+C (`core/shutdown.py`) — sổ `ops.etl_run` đóng `failed: dừng tay (Ctrl+C)`, exit 130; `ingester` đi đường `install_loop_stop` — đặt `stop`, phiên đóng đúng đường deadline (xả hàng đợi + đối chứng), exit 0/1, **không** có dòng `ops.etl_run` nào (ingester chưa từng ghi bảng đó). `stop_grace_period` 60 s (`etl`) / 90 s (`ingester`) *(đo 2026-09-08 21:34: `docker stop -t 90` phiên `--minutes 3` → `reconcile: p1=0 p2=0 ok=0`, exit 0)*. Lịch chạy tự động thuộc **lát 13**; Task Scheduler và `scripts/register-tasks.ps1` đã về hưu.
+Cùng image, cùng code: `docker compose run --rm etl python -m etl <job> [cờ]` (mọi cờ ở các mục trên). `ingester` là service daemon riêng (`docker compose up -d ingester`), lưới đo `docker compose --profile measure up -d ingester-measure`. `docker stop`/`compose down` gửi `SIGTERM`, nhưng job `etl` và `ingester` KHÔNG đi cùng một đường: job `etl` đi đường Ctrl+C (`core/shutdown.py`) — sổ `ops.etl_run` đóng `failed: dừng tay (Ctrl+C)`, exit 130; `ingester` đi đường `install_loop_stop` — đặt `stop`, phiên đóng đúng đường deadline (xả hàng đợi + đối chứng), exit 0/1, **không** có dòng `ops.etl_run` nào (ingester chưa từng ghi bảng đó). `stop_grace_period` 60 s (`etl`) / 90 s (`ingester`) *(đo 2026-09-08 21:34: `docker stop -t 90` phiên `--minutes 3` → `reconcile: p1=0 p2=0 ok=0`, exit 0)*. Lịch chạy tự động là **scheduler trong chính service `etl`** (`docker compose up -d`, mục Scheduler ở đầu file); Task Scheduler và `scripts/register-tasks.ps1` đã về hưu ở lát 12.

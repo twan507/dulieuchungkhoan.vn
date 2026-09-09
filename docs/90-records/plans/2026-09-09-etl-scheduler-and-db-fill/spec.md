@@ -310,6 +310,12 @@ Runner spawn nếu chưa có hoặc đã chết; giãn cách khởi động lạ
 
 **§5.9 khoá bận** — dòng `failed` ghi trên chính connection giữ khoá (AUTOCOMMIT) trước khi đóng, để không cần connection thứ hai.
 
+**§5.8 giả định "mọi lần thoát đều có dòng sổ" là SAI** *(2026-09-09 chiều, sau lượt chạy thử native)*. Job chết **trước** khi kịp `open_run` — ví dụ `news.classify` gặp kho chưa áp migration `0021` — không để lại dòng nào trong `ops.etl_run`, nên planner thấy mốc vẫn chưa chạy và cấp lại **mỗi nhịp**: đo được ba lần spawn liên tiếp lúc 17:36:04 · 17:36:44 · 17:37:24. Đã thêm ở runner một **hạ nhiệt 10 phút** (RAM) cho mỗi tên job vừa có con thoát mã ≠ 0; daemon giữ backoff riêng.
+
+**§5.10 "prune xoá file `mtime` > 30 ngày" đổi thành theo NGÀY TRONG TÊN FILE** *(2026-09-09 chiều)*. Log mang tên `<job>-YYYYMMDD.log`; một file của ngày cũ vẫn có thể được ghi thêm, và `mtime` bị mọi thao tác chép/khôi phục làm mới. Ngày trong tên là thứ bất biến, nên `prune_old_logs` đọc nó.
+
+**§5.10 thiếu một vế trên Windows: con phải bắt `SIGBREAK`** *(đo 2026-09-09 bằng cặp script cha/con ở scratchpad)*. Runner dừng con bằng `CTRL_BREAK_EVENT`; Python ánh xạ tín hiệu đó sang `SIGBREAK` chứ không sang `SIGINT`, nên con chỉ cài handler `SIGINT` chết với mã `0xC000013A`, không đi qua `except KeyboardInterrupt`, và để lại dòng `running` treo. Đã cho `core.shutdown.install_signal_handlers` và vòng lặp scheduler cùng ánh xạ `SIGBREAK` về đường Ctrl+C khi nền tảng có thuộc tính đó; Linux không đổi gì.
+
 ## 9. Điểm cần chủ dự án duyệt tường minh
 
 1. Sáu điểm tự chốt §4.3 — đặc biệt (1) dòng `running` mồ côi để lát 14, (6) seed đọc CSV chuyển từ xlsx, không thêm `openpyxl`.
