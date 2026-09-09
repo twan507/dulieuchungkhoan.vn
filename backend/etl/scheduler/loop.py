@@ -68,6 +68,19 @@ ORDER BY job
 """)
 
 
+def _install_stop_handlers(handler) -> None:
+    """SIGINT/SIGTERM/SIGBREAK → `handler` (seam test được, hành vi y hệt phần từng nằm trong `main`).
+
+    SIGBREAK chỉ có trên Windows — `runner._stop_child` gửi CTRL_BREAK_EVENT cho nhóm tiến trình
+    con, và scheduler tự nó cũng cần dừng sạch khi một wrapper gửi cùng tín hiệu đó cho chính nó.
+    """
+    signal.signal(signal.SIGINT, handler)
+    if hasattr(signal, "SIGTERM"):          # Windows có hằng số nhưng không bao giờ gửi tín hiệu này
+        signal.signal(signal.SIGTERM, handler)
+    if hasattr(signal, "SIGBREAK"):         # chỉ Windows
+        signal.signal(signal.SIGBREAK, handler)
+
+
 def resolve_log_dir(env: Mapping[str, str]) -> Path:
     """Thư mục log của tiến trình con, tạo sẵn nếu chưa có. Thuần theo `env` truyền vào."""
     raw = env.get("ETL_LOG_DIR")
@@ -156,9 +169,7 @@ def main(argv: list[str] | None = None) -> int:      # noqa: ARG001 — không n
 
     # Đăng ký SAU `core.shutdown.install_signal_handlers()` của `etl.__main__` nên thắng nó: scheduler
     # KHÔNG được chết ngay khi có SIGTERM, phải đóng từng con có trật tự rồi mới thoát (§5.10).
-    signal.signal(signal.SIGINT, _flag_stop)
-    if hasattr(signal, "SIGTERM"):          # Windows có hằng số nhưng không bao giờ gửi tín hiệu này
-        signal.signal(signal.SIGTERM, _flag_stop)
+    _install_stop_handlers(_flag_stop)
 
     print(f"scheduler: {len(job_names())} job, log_dir={log_dir}, tick {TICK_SECONDS}s", flush=True)
     summary_printed_on = None

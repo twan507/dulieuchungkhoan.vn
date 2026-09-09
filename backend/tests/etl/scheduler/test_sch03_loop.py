@@ -1,5 +1,6 @@
 """loop.py: nối planner + runner với sổ thật (spec lát 13 §5.6, §5.8, §5.10). Ngày giả cố định 2026-09-09 (thứ 4)."""
 import json
+import signal
 from datetime import datetime
 
 import pytest
@@ -35,6 +36,20 @@ def test_resolve_log_dir_prefers_env_and_creates_it(tmp_path):
     p = loop.resolve_log_dir({"ETL_LOG_DIR": str(tmp_path / "x")})
     assert p == tmp_path / "x" and p.is_dir()
     assert loop.resolve_log_dir({}).as_posix().endswith("dlck-runtime/etl-logs")
+
+
+@pytest.mark.skipif(not hasattr(signal, "SIGBREAK"), reason="SIGBREAK chỉ có trên Windows")
+def test_install_stop_handlers_registers_sigbreak_and_sigint():
+    sentinel = lambda signum, frame: None  # noqa: E731 — chỉ cần một identity riêng để so `is`
+    old_sigint = signal.getsignal(signal.SIGINT)
+    old_sigbreak = signal.getsignal(signal.SIGBREAK)
+    try:
+        loop._install_stop_handlers(sentinel)
+        assert signal.getsignal(signal.SIGBREAK) is sentinel
+        assert signal.getsignal(signal.SIGINT) is sentinel
+    finally:
+        signal.signal(signal.SIGINT, old_sigint)
+        signal.signal(signal.SIGBREAK, old_sigbreak)
 
 
 def test_read_today_filters_by_vn_day_and_drops_intraday_subset_dry_run(clean):

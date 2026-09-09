@@ -28,6 +28,16 @@ def test_install_registers_the_handler_for_sigterm():
         signal.signal(signal.SIGTERM, old)
 
 
+@pytest.mark.skipif(not hasattr(signal, "SIGBREAK"), reason="SIGBREAK chỉ có trên Windows")
+def test_install_registers_the_handler_for_sigbreak():
+    old = signal.getsignal(signal.SIGBREAK)
+    try:
+        shutdown.install_signal_handlers()
+        assert signal.getsignal(signal.SIGBREAK) is shutdown._raise_interrupt
+    finally:
+        signal.signal(signal.SIGBREAK, old)
+
+
 @pytest.mark.skipif(sys.platform == "win32", reason="Windows không giao SIGTERM cho handler Python")
 def test_sigterm_in_a_real_process_lands_in_the_ctrl_c_path():
     code = ("import os, sys, time\n"
