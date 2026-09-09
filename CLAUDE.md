@@ -296,7 +296,7 @@ Ghi vào **hồ sơ plan của chính task** (`90-records/plans/<task>/` — tro
 | Nền tảng | Windows 11, PowerShell + Git Bash |
 | Python | 3.12 — **luôn đặt `PYTHONIOENCODING=utf-8`**, nếu không sẽ crash cp1252 khi in tiếng Việt |
 | Git | `core.longpaths true` *(bật ở config cục bộ của repo; global CHƯA bật — clone mới cần `git clone -c core.longpaths=true`, đo 2026-09-08 khi build sạch từ clone (AC1 lát 12) vỡ ở `docs/30-skills/corpus/HP…`)* |
-| Bí mật | `.env` ở gốc repo, đã được `.gitignore` che. **Không bao giờ in giá trị khoá ra output hay ghi vào file.** |
+| Bí mật | `.env` ở gốc repo, đã được `.gitignore` che. **Không bao giờ in giá trị khoá ra output hay ghi vào file** — kể cả plan, ledger, spec, `.env.example` (chỉ tên khoá hoặc `<placeholder>`). 🔴 Sự cố 2026-09-09: mật khẩu owner Postgres thật nằm **công khai** trong repo từ 2026-08-24 vì một plan dán `.env` mẫu bằng giá trị thật và `.env.example` mang theo; GitGuardian chỉ báo khi lát 12 push. Đã xoay và che; `backend/tests/docs/test_d04_no_real_secrets_in_repo.py` canh máy móc. Khi có cảnh báo secret: đối chiếu **giá trị thật** với toàn lịch sử (`git log --all -S`, chỉ in tên khoá) trước khi kết luận dương tính giả. |
 | Email dự án | `dulieuchungkhoan.official@gmail.com` *(tạo 2026-08-24)* — dùng khi đăng ký dịch vụ, khai email liên hệ (User-Agent crawler, API key…). Không phải email cá nhân của chủ dự án |
 | Chạy production | Docker: `docker compose up -d --build` ở gốc repo (lát 12); native `uv run …` chỉ cho dev/test, cùng một `.env` nguyên tố |
 
