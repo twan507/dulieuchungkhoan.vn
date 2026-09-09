@@ -19,6 +19,15 @@ def main(argv: list[str] | None = None) -> int:
     if not args:
         return _heartbeat_loop()          # giữ tương thích compose deploy/app
     if args[0] == "omo":
+        parser = argparse.ArgumentParser(prog="etl omo")
+        parser.add_argument("--seed", metavar="CSV", help="nạp lịch sử từ CSV FiinProX (spec lát 13 §5.1)")
+        parser.add_argument("--dry-run", action="store_true", dest="dry_run")
+        parsed = parser.parse_args(args[1:])
+        if parsed.dry_run and not parsed.seed:
+            parser.error("--dry-run chỉ đi với --seed")
+        if parsed.seed:
+            import etl.omo_seed
+            return etl.omo_seed.run(parsed.seed, dry_run=parsed.dry_run)
         import etl.omo_job
         return etl.omo_job.run()
     if args[0] == "refdata":

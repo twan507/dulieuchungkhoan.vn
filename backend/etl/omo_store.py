@@ -20,15 +20,16 @@ def store(result: OmoResult, html: str, conn) -> dict:
     won = conn.execute(
         sa.text(
             "INSERT INTO macro.omo_session"
-            " (session_date, crawled_at, has_reverse_repo, has_repo, has_outright_sale)"
-            " VALUES (:d, now(), :r, :p, :o)"
+            " (session_date, crawled_at, has_reverse_repo, has_repo, has_outright_sale, note)"
+            " VALUES (:d, now(), :r, :p, :o, :n)"
             " ON CONFLICT (session_date) DO NOTHING"
             " RETURNING session_date"
         ),
         {"d": result.session_date,
          "r": "reverse_repo" in result.groups_present,
          "p": "repo" in result.groups_present,
-         "o": "outright_sale" in result.groups_present},
+         "o": "outright_sale" in result.groups_present,
+         "n": _session_note(None, result.merged)},
     ).first()
     if won is None:
         return {"skipped": True}
@@ -52,6 +53,30 @@ def store(result: OmoResult, html: str, conn) -> dict:
         {"b": html, "m": json.dumps({"bytes": len(body_bytes),
                                      "hash": hashlib.sha256(body_bytes).hexdigest()})},
     )
+    return {"sessions": 1, "auctions": len(result.rows)}
+
+
+def _session_note(base: str | None, merged: int) -> str | None:
+    tail = f"gộp {merged} dòng cùng kỳ hạn" if merged else None
+    return " · ".join(x for x in (base, tail) if x) or None
+
+
+def store_seed(result: OmoResult, conn, *, crawled_at, note: str) -> dict:
+    """Ghi một phiên từ nguồn ngoài (FiinProX) — cùng khoá PK/ON CONFLICT như `store`, KHÔNG ghi raw_payload."""
+    won = conn.execute(
+        sa.text("INSERT INTO macro.omo_session (session_date, crawled_at, has_reverse_repo, has_repo, has_outright_sale, note)"
+                " VALUES (:d, :c, :r, :p, :o, :n) ON CONFLICT (session_date) DO NOTHING RETURNING session_date"),
+        {"d": result.session_date, "c": crawled_at, "r": "reverse_repo" in result.groups_present,
+         "p": "repo" in result.groups_present, "o": "outright_sale" in result.groups_present,
+         "n": _session_note(note, result.merged)}).first()
+    if won is None:
+        return {"skipped": True}
+    for row in result.rows:
+        conn.execute(
+            sa.text("INSERT INTO macro.omo_auction (session_date, op_type, tenor_days, participants, winners, volume_vnd, rate_pct)"
+                    " VALUES (:d, :op, :t, :p, :w, :v, :r)"),
+            {"d": result.session_date, "op": row.op_type, "t": row.tenor_days, "p": row.participants, "w": row.winners,
+             "v": row.volume_vnd, "r": row.rate_pct})
     return {"sessions": 1, "auctions": len(result.rows)}
 
 
