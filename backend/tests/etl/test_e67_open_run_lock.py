@@ -36,6 +36,10 @@ def test_busy_lock_writes_a_refused_row_and_exits_1(clean):
         with pytest.raises(SystemExit) as e:
             omo_store.open_run(clean, JOB)
         assert e.value.code == 1
+        # I1: khoá bận phải ném một lớp con RIÊNG của SystemExit — caller lồng nhau
+        # (`snapshot_job._recrawl`, `news --loop --classify`) bắt được nó mà không phải bắt mọi
+        # `SystemExit`; mã thoát vẫn là 1 nên hợp đồng CLI (test_e63) không đổi.
+        assert isinstance(e.value, omo_store.LockBusy)
         rows = _rows(clean)
         assert len(rows) == 1 and rows[0].status == "failed"
         assert rows[0].error == "lock busy: lượt khác đang chạy"
@@ -99,3 +103,4 @@ def test_close_run_refused_flags_stats(clean):
     rid2 = omo_store.open_run(clean, JOB)               # khoá đã nhả
     omo_store.close_run_refused(clean, rid2, "model down")
     assert _rows(clean)[1].stats == {"guard_refused": True}
+

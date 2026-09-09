@@ -5,6 +5,7 @@ from datetime import date
 import pytest
 import sqlalchemy as sa
 
+from etl import omo_store
 from etl import snapshot_job as sj
 from etl import snapshot_store as ss
 
@@ -252,6 +253,37 @@ def test_recrawl_passes_the_time_budget_to_price_job(snapshot_db, monkeypatch):
     rc = sj.run(get=_fake_get())
     assert rc == 0
     assert price_calls == [{"backfill": True, "codes": [TICKER], "max_minutes": sj.RECRAWL_MAX_MINUTES}]
+
+
+def test_a_busy_price_lock_during_recrawl_does_not_kill_the_snapshot_run(snapshot_db, monkeypatch):
+    """I1 (review toàn nhánh lát 13): `_recrawl` gọi `price_job.run` TRONG TIẾN TRÌNH, mà
+    `omo_store.open_run` ném `SystemExit(1)` khi khoá `market.price_backfill` bận (backfill thứ 7
+    hoặc một lượt chạy tay — đã có một lượt chạy suốt ngày 09/09). `SystemExit` là `BaseException`
+    nên `except Exception` của `_recrawl` KHÔNG bắt: cả tiến trình snapshot chết giữa chừng và để
+    dòng `market.snapshot` treo `running` vĩnh viễn.
+
+    Sau fix, khoá bận là `omo_store.LockBusy` (một lớp con của `SystemExit`, giữ nguyên mã 1 cho
+    hợp đồng CLI) và `_recrawl` bắt riêng nó: lượt snapshot vẫn đóng `success`, và chuyện đã xảy ra
+    nằm lại trong `stats.recrawl.lock_busy` để người vận hành đọc được.
+    """
+    _quiet_floor(snapshot_db)
+
+    def busy(**_kw):
+        raise omo_store.LockBusy(1)
+
+    monkeypatch.setattr("etl.price_job.run", busy)
+    iid = _seed(snapshot_db)
+    with snapshot_db.begin() as c:
+        c.execute(sa.text(
+            "INSERT INTO market.corporate_event (event_type, issuer_id, exright_date, payload)"
+            " VALUES ('CashDividend', :i, current_date, '{}'::jsonb)"), {"i": iid})
+    rc = sj.run(get=_fake_get())
+    assert rc == 0
+    with snapshot_db.begin() as c:
+        row = c.execute(sa.text("SELECT status, stats FROM ops.etl_run WHERE job = :j"
+                                " ORDER BY run_id DESC LIMIT 1"), {"j": ss.JOB}).one()
+    assert row.status == "success"
+    assert row.stats["recrawl"] == {"codes": [TICKER], "lock_busy": True}
 
 
 def test_a_codes_run_does_not_trigger_a_price_recrawl(snapshot_db, monkeypatch):

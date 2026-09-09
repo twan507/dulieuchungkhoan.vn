@@ -87,6 +87,14 @@ def _recrawl(engine, stats):
         import etl.price_job
         rc = etl.price_job.run(backfill=True, codes=codes, max_minutes=RECRAWL_MAX_MINUTES)
         stats["recrawl"] = {"codes": codes, "exit": rc}
+    except omo_store.LockBusy:
+        # I1: `price_job.run` chạy TRONG tiến trình này, và `open_run` của nó ném khi khoá
+        # `market.price_backfill` bận (backfill thứ 7, hay một lượt chạy tay). `LockBusy` kế thừa
+        # `SystemExit` nên `except Exception` bên dưới KHÔNG bắt — không bắt riêng ở đây thì cả lượt
+        # snapshot chết giữa chừng và để dòng `market.snapshot` treo `running` mãi. Mã vẫn nằm trong
+        # cửa sổ ngày của `recrawl_codes()` nên lượt snapshot sau tự thấy lại, không mất gì.
+        stats["recrawl"] = {"codes": codes, "lock_busy": True}
+        log.warning("re-crawl bỏ qua: khoá giá đang bận — lượt snapshot vẫn tính là xong")
     except Exception as e:                    # noqa: BLE001 — re-crawl hỏng KHÔNG kéo đổ lượt snapshot
         stats["recrawl"] = {"codes": codes, "error": f"{type(e).__name__}: {e}"}
         log.exception("re-crawl giá thất bại — lượt snapshot vẫn tính là xong")

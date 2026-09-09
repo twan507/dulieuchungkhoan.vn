@@ -88,10 +88,23 @@ _LOCK_CONNS: dict[int, tuple[sa.Connection, str]] = {}   # run_id -> (connection
 LOCK_BUSY_ERROR = "lock busy: lượt khác đang chạy"
 
 
+class LockBusy(SystemExit):
+    """Khoá bận — vẫn là `SystemExit(1)` cho tiến trình chạy CLI, nhưng có TÊN để caller lồng nhau bắt được.
+
+    🔴 Vì sao phải là lớp riêng (I1, review toàn nhánh lát 13): `open_run` không chỉ chạy ở biên tiến
+    trình. `snapshot_job._recrawl` gọi `price_job.run(...)` TRONG TIẾN TRÌNH, `news --loop --classify N`
+    gọi `news_classify.run(...)` trong vòng lặp — cả hai bọc bằng `except Exception`, mà `SystemExit`
+    là `BaseException`. Một khoá `market.price_backfill` bận (backfill thứ 7, hay một lượt chạy tay)
+    do đó GIẾT luôn tiến trình snapshot ở giữa lượt và để dòng `market.snapshot` treo `running` mãi.
+    Bắt trần `SystemExit` ở những chỗ đó thì lại nuốt cả `sys.exit` thật, nên khoá bận cần tên riêng.
+    Kế thừa `SystemExit` ⇒ mã thoát vẫn 1, hợp đồng CLI (`test_e63`) không đổi.
+    """
+
+
 def open_run(engine, job: str) -> int:
     """Mở sổ + giành khoá theo tên job (spec lát 13 §5.9). Khoá session-level trên connection riêng AUTOCOMMIT:
     sống tới `close_run`, tự nhả khi tiến trình chết (Postgres nhả theo phiên). Bận ⇒ ghi một dòng `failed`
-    mang `guard_refused` (planner không bù lại mốc đó trong ngày) rồi SystemExit(1) — ném TRƯỚC `try` của mọi
+    mang `guard_refused` (planner không bù lại mốc đó trong ngày) rồi `LockBusy(1)` — ném TRƯỚC `try` của mọi
     job nên không sửa file job nào; exit 1 đúng hợp đồng "dữ liệu lành, không cần người".
     """
     lock = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
@@ -105,7 +118,7 @@ def open_run(engine, job: str) -> int:
         )
         lock.close()
         print(f"{job}: {LOCK_BUSY_ERROR} — bỏ lượt này", file=sys.stderr, flush=True)
-        raise SystemExit(1)
+        raise LockBusy(1)
     rid = lock.execute(
         sa.text("INSERT INTO ops.etl_run (job) VALUES (:j) RETURNING run_id"), {"j": job}
     ).scalar_one()
