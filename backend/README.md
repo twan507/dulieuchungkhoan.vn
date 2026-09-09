@@ -98,7 +98,7 @@ lượt khô không được tính là "mốc hôm nay đã chạy".
 
 stdout + stderr của con vào `ETL_LOG_DIR/<job>-YYYYMMDD.log` (mở chế độ nối). Native mặc định
 `<repo>/../dlck-runtime/etl-logs`; container `/var/lib/dlck/etl-logs` (volume `etl_logs`). Con thoát thì scheduler
-in một dòng `<job> mã <rc> sau <s>s (<lý do>)`.
+in một dòng `[<YYYY-MM-DD HH:MM:SS>] <job> rc=<rc> <s>s (<lý do>)` — đúng chuỗi đó, để grep được.
 
 🔴 **Dọn log theo NGÀY TRONG TÊN FILE** (`<job>-YYYYMMDD.log` cũ hơn 30 ngày), không theo `mtime`: file của ngày cũ
 vẫn có thể được ghi thêm, và `mtime` bị mọi thao tác chép/khôi phục làm mới.
@@ -136,6 +136,15 @@ Khoá bận ⇒ job ghi một dòng `failed` với `error = lock busy: lượt k
 | `1` | **chốt chặn từ chối** *hoặc* **khoá bận** — dữ liệu lành, không cần người; dòng `failed` luôn mang `stats.guard_refused = true`, riêng khoá bận thêm `stats.lock_busy = true` |
 | `2` | lỗi thật (thiếu biến môi trường, nguồn hỏng sau retry, DB lỗi) — không ghi kho |
 | `130` | dừng tay: Ctrl+C · `docker stop` · scheduler tắt con — sổ đóng `failed: dừng tay (Ctrl+C)` |
+
+**Một dòng `market.price_backfill` `subset` mọc ra cạnh mỗi lượt `market.snapshot` là ĐÚNG, không phải người chạy
+tay.** `snapshot_job._recrawl` kéo lại giá cho những mã có ngày không hưởng quyền trong cửa sổ vài ngày, bằng cách
+gọi `price --backfill --codes … --max-minutes 20` **ngay trong tiến trình snapshot** — lượt con đó tự mở sổ dưới tên
+`market.price_backfill` với `stats.subset = true`, và `stats.recrawl` của lượt snapshot ghi lại đúng những mã ấy
+*(ví dụ thật: run 48 `market.snapshot` → run 49 lúc 2026-09-09 17:30, 4 mã DIG/HUB/ITC/VPI)*. Planner loại mọi dòng
+`subset` nên nó không bao giờ bị tính là "mốc backfill tuần đã chạy". Khoá `market.price_backfill` đang bận (backfill
+thứ 7, hay một lượt chạy tay) thì lượt con đó **không** còn giết lượt snapshot nữa: `omo_store.LockBusy` được bắt tại
+chỗ, lượt snapshot vẫn đóng `success` và `stats.recrawl` mang `{"lock_busy": true}`.
 
 ### Chạy thử native 10 phút — 2026-09-09 17:35:24 → 17:45:45
 

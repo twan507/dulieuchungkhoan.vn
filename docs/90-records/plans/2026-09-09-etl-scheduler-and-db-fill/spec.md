@@ -316,6 +316,8 @@ Runner spawn nếu chưa có hoặc đã chết; giãn cách khởi động lạ
 
 **§5.10 thiếu một vế trên Windows: con phải bắt `SIGBREAK`** *(đo 2026-09-09 bằng cặp script cha/con ở scratchpad)*. Runner dừng con bằng `CTRL_BREAK_EVENT`; Python ánh xạ tín hiệu đó sang `SIGBREAK` chứ không sang `SIGINT`, nên con chỉ cài handler `SIGINT` chết với mã `0xC000013A`, không đi qua `except KeyboardInterrupt`, và để lại dòng `running` treo. Đã cho `core.shutdown.install_signal_handlers` và vòng lặp scheduler cùng ánh xạ `SIGBREAK` về đường Ctrl+C khi nền tảng có thuộc tính đó; Linux không đổi gì.
 
+**§5.10 dòng con thoát in đúng dạng `[<ts>] <job> rc=<rc> <s>s (<lý do>)`** *(2026-09-09, review toàn nhánh)* — bản trước ghi `<job> mã <rc> sau <s>s`, không phải chuỗi `runner.py` thật in ra; `backend/README.md` đã sửa theo để grep được.
+
 ## 9. Điểm cần chủ dự án duyệt tường minh
 
 1. Sáu điểm tự chốt §4.3 — đặc biệt (1) dòng `running` mồ côi để lát 14, (6) seed đọc CSV chuyển từ xlsx, không thêm `openpyxl`.
