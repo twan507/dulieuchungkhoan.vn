@@ -68,11 +68,11 @@ Dữ kiện danh mục: `market.security` có 1.962 mã `listed` nhưng 439 mã 
 - 13:10 khởi động lại: `dlck-fill-price-backfill` (nối sau ACC, còn 1.506 mã) · `dlck-fill-fundamentals` · ba `dlck-fill-news-*` · **lượt thử tải 1 `dlck-fill-price-daily-1` chạy ngay** (13:10, phiên chiều, ba luồng FiinTrade) · lượt 2 hẹn 14:30 (script nền `price-load-test.sh`, log `scratchpad/price-load-test-2b.log`).
 - 13:12 giao lại Task 1 (Sonnet).
 
-## Task 1–2 (2026-09-09 13:12–13:25)
+## Task 1–5 (2026-09-09 13:12 →)
 
 - **Task 1** parser gộp dòng cùng kỳ hạn — `048c514`, review sạch (2 Minor để review cuối: chưa test nhánh None của thành viên; quét O(n) tìm dòng cùng kỳ hạn).
 - **Task 2** seed OMO từ CSV — `2ad2126`, 46 test seam + 612 test `tests/etl` xanh. CSV chuyển từ xlsx bằng script dùng một lần (openpyxl, Python hệ thống) → `C:\Users\tuanb\Downloads\omo-fiinprox-20250908-20260907.csv`, 826 dòng, ngoài repo.
-- **AC1 nửa đầu — chạy khô trên kho thật 13:23** (`uv run python -m etl omo --seed <csv> --dry-run`, native):
+- **AC1 nửa đầu — chạy khô trên kho thật ~13:20** (`uv run python -m etl omo --seed <csv> --dry-run`, native):
 
 ```
 sessions_new=248 sessions_skipped=0 auctions=823 rows_merged=3 min_session_date=2025-09-08 max_session_date=2026-09-07 flow_rows=317 outstanding_2026-09-07=250778.26 outstanding_2026-09-08=249363.44
@@ -81,5 +81,8 @@ rc=0
 
   Khớp từng số với dự đoán trong spec §2.1 (250.778,26 và 249.363,44 tỷ). `auctions=823` = 826 dòng − 3 dòng gộp. Lượt ghi thật chạy sau khi review Task 2 xanh.
 - **Task 2 review:** 3 Important (dry-run không bắt lỗi thành 2/130; `store()` ghi note khi gộp chưa test; nhánh None chưa test) → vòng sửa 1 `84295a8`, re-review sạch. Minor để review cuối: INSERT auction lặp ở `store`/`store_seed`; test dry-run chỉ kiểm một khoá outstanding; test thật bỏ qua `auctions`/`flow_rows`; CSV rỗng chưa test.
-- **AC1 ĐẠT — seed thật 13:46** (`uv run python -m etl omo --seed <csv>`, run 41 `success`): `sessions_new=248 auctions=823 rows_merged=3 flow_rows=317`; kho `macro.omo_session` **249 phiên** 2025-09-08 → 2026-09-08 (248 seed + 1 SBV); bốn dòng 14/08/2026 = 6.307,47 · 3.466,54 · 210,17 · 909,92 tỷ, thành viên 4/4 · 4/4 · 1/1 · 3/3, lãi suất 4,5; `omo_flow.outstanding_vnd` 07/09 = **250.778,26** · 08/09 = **249.363,44** tỷ, `complete = true` cả hai; `note` phiên 03/02/2026 = "seed FiinProX export 2026-09-08 · gộp 3 dòng cùng kỳ hạn" (03/02 có ba kỳ hạn gộp 7/28/56 nên đếm 3 ở phiên đó — tổng `rows_merged=3` cả file).
+- **AC1 ĐẠT — seed thật ~13:31** (`uv run python -m etl omo --seed <csv>`, run 41 `success`): `sessions_new=248 auctions=823 rows_merged=3 flow_rows=317`; kho `macro.omo_session` **249 phiên** 2025-09-08 → 2026-09-08 (248 seed + 1 SBV); bốn dòng 14/08/2026 = 6.307,47 · 3.466,54 · 210,17 · 909,92 tỷ, thành viên 4/4 · 4/4 · 1/1 · 3/3, lãi suất 4,5; `omo_flow.outstanding_vnd` 07/09 = **250.778,26** · 08/09 = **249.363,44** tỷ, `complete = true` cả hai; `note` phiên 03/02/2026 = "seed FiinProX export 2026-09-08 · gộp 3 dòng cùng kỳ hạn" (03/02 có ba kỳ hạn gộp 7/28/56 nên đếm 3 ở phiên đó — tổng `rows_merged=3` cả file).
 - **Thử tải giá lượt 1 (từ 13:10, ba luồng FiinTrade):** 100 mã/3,5 phút 5 retry · 200 mã/16 phút 24 retry, có mã hỏng trang 1 sau 4 lần (BMF, 0700823506) — chậm ~3× so với lượt đơn luồng 04/09 (0 retry). Kết quả cuối ghi khi lượt xong.
+- **Task 3** bỏ quota quét sàn snapshot — `79dc046` + `9f6f557`: `QUOTA`/`LIMIT` gỡ, `plan_due`/`due_list` mất tham số; hai test e29 viết lại (trả đủ mọi cặp tới hạn), ba test e30 dùng `_quiet_floor` (implementer tìm thêm một test thứ ba ngoài brief; kỳ vọng `rows_written` 1 → 4 vì một issuer × bốn kind — reviewer lần ngược `plan_due`/`apply` xác nhận đúng). Review: một Important (docstring còn chữ "zero-QUOTA") — controller tự sửa hai dòng (§4.1 việc nhỏ), commit `9f6f557`.
+- **Task 4** `classify_attempts` — `b0881c4`: migration `0021`, `MAX_ATTEMPTS = 3`, lọc `< 3` ở cả hai đường chọn bài, tăng đếm trong cùng giao dịch với `log_call` (dry-run không tăng), `stats.skipped_attempts`; review sạch. Minor để Task 12: `database/README.md` còn ghi head `0020`. Đường `--ids-file` (bộ gold) cố ý không lọc theo attempts.
+- **Task 5** giao Opus ~13:45 (12 file + cả bộ test + hai phép kiểm production).
