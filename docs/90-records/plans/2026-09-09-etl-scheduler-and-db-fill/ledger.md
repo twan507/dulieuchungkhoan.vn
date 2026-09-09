@@ -133,3 +133,46 @@ Task 1: chưa test nhánh None của thành viên khi gộp; quét O(n). Task 2:
 - **AC3 thử tải giá lượt 1 (run 40):** bắt đầu 13:10 cùng lúc với backfill giá + backfill BCTC + sitemap, sau 13:51 thêm ingester, sau 14:30 thêm lượt 2. Kết quả: `success`, exit 0, **1.502/1.523 mã có dữ liệu, 21 mã hỏng (1,4 % < ngưỡng 2 %), 305 retry, 11.653 s = 3 giờ 14 phút** (so 38 phút, 0 retry hôm 04/09 đơn luồng), `rows_changed` 87.587, `latest_trading_date` 2026-09-09. Backfill giá cùng khoảng: 9 → 17 mã hỏng. **Kết luận §4.3:** mức ba luồng vào `getPriceData` *chạy được nhưng chậm 5 lần và sát ngưỡng guard*; mức một luồng đã đo an toàn. Không dò thêm. Ingester và BCTC không bị ảnh hưởng ⇒ nghẽn nằm ở truy vấn phía FiinTrade của endpoint giá, không phải rate limit (0 lần 429/418).
 - **Lượt 2 (run 44, 14:30) và lượt khép ngày (run 46, 15:21) còn chạy** lúc 16:30 — ba lượt `market.price_daily` chồng nhau vì image cũ chưa có khoá; UPSERT idempotent nên vô hại, chỉ chậm. Script khép ngày: `screener` run 45 `success` 15:20 (guard "có phiên" qua); `price` đang chạy; `events` → `snapshot` → `fundamentals` → `omo` nối sau. Kết quả cuối ở `eod-0909.log` và `ops.etl_run` từ run 45.
 - **Kho lúc 16:30:** `financial_statement` 27.282.128 (BCTC toàn sàn xong, run 36 `success`, 0 retry) · `article` 3.070 (sitemap 3/3 xong) · `price_daily` > 35.610 · `omo_session` 249.
+
+## Nối lại lần 3 — 2026-09-09 16:35 → (Task 6–10 + chạy thử native)
+
+Sổ SDD phiên này: `C:\Users\tuanb\AppData\Local\Temp\claude\D--twan-projects-dulieuchungkhoan-vn\4b3d1482-7b5a-4ef5-af27-afb5fa18da27\scratchpad\sdd\2026-09-09-etl-scheduler-and-db-fill\progress.md` (chép bảng phán quyết cũ sang, brief 6–13 cắt lại).
+
+### Mốc code
+
+| Task | Commit | Review | Ghi chú |
+|---|---|---|---|
+| 6 bảng lịch + planner thuần | `8d5897d` | Opus, sạch (6 Minor để cuối) | 13 test planner; **R8** ba dòng intraday mang `weekdays=ALL_DAYS`; **R9** không tạo `tests/etl/scheduler/__init__.py` (cây test không phải package) |
+| 7 runner | `db55c17` + sửa `34648e1` | Opus: 1 Important (trần đếm cả daemon ⇒ thực tế 5) + 5 Minor; vòng sửa 1 re-review sạch | **R10** helper test `vn(h, mi, s)` (brief bỏ sót, literal chỉ khớp cách đọc này); **R11** daemon không chiếm slot; **R12/R13** gộp Minor ghim nhánh reset backoff + `spawn_fn` ném `OSError` được log thay vì nổ; **R14** prune theo ngày trong tên file đứng (spec §5.10 ghi "mtime" là bên lỗi thời) |
+| 8 loop + CLI | `a48052d` + sửa `473d484` | Opus: 2 Important cần phán quyết + 8 Minor; vòng sửa 1 sạch | **R15** Step 5 chạy thử do controller làm; **R16** `FakePopen` của brief không thể thoả (`Runner.poll` bỏ qua con đã có `returncode`) ⇒ fake trung thực hơn, literal giữ nguyên; **R17** test `summary_lines` ghim đủ 5 bộ đếm + biên 24 h; **R18** lỗi trong một nhịp chỉ log, không giết scheduler; **R19** `engine.dispose()` chạy kể cả khi `shutdown()` ném; **R20** `SHUTDOWN_GRACE_S` 60 = `stop_grace_period` 60s giữ nguyên plan |
+| 10 compose/env | `9636410` | Sonnet, sạch | **R22** test dùng `rsplit(":", 1)` vì `${CLICKHOUSE_BACKUP_DIR:-…}` có dấu hai chấm |
+| vá SIGBREAK | `4d7f081` | Sonnet, sạch (1 Minor → sửa ở `019f97b`) | **R23** — xem "Lỗ hổng Windows" dưới |
+| vá cooldown | `8be509d` | *(review chung dưới)* | **R24** — xem "Chạy thử" dưới |
+| vá dòng trùng + test | `019f97b` | *(review chung 4d7f081..019f97b)* | **R26** dòng "đang chạy, bỏ qua lượt" in một lần mỗi con sống, không mỗi nhịp |
+
+Task 9 (kiểm bù trên kho thật) làm bằng lượt chạy thử dưới; **R21**: bước "chạy chồng ⇒ exit 1" thử native vì image container còn cũ (chưa có khoá) — đường container kiểm lại ở Task 11 AC6.
+
+### Lỗ hổng Windows tìm thấy trước khi chạy thử (R23)
+
+Runner dừng con bằng `CTRL_BREAK_EVENT` (spec §5.10). Đo bằng script hai file ở scratchpad (`sig/parent.py`, `child.py`): con có `install_signal_handlers()` nhận CTRL_BREAK ⇒ **chết mã `0xC000013A`, không qua `except KeyboardInterrupt`** ⇒ dòng sổ sẽ treo `running`. Python ánh xạ CTRL_BREAK sang `SIGBREAK`, không phải `SIGINT`. Thêm handler `SIGBREAK` ⇒ con in từ nhánh KeyboardInterrupt, **rc 130** (giao sau khi lời gọi chặn hiện tại trả về — ca `sleep(30)` thoát sau ~30 s). Sửa: `core.shutdown` và `loop.main` cùng ánh xạ `SIGBREAK` khi nền tảng có; Linux không có thuộc tính này ⇒ không đổi gì. Kiểm thật ở lượt chạy thử: cả ba con đóng sổ `dừng tay (Ctrl+C)`.
+
+### Chạy thử native 10 phút — 17:35:24 → 17:45:45 (`trial.py`, log `trial-1.log` ở scratchpad)
+
+Dự đoán ghi trước ở sổ SDD lúc 17:25; sai một điểm: `omo` không tới hạn vì script khép ngày vừa chạy `omo` success 17:35:14 (≥ mốc 15:30). Còn lại đúng.
+
+| Giờ | Sự kiện | Đối chiếu |
+|---|---|---|
+| 17:35:24 | `scheduler: 16 job, log_dir=D:\twan_projects\dlck-runtime\etl-logs, tick 20s`; in ngay bảng tóm tắt 24 h + "news --loop đang sống từ 17:35" (khởi động sau 06:00 ⇒ in một lần, Minor để cuối) | |
+| 17:35:25 | nhịp 1 spawn: `news.collect` (daemon) · 3 intraday · `refdata` (bù mốc 08:00) · `price` (mốc 15:40 — hai lượt trước đều bắt đầu **trước** mốc) · `classify` (mốc 17:00) ⇒ **chạm trần 6**; `yahoo` daily bị con intraday cùng tên chặn ("đang chạy, bỏ qua lượt (mốc 11:00)") | AC5 bù đúng, trần đúng, lớp ngoài khoá đúng |
+| 17:35:32 | `refdata` rc=0 7 s (run 57) | |
+| 17:35:44 | **`classify` rc=2** — `column a.classify_attempts does not exist`: kho dev chưa áp migration `0021` (container `migrate` chỉ chạy khi `up`). Job chết **trước `open_run`** ⇒ sổ không có dòng ⇒ planner cấp lại mỗi nhịp ⇒ **spawn lặp mỗi 40 s** (17:36:04 · 17:36:44 · 17:37:24) | 🔴 lỗ hổng thiết kế: spec §5.8 giả định mọi lần thoát đều có dòng sổ |
+| 17:36:00 | chạy chồng native `python -m etl price` ⇒ stderr `lock busy: lượt khác đang chạy — bỏ lượt này`, **rc=1**, run 58 `failed {"lock_busy": true, "guard_refused": true}` | **AC6 (native) đạt** |
+| 17:38 | controller `alembic upgrade head` native: `0020 → 0021`; `classify` chạy thật từ 17:38:05 (run 59) | |
+| 17:38:07 · 17:37:25 · 17:36:05 | intraday yahoo/wichart/binance success; nhịp hai binance 17:40:25 (đúng 300 s), wichart 17:40:25; `yahoo` daily chạy 17:38:45 ngay khi con intraday nhả tên, success 17:41:14 (run 60) | nhịp intraday và khoá tên đúng |
+| 17:45:24 | CTRL_BREAK ⇒ scheduler **rc 0 lúc 17:45:45** (21 s: `stop.wait(20)` không bị SIGBREAK đánh thức, xử lý ở biên nhịp), stdout `dừng 3 tiến trình con, giết cứng 0`; sổ: `news.collect` 17:45:26 · `classify` 17:45:29 · `price` 17:45:45 đều `failed: dừng tay (Ctrl+C)`, **không dòng `running` mồ côi** | **AC7 (native) đạt**; R23 kiểm thật |
+
+**Sửa sau chạy thử:** **R24** runner từ chối spawn lại cùng tên trong 10 phút sau khi con thoát mã ≠ 0 (RAM, cùng loại `_last_spawn`; daemon có backoff riêng; = đúng độ trễ thử lại exit 2 của planner) — bịt đường job chết trước `open_run` đập nguồn mỗi 40 s. **R26** dòng từ chối trùng in một lần mỗi con sống (đo: một dòng mỗi 20 s suốt lúc `price` chạy ⇒ ~360 dòng/ngày chỉ riêng price).
+
+**Đính chính spec cần ghi ở Task 12:** §5.8 (mọi lần thoát có dòng sổ — sai khi chết trước `open_run`; nay có cooldown RAM), §5.10 (prune theo ngày trong tên file, không phải mtime; Windows cần `SIGBREAK`).
+
+**Quan sát chưa giải thích (để review cuối):** run 49 `market.price_backfill` 17:30:16 success `subset: true`, 4 mã, `stop_at 17:50` — không do controller khởi động; nghi một test spawn CLI thật với `.env` cung cấp `ETL_DATABASE_URL` (`test_e63` đã trỏ sang `TEST_DATABASE_URL`, cần tìm test khác). Vô hại (planner loại `subset`), nhưng phải giải thích trước khi merge. Run 50 `fundamentals` (script khép ngày) success 0 lời gọi vì watermark đã là 2026-09-09 sau backfill — đúng.
