@@ -87,6 +87,46 @@ def test_run_dry_run_reports_and_writes_nothing(migrated_engine, monkeypatch, ca
         assert c.execute(sa.text("SELECT count(*) FROM ops.etl_run WHERE job = 'macro.omo_seed'")).scalar_one() == 0
 
 
+def test_run_dry_run_returns_2_on_exception(migrated_engine, monkeypatch):
+    """Đường dry-run phải tuân cùng hợp đồng exit code với đường ghi thật: lỗi bất kỳ ⇒ 2,
+    không có `ops.etl_run` để đóng vì dry-run chưa bao giờ `open_run`."""
+    monkeypatch.setenv("ETL_DATABASE_URL", os.environ["TEST_DATABASE_URL"])
+    monkeypatch.setattr("etl.omo_seed.load_dotenv", lambda *a, **k: None)
+
+    def _boom(conn, results):
+        raise RuntimeError("ZZ")
+
+    monkeypatch.setattr("etl.omo_seed._seed", _boom)
+    rc = omo_seed.run(str(CSV), dry_run=True, checks=(date(2026, 8, 14),))
+    assert rc == 2
+    with migrated_engine.connect() as c:
+        assert c.execute(sa.text("SELECT count(*) FROM ops.etl_run WHERE job = 'macro.omo_seed'")).scalar_one() == 0
+
+
+def test_to_results_none_participants_propagates_through_merge(tmp_path):
+    """`None` (ô trống trong CSV) phải LAN qua phép gộp, không bị coi như 0 — hai dòng cùng kỳ
+    hạn mà một dòng thiếu participants/winners thì dòng gộp cũng phải thiếu, không được cộng
+    nhầm `None + 2`."""
+    bad = tmp_path / "none_merge.csv"
+    bad.write_text(
+        "session_date,tenor_days,participants,winners,volume_bn,rate\n"
+        "2026-01-05,7,,,10,0.04\n"
+        "2026-01-05,7,2,2,5,0.04\n",
+        encoding="utf-8",
+    )
+    rows = omo_seed.read_csv(bad)
+    assert rows[0].participants is None and rows[0].winners is None
+
+    results = omo_seed.to_results(rows)
+    assert len(results) == 1
+    result = results[0]
+    assert result.merged == 1
+    assert len(result.rows) == 1
+    row = result.rows[0]
+    assert row.volume_vnd == Decimal("15") * 10**9
+    assert row.participants is None and row.winners is None
+
+
 def test_run_real_writes_and_second_run_skips(migrated_engine, monkeypatch):
     monkeypatch.setenv("ETL_DATABASE_URL", os.environ["TEST_DATABASE_URL"])
     monkeypatch.setattr("etl.omo_seed.load_dotenv", lambda *a, **k: None)

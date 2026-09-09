@@ -120,13 +120,20 @@ def run(path: str, dry_run: bool = False, checks: tuple[date, ...] = (date(2026,
     engine = sa.create_engine(url, pool_pre_ping=True)
     try:
         if dry_run:
-            with engine.connect() as conn:
-                tx = conn.begin()
-                st = _seed(conn, results)
-                st.update(_outstanding(conn, checks))
-                tx.rollback()
-            print(" ".join(f"{k}={v}" for k, v in st.items()), flush=True)
-            return 0
+            try:
+                with engine.connect() as conn:
+                    tx = conn.begin()
+                    st = _seed(conn, results)
+                    st.update(_outstanding(conn, checks))
+                    tx.rollback()
+                print(" ".join(f"{k}={v}" for k, v in st.items()), flush=True)
+                return 0
+            except KeyboardInterrupt:
+                log.warning("omo seed dry-run dừng tay (Ctrl+C)")
+                return 130
+            except Exception:  # noqa: BLE001 — job biên ngoài, không có ops.etl_run để đóng
+                log.exception("omo seed dry-run thất bại")
+                return 2
         run_id = omo_store.open_run(engine, JOB)
         try:
             with engine.begin() as conn:
