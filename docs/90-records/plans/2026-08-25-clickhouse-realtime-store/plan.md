@@ -1272,8 +1272,8 @@ và trong khối `volumes:` cuối file thêm dòng `  chdata:`.
 ```
 # ClickHouse (kho realtime — bật bằng cách bỏ comment dòng COMPOSE_PROFILES)
 # COMPOSE_PROFILES=realtime
-CLICKHOUSE_PASSWORD=change-me-in-production
-CLICKHOUSE_URL=http://default:change-me-in-production@127.0.0.1:8123
+CLICKHOUSE_PASSWORD=<REDACTED 2026-09-09>
+CLICKHOUSE_URL=http://default:<REDACTED 2026-09-09>@127.0.0.1:8123
 CLICKHOUSE_BACKUP_DIR=./clickhouse-backups
 ```
 

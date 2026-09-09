@@ -68,7 +68,7 @@ A2  __main__.py:150-152   cờ --intraday/--backfill chỉ thêm khi args[0] in 
 
 **Nhịp S:**
 
-- `.env.example` — thêm `AGENT_DATABASE_URL` (cạnh `ETL_DATABASE_URL`, cùng nhóm "user tạo per-môi-trường"), `FRED_API` (nhóm mới), `# LLM_TIMEOUT_S=120`. Giá trị đều là placeholder `change-me-in-production`; **không đọc, không chép gì từ `.env` thật** (§5).
+- `.env.example` — thêm `AGENT_DATABASE_URL` (cạnh `ETL_DATABASE_URL`, cùng nhóm "user tạo per-môi-trường"), `FRED_API` (nhóm mới), `# LLM_TIMEOUT_S=120`. Giá trị đều là placeholder `<REDACTED 2026-09-09>`; **không đọc, không chép gì từ `.env` thật** (§5).
 - `backend/README.md:102` — `≥ 50 %` → `≥ 20 %`, **kèm 6 dòng lý do**: ngưỡng 0,5 đặt từ số đo trang 1, nhưng toàn thị trường giữa phiên chỉ 53,8 % ⇒ chỉ hơn ngưỡng 3,8 điểm; từ chối nhầm một phiên thật là mất vĩnh viễn. Tri thức này trước đó **chỉ sống trong comment của code** — nay lên tài liệu, đúng §1.1.
 - `backend/README.md:321` — thay *"nhận cờ rồi bỏ qua"* bằng *"**không có cờ này** … truyền vào là `exit 2`"*, kèm trỏ `__main__.py:150-152`.
 

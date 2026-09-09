@@ -2366,9 +2366,9 @@ if __name__ == "__main__":
 
 ```
 # Lát cắt ingester + OMO (spec 2026-08-26)
-CLICKHOUSE_INGESTER_URL=http://ingester_worker:change-me-in-production@127.0.0.1:8123
+CLICKHOUSE_INGESTER_URL=http://ingester_worker:<REDACTED 2026-09-09>@127.0.0.1:8123
 REDIS_URL=redis://127.0.0.1:6379/0
-ETL_DATABASE_URL=postgresql+psycopg://etl_worker:change-me-in-production@127.0.0.1:5432/dulieu
+ETL_DATABASE_URL=postgresql+psycopg://etl_worker:<REDACTED 2026-09-09>@127.0.0.1:5432/dulieu
 # INGESTER_LOG_DIR=D:\dlck-runtime\logs
 # INGESTER_MEASURE_DIR=D:\dlck-runtime\measure
 ```
