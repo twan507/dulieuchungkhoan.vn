@@ -53,9 +53,41 @@ def test_open_run_holds_the_lock_until_close_run(clean):
         assert probe.execute(sa.text("SELECT pg_try_advisory_lock(hashtext(:j))"), {"j": JOB}).scalar_one() is True
         probe.execute(sa.text("SELECT pg_advisory_unlock(hashtext(:j))"), {"j": JOB})
     finally:
+        # Nếu một assert phía trên nổ TRƯỚC close_run, khoá thật vẫn còn bị connection của open_run giữ —
+        # đóng sổ (best-effort) ở đây để không rò khoá vào engine phiên test. close_run tự bỏ qua nếu đã đóng.
+        if rid in omo_store._LOCK_CONNS:
+            omo_store.close_run(clean, rid, "failed", error="test containment: assertion failed before close_run")
         probe.close()
     rows = _rows(clean)
     assert [r.status for r in rows] == ["success"] and rows[0].stats == {"x": 1}
+
+
+def test_close_run_survives_unlock_failure_and_still_marks_success(clean):
+    """R7: connection giữ khoá hỏng lúc nhả (`pg_advisory_unlock`) không được làm hỏng UPDATE đã ghi —
+    `close_run` vẫn phải trả về bình thường, dòng vẫn `success`, và connection giữ khoá vẫn được đóng."""
+
+    class FakeConn:
+        def __init__(self):
+            self.closed = False
+
+        def execute(self, *a, **k):
+            raise RuntimeError("zz")
+
+        def close(self):
+            self.closed = True
+
+    rid = omo_store.open_run(clean, JOB)
+    real_lock, _ = omo_store._LOCK_CONNS[rid]        # khoá thật vẫn phải tự tay nhả — ta sắp thay bằng giả
+    fake = FakeConn()
+    omo_store._LOCK_CONNS[rid] = (fake, JOB)
+    try:
+        omo_store.close_run(clean, rid, "success", {"y": 2})
+        assert fake.closed is True
+        rows = _rows(clean)
+        assert rows[0].status == "success" and rows[0].stats == {"y": 2}
+    finally:
+        real_lock.execute(sa.text("SELECT pg_advisory_unlock(hashtext(:j))"), {"j": JOB})
+        real_lock.close()
 
 
 def test_close_run_refused_flags_stats(clean):

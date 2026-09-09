@@ -3,11 +3,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import sys
 
 import sqlalchemy as sa
 
 from etl.omo_parse import OmoResult
+
+log = logging.getLogger("etl.omo_store")
 
 
 def store(result: OmoResult, html: str, conn) -> dict:
@@ -123,23 +126,33 @@ def close_run(engine, run_id: int, status: str, stats: dict | None = None,
 
     Sau UPDATE: nhả khoá và đóng connection giữ khoá (lát 13). `pg_advisory_unlock` phải gọi TƯỜNG MINH —
     connection trả về pool mà chưa nhả thì vẫn giữ khoá, lượt sau của cùng job sẽ chết oan. Seam: `test_e67`.
+
+    Việc nhả khoá nằm trong `finally` của UPDATE: dù UPDATE ném lỗi, khoá vẫn phải được thả — một UPDATE
+    hỏng không được phép khoá chết job đó cho mọi lượt sau. Và nhả khoá thất bại (connection giữ khoá đã
+    chết…) chỉ log cảnh báo rồi vẫn đóng connection — KHÔNG BAO GIỜ làm hỏng lượt đang đóng vì dữ liệu
+    (status/stats) đã ghi quan trọng hơn việc dọn khoá. Seam: `test_e67`.
     """
-    with engine.connect() as c:
-        c.execute(
-            sa.text("UPDATE ops.etl_run SET finished_at = now(), status = :s,"
-                    " stats = coalesce(cast(:st AS jsonb), ops.etl_run.stats),"
-                    " error = :e WHERE run_id = :r"),
-            {"s": status, "st": json.dumps(stats) if stats is not None else None,
-             "e": error, "r": run_id},
-        )
-        c.commit()
-    held = _LOCK_CONNS.pop(run_id, None)
-    if held is not None:
-        lock, job = held
-        try:
-            lock.execute(sa.text("SELECT pg_advisory_unlock(hashtext(:j))"), {"j": job})
-        finally:
-            lock.close()
+    try:
+        with engine.connect() as c:
+            c.execute(
+                sa.text("UPDATE ops.etl_run SET finished_at = now(), status = :s,"
+                        " stats = coalesce(cast(:st AS jsonb), ops.etl_run.stats),"
+                        " error = :e WHERE run_id = :r"),
+                {"s": status, "st": json.dumps(stats) if stats is not None else None,
+                 "e": error, "r": run_id},
+            )
+            c.commit()
+    finally:
+        held = _LOCK_CONNS.pop(run_id, None)
+        if held is not None:
+            lock, job = held
+            try:
+                try:
+                    lock.execute(sa.text("SELECT pg_advisory_unlock(hashtext(:j))"), {"j": job})
+                except Exception as e:
+                    log.warning("không nhả được advisory lock của %s: %s", job, e)
+            finally:
+                lock.close()
 
 
 def close_run_refused(engine, run_id: int, error: str, stats: dict | None = None) -> None:

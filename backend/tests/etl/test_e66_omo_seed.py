@@ -77,6 +77,7 @@ def test_run_dry_run_reports_and_writes_nothing(migrated_engine, monkeypatch, ca
     with migrated_engine.begin() as c:
         c.execute(sa.text("DELETE FROM macro.omo_auction WHERE session_date IN ('2026-02-03','2026-07-17','2026-08-14')"))
         c.execute(sa.text("DELETE FROM macro.omo_session WHERE session_date IN ('2026-02-03','2026-07-17','2026-08-14')"))
+        rebuild(c)   # macro.omo_flow là bảng tự dựng — xoá session/auction mà không rebuild để lại dòng mồ côi (va test_s05)
     rc = omo_seed.run(str(CSV), dry_run=True, checks=(date(2026, 8, 14), date(2026, 8, 21)))
     out = capsys.readouterr().out
     assert rc == 0
@@ -133,6 +134,7 @@ def test_run_real_writes_and_second_run_skips(migrated_engine, monkeypatch):
     with migrated_engine.begin() as c:
         c.execute(sa.text("DELETE FROM macro.omo_auction WHERE session_date IN ('2026-02-03','2026-07-17','2026-08-14')"))
         c.execute(sa.text("DELETE FROM macro.omo_session WHERE session_date IN ('2026-02-03','2026-07-17','2026-08-14')"))
+        rebuild(c)   # nt — cùng lý do
     try:
         assert omo_seed.run(str(CSV), checks=(date(2026, 8, 14),)) == 0
         with migrated_engine.connect() as c:
@@ -147,4 +149,5 @@ def test_run_real_writes_and_second_run_skips(migrated_engine, monkeypatch):
         with migrated_engine.begin() as c:
             c.execute(sa.text("DELETE FROM macro.omo_auction WHERE session_date IN ('2026-02-03','2026-07-17','2026-08-14')"))
             c.execute(sa.text("DELETE FROM macro.omo_session WHERE session_date IN ('2026-02-03','2026-07-17','2026-08-14')"))
+            rebuild(c)   # nt — cùng lý do
             c.execute(sa.text("DELETE FROM ops.etl_run WHERE job = 'macro.omo_seed'"))
