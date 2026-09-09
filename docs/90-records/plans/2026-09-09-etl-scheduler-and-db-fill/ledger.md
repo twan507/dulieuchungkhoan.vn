@@ -86,3 +86,43 @@ rc=0
 - **Task 3** bỏ quota quét sàn snapshot — `79dc046` + `9f6f557`: `QUOTA`/`LIMIT` gỡ, `plan_due`/`due_list` mất tham số; hai test e29 viết lại (trả đủ mọi cặp tới hạn), ba test e30 dùng `_quiet_floor` (implementer tìm thêm một test thứ ba ngoài brief; kỳ vọng `rows_written` 1 → 4 vì một issuer × bốn kind — reviewer lần ngược `plan_due`/`apply` xác nhận đúng). Review: một Important (docstring còn chữ "zero-QUOTA") — controller tự sửa hai dòng (§4.1 việc nhỏ), commit `9f6f557`.
 - **Task 4** `classify_attempts` — `b0881c4`: migration `0021`, `MAX_ATTEMPTS = 3`, lọc `< 3` ở cả hai đường chọn bài, tăng đếm trong cùng giao dịch với `log_call` (dry-run không tăng), `stats.skipped_attempts`; review sạch. Minor để Task 12: `database/README.md` còn ghi head `0020`. Đường `--ids-file` (bộ gold) cố ý không lọc theo attempts.
 - **Task 5** giao Opus ~13:45 (12 file + cả bộ test + hai phép kiểm production).
+- **Task 5** advisory lock + `close_run_refused` — `91b5079` + vòng sửa `d115ff1` (Opus làm, Opus review, Sonnet sửa). Review xác nhận độc lập: 10 nhánh exit 1 đổi đúng, cả 14 chỗ gọi `open_run` không có đường rò khoá, pool an toàn, `SystemExit(1)` ra tới shell. Hai Important đều ở test quét tĩnh `test_e68` (plan ép nguyên văn) ⇒ phán quyết R6/R7 dưới. Phép kiểm dưới quyền production: `omo` trong container exit 0 (run 42, dùng bind-mount `backend/etl` chỉ đọc lên image cũ vì cấm rebuild); khoá bận mô phỏng bằng cách giữ `hashtext('market.price_backfill')` từ host dưới role `dlck_etl` rồi chạy `price --backfill` trong container ⇒ stderr `lock busy`, exit 1, **run 43 là dòng `failed` cố ý** (không phải sự cố), lượt backfill thật run 35 không bị đụng. ⚠️ **Khoá chỉ có hiệu lực sau khi rebuild image** (`docker compose up -d --build`, Task 11) — các container `dlck-fill-*` đang chạy code cũ, chưa giữ khoá.
+- **Cả bộ test tại `d115ff1`: 1.161 passed, 3 failed, 3 skipped** — ba fail là `tests/docs/test_d01_docs_consistency.py` (`test_no_orphan_plan_docs`, `test_migration_count_matches_docs`, `test_schema_test_count_matches_docs`): hồ sơ mới, migration `0021`, test schema mới chưa được ghi vào tài liệu — **về xanh ở Task 12**, không phải lỗi code. `test_s05_macro::test_omo_flow_hand_computed` từng đỏ do test seed Task 2 để lại dòng `omo_flow` đã commit — sửa ở `d115ff1` (dọn xong thì `rebuild`).
+
+### Phán quyết của controller trong phiên (chép từ sổ SDD, để không mất)
+
+| # | Phán quyết | Vì sao | Chi phí nếu sai |
+|---|---|---|---|
+| R1 | Artifact SDD ở scratchpad phiên, ledger dự án là file này | CLAUDE.md cấm `.superpowers/` trong repo | không |
+| R2 | Task 5 chạy cả bộ test; test nào `open_run` mà không `close_run` phải thêm `close_run` | khoá sống theo lượt trên connection riêng | một test exit 1 chập chờn, lộ ngay |
+| R3 | Task 8: `main()` đọc `os.environ.get("ETL_LOG_DIR")` tường minh | `test_env_contract` quét code tìm người đọc | một test hợp đồng đỏ, sửa một dòng |
+| R4 | Hợp đồng exit 1 là quét tĩnh `test_e68`, không tham số hoá 15 họ | ép 15 kịch bản fetch giả quá đắt cho một điều kiện cú pháp | job đặt cờ sai mà scanner không thấy — test DB của `close_run_refused` che phần cờ |
+| R5 | Controller tự sửa hai docstring "zero-QUOTA" (Task 3) | §4.1 việc nhỏ 1–2 dòng | không |
+| R6 | Scanner `test_e68` bỏ qua dòng chú thích, nhận dấu `# no-run:` cho nhánh không có sổ, đối chứng dương bằng snippet literal | bản gốc bị "qua" bằng một chú thích nhắc tên hàm — khẳng định sai | không |
+| R7 | `close_run` nhả khoá trong `finally`, lỗi unlock chỉ log | khoá rò trong `news --loop` sống dai làm mọi vòng sau exit 1 | không |
+
+### Minor để dành cho review toàn nhánh (Task 13)
+
+Task 1: chưa test nhánh None của thành viên khi gộp; quét O(n). Task 2: INSERT auction lặp ở `store`/`store_seed`; test dry-run chỉ kiểm một khoá outstanding; test thật bỏ qua `auctions`/`flow_rows`; CSV rỗng chưa test. Task 4: `database/README.md` còn ghi head `0020` (Task 12). Task 5: docstring `close_run` về `coalesce` khi `close_run_refused` luôn truyền dict; bảng mã thoát ở `backend/README.md` cần thêm nghĩa "khoá bận" cho mã 1 và cờ `stats.guard_refused` (Task 12).
+
+## ⏸️ Tạm dừng lần 2 — 2026-09-09 14:15, hết Task 5 theo chủ dự án ("càng tiết kiệm session càng tốt")
+
+**Code:** nhánh `feat/etl-scheduler` HEAD = `d115ff1` + commit ledger này; cây sạch. Task 0–5 xong; **Task 6 là việc kế** (Opus): `backend/etl/scheduler/schedule.py` + `planner.py` theo plan. Sau đó 7 → 8 → 9 → 10 → 11 → 12 → 13.
+
+**Đang chạy trên máy lúc 14:15 (Docker, sống qua phiên chat, không sống qua reboot):**
+| Container | Việc | Ghi chú |
+|---|---|---|
+| `dlck-ingester-1` | daemon ghi tick, bật 13:51 theo chủ dự án để đo tải đồng thời | ngủ sau 15:05, **tự dậy 08:30 ngày 10/09** — không cần bật tay nữa; `docker compose up -d --build` ở Task 11 sẽ dựng lại nó |
+| `dlck-fill-price-backfill` | run 35, con trỏ ~AG1 | > 2 ngày, chạy xuyên phiên; code cũ, chưa giữ khoá |
+| `dlck-fill-fundamentals` | run 36, đang apply sau 6.091 lời gọi fetch (0 retry) | `financial_statement` vẫn 15.904 lúc 14:11, sẽ nhảy lên ~27 triệu khi apply xong |
+| `dlck-fill-price-daily-1` | run 40, **thử tải lượt 1** ba luồng + ingester từ 13:10 | chậm ~3× (200 mã/16 phút, 24 retry); kết quả cuối ở `ops.etl_run` run 40 và `…\scratchpad\price-load-test-1b.log` |
+| `dlck-fill-news-nguoiquansat` | run 39 | TinnhanhCK (37) và BNews (38) đã `success`; `article` 174 → 2.789 |
+
+**Script nền (Git Bash `nohup`, chết nếu reboot; log ở scratchpad phiên này `C:\Users\tuanb\AppData\Local\Temp\claude\D--twan-projects-dulieuchungkhoan-vn\3394952d-87db-4d2f-b1b1-98a68f2e1aa6\scratchpad\`):**
+- `price-load-test.sh 1430 dlck-fill-price-daily-2` → **thử tải lượt 2 lúc 14:30**, log `price-load-test-2b.log`.
+- `eod-0909.sh` → **15:20** chạy tuần tự `screener` → `price` → `events`, đợi `dlck-fill-fundamentals` xong rồi `snapshot` → `fundamentals` → `omo`; `omo` lại lúc 18:05 và 21:35; cuối cùng in bảng `ops.etl_run` 8 giờ gần nhất; log `eod-0909.log`. Container tên `dlck-eod-<job>`, `--rm`.
+- Nếu phiên sau không thấy log/container tương ứng ⇒ script đã chết, chạy tay theo mục "Việc còn lại trong ngày 09/09" ở lần dừng 1 (các lệnh không đổi).
+
+**Việc còn lại của Task 0 (nạp đầu) sang phiên sau:** `snapshot --codes` trọn sàn (1.523 mã, sau khi BCTC xong — lệnh ở plan Task 0 Step 6) · `classify --limit 1000` lặp tới hết (Step 8) · ghi kết quả thử tải lượt 1–2 và kết luận AC3 · từ 12/09 `refdata --accept-drop` một lần (Step 10).
+
+**Điểm nối lại phiên sau:** đọc mục này → `git status` (sạch, HEAD nhánh) → đọc `eod-0909.log`, `price-load-test-*b.log`, `ops.etl_run` từ run 40 → ghi số vào ledger → Task 6 theo `plan.md` (brief cắt bằng `scripts/task-brief PLAN 6 <OUTFILE ngoài repo>`; sổ SDD mới ở scratchpad mới, chép bảng phán quyết trên sang). Sáng 10/09 nhớ Task 11 Step 1 `docker compose up -d --build` **sau** khi Task 8 + 10 xong, không sớm hơn (image mới mới có scheduler và khoá).
