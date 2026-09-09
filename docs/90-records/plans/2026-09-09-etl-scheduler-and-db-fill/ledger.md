@@ -29,3 +29,32 @@ Dữ kiện danh mục: `market.security` có 1.962 mã `listed` nhưng 439 mã 
 ## Task 1 → 13
 
 *(ghi tiếp theo tiến độ)*
+
+## ⏸️ Tạm dừng 2026-09-09 09:06 — chủ dự án: sắp hết hạn mức phiên, dừng ở điểm an toàn, đợi reset
+
+**Trạng thái code:** nhánh `feat/etl-scheduler` HEAD `8941bab` (spec + plan + ledger, chưa có code). Task 1 vừa giao subagent Sonnet lúc 09:06 và đã bị dừng; cây làm việc còn **một file sửa chưa commit**: `backend/tests/etl/test_e03_parse.py` (hai test đỏ theo brief Task 1) — phiên sau: implementer mới đối chiếu với brief, dùng lại hoặc ghi đè, không cần stash.
+
+**Sổ SDD (ngoài repo, đường dẫn tuyệt đối để phiên sau đọc):** `C:\Users\tuanb\AppData\Local\Temp\claude\D--twan-projects-dulieuchungkhoan-vn\3394952d-87db-4d2f-b1b1-98a68f2e1aa6\scratchpad\sdd\2026-09-09-etl-scheduler-and-db-fill\` — `progress.md` (bảng rà xung đột tiền thực thi + 4 phán quyết R1–R4), `task-1..5-brief.md`. Phiên sau có scratchpad khác: tạo workspace mới, chép `progress.md` sang (hoặc đọc tại chỗ), cắt brief lại bằng `scripts/task-brief PLAN N OUTFILE` của skill `subagent-driven-development` (luôn truyền OUTFILE ngoài repo).
+
+**Bốn phán quyết đã ghi ở sổ SDD (chép để không mất):**
+- R1: artifact SDD ở scratchpad; ledger dự án là file này, commit.
+- R2: Task 5 — implementer chạy cả bộ test; test nào `open_run` mà không `close_run` phải thêm `close_run` (khoá sống theo lượt).
+- R3: Task 8 — `main()` đọc `os.environ.get("ETL_LOG_DIR")` tường minh để `test_env_contract` thấy người đọc.
+- R4: hợp đồng exit 1 là quét tĩnh `test_e68` (đã ghi đính chính spec).
+
+**Đang chạy trên máy (Docker, không phụ thuộc phiên chat):**
+| Container | Lệnh | Bắt đầu | Ghi chú |
+|---|---|---|---|
+| `dlck-fill-price-backfill` | `price --backfill` (run 25) | 08:24 | ~2,5 phút/mã, > 2 ngày; lỗi "Timeout expired" 5/14 mã tới 09:00 |
+| `dlck-fill-fundamentals` | `fundamentals --backfill` (run 26) | 08:24 | 3.900/6.091 lúc 09:00, 0 retry |
+| `dlck-fill-news-tinnhanhck` / `-bnews` / `-nguoiquansat` | `news --backfill-sitemap --source <x> --from 2026-09` | 09:03 | Task 0 Step 5 |
+| *(ingester)* | **đang dừng** từ 07:59 theo yêu cầu | | `docker compose up -d` sẽ dựng lại nó — hôm nay tránh |
+
+**Hai script nền (Git Bash `nohup`, có thể chết theo phiên):** `scratchpad/price-load-test.sh 1000 dlck-fill-price-daily-1` và `… 1330 dlck-fill-price-daily-2` — chờ tới 10:00 / 13:30 rồi `docker compose run -d --name <tên> etl python -m etl price`, ghi log `scratchpad/price-load-test-1.log`, `-2.log` (cùng thư mục scratchpad ở trên). Nếu phiên sau không thấy container `dlck-fill-price-daily-1`/`-2` thì script đã chết — chạy tay lệnh đó cho AC3.
+
+**Việc còn lại trong ngày 09/09 nếu phiên chưa quay lại kịp (chủ dự án chạy tay được):**
+1. Sau 15:05: `docker compose run --rm etl python -m etl screener` → `… price` → `… events` → `… snapshot` → `… fundamentals` → `… omo` (mỗi lệnh chờ xong mới tới lệnh sau; `snapshot` và `fundamentals` chờ `dlck-fill-fundamentals` xong).
+2. Trước 08:30 sáng 10/09: `docker compose start ingester` (bật lại ghi tick; `docker compose logs --tail 3 ingester` phải thấy "chờ tới 2026-09-10T08:30").
+3. Seed OMO và `snapshot --codes` trọn sàn cần code Task 2 / xong BCTC — để phiên sau.
+
+**Điểm nối lại:** đọc mục này → `git status` → tiếp Task 1 theo `plan.md` (giao subagent Sonnet, BASE = HEAD lúc đó) → review → Task 2… Nhịp mỗi task: brief → implementer → review-package → reviewer → ledger.
