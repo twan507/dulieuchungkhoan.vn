@@ -304,6 +304,12 @@ Runner spawn nếu chưa có hoặc đã chết; giãn cách khởi động lạ
 - `docs/90-records/README.md`: dòng hồ sơ này. `.env.example`: `ETL_LOG_DIR`.
 - `git grep`: `heartbeat` · `QUOTA` · `quota` (snapshot) · `chưa đăng ký task` — hit còn lại phải thuộc vùng lịch sử.
 
+## Đính chính khi viết plan — 2026-09-09 *(không sửa phần trên: đó là bản duyệt)*
+
+**§5.8 "test hợp đồng tham số hoá kiểu `test_e63`" đổi thành quét tĩnh.** Ép từng họ tới nhánh guard từ chối cần fake fetch riêng cho mỗi họ (15 kịch bản), trong khi thứ cần canh chỉ là *"mọi `return 1` phải đi qua một hàm đóng sổ duy nhất đặt cờ"*. Plan Task 5 gộp cờ vào hàm mới `omo_store.close_run_refused` và canh bằng quét tĩnh `test_e68` (cùng tinh thần `test_e65` vế 2), cộng test DB thật cho chính hàm đó. Hệ quả: `stats.guard_refused` là chủ của một hàm, không rải ở 10 chỗ.
+
+**§5.9 khoá bận** — dòng `failed` ghi trên chính connection giữ khoá (AUTOCOMMIT) trước khi đóng, để không cần connection thứ hai.
+
 ## 9. Điểm cần chủ dự án duyệt tường minh
 
 1. Sáu điểm tự chốt §4.3 — đặc biệt (1) dòng `running` mồ côi để lát 14, (6) seed đọc CSV chuyển từ xlsx, không thêm `openpyxl`.
