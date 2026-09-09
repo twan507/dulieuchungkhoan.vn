@@ -119,7 +119,10 @@ services:
     <<: *app
     restart: unless-stopped
     command: ["python", "-m", "etl"]
-    stop_grace_period: 60s
+    # 90s (bằng `ingester`) để runner còn dư địa: nhịp vòng lặp 20s + `SHUTDOWN_GRACE_S = 60` chờ con
+    # tự đóng sổ rồi mới `kill()`. Đặt đúng 60s thì Docker giết cả scheduler ngay lúc nó bắt đầu chờ,
+    # và con nào chưa kịp ghi `ops.etl_run` sẽ để lại dòng `running` treo.
+    stop_grace_period: 90s
     environment:
       <<: *app-env
       CLICKHOUSE_BACKUP_DIR: /backups

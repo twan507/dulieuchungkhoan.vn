@@ -110,7 +110,8 @@ vẫn có thể được ghi thêm, và `mtime` bị mọi thao tác chép/khôi
 
 `SIGTERM` / `SIGINT` / `SIGBREAK` chỉ **đặt cờ**; nhịp kế mọi con đang sống nhận `SIGTERM` (POSIX) hoặc
 `CTRL_BREAK_EVENT` (Windows), chờ tối đa **60 s**, còn sống thì `kill()`; scheduler thoát `0`.
-`stop_grace_period` của service `etl` cũng là 60 s.
+`stop_grace_period` của service `etl` là **90 s** — cố ý rộng hơn 60 s đó, để Docker không giết cả scheduler
+ngay lúc nó vừa bắt đầu chờ con (`ingester` cũng 90 s).
 
 🔴 **Windows: con phải bắt `SIGBREAK`, không chỉ `SIGINT`.** Python ánh xạ `CTRL_BREAK_EVENT` sang `SIGBREAK`; con
 chỉ cài handler `SIGINT` sẽ **chết với mã `0xC000013A`, không đi qua `except KeyboardInterrupt`** và để lại dòng
@@ -547,4 +548,4 @@ Cần biến môi trường mới **`AGENT_DATABASE_URL`** — user login `agent
 
 ## Chạy trong container (lát 12 — 2026-09-08)
 
-Cùng image, cùng code: `docker compose run --rm etl python -m etl <job> [cờ]` (mọi cờ ở các mục trên). `ingester` là service daemon riêng (`docker compose up -d ingester`), lưới đo `docker compose --profile measure up -d ingester-measure`. `docker stop`/`compose down` gửi `SIGTERM`, nhưng job `etl` và `ingester` KHÔNG đi cùng một đường: job `etl` đi đường Ctrl+C (`core/shutdown.py`) — sổ `ops.etl_run` đóng `failed: dừng tay (Ctrl+C)`, exit 130; `ingester` đi đường `install_loop_stop` — đặt `stop`, phiên đóng đúng đường deadline (xả hàng đợi + đối chứng), exit 0/1, **không** có dòng `ops.etl_run` nào (ingester chưa từng ghi bảng đó). `stop_grace_period` 60 s (`etl`) / 90 s (`ingester`) *(đo 2026-09-08 21:34: `docker stop -t 90` phiên `--minutes 3` → `reconcile: p1=0 p2=0 ok=0`, exit 0)*. Lịch chạy tự động là **scheduler trong chính service `etl`** (`docker compose up -d`, mục Scheduler ở đầu file); Task Scheduler và `scripts/register-tasks.ps1` đã về hưu ở lát 12.
+Cùng image, cùng code: `docker compose run --rm etl python -m etl <job> [cờ]` (mọi cờ ở các mục trên). `ingester` là service daemon riêng (`docker compose up -d ingester`), lưới đo `docker compose --profile measure up -d ingester-measure`. `docker stop`/`compose down` gửi `SIGTERM`, nhưng job `etl` và `ingester` KHÔNG đi cùng một đường: job `etl` đi đường Ctrl+C (`core/shutdown.py`) — sổ `ops.etl_run` đóng `failed: dừng tay (Ctrl+C)`, exit 130; `ingester` đi đường `install_loop_stop` — đặt `stop`, phiên đóng đúng đường deadline (xả hàng đợi + đối chứng), exit 0/1, **không** có dòng `ops.etl_run` nào (ingester chưa từng ghi bảng đó). `stop_grace_period` 90 s cho cả `etl` lẫn `ingester` *(đo 2026-09-08 21:34: `docker stop -t 90` phiên `--minutes 3` → `reconcile: p1=0 p2=0 ok=0`, exit 0)*. Lịch chạy tự động là **scheduler trong chính service `etl`** (`docker compose up -d`, mục Scheduler ở đầu file); Task Scheduler và `scripts/register-tasks.ps1` đã về hưu ở lát 12.

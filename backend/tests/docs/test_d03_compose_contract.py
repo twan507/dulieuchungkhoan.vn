@@ -73,7 +73,9 @@ def test_ingester_runtime_dirs_are_named_volumes_and_stop_grace_is_generous():
     ing = _services()["ingester"]
     targets = {v.split(":")[1] for v in ing["volumes"]}
     assert targets == {"/var/lib/dlck/logs", "/var/lib/dlck/measure", "/var/lib/dlck/spill"}
-    assert ing["stop_grace_period"] == "90s" and _services()["etl"]["stop_grace_period"] == "60s"
+    # I2: `etl` cũng 90s — bằng đúng `SHUTDOWN_GRACE_S = 60` thì runner không còn giây nào để chờ con
+    # tự đóng sổ rồi mới `kill()`: Docker giết cả scheduler ngay lúc nó bắt đầu chờ.
+    assert ing["stop_grace_period"] == "90s" and _services()["etl"]["stop_grace_period"] == "90s"
 
 
 def test_etl_log_dir_is_a_named_volume_next_to_backups():
