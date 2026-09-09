@@ -58,3 +58,12 @@ Dữ kiện danh mục: `market.security` có 1.962 mã `listed` nhưng 439 mã 
 3. Seed OMO và `snapshot --codes` trọn sàn cần code Task 2 / xong BCTC — để phiên sau.
 
 **Điểm nối lại:** đọc mục này → `git status` → tiếp Task 1 theo `plan.md` (giao subagent Sonnet, BASE = HEAD lúc đó) → review → Task 2… Nhịp mỗi task: brief → implementer → review-package → reviewer → ledger.
+
+## Nối lại 2026-09-09 13:08 — máy đã reboot lúc 13:05, Docker tắt từ ~09:07
+
+- Mọi lượt nạp đầu đóng sổ **`failed: dừng tay (Ctrl+C)` lúc 09:07** (SIGTERM khi Docker tắt — hợp đồng dừng sạch trong container đúng cả với `docker compose run`). Hai script hẹn giờ thử tải chết theo; lượt 10:00 không chạy (không kết nối được engine). Mở lại Docker Desktop 13:09, engine lên sau 20 s; ba kho + `api` + `etl` tự lên (`restart: unless-stopped`), **ingester vẫn dừng** như chủ đích.
+- **Kết quả lượt backfill giá đầu (run 25, 08:24–09:07):** 16 mã, con trỏ `ACC`, `price_daily` 2.084 → 18.094 dòng. **7/16 mã hỏng**, đều `Timeout expired` (HTTP 200, `status: Failed`) sau 4 lần: AAA trang 1 · AAH trang 8 · AAM trang 4 · ABS trang 10 · ABT trang 1 · ACB trang 65 · ACC trang 3 — không chỉ trang sâu; `source_down_pauses = 0`. Cùng lúc luồng BCTC (run 26) đi 4.000+ lời gọi **0 retry** ⇒ endpoint `getPriceData` nghẽn phía nguồn khi có hai luồng, hoặc nghẽn giờ sáng — lượt thử tải chiều sẽ phân định.
+- **Backfill BCTC (run 26)** bị giết giữa pha fetch (3.900/6.091) ⇒ **không ghi gì** (`fundamentals_check` vẫn 1 dòng): job fetch trọn rồi mới apply, không nối được giữa chừng — phải chạy liền ~1 giờ 45.
+- Sitemap tin (run 32–34): `article` 174 → 382 trước khi bị giết; con trỏ nối lại được.
+- 13:10 khởi động lại: `dlck-fill-price-backfill` (nối sau ACC, còn 1.506 mã) · `dlck-fill-fundamentals` · ba `dlck-fill-news-*` · **lượt thử tải 1 `dlck-fill-price-daily-1` chạy ngay** (13:10, phiên chiều, ba luồng FiinTrade) · lượt 2 hẹn 14:30 (script nền `price-load-test.sh`, log `scratchpad/price-load-test-2b.log`).
+- 13:12 giao lại Task 1 (Sonnet).
