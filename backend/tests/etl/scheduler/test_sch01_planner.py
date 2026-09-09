@@ -62,6 +62,19 @@ def test_snapshot_waits_for_events_then_fires():
     assert names(tasks) == ["market.snapshot"] and tasks[0].reason == "chuỗi: cha market.events success"
 
 
+def test_a_child_success_older_than_the_parents_latest_success_does_not_count():
+    """Ghim luật mắt xích CHẶT HƠN câu chữ spec §5.8 ("cha xong thì con chạy"): mốc của con là
+    `started_at` của lượt `success` MỚI NHẤT hôm nay của cha, và chỉ dòng con có `started_at >= mốc
+    đó` mới tính. Một lượt `snapshot` thành công TRƯỚC lượt `events` mới nhất không được coi là đã
+    phục vụ dữ liệu của lượt cha đó — nó chạy trên sự kiện cũ, nên con vẫn phải chạy lại.
+
+    Đây là hành vi đang có (test này không đổi code), viết ra để lát sau đừng "đơn giản hoá" thành
+    "cha có success ⇒ con thôi" mà không biết mình đang bỏ mất một lượt chạy bù."""
+    parent = row("market.events", 18, 12)
+    assert names(due([EVENTS, SNAP], vn(9, 18, 30), [parent, row("market.snapshot", 18, 5)])) == ["market.snapshot"]
+    assert due([EVENTS, SNAP], vn(9, 18, 30), [parent, row("market.snapshot", 18, 20)]) == []
+
+
 def test_exit2_retries_once_after_ten_minutes_then_stops():
     fail = row("market.price_daily", 15, 41, "failed")
     assert due([PRICE], vn(9, 15, 49), [fail]) == []
