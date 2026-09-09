@@ -80,3 +80,6 @@ rc=0
 ```
 
   Khớp từng số với dự đoán trong spec §2.1 (250.778,26 và 249.363,44 tỷ). `auctions=823` = 826 dòng − 3 dòng gộp. Lượt ghi thật chạy sau khi review Task 2 xanh.
+- **Task 2 review:** 3 Important (dry-run không bắt lỗi thành 2/130; `store()` ghi note khi gộp chưa test; nhánh None chưa test) → vòng sửa 1 `84295a8`, re-review sạch. Minor để review cuối: INSERT auction lặp ở `store`/`store_seed`; test dry-run chỉ kiểm một khoá outstanding; test thật bỏ qua `auctions`/`flow_rows`; CSV rỗng chưa test.
+- **AC1 ĐẠT — seed thật 13:46** (`uv run python -m etl omo --seed <csv>`, run 41 `success`): `sessions_new=248 auctions=823 rows_merged=3 flow_rows=317`; kho `macro.omo_session` **249 phiên** 2025-09-08 → 2026-09-08 (248 seed + 1 SBV); bốn dòng 14/08/2026 = 6.307,47 · 3.466,54 · 210,17 · 909,92 tỷ, thành viên 4/4 · 4/4 · 1/1 · 3/3, lãi suất 4,5; `omo_flow.outstanding_vnd` 07/09 = **250.778,26** · 08/09 = **249.363,44** tỷ, `complete = true` cả hai; `note` phiên 03/02/2026 = "seed FiinProX export 2026-09-08 · gộp 3 dòng cùng kỳ hạn" (03/02 có ba kỳ hạn gộp 7/28/56 nên đếm 3 ở phiên đó — tổng `rows_merged=3` cả file).
+- **Thử tải giá lượt 1 (từ 13:10, ba luồng FiinTrade):** 100 mã/3,5 phút 5 retry · 200 mã/16 phút 24 retry, có mã hỏng trang 1 sau 4 lần (BMF, 0700823506) — chậm ~3× so với lượt đơn luồng 04/09 (0 retry). Kết quả cuối ghi khi lượt xong.
