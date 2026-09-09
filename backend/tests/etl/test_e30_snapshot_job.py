@@ -236,7 +236,7 @@ def test_recrawl_passes_the_time_budget_to_price_job(snapshot_db, monkeypatch):
 
     PHẢI là lượt ĐẦY ĐỦ (`codes=None`, `kinds=None`): vòng sửa 4 chặn hẳn `_recrawl` ở lượt
     con (xem `test_a_codes_run_does_not_trigger_a_price_recrawl` ngay dưới) — test này đổi từ
-    `codes=[TICKER]` sang lượt đầy đủ để còn đứng được sau fix đó, đúng khuôn zero-QUOTA của
+    `codes=[TICKER]` sang lượt đầy đủ để còn đứng được sau fix đó, đúng khuôn `_quiet_floor` của
     `test_the_watermark_written_reflects_the_due_list_snapshot_not_a_later_insert` (không zero
     thì nhánh quét sàn có thể kéo issuer thật còn sót của file test khác vào lượt).
     """
@@ -310,7 +310,7 @@ def test_the_watermark_written_reflects_the_due_list_snapshot_not_a_later_insert
     mất, không job nào phục vụ nó. Sửa: `max(public_date)` phải lấy CÙNG giao dịch với
     `due_list` ở T0 và ghi đúng giá trị đó ở cuối lượt — bất kể chuyện gì xảy ra ở giữa.
 
-    Zero hoá `QUOTA` để nhánh quét sàn không kéo issuer thật còn sót của file test khác vào
+    Gọi `_quiet_floor` (lát 13 bỏ quota) để nhánh quét sàn không kéo issuer thật còn sót của file test khác vào
     lượt (đây phải là lượt ĐẦY ĐỦ — codes=None, kinds=None — mới thật sự ghi watermark theo
     fix #1). `expected_wm` tự đo NGAY TRƯỚC khi chạy job thay vì hard-code, để test không phụ
     thuộc việc `market.corporate_event` có sạch tuyệt đối hay không (§1.7 — không giả định
