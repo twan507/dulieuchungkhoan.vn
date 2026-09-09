@@ -325,10 +325,47 @@ def test_backfill_pauses_ten_minutes_after_a_source_outage_and_resumes_instead_o
     assert s["failed_tickers"] == ["ZZA"] and s["codes_done"] == 3 and s["cursor"] == "ZZC" and s["pass_complete"] is True
 
 
-def test_backfill_gives_up_after_three_consecutive_pauses_when_the_source_stays_down(price_db, monkeypatch):
-    slept = _wire_flaky(monkeypatch, fail_calls=10_000)
-    assert price_job.run(backfill=True) == 2
+def test_backfill_escalates_pauses_and_never_gives_up_while_the_source_stays_down(price_db, monkeypatch):
+    """Đo 09/09–10/09: FiinTrade nghẽn ~4–9 mã mỗi giờ ở MỌI giờ ⇒ bỏ cuộc sau 3 lần nghỉ là bỏ dở vòng
+    (lượt 09/09 chết 02:02 tại con trỏ CK8, không ai bật lại). Nay nghỉ dài dần 10/20/40/60/60 phút và đi tiếp."""
+    # 24 lời gọi hỏng = ZZA (4) + ZZB hỏng 5 lượt × 4 ⇒ 5 lần trip SourceDown liên tiếp, rồi ZZB qua.
+    slept = _wire_flaky(monkeypatch, fail_calls=24)
+    assert price_job.run(backfill=True) == 0
     status, s, err = _last(price_db, "market.price_backfill")
-    assert status == "failed" and err.startswith("SourceDown")
-    assert slept == [600.0, 600.0, 600.0] and s["source_down_pauses"] == 3
-    assert s["cursor"] == "ZZA"                                            # con trỏ giữ mã đã đi qua, lượt sau nối tiếp
+    assert status == "success" and err is None
+    assert slept == [600.0, 1200.0, 2400.0, 3600.0, 3600.0]
+    assert s["source_down_pauses"] == 5 and s["source_down_pause_s"] == 11400
+    assert s["failed_tickers"] == ["ZZA"] and s["cursor"] == "ZZC" and s["pass_complete"] is True
+    assert _rows(price_db) == 19                                           # 18 phiên của ZZB + 1 của ZZC
+
+
+def _wire_failing_calls(monkeypatch, fail_calls: set[int]):
+    """Nguồn hỏng ĐÚNG những lời gọi thứ n — dựng được kịch bản trip · một mã qua · trip lại."""
+    _wire(monkeypatch)
+    good, n = _get(), {"calls": 0}
+
+    def get(url):
+        n["calls"] += 1
+        return (500, "gateway timeout") if n["calls"] in fail_calls else good(url)
+
+    @contextlib.contextmanager
+    def fake_open_fetcher():
+        yield price_fetch.Fetcher(get, sleep=lambda s: None)
+    monkeypatch.setattr("etl.price_fetch.open_fetcher", fake_open_fetcher)
+    monkeypatch.setattr(price_fetch, "MAX_CONSECUTIVE_FAILURES", 1)       # một mã hỏng là trip: kịch bản ngắn gọn
+    slept = []
+    monkeypatch.setattr(price_job, "_sleep", lambda s: slept.append(s))
+    return slept
+
+
+def test_backfill_pause_ladder_resets_after_a_code_loads(price_db, monkeypatch):
+    """Thang nghỉ đếm số lần nghỉ LIÊN TIẾP: một mã tải được là nguồn đã sống lại ⇒ lần nghẽn sau
+    bắt lại từ 10 phút, không nối tiếp 20 phút của quãng nghẽn trước."""
+    # ZZA hỏng 4 lần (gọi 1–4) ⇒ nghỉ; gọi 5 ZZA qua; ZZB hỏng 4 lần (gọi 6–9) ⇒ nghỉ; gọi 10 ZZB qua.
+    slept = _wire_failing_calls(monkeypatch, {1, 2, 3, 4, 6, 7, 8, 9})
+    assert price_job.run(backfill=True) == 0
+    status, s, err = _last(price_db, "market.price_backfill")
+    assert status == "success" and err is None
+    assert slept == [600.0, 600.0]
+    assert s["source_down_pauses"] == 2 and s["source_down_pause_s"] == 1200
+    assert s["failed_tickers"] == [] and s["codes_done"] == 3 and s["pass_complete"] is True

@@ -24,8 +24,14 @@ from etl.guard_common import GuardRefused
 log = logging.getLogger("etl.price")
 _wall_clock = time.time      # seam cho test: patch toàn cục time.time thì SQLAlchemy pool cũng ăn tick
 _sleep = time.sleep          # seam cho test: nghỉ khi nguồn nghẽn (backfill)
-SOURCE_DOWN_PAUSE_S = 600    # sự cố 05/09: FiinTrade nghẽn từng quãng ~15 phút tối thứ 7 — nghỉ 10 phút rồi nối tiếp
-SOURCE_DOWN_MAX_PAUSES = 3   # 3 lần nghỉ liên tiếp không có mã nào qua (30 phút) ⇒ coi nguồn chết thật, lượt failed như cũ
+# Thang nghỉ khi nguồn nghẽn: lần nghỉ LIÊN TIẾP thứ n (chưa mã nào qua) dùng phần tử thứ n−1, phần
+# tử cuối lặp mãi ⇒ 10 → 20 → 40 → 60 → 60 … phút. Đo 09/09–10/09: `getPriceData` trả HTTP 200 kèm
+# `status: Failed, "Timeout expired…"` cho ~4–9 mã MỖI GIỜ, ở mọi giờ, dù chạy một luồng hay ba —
+# nghẽn là nền của nguồn, không phải sự cố ngắn. Bản cũ (nghỉ 10 phút, bỏ cuộc sau 3 lần) chết lúc
+# 02:02 ngày 10/09 với exit 2 sau 194 mã (con trỏ CK8) và không ai bật lại. Nay không bỏ cuộc: nghỉ
+# dài dần rồi thử tiếp; mỗi quãng nghỉ chỉ tốn ≤ 4 lời gọi thăm dò (`Fetcher.resume`) nên nguồn đang
+# xấu vẫn được để yên.
+SOURCE_DOWN_PAUSES_S = (600, 1200, 2400, 3600)
 
 
 def _now_iso() -> str:
@@ -186,7 +192,8 @@ def _backfill(engine, tickers: list[str] | None, max_minutes: float | None,
                    "codes_done": 0, "pages": 0, "rows_sent": 0, "rows_changed": 0,
                    "dup_dates": 0, "raw_close_mismatch": 0, "raw_close_mismatch_sample": [],
                    "invalid_tickers": [], "failed_tickers": [], "retries": 0,
-                   "budget_hit": False, "pass_complete": False, "elapsed_s": 0, "source_down_pauses": 0}
+                   "budget_hit": False, "pass_complete": False, "elapsed_s": 0,
+                   "source_down_pauses": 0, "source_down_pause_s": 0}
     # Mở sổ là việc CUỐI trước `try`: hỏng ở phần tính hạn giờ phía trên thì không có dòng 'running' treo
     run_id = omo_store.open_run(engine, price_store.JOB_BACKFILL)
     try:
@@ -219,17 +226,18 @@ def _backfill(engine, tickers: list[str] | None, max_minutes: float | None,
                     except price_fetch.CodeInvalid:
                         stats["invalid_tickers"].append(c.ticker)
                     except price_fetch.SourceDown as e:
-                        # Cầu chì trip = nguồn nghẽn (sự cố 05/09: 3 lượt cuối tuần chết vì một quãng nghẽn, task chờ tới
-                        # thứ 7 sau). Nghỉ rồi thử lại ĐÚNG mã này; chỉ bỏ cuộc khi nghỉ 3 lần liên tiếp mà không mã nào qua.
+                        # Cầu chì trip = nguồn nghẽn. Nghỉ rồi thử lại ĐÚNG mã này, nghỉ dài dần theo thang —
+                        # KHÔNG bao giờ bỏ dở vòng: nguồn nghẽn nền thì bỏ cuộc chỉ để lại con trỏ đứng im.
                         pauses += 1
-                        if pauses > SOURCE_DOWN_MAX_PAUSES:
-                            raise
-                        if deadline is not None and _wall_clock() + SOURCE_DOWN_PAUSE_S >= deadline:
+                        pause_s = SOURCE_DOWN_PAUSES_S[min(pauses - 1, len(SOURCE_DOWN_PAUSES_S) - 1)]
+                        if deadline is not None and _wall_clock() + pause_s >= deadline:
                             raise                                   # nghỉ xong là quá hạn — không lấn giờ giao dịch
-                        stats["source_down_pauses"] += 1            # đếm lần NGHỈ thật, không đếm lần trip bỏ cuộc
-                        log.warning("%s — nghỉ %d phút rồi thử lại (lần %d/%d)", e, SOURCE_DOWN_PAUSE_S // 60, pauses, SOURCE_DOWN_MAX_PAUSES)
+                        stats["source_down_pauses"] += 1            # đếm lần NGHỈ thật
+                        stats["source_down_pause_s"] += pause_s
+                        log.warning("%s — nghỉ %d phút rồi thử lại (lần nghỉ liên tiếp thứ %d)",
+                                    e, pause_s // 60, pauses)
                         price_store.save_progress(engine, run_id, stats)
-                        _sleep(SOURCE_DOWN_PAUSE_S)
+                        _sleep(pause_s)
                         f.resume()
                         continue
                     except price_fetch.FetchError as e:
