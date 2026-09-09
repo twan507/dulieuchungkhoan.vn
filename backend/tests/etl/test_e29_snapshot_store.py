@@ -110,13 +110,14 @@ def test_due_list_takes_back_a_kind_past_its_cadence(db):
     assert [t.kind for t in ss.due_list(db, date(1900, 1, 1))] == ["ownership"]
 
 
-def test_due_list_respects_the_daily_quota_and_takes_the_oldest_first(db):
+def test_due_list_returns_every_overdue_pair_oldest_first(db):
+    """Lát 13: bỏ quota — tới nhịp thì quét TRỌN (chủ dự án 2026-09-09), thứ tự vẫn cũ nhất trước."""
     _quiet_universe(db)
     ids = [_issuer(db, f"Ma {i}", f"ZZQ{i}", f"ZQ{i}") for i in range(5)]
     for n, iid in enumerate(ids):
         _checked(db, iid, "ownership", days_ago=40 + n)     # ZZQ4 cũ nhất
-    due = ss.due_list(db, date(1900, 1, 1), kinds=["ownership"], quota={"ownership": 2})
-    assert [t.organ_code for t in due] == ["ZZQ4", "ZZQ3"]
+    due = ss.due_list(db, date(1900, 1, 1), kinds=["ownership"])
+    assert [t.organ_code for t in due] == ["ZZQ4", "ZZQ3", "ZZQ2", "ZZQ1", "ZZQ0"]
 
 
 def test_due_list_pulls_a_kind_in_early_when_an_event_fired(db):
@@ -198,16 +199,14 @@ def test_due_list_caps_the_trigger_branch_and_takes_the_oldest_public_date_first
     assert [t.ticker for t in due] == ["ZT0", "ZT1", "ZT2"]
 
 
-def test_due_list_floor_returns_exactly_quota_when_cold_start_has_more_issuers_than_quota(db):
-    """IMPORTANT #6: spec §6 chốt seam 'bảng rỗng đi theo NULLS FIRST' — cơ chế DUY NHẤT giữ
-    quét sàn khỏi nổ 6.092 lời gọi ở lượt đầu — nhưng chưa test bao giờ ở tổ hợp thật: N issuer
-    chưa kiểm bao giờ, N > quota. Test cũ chỉ phủ 1 issuer NULL hoặc 5 issuer đều có checked_at."""
+def test_due_list_floor_returns_all_never_checked_issuers_on_cold_start(db):
+    """Lát 13: cold start không còn bị cắt — lượt đầu quét trọn những gì chưa kiểm (NULLS FIRST giữ nguyên)."""
     _quiet_universe(db)
     tickers = [f"ZC{i}" for i in range(5)]
     for i, t in enumerate(tickers):
         _issuer(db, f"Cold start floor {i}", f"ZZCS{i}", t)
-    due = ss.due_list(db, date(1900, 1, 1), kinds=["ownership"], quota={"ownership": 3})
-    assert [t.ticker for t in due] == tickers[:3]
+    due = ss.due_list(db, date(1900, 1, 1), kinds=["ownership"])
+    assert [t.ticker for t in due] == tickers
 
 
 def test_a_share_issuance_event_triggers_both_snapshot_and_valuation(db):

@@ -28,7 +28,6 @@ MAX_TRIGGER = 300                                  # trần nhánh trigger/lư�
 COLD_START = dt.date(1900, 1, 1)                   # mốc khởi tạo của load_watermark()
 
 CADENCE_DAYS = {"snapshot": 90, "valuation": 30, "ownership": 30, "dividend": 30}
-QUOTA = {"snapshot": 24, "valuation": 70, "ownership": 70, "dividend": 70}
 # Một loại sự kiện có thể bắn NHIỀU kind: `outstandingShare` nằm trong tập trắng của CẢ
 # `snapshot` lẫn `valuation`, và ShareIssuance/StockDividend là hai loại duy nhất làm nó đổi
 # (review #7) — CashDividend không đổi số cổ phiếu nên chỉ bắn `dividend`. StockDividend
@@ -76,18 +75,17 @@ class Due:
 
 
 def due_list(conn, watermark: dt.date, kinds=None, codes=None,
-             quota=None, cadence=None, max_trigger=None) -> list[Target]:
-    return plan_due(conn, watermark, kinds, codes, quota, cadence, max_trigger).targets
+             cadence=None, max_trigger=None) -> list[Target]:
+    return plan_due(conn, watermark, kinds, codes, cadence, max_trigger).targets
 
 
 def plan_due(conn, watermark: dt.date, kinds=None, codes=None,
-             quota=None, cadence=None, max_trigger=None) -> Due:
+             cadence=None, max_trigger=None) -> Due:
     kinds = list(kinds or KINDS)
-    quota = quota or QUOTA
     cadence = cadence or CADENCE_DAYS
     max_trigger = max_trigger or MAX_TRIGGER
 
-    if codes:                                   # lượt ép: mọi kind, bỏ qua nhịp và quota
+    if codes:                                   # lượt ép: mọi kind, bỏ qua nhịp
         rows = conn.execute(sa.text(
             _UNIVERSE + "SELECT * FROM uni WHERE ticker = ANY(:codes) ORDER BY ticker"),
             {"codes": list(codes)}).all()
@@ -101,8 +99,9 @@ def plan_due(conn, watermark: dt.date, kinds=None, codes=None,
     if event_types and watermark == COLD_START:
         # Cold start: chưa có dòng data_domain_state ⇒ mốc là 1900-01-01 ⇒ điều kiện
         # `public_date > watermark` đúng cho MỌI sự kiện từng có — gần trọn vũ trụ × nhiều
-        # kind, hàng nghìn lời gọi. Quét sàn (nhánh B) đã tự phủ trọn sàn trong 30/90 ngày,
-        # không cần bắn trigger cho toàn bộ lịch sử ở lượt đầu (review, phát hiện #2).
+        # kind, hàng nghìn lời gọi. Quét sàn (nhánh B) phủ trọn sàn ngay ở lượt tới hạn (lát
+        # 13 bỏ quota — chủ dự án 2026-09-09), không cần bắn trigger cho toàn bộ lịch sử ở
+        # lượt đầu (review, phát hiện #2).
         log.info("bỏ qua nhánh trigger: mốc nước còn ở mốc khởi tạo %s (cold start) —"
                  " quét sàn sẽ tự phủ trong 30/90 ngày", COLD_START.isoformat())
     elif event_types:
@@ -150,8 +149,7 @@ def plan_due(conn, watermark: dt.date, kinds=None, codes=None,
             WHERE c.checked_at IS NULL
                OR c.checked_at < now() - make_interval(days => :cadence)
             ORDER BY c.checked_at NULLS FIRST, u.issuer_id
-            LIMIT :quota
-            """), {"kind": kind, "cadence": cadence[kind], "quota": quota[kind]}).all()
+            """), {"kind": kind, "cadence": cadence[kind]}).all()
         for r in rows:
             if (r.issuer_id, kind) not in seen:      # trigger đã lấy rồi thì thôi
                 seen.add((r.issuer_id, kind))

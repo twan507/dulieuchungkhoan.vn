@@ -79,6 +79,16 @@ def _cleanup(engine):
                   {"d": ss.DOMAIN, "s": ss.SOURCE})
 
 
+def _quiet_floor(engine):
+    """Lát 13 bỏ QUOTA: dập nền quét sàn bằng cách coi mọi issuer đang có là vừa kiểm xong (khuôn e29 `_quiet_universe`, ở đây commit thật)."""
+    with engine.begin() as c:
+        for kind in ss.CADENCE_DAYS:
+            c.execute(sa.text(
+                "INSERT INTO ops.snapshot_check (issuer_id, kind, checked_at, keep_hash, found_by)"
+                " SELECT i.issuer_id, :k, clock_timestamp(), 'nen', 'floor' FROM market.issuer i"
+                " ON CONFLICT (issuer_id, kind) DO UPDATE SET checked_at = clock_timestamp()"), {"k": kind})
+
+
 def _seed(engine, organ=ORGAN, ticker=TICKER):
     with engine.begin() as c:
         iid = c.execute(sa.text("INSERT INTO market.issuer (name, com_type_code)"
@@ -230,7 +240,7 @@ def test_recrawl_passes_the_time_budget_to_price_job(snapshot_db, monkeypatch):
     `test_the_watermark_written_reflects_the_due_list_snapshot_not_a_later_insert` (không zero
     thì nhánh quét sàn có thể kéo issuer thật còn sót của file test khác vào lượt).
     """
-    monkeypatch.setattr(ss, "QUOTA", {k: 0 for k in ss.QUOTA})
+    _quiet_floor(snapshot_db)
     price_calls = []
     monkeypatch.setattr("etl.price_job.run", lambda **kw: (price_calls.append(kw), 0)[1])
     iid = _seed(snapshot_db)
@@ -305,7 +315,7 @@ def test_the_watermark_written_reflects_the_due_list_snapshot_not_a_later_insert
     fix #1). `expected_wm` tự đo NGAY TRƯỚC khi chạy job thay vì hard-code, để test không phụ
     thuộc việc `market.corporate_event` có sạch tuyệt đối hay không (§1.7 — không giả định
     trạng thái người khác để lại)."""
-    monkeypatch.setattr(ss, "QUOTA", {k: 0 for k in ss.QUOTA})
+    _quiet_floor(snapshot_db)
     iid = _seed(snapshot_db)
     with snapshot_db.begin() as c:
         c.execute(sa.text(
@@ -362,7 +372,7 @@ def test_stats_survive_when_upsert_domain_state_fails_after_close_run(snapshot_d
     `stats` dùng `coalesce` nên nếu bước sau ném lỗi, `etl_run` vẫn GIỮ được stats đã ghi, chỉ
     đổi `status` sang `failed`. Trước fix, `snapshot_job` gọi `upsert_domain_state` TRƯỚC
     `close_run` — lỗi ở đó làm `stats = NULL`, mất sạch bằng chứng của lượt đã ghi xong."""
-    monkeypatch.setattr(ss, "QUOTA", {k: 0 for k in ss.QUOTA})
+    _quiet_floor(snapshot_db)
     monkeypatch.setattr(ss, "upsert_domain_state",
                         lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
     iid = _seed(snapshot_db)
@@ -380,7 +390,10 @@ def test_stats_survive_when_upsert_domain_state_fails_after_close_run(snapshot_d
                                 " ORDER BY run_id DESC LIMIT 1"), {"j": ss.JOB}).one()
     assert row.status == "failed"
     assert "boom" in row.error
-    assert row.stats["rows_written"] == 1    # bằng chứng KHÔNG mất, dù status = failed
+    # Lát 13 bỏ quota: issuer mới seed chưa có sổ kiểm ở cả 4 kind, nên lượt ĐẦY ĐỦ (không
+    # --codes) quét sàn phủ luôn cả 4, không chỉ kind bị trigger bởi Earning ở trên — điểm
+    # test cần là stats KHÔNG mất khi status = failed, không phải con số 1.
+    assert row.stats["rows_written"] == 4    # bằng chứng KHÔNG mất, dù status = failed
 
 
 def test_a_partial_outage_refuses_the_run_and_leaves_real_evidence(snapshot_db):
