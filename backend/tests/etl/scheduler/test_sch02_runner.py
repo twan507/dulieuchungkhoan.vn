@@ -33,14 +33,15 @@ class FakeClock:
 
 
 class FakePopen:
-    def __init__(self, exits_after: int | None = 0):   # số lần poll trả None trước khi thoát; None = sống mãi
+    def __init__(self, exits_after: int | None = 0, rc: int = 0):   # số lần poll trả None trước khi thoát; None = sống mãi
         self.left, self.returncode, self.terminated, self.killed = exits_after, None, 0, 0
+        self.rc = rc
 
     def poll(self):
         if self.left is None:
             return None
         if self.left == 0:
-            self.returncode = 0
+            self.returncode = self.rc
         else:
             self.left -= 1
         return self.returncode
@@ -85,6 +86,44 @@ def test_poll_reports_exit_code_and_duration(tmp_path, capsys):
     assert fin == [Finished("market.price_daily", 0, 40, "mốc 15:40")]
     assert "market.price_daily rc=0 40s (mốc 15:40)" in capsys.readouterr().out
     assert r.alive("market.price_daily") is False
+
+
+def test_non_zero_exit_blocks_respawn_for_ten_minutes_then_allows(tmp_path):
+    # R24: news.classify chết mã 2 trước khi mở ops.etl_run trong lượt thật 2026-09-09 17:35 —
+    # planner thuần-sổ không thấy dòng nào nên ra lệnh lại mỗi nhịp, runner phải tự chặn.
+    log = []
+    r = Runner(tmp_path, spawn_fn=lambda cmd, **kw: log.append(cmd) or FakePopen(0, rc=2), clock=lambda: vn(15, 40, 0))
+    assert r.spawn(PRICE, vn(15, 40, 0), "mốc 15:40") is not None
+    fin = r.poll(vn(15, 40, 20))
+    assert fin == [Finished("market.price_daily", 2, 20, "mốc 15:40")]
+    assert r.spawn(PRICE, vn(15, 45, 0), "mốc 15:40 lại") is None      # 5 phút sau: còn nguội
+    assert len(log) == 1
+    child = r.spawn(PRICE, vn(15, 50, 20), "mốc 15:40 lại")             # đúng 10 phút sau lúc thoát
+    assert child is not None
+    assert len(log) == 2
+
+
+def test_clean_exit_does_not_block_respawn(tmp_path):
+    log = []
+    r = Runner(tmp_path, spawn_fn=lambda cmd, **kw: log.append(cmd) or FakePopen(0, rc=0), clock=lambda: vn(15, 40, 0))
+    assert r.spawn(PRICE, vn(15, 40, 0), "mốc 15:40") is not None
+    fin = r.poll(vn(15, 40, 20))
+    assert fin == [Finished("market.price_daily", 0, 20, "mốc 15:40")]
+    child = r.spawn(PRICE, vn(15, 40, 21), "mốc 15:40 lại")             # 1 giây sau: thoát sạch, không nguội
+    assert child is not None
+    assert len(log) == 2
+
+
+def test_daemon_is_not_subject_to_the_failure_cooldown(tmp_path):
+    fc = FakeClock(vn(15, 40, 0))
+    log = []
+    r = Runner(tmp_path, spawn_fn=lambda cmd, **kw: log.append(cmd) or FakePopen(0, rc=2), clock=fc.now)
+    assert r.ensure_daemon(DAEMON, fc.now()) is True
+    r.poll(fc.now())                                        # chết ngay (0s), rc=2
+    fc.t += timedelta(seconds=29)
+    assert r.ensure_daemon(DAEMON, fc.now()) is False        # backoff daemon riêng: 30s chưa đủ
+    fc.t += timedelta(seconds=1)
+    assert r.ensure_daemon(DAEMON, fc.now()) is True         # đúng 30s là đủ — không chờ 10 phút như task thường
 
 
 def test_intraday_spawns_on_interval_only_when_not_alive(tmp_path):

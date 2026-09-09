@@ -9,6 +9,11 @@ Trạng thái trong RAM (`_last_spawn`, backoff daemon) là **vô hại** theo s
 
 Chống chạy chồng lớp ngoài (§5.9): một `spec.name` chỉ có một con sống — bản trọn ngày và bản
 `--intraday` mang cùng tên nên tự không giẫm nhau.
+
+`_last_failed` (R24, 2026-09-09): con thoát mã khác 0 trước cả khi kịp mở `ops.etl_run` (auth hỏng,
+DNS, schema drift — `news.classify` đo được ngoài đời) khiến planner thuần-sổ cứ ra lệnh lại mỗi
+nhịp; guard này chặn respawn cùng tên 10 phút sau lần thoát lỗi. Cùng loại RAM-state như
+`_last_spawn`: mất khi restart chỉ tốn nhiều nhất một lượt thử sớm, vô hại — không phải nguồn sự thật.
 """
 from __future__ import annotations
 
@@ -25,7 +30,13 @@ from pathlib import Path
 from core.clock import now_vn, today_vn
 from core.env import REPO_ROOT
 from etl.scheduler.planner import Task
-from etl.scheduler.schedule import LOG_KEEP_DAYS, MAX_CONCURRENT_CHILDREN, SHUTDOWN_GRACE_S, JobSpec
+from etl.scheduler.schedule import (
+    LOG_KEEP_DAYS,
+    MAX_CONCURRENT_CHILDREN,
+    RETRY_AFTER_MIN,
+    SHUTDOWN_GRACE_S,
+    JobSpec,
+)
 
 BACKEND_DIR = REPO_ROOT / "backend"     # `python -m etl` chỉ import được khi cwd là backend/
 
@@ -90,6 +101,7 @@ class Runner:
         # vừa là "còn sống" vừa là "chưa báo cáo", nên `poll` không bao giờ in hai lần một cái chết.
         self._children: dict[str, Child] = {}
         self._last_spawn: dict[str, datetime] = {}
+        self._last_failed: dict[str, tuple[int, datetime]] = {}
         self._daemon_last_exit: datetime | None = None
         self._daemon_wait_s = 0             # giãn cách đang áp cho lần chết vừa rồi
         self._daemon_backoff_s = DAEMON_BACKOFF_START_S   # giãn cách cho lần chết TIẾP THEO
@@ -115,12 +127,21 @@ class Runner:
     def spawn(self, spec: JobSpec, now: datetime, reason: str) -> Child | None:
         """Chạy `python -m etl <cmd>`, stdout+stderr nối vào log của ngày. None khi từ chối.
 
-        Hai lý do từ chối, mỗi lý do một dòng stdout (§5.9): con cùng tên còn sống, hoặc đã đủ trần.
-        Daemon không tính trần và luôn được đảm bảo trước (§5.10).
+        Ba lý do từ chối, mỗi lý do một dòng stdout (§5.9): con cùng tên còn sống, vừa thoát mã khác
+        0 chưa đủ 10 phút nguội (R24), hoặc đã đủ trần. Daemon không tính trần, không chịu nguội —
+        được đảm bảo trước (§5.10) và có backoff riêng của nó.
         """
         if self.alive(spec.name):
             print(f"[{now:%Y-%m-%d %H:%M:%S}] {spec.name} đang chạy, bỏ qua lượt ({reason})", flush=True)
             return None
+        if spec.kind != "daemon":
+            failed = self._last_failed.get(spec.name)
+            if failed is not None:
+                rc, failed_at = failed
+                if now < failed_at + timedelta(minutes=RETRY_AFTER_MIN):
+                    print(f"[{now:%Y-%m-%d %H:%M:%S}] {spec.name} vừa thoát mã {rc} lúc {failed_at:%H:%M}, "
+                          f"chờ {RETRY_AFTER_MIN} phút ({reason})", flush=True)
+                    return None
         if spec.kind != "daemon" and len(self._live_non_daemon_children()) >= self.max_children:
             print(f"[{now:%Y-%m-%d %H:%M:%S}] {spec.name} hoãn: đủ {self.max_children} tiến trình con ({reason})", flush=True)
             return None
@@ -191,6 +212,10 @@ class Runner:
             child.log_fh.close()
             if child.spec.kind == "daemon":
                 self._daemon_died(now, seconds)
+            elif rc != 0:
+                self._last_failed[name] = (rc, now)
+            else:
+                self._last_failed.pop(name, None)
             print(f"[{now:%Y-%m-%d %H:%M:%S}] {name} rc={rc} {seconds}s ({child.reason})", flush=True)
             done.append(Finished(name, rc, seconds, child.reason))
         return done
