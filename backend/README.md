@@ -143,9 +143,16 @@ tay.** `snapshot_job._recrawl` kéo lại giá cho những mã có ngày không 
 gọi `price --backfill --codes … --max-minutes 20` **ngay trong tiến trình snapshot** — lượt con đó tự mở sổ dưới tên
 `market.price_backfill` với `stats.subset = true`, và `stats.recrawl` của lượt snapshot ghi lại đúng những mã ấy
 *(ví dụ thật: run 48 `market.snapshot` → run 49 lúc 2026-09-09 17:30, 4 mã DIG/HUB/ITC/VPI)*. Planner loại mọi dòng
-`subset` nên nó không bao giờ bị tính là "mốc backfill tuần đã chạy". Khoá `market.price_backfill` đang bận (backfill
-thứ 7, hay một lượt chạy tay) thì lượt con đó **không** còn giết lượt snapshot nữa: `omo_store.LockBusy` được bắt tại
-chỗ, lượt snapshot vẫn đóng `success` và `stats.recrawl` mang `{"lock_busy": true}`.
+`subset` nên nó không bao giờ bị tính là lượt backfill của mốc. Khoá `market.price_backfill` đang bận (daemon
+backfill đang chạy vòng đầu, hay một lượt chạy tay) thì lượt con đó **không** còn giết lượt snapshot nữa:
+`omo_store.LockBusy` được bắt tại chỗ, lượt snapshot vẫn đóng `success` và `stats.recrawl` mang `{"lock_busy": true}`.
+
+⚠️ **Suốt vòng backfill đầu, re-crawl quyền của snapshot bị bỏ qua MỖI NGÀY** — daemon `price --backfill` giữ khoá
+`market.price_backfill` từ đầu tới cuối vòng (~20 giờ gọi, thực tế dài hơn vì thang nghỉ), nên mọi lượt con của
+`_recrawl` đều `lock_busy`. Chấp nhận cho đúng một vòng này *(phán quyết R33, 2026-09-10)*: giá điều chỉnh của mã có
+ngày không hưởng quyền trong khoảng đó sẽ cũ cho tới khi được kéo lại. **Khi vòng xong (`pass_complete`), người vận
+hành chạy TAY một lượt** `python -m etl price --backfill --codes <mã có ngày không hưởng quyền trong khoảng chạy
+vòng>` — danh sách mã lấy từ `stats.recrawl` của các lượt `market.snapshot` mang `lock_busy` trong khoảng đó.
 
 ### Chạy thử native 10 phút — 2026-09-09 17:35:24 → 17:45:45
 
@@ -291,7 +298,7 @@ Hồ sơ và ba quyết định thiết kế (tuần tự thay vì 8 luồng · 
 | Chế độ | Sổ `ops.etl_run.job` | Giao dịch | Guard |
 |---|---|---|---|
 | hằng ngày | `market.price_daily` | một giao dịch cho cả lượt, guard **trước** commit | (0) không mã nào có dữ liệu · (i) mã sai + mã hỏng > 2 % · (ii) số mã có dữ liệu sụt > 2 % so lượt success toàn tập gần nhất · (iii) ngày mới nhất ở tương lai · (iv) ngày mới nhất lùi so mốc |
-| `--backfill` | `market.price_backfill` | mỗi mã một giao dịch; `stats.cursor` ghi sau từng mã (mã hỏng/sai **vẫn đẩy con trỏ đi** — làm lại ở vòng sau, dấu vết ở `failed_tickers`/`invalid_tickers`) | không guard tổng — cầu chì **10 mã liên tiếp** hỏng ⇒ **nghỉ rồi thử lại đúng mã đó**, nghỉ dài dần **10 → 20 → 40 → 60 → 60 …** phút theo số lần nghỉ LIÊN TIẾP (`stats.source_down_pauses`, `stats.source_down_pause_s`); một mã tải được là thang về lại 10 phút. Sau mỗi lần nghỉ chỉ thăm dò **một mã** (`Fetcher.resume`) nên mỗi quãng nghỉ tốn **≤ 4 lời gọi** — nguồn đang xấu vẫn được để yên. **Không bao giờ bỏ dở vòng** *(sửa 2026-09-10: đo 09/09–10/09 thấy `getPriceData` trả HTTP 200 kèm `status: Failed, "Timeout expired…"` cho ~4–9 mã MỖI GIỜ ở mọi giờ, dù một luồng hay ba — nghẽn là nền của nguồn; bản bỏ cuộc sau 3 lần nghỉ chết 02:02 ngày 10/09 sau 194 mã, con trỏ `CK8`, không ai bật lại)*; vẫn đếm `dup_dates` và `raw_close_mismatch` từng mã |
+| `--backfill` | `market.price_backfill` | mỗi mã một giao dịch; `stats.cursor` ghi sau từng mã (mã hỏng/sai **vẫn đẩy con trỏ đi** — làm lại ở vòng sau, dấu vết ở `failed_tickers`/`invalid_tickers`) | không guard tổng — cầu chì **10 mã liên tiếp** hỏng ⇒ **nghỉ rồi thử lại đúng mã đó**, nghỉ dài dần **10 → 20 → 40 → 60 → 60 …** phút theo số lần nghỉ LIÊN TIẾP (`stats.source_down_pauses`, `stats.source_down_pause_s`); một mã tải được là thang về lại 10 phút. Sau mỗi lần nghỉ chỉ thăm dò **một mã** (`Fetcher.resume`) nên mỗi quãng nghỉ tốn **≤ 4 lời gọi** — nguồn đang xấu vẫn được để yên. **Không bao giờ bỏ dở vòng** *(sửa 2026-09-10: đo 09/09–10/09 thấy `getPriceData` trả HTTP 200 kèm `status: Failed, "Timeout expired…"` cho ~4–9 mã MỖI GIỜ ở mọi giờ, dù một luồng hay ba — nghẽn là nền của nguồn; bản bỏ cuộc sau 3 lần nghỉ chết 02:02 ngày 10/09 sau 194 mã, con trỏ `CK8`, không ai bật lại)*. Nghỉ tới **6 lần liên tiếp tại cùng một vị trí con trỏ** (~4,5 giờ) mà mã vẫn không tải nổi ⇒ **bỏ qua mã đó**, ghi vào `failed_tickers`, con trỏ đi tiếp và làm lại ở vòng sau — một mã hỏng vĩnh viễn không được treo cả vòng *(R30)*. Mỗi quãng nghỉ ngủ thành **lát 30 giây** để Ctrl+C/CTRL_BREAK đóng được sổ trong ≤ 30 giây *(R32: trên Windows `time.sleep` không bị CTRL_BREAK đánh thức, mà scheduler chỉ chờ con 60 giây)*; vẫn đếm `dup_dates` và `raw_close_mismatch` từng mã |
 
 Bốn bộ đếm "không có dữ liệu" của lượt hằng ngày, đều nêu tên ≤ 20 mã: `invalid` (nguồn trả `Code not valid`) ·
 `failed` (hỏng sau 3 retry, kể cả timeout/đứt kết nối) · `empty` (trả `Success` nhưng 0 phiên) · `no_organ_code_count`
@@ -311,7 +318,10 @@ task Windows sang scheduler ở lát 13)*: dòng `market.price_backfill` kiểu 
 sống 24/7**, và **tắt vĩnh viễn** khi đã có một lượt `success` mang `stats.pass_complete = true` *(chủ dự án chốt
 2026-09-10 sáng: nguồn nghẽn đều ở mọi giờ nên không có "giờ đẹp" để hẹn — cứ chạy, và nghỉ dài dần khi nguồn xấu)*.
 Không đặt hạn giờ: dòng này không mang `--stop-before-open` cũng không mang `--max-minutes`. Nguồn nghẽn ⇒ nghỉ theo
-thang 10/20/40/60 phút rồi đi tiếp, **không bỏ dở vòng**; crash thật ⇒ runner bật lại ở nhịp sau và con trỏ nối tiếp.
+thang 10/20/40/60 phút rồi đi tiếp, **không bỏ dở vòng** (một mã nghỉ hết 6 lần vẫn không tải được thì bỏ qua mã đó,
+không treo vòng); crash thật ⇒ runner bật lại ở nhịp sau và con trỏ nối tiếp. Suốt vòng này daemon **giữ khoá**
+`market.price_backfill`, nên re-crawl quyền của snapshot bị bỏ qua mỗi ngày với `stats.recrawl.lock_busy` — xong vòng
+thì chạy tay một lượt `price --backfill --codes …` cho những mã đó *(xem ô ⚠️ ở mục "Mã thoát", phán quyết R33)*.
 Chạy tay vẫn được (`uv run python -m etl price --backfill --stop-before-open`): cờ `--stop-before-open` còn nguyên
 cho lượt tay, tính hạn **08:45 của ngày giao dịch kế tiếp** ngay lúc bắt đầu nên tối thứ 3 dừng trước phiên sáng thứ 4.
 Máy ngủ 02:00 giữa chừng: job sống qua và chạy tiếp; con trỏ nối các lượt. ⚠️ Hết vòng (`pass_complete`) thì scheduler **thôi hẳn** dòng
