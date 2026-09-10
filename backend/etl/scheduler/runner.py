@@ -102,15 +102,20 @@ class Runner:
         self._children: dict[str, Child] = {}
         self._last_spawn: dict[str, datetime] = {}
         self._last_failed: dict[str, tuple[int, datetime]] = {}
-        self._daemon_last_exit: datetime | None = None
-        self._daemon_wait_s = 0             # giãn cách đang áp cho lần chết vừa rồi
-        self._daemon_backoff_s = DAEMON_BACKOFF_START_S   # giãn cách cho lần chết TIẾP THEO
+        # Ba ô backoff daemon theo TÊN JOB (I2, review 2026-09-10): bảng lịch có hai daemon từ lát 13
+        # (`news --loop`, `price --backfill`); ô vô hướng dùng chung bắt daemon này chờ theo giãn cách
+        # của daemon kia và in nhầm số trong dòng lý do.
+        self._daemon_last_exit: dict[str, datetime] = {}
+        self._daemon_wait_s: dict[str, int] = {}          # giãn cách đang áp cho lần chết vừa rồi
+        self._daemon_backoff_s: dict[str, int] = {}       # giãn cách cho lần chết TIẾP THEO
         # R26: planner re-issue cùng job mỗi nhịp trong lúc con còn sống ⇒ không in lại dòng từ chối
         # cho mỗi lần gọi, chỉ một dòng cho mỗi CON đang sống (§5.9 "log một dòng").
         self._dup_logged: set[str] = set()
         # M1: cùng lý do, cho dòng hạ nhiệt — giá trị là `failed_at` của cửa sổ đã in, nên lần thoát
         # lỗi SAU (failed_at mới) lại được in một dòng, còn mọi nhịp trong cùng cửa sổ thì im.
         self._cooldown_logged: dict[str, datetime] = {}
+        # M3: daemon đã xong vòng — một dòng cho lần bỏ qua đầu tiên, xem `note_once_done`.
+        self._once_done_logged: set[str] = set()
 
     # ---- trạng thái ------------------------------------------------------
     def alive(self, name: str) -> bool:
@@ -194,21 +199,32 @@ class Runner:
         """`news --loop` phải luôn sống (§5.11). True nếu vừa spawn lại ở nhịp này."""
         if self.alive(spec.name):
             return False
-        if self._daemon_last_exit is not None:
-            waited = (now - self._daemon_last_exit).total_seconds()
-            if waited < self._daemon_wait_s:
-                return False
-        reason = "daemon khởi động" if self._daemon_last_exit is None else f"daemon chạy lại sau {self._daemon_wait_s}s"
+        last_exit = self._daemon_last_exit.get(spec.name)
+        wait_s = self._daemon_wait_s.get(spec.name, 0)
+        if last_exit is not None and (now - last_exit).total_seconds() < wait_s:
+            return False
+        reason = "daemon khởi động" if last_exit is None else f"daemon chạy lại sau {wait_s}s"
         return self.spawn(spec, now, reason) is not None
 
-    def _daemon_died(self, now: datetime, lifetime_s: int) -> None:
+    def note_once_done(self, name: str, now: datetime) -> bool:
+        """Daemon đã trọn một vòng (`stats.pass_complete`) nên nhịp này bỏ qua nó — in ĐÚNG một dòng
+        cho lần bỏ qua đầu tiên, không phải một dòng mỗi 20 giây (khuôn `_dup_logged`). True nếu vừa
+        in. Trạng thái RAM: khởi động lại thì in lại một dòng, vô hại (M3)."""
+        if name in self._once_done_logged:
+            return False
+        self._once_done_logged.add(name)
+        print(f"[{now:%Y-%m-%d %H:%M:%S}] {name}: đã xong vòng (pass_complete), không chạy lại", flush=True)
+        return True
+
+    def _daemon_died(self, name: str, now: datetime, lifetime_s: int) -> None:
         """Giãn cách 30 s nhân đôi tới trần 300 s khi daemon chết lại nhanh; sống quá 5 phút thì
-        coi như lành, lần chết sau lại bắt đầu từ 30 s."""
+        coi như lành, lần chết sau lại bắt đầu từ 30 s. Đếm riêng cho từng tên daemon."""
+        backoff = self._daemon_backoff_s.get(name, DAEMON_BACKOFF_START_S)
         if lifetime_s > DAEMON_HEALTHY_S:
-            self._daemon_backoff_s = DAEMON_BACKOFF_START_S
-        self._daemon_last_exit = now
-        self._daemon_wait_s = self._daemon_backoff_s
-        self._daemon_backoff_s = min(self._daemon_backoff_s * 2, DAEMON_BACKOFF_MAX_S)
+            backoff = DAEMON_BACKOFF_START_S
+        self._daemon_last_exit[name] = now
+        self._daemon_wait_s[name] = backoff
+        self._daemon_backoff_s[name] = min(backoff * 2, DAEMON_BACKOFF_MAX_S)
 
     # ---- thu hoạch -------------------------------------------------------
     def poll(self, now: datetime) -> list[Finished]:
@@ -224,7 +240,7 @@ class Runner:
             child.log_fh.close()
             self._dup_logged.discard(name)
             if child.spec.kind == "daemon":
-                self._daemon_died(now, seconds)
+                self._daemon_died(name, now, seconds)
             elif rc != 0:
                 self._last_failed[name] = (rc, now)
             else:

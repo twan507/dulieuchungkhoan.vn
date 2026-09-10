@@ -141,3 +141,26 @@ def test_run_once_does_not_respawn_a_daemon_that_already_finished_its_pass(clean
     runner = Runner(tmp_path, spawn_fn=lambda cmd, **kw: spawned.append(cmd[3]) or FakePopen(), clock=lambda: vn(9, 8, 16))
     out = loop.run_once(clean, runner, vn(9, 8, 16), schedule=schedule)
     assert out["spawned"] == ["zz.loop.d"] and spawned == ["news"]
+
+
+def test_run_once_says_once_that_a_daemon_finished_its_pass_then_stays_quiet(clean, tmp_path, capsys):
+    """M3 (review 2026-09-10): sau `pass_complete` mỗi nhịp 20 s đều bỏ qua daemon này trong im lặng
+    — không dấu vết nào nói vì sao nó không chạy nữa. In ĐÚNG một dòng cho lần bỏ qua đầu tiên
+    (khuôn `_dup_logged`/`_cooldown_logged`), không phải một dòng mỗi nhịp."""
+    _insert(clean, "zz.loop.bf", vn(9, 0, 5), stats={"pass_complete": True})
+    schedule = [JobSpec("zz.loop.bf", ("price", "--backfill"), "daemon", once_until_flag="pass_complete")]
+    runner = Runner(tmp_path, spawn_fn=lambda cmd, **kw: FakePopen(), clock=lambda: vn(9, 8, 16))
+    assert loop.run_once(clean, runner, vn(9, 8, 16), schedule=schedule)["spawned"] == []
+    assert loop.run_once(clean, runner, vn(9, 8, 17), schedule=schedule)["spawned"] == []
+    assert capsys.readouterr().out.count("zz.loop.bf: đã xong vòng (pass_complete), không chạy lại") == 1
+
+
+def test_the_morning_summary_leaves_out_daemons_that_finished_their_pass(clean, tmp_path):
+    """M3: bản tóm tắt 06:00 in "price --backfill KHÔNG sống" mỗi sáng, mãi mãi, sau khi vòng đã
+    xong — báo động giả. Daemon đã xong vòng không còn là daemon phải sống."""
+    schedule = [JobSpec("zz.loop.bf", ("price", "--backfill"), "daemon", once_until_flag="pass_complete"),
+                JobSpec("zz.loop.d", ("news", "--loop"), "daemon")]
+    runner = Runner(tmp_path, spawn_fn=lambda cmd, **kw: FakePopen(), clock=lambda: vn(9, 6, 0))
+    assert runner.spawn(schedule[1], vn(9, 6, 0), "daemon khởi động") is not None
+    lines = loop._daemon_alive_line(runner, schedule, frozenset({"zz.loop.bf"}))
+    assert lines == ["news --loop đang sống từ 06:00"]

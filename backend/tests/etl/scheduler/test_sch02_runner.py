@@ -237,6 +237,34 @@ def test_daemon_backoff_resets_to_30s_after_a_healthy_run(tmp_path):
     assert r.ensure_daemon(DAEMON, fc.now()) is True        # đúng 30s là đủ; 60s (chưa reset) sẽ False
 
 
+def test_daemon_backoff_is_kept_per_daemon_not_in_one_shared_slot(tmp_path):
+    """I2 (review 2026-09-10): từ lát 13 bảng lịch có HAI daemon (`news --loop` và `price --backfill`).
+    Backoff daemon nằm ở ba ô VÔ HƯỚNG dùng chung, nên cái chết của daemon này bắt daemon kia chờ
+    theo giãn cách của nó, và dòng lý do in nhầm số. Mỗi tên job phải có ô riêng."""
+    fc = FakeClock(vn(9, 12, 0))
+    r, _ = _runner(tmp_path, fc.now, exits_after=None)
+    other = JobSpec("market.price_backfill", ("price", "--backfill"), "daemon")
+
+    assert r.ensure_daemon(DAEMON, fc.now()) is True             # A chết lần 1 ⇒ chờ 30 s
+    r._children["news.collect"].proc.left = 0
+    r.poll(fc.now())
+    fc.t += timedelta(seconds=30)
+    assert r.ensure_daemon(DAEMON, fc.now()) is True             # A chết lần 2 ⇒ chờ 60 s
+    r._children["news.collect"].proc.left = 0
+    r.poll(fc.now())
+
+    assert r.ensure_daemon(other, fc.now()) is True              # B mới khởi động, không dính chờ của A
+    r._children["market.price_backfill"].proc.left = 0
+    r.poll(fc.now())                                             # B chết lần 1 ⇒ chờ 30 s của RIÊNG B
+    fc.t += timedelta(seconds=30)
+    assert r.ensure_daemon(other, fc.now()) is True
+    assert r._children["market.price_backfill"].reason == "daemon chạy lại sau 30s"
+    assert r.ensure_daemon(DAEMON, fc.now()) is False            # A vẫn còn 30 s nữa trong 60 s của nó
+    fc.t += timedelta(seconds=30)
+    assert r.ensure_daemon(DAEMON, fc.now()) is True
+    assert r._children["news.collect"].reason == "daemon chạy lại sau 60s"
+
+
 def test_spawn_failure_closes_log_handle_and_returns_none(tmp_path):
     # F3 (review): spawn_fn ném lỗi (vd. thiếu file thực thi) không được văng ra ngoài caller, và
     # handle log đã mở phải được đóng lại — không rò.

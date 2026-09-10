@@ -99,8 +99,9 @@ def read_today(engine, now_vn: datetime, job_names: list[str]) -> list[LedgerRow
 
 
 def once_done(engine) -> frozenset[str]:
-    """Job `weekly_once` đã trọn một lượt (luật 6) — hỏi MỌI thời điểm, không chỉ hôm nay: cờ
-    `pass_complete` là "xong hẳn", đọc theo ngày thì thứ 7 sau lại chạy lại từ đầu."""
+    """Job mang `once_until_flag` (`weekly_once`, hoặc `daemon` như `market.price_backfill`) đã trọn
+    một lượt (luật 6) — hỏi MỌI thời điểm, không chỉ hôm nay: cờ `pass_complete` là "xong hẳn", đọc
+    theo ngày thì hôm sau lại chạy lại từ đầu."""
     with engine.connect() as conn:
         return frozenset(conn.execute(_ONCE_DONE_SQL).scalars().all())
 
@@ -125,7 +126,11 @@ def run_once(engine, runner: Runner, now_vn: datetime, *, schedule: list[JobSpec
     # nhịp ngay sau đó phải thấy nó trong danh sách "đã xong", không thì `ensure_daemon` bật lại.
     done = once_done(engine)
     for spec in schedule:
-        if spec.kind == "daemon" and spec.name not in done and runner.ensure_daemon(spec, now_vn):
+        if spec.kind != "daemon":
+            continue
+        if spec.name in done:
+            runner.note_once_done(spec.name, now_vn)      # M3: một dòng cho lần bỏ qua đầu tiên
+        elif runner.ensure_daemon(spec, now_vn):
             spawned.append(spec.name)
     spawned += runner.tick_intraday([s for s in schedule if s.kind == "intraday"], now_vn)
     ledger = read_today(engine, now_vn, job_names(schedule))
@@ -135,11 +140,16 @@ def run_once(engine, runner: Runner, now_vn: datetime, *, schedule: list[JobSpec
     return {"spawned": spawned, "finished": finished}
 
 
-def _daemon_alive_line(runner: Runner, schedule: list[JobSpec]) -> list[str]:
-    """Dòng "news --loop đang sống từ HH:MM" của bản tóm tắt sáng (spec §5.10)."""
+def _daemon_alive_line(runner: Runner, schedule: list[JobSpec],
+                       done: frozenset[str] = frozenset()) -> list[str]:
+    """Dòng "news --loop đang sống từ HH:MM" của bản tóm tắt sáng (spec §5.10).
+
+    Daemon đã trọn một vòng (`done`, cờ `pass_complete`) KHÔNG được kể ở đây: nó thôi hẳn theo thiết
+    kế, in "KHÔNG sống" mỗi sáng là báo động giả vĩnh viễn (M3, review 2026-09-10).
+    """
     lines = []
     for spec in schedule:
-        if spec.kind != "daemon":
+        if spec.kind != "daemon" or spec.name in done:
             continue
         # `Runner` chưa có accessor công khai cho giờ khởi động của con; đọc bản ghi qua `_children`
         # sau khi `alive()` xác nhận còn sống (một dòng, không đáng mở thêm API ở runner).
@@ -186,7 +196,7 @@ def main(argv: list[str] | None = None) -> int:      # noqa: ARG001 — không n
                 # supervisor: log rồi thử lại ở nhịp sau, không backoff, không đếm.
                 log.exception("scheduler: nhịp lỗi, thử lại sau %ss", TICK_SECONDS)
             if (now.hour, now.minute) >= SUMMARY_AT and today_vn(now) != summary_printed_on:
-                for line in summary_lines(engine, now) + _daemon_alive_line(runner, SCHEDULE):
+                for line in summary_lines(engine, now) + _daemon_alive_line(runner, SCHEDULE, once_done(engine)):
                     print(line, flush=True)
                 summary_printed_on = today_vn(now)
             stop.wait(TICK_SECONDS)

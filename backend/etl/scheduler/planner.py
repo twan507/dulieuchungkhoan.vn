@@ -77,8 +77,9 @@ def due(schedule: list[JobSpec], now_vn: datetime, ledger: list[LedgerRow],
     """Các job tới lượt tại `now_vn`, theo đúng thứ tự bảng lịch.
 
     `ledger` là sổ `ops.etl_run` của NGÀY VN hôm nay (luật 2 — biên ngày do `day_bounds_utc` cắt);
-    `once_done` là tên các `weekly_once` đã có lượt `success` mang `stats.pass_complete = true`,
-    tắt vĩnh viễn (luật 6). `intraday`/`daemon` không bao giờ ra ở đây (luật 3).
+    `once_done` là tên các job mang `once_until_flag` (`weekly_once` ở đây, `daemon` ở `loop.run_once`)
+    đã có lượt `success` mang `stats.pass_complete = true`, tắt vĩnh viễn (luật 6).
+    `intraday`/`daemon` không bao giờ ra ở đây (luật 3).
     """
     tasks: list[Task] = []
     for spec in schedule:
