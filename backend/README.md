@@ -53,7 +53,7 @@ volume `etl_logs` tại `/var/lib/dlck/etl-logs`. **Mã thoát của chính sche
 | `macro.wichart` | `wichart --intraday` | intraday | mỗi **300 s** | cả tuần |
 | `news.classify` | `classify --limit 1000` | daily | **8 mốc**: 07 · 09 · 11 · 13 · 15 · 17 · 19 · 21 giờ | cả tuần |
 | `news.collect` | `news --loop` | daemon | giữ sống liên tục | cả tuần |
-| `market.price_backfill` | `price --backfill --stop-before-open` | weekly_once | thứ 7 00:05 | T7 |
+| `market.price_backfill` | `price --backfill` | daemon | giữ sống 24/7 tới khi `pass_complete` | cả tuần |
 
 Một **tên job** được phép có nhiều dòng (bản trọn ngày và bản `--intraday`): tên là khoá của `ops.etl_run`, còn
 chống chạy chồng do runner lo theo tên. Ba dòng `--intraday` mang `weekdays=ALL_DAYS` — chúng chạy 24/7 theo đồng
@@ -75,8 +75,9 @@ Hằng số cùng file: `MAX_CONCURRENT_CHILDREN = 6` · `RETRY_AFTER_MIN = 10` 
 5. **exit 1 không thử lại; exit 2 thử lại đúng một lần sau 10 phút.** Trong các dòng `failed` kể từ mốc: có dòng
    mang `stats.guard_refused = true` ⇒ thôi (chốt chặn từ chối là *hành vi đúng*, chạy lại chỉ tốn nguồn); không
    có, đúng một dòng, và `now ≥ started_at + 10 phút` ⇒ thử lại; từ hai dòng trở lên ⇒ thôi tới ngày sau.
-6. **`weekly_once` tắt vĩnh viễn** khi có bất kỳ `success` nào mang `stats.pass_complete = true` — backfill giá đi
-   hết một vòng thì không tự mở vòng mới.
+6. **Job mang `once_until_flag` tắt vĩnh viễn** khi có bất kỳ `success` nào mang `stats.pass_complete = true` —
+   backfill giá đi hết một vòng thì không tự mở vòng mới. Luật này áp cho cả `weekly_once` (planner) lẫn `daemon`
+   (`loop.run_once` đọc `once_done` **trước** bước daemon, nếu không nhịp kế tiếp bật lại đúng cái vừa xong).
 
 Sổ đọc mỗi nhịp **loại** các dòng mang `stats.intraday` / `stats.subset` / `stats.dry_run` = `true`: lượt hẹp và
 lượt khô không được tính là "mốc hôm nay đã chạy".
@@ -275,7 +276,8 @@ backfill đầu tiên (517 issuer, 2026-09-03), phải có người nhìn số t
 cd backend
 set -a; . ../.env; set +a; PYTHONIOENCODING=utf-8 uv run python -m etl price                      # hằng ngày: trang 1 (60 phiên) mọi cổ phiếu niêm yết
 set -a; . ../.env; set +a; PYTHONIOENCODING=utf-8 uv run python -m etl price --codes BID,VHM       # chỉ vài mã — chạy thử dưới quyền production, hoặc re-crawl theo sự kiện quyền
-set -a; . ../.env; set +a; PYTHONIOENCODING=utf-8 uv run python -m etl price --backfill --stop-before-open   # lùi trọn lịch sử (~12,5 năm), dừng trước 08:45 ngày giao dịch kế — đây là lệnh của task dlck-price-backfill
+set -a; . ../.env; set +a; PYTHONIOENCODING=utf-8 uv run python -m etl price --backfill                     # lùi trọn lịch sử (~12,5 năm) — đây là lệnh scheduler chạy, dạng daemon 24/7
+set -a; . ../.env; set +a; PYTHONIOENCODING=utf-8 uv run python -m etl price --backfill --stop-before-open   # chỉ khi chạy TAY: dừng trước 08:45 ngày giao dịch kế
 ```
 
 Cần `ETL_DATABASE_URL` (user thuộc role `dlck_etl`). `Code` gửi cho FiinTrade là **`organCode`** tra qua
@@ -289,7 +291,7 @@ Hồ sơ và ba quyết định thiết kế (tuần tự thay vì 8 luồng · 
 | Chế độ | Sổ `ops.etl_run.job` | Giao dịch | Guard |
 |---|---|---|---|
 | hằng ngày | `market.price_daily` | một giao dịch cho cả lượt, guard **trước** commit | (0) không mã nào có dữ liệu · (i) mã sai + mã hỏng > 2 % · (ii) số mã có dữ liệu sụt > 2 % so lượt success toàn tập gần nhất · (iii) ngày mới nhất ở tương lai · (iv) ngày mới nhất lùi so mốc |
-| `--backfill` | `market.price_backfill` | mỗi mã một giao dịch; `stats.cursor` ghi sau từng mã (mã hỏng/sai **vẫn đẩy con trỏ đi** — làm lại ở vòng sau, dấu vết ở `failed_tickers`/`invalid_tickers`) | không guard tổng — cầu chì **10 mã liên tiếp** hỏng ⇒ **nghỉ 10 phút rồi thử lại đúng mã đó** (`stats.source_down_pauses`; sau khi nghỉ, một mã hỏng nữa là trip ngay); 3 lần nghỉ liên tiếp không mã nào qua ⇒ lượt `failed: SourceDown` như trước *(sửa 2026-09-06 sau sự cố 05/09: FiinTrade nghẽn từng quãng tối thứ 7, ba lượt cuối tuần chết và task chờ tới thứ 7 sau)*; vẫn đếm `dup_dates` và `raw_close_mismatch` từng mã |
+| `--backfill` | `market.price_backfill` | mỗi mã một giao dịch; `stats.cursor` ghi sau từng mã (mã hỏng/sai **vẫn đẩy con trỏ đi** — làm lại ở vòng sau, dấu vết ở `failed_tickers`/`invalid_tickers`) | không guard tổng — cầu chì **10 mã liên tiếp** hỏng ⇒ **nghỉ rồi thử lại đúng mã đó**, nghỉ dài dần **10 → 20 → 40 → 60 → 60 …** phút theo số lần nghỉ LIÊN TIẾP (`stats.source_down_pauses`, `stats.source_down_pause_s`); một mã tải được là thang về lại 10 phút. Sau mỗi lần nghỉ chỉ thăm dò **một mã** (`Fetcher.resume`) nên mỗi quãng nghỉ tốn **≤ 4 lời gọi** — nguồn đang xấu vẫn được để yên. **Không bao giờ bỏ dở vòng** *(sửa 2026-09-10: đo 09/09–10/09 thấy `getPriceData` trả HTTP 200 kèm `status: Failed, "Timeout expired…"` cho ~4–9 mã MỖI GIỜ ở mọi giờ, dù một luồng hay ba — nghẽn là nền của nguồn; bản bỏ cuộc sau 3 lần nghỉ chết 02:02 ngày 10/09 sau 194 mã, con trỏ `CK8`, không ai bật lại)*; vẫn đếm `dup_dates` và `raw_close_mismatch` từng mã |
 
 Bốn bộ đếm "không có dữ liệu" của lượt hằng ngày, đều nêu tên ≤ 20 mã: `invalid` (nguồn trả `Code not valid`) ·
 `failed` (hỏng sau 3 retry, kể cả timeout/đứt kết nối) · `empty` (trả `Success` nhưng 0 phiên) · `no_organ_code_count`
@@ -305,12 +307,14 @@ giờ giao dịch; con trỏ đã lưu sau từng mã nên lượt sau nối ti�
 suspend theo lịch.
 
 **Backfill do scheduler chạy, không chạy tay trong phiên chat** *(quyết định chủ dự án 2026-09-04; chủ lịch đổi từ
-task Windows sang scheduler ở lát 13)*: dòng `market.price_backfill` kiểu `weekly_once` — `price --backfill
---stop-before-open`, **thứ 7 00:05**, và **tắt vĩnh viễn** khi đã có một lượt `success` mang
-`stats.pass_complete = true`. Chạy tay buổi tối bất kỳ vẫn được (`uv run python -m etl price --backfill
---stop-before-open`): `--stop-before-open` tính hạn **08:45 của ngày giao dịch kế tiếp** ngay lúc bắt đầu nên tối
-thứ 3 dừng trước phiên sáng thứ 4; còn lượt thứ 7 đi liền tới sáng thứ 2. Máy ngủ 02:00 giữa
-chừng: job sống qua và chạy tiếp tới hạn; con trỏ nối các lượt. ⚠️ Hết vòng (`pass_complete`) thì scheduler **thôi hẳn** dòng
+task Windows sang scheduler ở lát 13)*: dòng `market.price_backfill` kiểu **`daemon`** — `price --backfill`, **giữ
+sống 24/7**, và **tắt vĩnh viễn** khi đã có một lượt `success` mang `stats.pass_complete = true` *(chủ dự án chốt
+2026-09-10 sáng: nguồn nghẽn đều ở mọi giờ nên không có "giờ đẹp" để hẹn — cứ chạy, và nghỉ dài dần khi nguồn xấu)*.
+Không đặt hạn giờ: dòng này không mang `--stop-before-open` cũng không mang `--max-minutes`. Nguồn nghẽn ⇒ nghỉ theo
+thang 10/20/40/60 phút rồi đi tiếp, **không bỏ dở vòng**; crash thật ⇒ runner bật lại ở nhịp sau và con trỏ nối tiếp.
+Chạy tay vẫn được (`uv run python -m etl price --backfill --stop-before-open`): cờ `--stop-before-open` còn nguyên
+cho lượt tay, tính hạn **08:45 của ngày giao dịch kế tiếp** ngay lúc bắt đầu nên tối thứ 3 dừng trước phiên sáng thứ 4.
+Máy ngủ 02:00 giữa chừng: job sống qua và chạy tiếp; con trỏ nối các lượt. ⚠️ Hết vòng (`pass_complete`) thì scheduler **thôi hẳn** dòng
 này; muốn làm mới toàn bộ chuỗi điều chỉnh (~20 giờ gọi) thì chạy tay một lượt, còn cập nhật thường ngày đi bằng
 re-crawl theo sự kiện quyền với `--codes` (lát 4). Tiến độ: `stats.cursor` /
 `codes_done` / `stop_at` của job `market.price_backfill` trong `ops.etl_run`.

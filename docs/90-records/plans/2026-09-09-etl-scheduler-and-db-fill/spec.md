@@ -320,6 +320,8 @@ Runner spawn nếu chưa có hoặc đã chết; giãn cách khởi động lạ
 
 **§2.1 / §5.12 `stop_grace_period` của `etl` = 60 s → 90 s (đính chính 2026-09-09 tối, review toàn nhánh I2, phán quyết R27).** `SHUTDOWN_GRACE_S = 60` của runner bằng đúng thời hạn `docker compose stop` ⇒ con nào cần ~59 s để đóng sổ sẽ bị SIGKILL cùng PID 1, sinh dòng `running` mồ côi. Compose nâng lên 90s (cùng ingester), runner giữ 60 s; `test_d03` ghim 90s.
 
+**§5.7 dòng `market.price_backfill` đổi từ `weekly_once` (thứ 7 00:05, `--stop-before-open`) sang `daemon` 24/7 tới `pass_complete`, và backfill không bao giờ bỏ dở vòng** *(chủ dự án chốt 2026-09-10 sáng, phán quyết R29)*. Đo 09/09–10/09: `getPriceData` trả HTTP 200 kèm thân `status: Failed, "Timeout expired…"` cho **~4–9 mã mỗi giờ, ở mọi giờ**, dù chạy một luồng hay ba — nghẽn là **nền** của nguồn, không phải sự cố ngắn nên không có "giờ đẹp" để hẹn lịch. Bản cũ (`SOURCE_DOWN_PAUSE_S = 600`, bỏ cuộc sau 3 lần nghỉ) nghỉ lúc 23:09 · 01:18 · 01:31 · 01:50 rồi chết **02:02 với exit 2 sau 194 mã** (con trỏ `CK8`), và không ai bật lại. Nay: thang nghỉ **10 → 20 → 40 → 60 → 60 …** phút theo số lần nghỉ liên tiếp, về lại 10 phút ngay khi một mã tải được; sau mỗi lần nghỉ chỉ thăm dò **một mã** nên mỗi quãng nghỉ tốn ≤ 4 lời gọi; **không còn nhánh bỏ cuộc**. Hệ quả ở scheduler: `loop.run_once` đọc `once_done` **trước** bước daemon, nếu không nhịp ngay sau khi backfill thoát 0 với `pass_complete` sẽ bật lại đúng cái vừa xong. Cờ `--stop-before-open` giữ nguyên cho lượt chạy tay.
+
 ## 9. Điểm cần chủ dự án duyệt tường minh
 
 1. Sáu điểm tự chốt §4.3 — đặc biệt (1) dòng `running` mồ côi để lát 14, (6) seed đọc CSV chuyển từ xlsx, không thêm `openpyxl`.
