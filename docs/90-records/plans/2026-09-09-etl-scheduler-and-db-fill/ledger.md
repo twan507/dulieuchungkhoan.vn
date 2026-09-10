@@ -231,3 +231,7 @@ docker compose config --quiet     → rc=0
 **Hai việc ngoài scheduler:** (1) container backfill giá cũ (run 35) **`failed` lúc 02:02** — `SourceDown: 10 mã liên tiếp hỏng` sau 194 mã, con trỏ `CK8`, 68 mã hỏng, 1.099 retry, 4 lần tạm nghỉ vì nguồn: `getPriceData` FiinTrade nghẽn cả đêm, không phải lỗi scheduler; con trỏ còn, lượt thứ 7 (`weekly_once`) hoặc chạy tay nối tiếp. (2) run 111 `price_backfill` lồng của snapshot 18:15 (re-crawl DIG/HUB/ITC/VPI): `budget_hit` 20 phút, 41 retry, HUB hỏng — cùng nguyên nhân nghẽn nguồn.
 
 Kết luận: đường scheduler chạy 13 giờ không lỗi; điểm yếu duy nhất đêm qua nằm ở nguồn FiinTrade giá. Tiếp: chờ native tự dừng 07:18 → Task 11 Step 1 `docker compose up -d --build` ~07:30.
+
+**07:18 — lượt native khép:** wrapper gửi CTRL_BREAK 07:18:16 ⇒ scheduler **rc 0 lúc 07:18:36**, `dừng 2 tiến trình con, giết cứng 0`; `news.classify` mốc 07:00 (run 621) đóng `failed: dừng tay (Ctrl+C)`; `news --loop` đang ở khoảng nghỉ giữa hai vòng nên không có dòng mở; **0 dòng `running`**, không còn tiến trình python. Tổng 13 giờ 30 phút chạy không người, **AC7 native lần hai đạt**.
+
+**R29 (chủ dự án chốt 07:00):** backfill giá chạy 24/7 tới `pass_complete` — xem sổ SDD phiên và mục tiếp theo; review Opus ra C1 (một mã hỏng mãi làm pass đứng yên vô hình) + I2/I3/I4 ⇒ phán quyết R30–R33, vòng sửa 1 đang chạy; rebuild container lùi tới khi vòng sửa xanh.
