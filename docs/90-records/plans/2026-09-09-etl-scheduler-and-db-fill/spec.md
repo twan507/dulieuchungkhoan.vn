@@ -324,6 +324,8 @@ Runner spawn nếu chưa có hoặc đã chết; giãn cách khởi động lạ
 
 **Vòng backfill đầu chiếm khoá `market.price_backfill`, re-crawl quyền của snapshot bị bỏ qua tới khi xong vòng** *(2026-09-10, review R29 — phán quyết R33)*. Daemon giữ advisory lock suốt cả vòng, nên `snapshot_job._recrawl` nhận `LockBusy` mỗi ngày và lượt snapshot đóng `success` với `stats.recrawl.lock_busy`. Chấp nhận cho đúng một vòng này; **khi có `pass_complete`, người vận hành chạy TAY một lượt** `python -m etl price --backfill --codes <mã có ngày không hưởng quyền trong khoảng chạy vòng>` (danh sách lấy từ `stats.recrawl` của các lượt snapshot mang `lock_busy`). Cùng lượt review: nghỉ tối đa **6 lần liên tiếp tại cùng một vị trí con trỏ** rồi bỏ qua mã đó và đi tiếp (R30 — bỏ nhánh bỏ cuộc mà không chặn trên thì một mã hỏng mãi treo vòng vĩnh viễn, dòng sổ nằm `running` câm), và mỗi quãng nghỉ ngủ thành **lát 30 giây** (R32 — trên Windows `time.sleep` không bị CTRL_BREAK_EVENT đánh thức, con đang nghỉ 60 phút bị giết cứng sau 60 giây ân hạn và để lại dòng `running` mồ côi).
 
+**§7 AC9 "ba ngày chạy thử" → hai ngày giao dịch 10–11/09 (chủ dự án chốt 2026-09-10 sáng).** 12–13/09 là thứ 7, chủ nhật — không có phiên để kiểm; khép lát chiều 11/09 (~19:00, sau chuỗi events → snapshot → fundamentals lần hai trong container). Merge không đổi image đang chạy nên cuối tuần vẫn là bằng chứng bổ sung. Hệ quả: 439 mã vắng danh mục tới hạn 16:09 11/09, lượt `refdata` đầu tiên bị guard từ chối là thứ 2 14/09 08:00 — chạy tay `refdata --accept-drop` sáng thứ 2.
+
 ## 9. Điểm cần chủ dự án duyệt tường minh
 
 1. Sáu điểm tự chốt §4.3 — đặc biệt (1) dòng `running` mồ côi để lát 14, (6) seed đọc CSV chuyển từ xlsx, không thêm `openpyxl`.
