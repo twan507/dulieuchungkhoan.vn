@@ -51,8 +51,9 @@ SCHEDULE: list[JobSpec] = [
     JobSpec("global.yahoo",   ("yahoo", "--intraday"),   "intraday", weekdays=ALL_DAYS, interval_s=600),
     JobSpec("global.binance", ("binance", "--intraday"), "intraday", weekdays=ALL_DAYS, interval_s=300),
     JobSpec("macro.wichart",  ("wichart", "--intraday"), "intraday", weekdays=ALL_DAYS, interval_s=300),
-    JobSpec("news.classify", ("classify", "--limit", "1000"), "daily", weekdays=ALL_DAYS,
-            times=((7, 0), (9, 0), (11, 0), (13, 0), (15, 0), (17, 0), (19, 0), (21, 0))),
+    # Chủ dự án chốt 2026-09-10 — độ trễ 2 giờ quá lâu; chi phí token theo số bài không theo số
+    # lượt. Khoá advisory + trần 1.000 bài/lượt giữ nguyên.
+    JobSpec("news.classify", ("classify", "--limit", "1000"), "intraday", weekdays=ALL_DAYS, interval_s=900),
     JobSpec("news.collect", ("news", "--loop"), "daemon"),
     # Backfill chạy 24/7 như daemon tới khi xong VÒNG ĐẦU (`pass_complete`), rồi thôi hẳn: nguồn nghẽn
     # ~4–9 mã mỗi giờ ở mọi giờ (đo 2026-09-10) nên không có "giờ đẹp" để hẹn, cứ chạy và nghỉ dài dần.

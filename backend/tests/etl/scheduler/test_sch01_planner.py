@@ -106,9 +106,9 @@ def test_schedule_is_the_spec_table():
     assert [s.name for s in SCHEDULE if s.kind == "daemon"] == ["news.collect", "market.price_backfill"]
     assert not [s for s in SCHEDULE if s.kind == "weekly_once"]
     assert next(s for s in SCHEDULE if s.name == "market.price_backfill").once_until_flag == "pass_complete"
-    assert [s.interval_s for s in SCHEDULE if s.kind == "intraday"] == [600, 300, 300]
+    assert [s.interval_s for s in SCHEDULE if s.kind == "intraday"] == [600, 300, 300, 900]
     classify = next(s for s in SCHEDULE if s.name == "news.classify")
-    assert classify.times == ((7, 0), (9, 0), (11, 0), (13, 0), (15, 0), (17, 0), (19, 0), (21, 0)) and classify.weekdays == ALL_DAYS
+    assert classify.kind == "intraday" and classify.interval_s == 900 and classify.times == () and classify.weekdays == ALL_DAYS
     assert next(s for s in SCHEDULE if s.name == "market.fundamentals").depends_on == "market.snapshot"
     assert next(s for s in SCHEDULE if s.name == "macro.wichart" and s.kind == "daily").times == ((8, 15),)
     assert next(s for s in SCHEDULE if s.name == "market.refdata").weekdays == MON_FRI

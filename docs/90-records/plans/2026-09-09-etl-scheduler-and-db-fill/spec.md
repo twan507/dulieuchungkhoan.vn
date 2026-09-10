@@ -326,6 +326,8 @@ Runner spawn nếu chưa có hoặc đã chết; giãn cách khởi động lạ
 
 **§7 AC9 "ba ngày chạy thử" → hai ngày giao dịch 10–11/09 (chủ dự án chốt 2026-09-10 sáng).** 12–13/09 là thứ 7, chủ nhật — không có phiên để kiểm; khép lát chiều 11/09 (~19:00, sau chuỗi events → snapshot → fundamentals lần hai trong container). Merge không đổi image đang chạy nên cuối tuần vẫn là bằng chứng bổ sung. Hệ quả: 439 mã vắng danh mục tới hạn 16:09 11/09, lượt `refdata` đầu tiên bị guard từ chối là thứ 2 14/09 08:00 — chạy tay `refdata --accept-drop` sáng thứ 2.
 
+**§5.7 dòng `news.classify` đổi từ `daily` 8 mốc (07 · 09 · 11 · 13 · 15 · 17 · 19 · 21 giờ) sang `intraday` mỗi 900 s, 24/7** *(chủ dự án chốt 2026-09-10 08:46)*. Lý do: độ trễ tới 2 giờ giữa lúc bài về và lúc được phân loại là quá lâu; chi phí gọi model tính theo **số bài** xử lý, không theo **số lượt** scheduler bật job, nên chạy dày hơn không tốn thêm — khoá advisory theo tên job và trần `--limit 1000` bài/lượt giữ nguyên, chặn chạy chồng và chặn phình một lượt.
+
 ## 9. Điểm cần chủ dự án duyệt tường minh
 
 1. Sáu điểm tự chốt §4.3 — đặc biệt (1) dòng `running` mồ côi để lát 14, (6) seed đọc CSV chuyển từ xlsx, không thêm `openpyxl`.

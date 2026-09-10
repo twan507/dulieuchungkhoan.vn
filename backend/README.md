@@ -51,7 +51,7 @@ volume `etl_logs` tại `/var/lib/dlck/etl-logs`. **Mã thoát của chính sche
 | `global.yahoo` | `yahoo --intraday` | intraday | mỗi **600 s** | cả tuần |
 | `global.binance` | `binance --intraday` | intraday | mỗi **300 s** | cả tuần |
 | `macro.wichart` | `wichart --intraday` | intraday | mỗi **300 s** | cả tuần |
-| `news.classify` | `classify --limit 1000` | daily | **8 mốc**: 07 · 09 · 11 · 13 · 15 · 17 · 19 · 21 giờ | cả tuần |
+| `news.classify` | `classify --limit 1000` | intraday | mỗi **900 s** (15 phút) | cả tuần |
 | `news.collect` | `news --loop` | daemon | giữ sống liên tục | cả tuần |
 | `market.price_backfill` | `price --backfill` | daemon | giữ sống 24/7 tới khi `pass_complete` | cả tuần |
 
@@ -70,7 +70,7 @@ Hằng số cùng file: `MAX_CONCURRENT_CHILDREN = 6` · `RETRY_AFTER_MIN = 10` 
    với dữ liệu theo ngày là ghi nhầm ngày, không phải cứu.
 3. **`intraday` và `daemon` planner bỏ qua.** Runner tự lo: intraday theo `interval_s` bằng đồng hồ của nó (RAM,
    mất khi khởi động lại — vô hại), daemon thì giữ sống.
-4. **Nhiều mốc cùng tên tự đúng.** OMO 4 mốc, FRED 2 mốc, `classify` 8 mốc: chỉ xét **mốc gần nhất đã qua**, một
+4. **Nhiều mốc cùng tên tự đúng.** OMO 4 mốc, FRED 2 mốc: chỉ xét **mốc gần nhất đã qua**, một
    `success` có `started_at ≥` mốc đó là đủ.
 5. **exit 1 không thử lại; exit 2 thử lại đúng một lần sau 10 phút.** Trong các dòng `failed` kể từ mốc: có dòng
    mang `stats.guard_refused = true` ⇒ thôi (chốt chặn từ chối là *hành vi đúng*, chạy lại chỉ tốn nguồn); không
@@ -553,7 +553,7 @@ Một bài = một giao dịch: `UPDATE news.article` (`group_no/sub/confidence/
 
 **Số đo thật** (2026-09-06, [ledger §2](../docs/90-records/plans/2026-09-06-news-classify-llm/ledger.md), 230 bài adaptive + 100 disabled): adaptive **p50 8 s / p90 16,5 s**, ≈ 3,0k token vào (cache trúng ≈ 50 %), ≈ 745 ra (≈ 330 thinking), **≈ $0,0019/bài quy giá, ≈ 6 bài/phút**; disabled p50 3,6 s, 294 ra, $0,0013/bài. 350 bài/ngày adaptive ≈ 1 giờ ≈ 6–7 % cửa sổ quota 5 giờ. Kho còn 7.797 bài chưa phân loại ≈ 22 giờ / ≈ $15 / 3 cửa sổ — chỉ chạy khi chủ dự án gọi tên.
 
-⚠️ `ops.llm_call` tham chiếu `ops.etl_run` và `news.article` (FK không `ON DELETE`): **mọi lệnh dọn `news.article` / `ops.etl_run` (kể cả `TRUNCATE` trong test) phải dọn `news.article_industry` + `ops.llm_call` trước** — test e05/e55/e56 đã sửa theo. ⚠️ Chạy lượt > 10 phút **tách tiến trình** (`Start-Process cmd`), theo dõi qua `ops.etl_run`. **Lịch:** scheduler chạy `classify --limit 1000` ở **8 mốc/ngày** (07 · 09 · 11 · 13 · 15 · 17 · 19 · 21 giờ VN, cả cuối tuần) — độc lập với `news --loop`, kiểu quét sàn, không gắn cờ `--classify` vào vòng thu thập ([news-pipeline §12](../docs/20-design/news-pipeline.md)).
+⚠️ `ops.llm_call` tham chiếu `ops.etl_run` và `news.article` (FK không `ON DELETE`): **mọi lệnh dọn `news.article` / `ops.etl_run` (kể cả `TRUNCATE` trong test) phải dọn `news.article_industry` + `ops.llm_call` trước** — test e05/e55/e56 đã sửa theo. ⚠️ Chạy lượt > 10 phút **tách tiến trình** (`Start-Process cmd`), theo dõi qua `ops.etl_run`. **Lịch:** scheduler chạy `classify --limit 1000` kiểu **intraday mỗi 900 s (15 phút), 24/7** (chốt 2026-09-10, thay cho 8 mốc/ngày cũ — độ trễ 2 giờ quá lâu, chi phí token theo số bài không theo số lượt) — độc lập với `news --loop`, kiểu quét sàn, không gắn cờ `--classify` vào vòng thu thập ([news-pipeline §12](../docs/20-design/news-pipeline.md)).
 
 ## Chạy vòng chat (`agent` — lát 10, 2026-09-07)
 
