@@ -303,6 +303,6 @@ Kết quả Task 11 trong ngày 10/09: **AC5 · AC6 · AC7 · AC10 đạt**; cò
 | AC9 chạy thử liên tục | ✅ **hai ngày giao dịch 10–11/09** (đính chính: 12–13/09 cuối tuần) + đêm native 09→10/09; 0 mốc sót, 0 dòng mồ côi do scheduler (một dòng mồ côi duy nhất do máy khởi động lại cứng 08:44 11/09, đóng tay) | 10–11/09 |
 | AC10 ingester phiên trọn trong container | ✅ 10/09 `p1=0 p2=0 ok=858` | Step 6 |
 
-**Cả bộ test tại HEAD nhánh trước merge:** *(dán ở dòng dưới khi chạy xong)*
+**Cả bộ test tại HEAD nhánh `4570966` trước merge (18:57–18:59):** `uv run pytest tests -q` → **1214 passed, 3 skipped in 111.36s**.
 
 **Việc còn mở sau khi khép (đều đã có chủ):** `refdata --accept-drop` sáng thứ 2 14/09 trước 08:00 (439 mã, tới hạn 16:09 11/09) · sau `pass_complete` của backfill (~13–14/09): chạy tay `price --backfill --codes` cho `stats.recrawl.codes` của các snapshot `lock_busy` và `failed_tickers` của pass (R33) · lát 14: giám sát hợp đồng (một `JobSpec`), dọn dòng `running` mồ côi, kênh báo động, các Minor để dành trong sổ SDD (M2/M4–M7/M9–M11 review cuối; SAT/`weekly_once` chết; `stats.recrawl` bốn hình chưa ghim; `interval_pct` MiniMax hay báo 99 dù lượt vẫn thành công — cần hiểu nghĩa).
