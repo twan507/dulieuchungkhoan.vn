@@ -1,10 +1,10 @@
-"""Hợp đồng lint: toàn repo phải sạch ruff (E4/E7/E9/F/I).
+"""Hợp đồng lint: toàn repo phải sạch ruff (E9/F/I).
 
 Vì: mục 7 bảng câu hỏi trước lát 12, chốt 2026-09-11 — thêm ruff làm lint tối
 thiểu, gác bằng test hợp đồng thay vì chỉ chạy tay. Bộ luật hẹp có chủ đích:
-E4/E7/E9 (lỗi rõ ràng), F (pyflakes — unused import/var, undefined name...),
-I (isort — thứ tự import). Không bật E501 (chiều dài dòng) hay các rule style
-khác.
+E9 (lỗi cú pháp), F (pyflakes — unused import/var, undefined name...),
+I (isort — thứ tự import). E4/E7/E501 và các rule kiểu dáng KHÔNG bật (xem
+`ruff.toml` gốc repo).
 
 Bẫy đã trả giá (ledger 2026-09-07 audit): NEVER chạy `ruff --unsafe-fixes`.
 Riêng F841 (biến gán mà không dùng) phải tự đọc code rồi sửa tay — biến đó có
@@ -24,6 +24,9 @@ def test_ruff_clean_across_repo():
         [sys.executable, "-m", "ruff", "check", str(REPO_ROOT)],
         capture_output=True,
         text=True,
+        encoding="utf-8",   # ruff in dòng nguồn có tiếng Việt; mặc định cp1252 trên Windows sẽ crash
+        errors="replace",
+        timeout=300,
     )
     if result.returncode != 0:
         print(result.stdout)
