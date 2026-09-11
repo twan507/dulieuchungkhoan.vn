@@ -576,7 +576,7 @@ Năm job `python -m etl fred|fx|lbma|yahoo|binance` (spec [`2026-09-05-global-et
 | 4 | `ingester` có trong phạm vi lát 12 không | **Có** (kiến trúc sư quyết theo mục 3: "một lệnh lên là chạy" không thể thiếu daemon). Nghiệm thu bằng `--minutes` ngoài giờ (phép kiểm rẻ §3.5 CLAUDE.md); phiên thật chỉ khi mục 1 tới lượt |
 | 5 | Nghiệm thu 15 họ chạy hẹp hay trọn | **Chốt trong spec**, không chốt trước — chưa thiết kế xong thì chưa có gì để nghiệm thu |
 | 6 | Múi giờ | Chủ dự án giao chọn **cách chuẩn hoá nhất, đồng bộ mọi nơi**. Chọn: **code không dựa vào múi giờ của tiến trình** — mọi phép "hôm nay"/"ngày VN" đi qua `ZoneInfo("Asia/Ho_Chi_Minh")` tường minh (sửa nốt ba chỗ `date.today()` trần ở bảng dưới), **cộng** `TZ=Asia/Ho_Chi_Minh` ở mọi service compose làm lưới thứ hai, **cộng** một test hợp đồng canh không còn `date.today()`/`datetime.now()` trần trong `backend/` ngoài test |
-| 7 | `ruff` | **Sau lát 12**, khi mọi thứ chạy ổn — không thuộc lát này (số đo để chọn bộ luật ở [ledger dọn lệch](../90-records/plans/2026-09-07-audit-drift-cleanup/ledger.md), mục "Còn treo") |
+| 7 | `ruff` | **Sau lát 12**, khi mọi thứ chạy ổn — không thuộc lát này (số đo để chọn bộ luật ở [ledger dọn lệch](../90-records/plans/2026-09-07-audit-drift-cleanup/ledger.md), mục "Còn treo"). ✅ làm 2026-09-11 (nhánh `chore/ruff`): bộ luật hẹp `E9/F/I`, `ruff.toml` gốc repo, test hợp đồng `tests/test_lint_contract.py` |
 
 **Dữ kiện đọc thêm từ code 2026-09-08, bản 2026-09-07 chưa ghi** — đầu vào cho bước 0 của §4.8 khi brainstorm:
 

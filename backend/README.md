@@ -16,6 +16,16 @@
 
 ---
 
+## Lint (`ruff`, 2026-09-11)
+
+```
+uv run --project backend ruff check .        # từ gốc repo — phủ cả backend/ và database/
+uv run --project backend ruff check . --fix  # chỉ safe fixes — KHÔNG bao giờ thêm --unsafe-fixes
+```
+
+Bộ luật hẹp `E9/F/I` (cấu hình ở `ruff.toml` gốc repo — coi tại chỗ, không chép lại ở đây). Gác bằng
+test hợp đồng `backend/tests/test_lint_contract.py` (chạy `ruff check` toàn repo, phải trả `All checks passed!`).
+
 ## Scheduler — `python -m etl` không tham số *(lát 13, 2026-09-09)*
 
 Chạy `python -m etl` **không tham số** là bật **scheduler**: một vòng lặp nhịp **20 giây**, mỗi nhịp đọc sổ
