@@ -283,3 +283,26 @@ Kết quả Task 11 trong ngày 10/09: **AC5 · AC6 · AC7 · AC10 đạt**; cò
 **Thang nghỉ R30 chạy thật lần đầu (đêm 10→11/09, log `market.price_backfill-20260910.log`):** FiinTrade chết từ ~00:25 tới ~05:25 — nghỉ 10 → 20 → 40 → 60 → 60 → 60 phút tại cùng mã, rồi `05:23:43 bỏ qua KHW sau 6 lần nghỉ, đi tiếp`, thang về 10 phút, pass tiếp tục; tổng đêm 11 lần nghỉ = 19.200 s (5 giờ 20 phút), 808 retry, con trỏ `MBN`, 332 mã từ 15:50 hôm trước, 64 mã hỏng để vòng sau; `06:53 backfill 320/1127 mã, 13.488 trang, 779.092 dòng đổi`. Đúng thiết kế: không bỏ cuộc, lúc nguồn chết chỉ gõ ≤ 4 request mỗi cửa sổ.
 
 **08:44 — máy dev khởi động lại đột ngột (không phải chủ đích của lát):** dòng log `etl` cuối trước khi mất là `08:43:24 global.yahoo rc=0`, **không có dòng "dừng N tiến trình con"** ⇒ Docker bị cắt cứng, không SIGTERM. Docker Desktop mở lại 08:47:15, engine lên 08:47:36, cả 6 service tự lên nhờ `restart: unless-stopped` (etl 08:47:46, ingester 08:47:45 "giành leader"). Hệ quả: (1) **một dòng `running` mồ côi** — run 993 `market.price_backfill` (từ 15:50 hôm trước, con trỏ `MCP`, 341 mã); controller đóng tay `failed` với error "máy dev khởi động lại 08:44 11/09 — không có SIGTERM, đóng tay (lát 13)" (`UPDATE` một dòng, ghi ở đây để truy được); daemon mới run 1786 nối đúng con trỏ `MCP`, còn 786 mã — **không mất dữ liệu**. (2) Ingester mất tick **~08:44 → 08:47:45** giữa phiên sáng — mất thật, không bù được; phần còn lại của phiên ghi bình thường. (3) Không mốc daily nào rơi vào khoảng mất (08:00 refdata đã xong 08:00:04; 08:15 wichart đã xong). Đây đúng kịch bản "chết lúc nào dựng lại cũng tự bù" của spec; điểm yếu duy nhất là dòng mồ côi — việc "dọn dòng `running` mồ côi" đã nằm ở "Điểm vào cho lát 14".
+
+## Khép lát — 2026-09-11 tối (Task 13 bước 3)
+
+**Chiều 11/09 — ngày giao dịch thứ hai, chuỗi 18:10 lần ba:** screener 15:20 ✓ · omo 15:30, 18:00 ✓ · **`price` 15:40 (run 2108) `failed: SourceDown` sau 38 phút, exit 2** ⇒ runner in dòng cooldown một lần, planner **thử lại đúng 10 phút sau (16:28, run 2143) ⇒ success 17:04** — luật 5 chạy thật lần đầu · events 18:10 ✓ (6 phút) → snapshot 18:16 ✓ (re-crawl đụng khoá backfill như R33) → fundamentals 18:17 ✓. Cùng lúc 16:17:54 cả `global.binance` (9/11 series hỏng ⇒ guard refused, exit 1) lẫn `news.classify` (5 lời gọi MiniMax liên tiếp lỗi ⇒ ModelDown, exit 1) cùng ngã: **mất mạng ~5 phút trên máy dev**, ba nguồn ngoài cùng đứt; cả hai về lại success ở nhịp 16:32 sau cooldown 10 phút. `real_fail` hôm nay = 1 (chính lượt price SourceDown, đã thử lại thành công). Backfill lúc 18:55: con trỏ `SD8`, 337 mã từ 08:47, 5 lần nghỉ.
+
+**Bảng nghiệm thu §7 (tất cả bằng chứng ở các mục trên):**
+
+| AC | Kết quả | Ở đâu |
+|---|---|---|
+| AC1 seed OMO khớp literal | ✅ 09/09 13:31 | mục Task 1–5 |
+| AC2 parser gộp hai phiên | ✅ test + seed 03/02/2026 | Task 1–2 |
+| AC3 thử tải giá | ✅ ba luồng chạy được, chậm 5×, sát guard; một luồng an toàn | Kết phiên 09/09 |
+| AC4 bảng 06:00 + SQL 24 h | ✅ 11/09 08:01, `real_fail = 0` | 11/09 08:00 |
+| AC5 bù mốc sau stop/start | ✅ 13:05:05, 4 s | Step 2 |
+| AC6 chạy chồng ⇒ exit 1 | ✅ native 09/09 + container 18:10:36 10/09 | R21, Step 4 |
+| AC7 dừng giữa job ⇒ 130, thoát ≤ 60 s, thử lại sau 10 phút | ✅ native 21 s · container 1 s · thử lại đúng biên | Step 3 |
+| AC8 `test_e68` + `close_run_refused` | ✅ Task 5 | Task 1–5 |
+| AC9 chạy thử liên tục | ✅ **hai ngày giao dịch 10–11/09** (đính chính: 12–13/09 cuối tuần) + đêm native 09→10/09; 0 mốc sót, 0 dòng mồ côi do scheduler (một dòng mồ côi duy nhất do máy khởi động lại cứng 08:44 11/09, đóng tay) | 10–11/09 |
+| AC10 ingester phiên trọn trong container | ✅ 10/09 `p1=0 p2=0 ok=858` | Step 6 |
+
+**Cả bộ test tại HEAD nhánh trước merge:** *(dán ở dòng dưới khi chạy xong)*
+
+**Việc còn mở sau khi khép (đều đã có chủ):** `refdata --accept-drop` sáng thứ 2 14/09 trước 08:00 (439 mã, tới hạn 16:09 11/09) · sau `pass_complete` của backfill (~13–14/09): chạy tay `price --backfill --codes` cho `stats.recrawl.codes` của các snapshot `lock_busy` và `failed_tickers` của pass (R33) · lát 14: giám sát hợp đồng (một `JobSpec`), dọn dòng `running` mồ côi, kênh báo động, các Minor để dành trong sổ SDD (M2/M4–M7/M9–M11 review cuối; SAT/`weekly_once` chết; `stats.recrawl` bốn hình chưa ghim; `interval_pct` MiniMax hay báo 99 dù lượt vẫn thành công — cần hiểu nghĩa).
