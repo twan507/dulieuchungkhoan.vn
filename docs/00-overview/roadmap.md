@@ -663,6 +663,13 @@ sẵn thư mục có quyền ghi trước `up`.
 ⚠️ **Cũng để dành cho lát 15:** `api` bind `127.0.0.1:8000` từ 2026-09-08 — lên VPS (lát 15) đặt
 reverse proxy hoặc override `ports` trong `docker-compose.vps.yml`, không mở thẳng `0.0.0.0`.
 
+### Ghi chú cho lát 15 — chốt với chủ dự án 2026-09-11, đọc khi tới lát 15
+
+- **Cách thao tác VPS:** từ máy dev qua `ssh dlck-vps "<lệnh>"`, xác thực bằng khoá SSH do chủ dự án tự tạo và cài (`ssh-keygen -t ed25519`, `ssh-copy-id`, `Host dlck-vps` trong `~/.ssh/config`); trợ lý không nhận mật khẩu/khoá. VPS dùng user riêng không phải root, nhóm `docker`, tắt đăng nhập mật khẩu. Làm nặng tại chỗ thì cài Claude Code trên VPS hoặc VS Code Remote-SSH.
+- **Env prod:** giữ "một `.env` cho một máy, không commit" của lát 12. `127.0.0.1` trong `.env` chỉ phục vụ tiến trình native trên dev (compose đè host bằng tên service); `ports: 127.0.0.1:…` trong compose là đúng ý prod. Còn thiếu: `.env.vps.example` (COMPOSE_FILE overlay, `COMPOSE_PROJECT_NAME=dlck`, backup dir tuyệt đối, bỏ biến test, 6 mật khẩu sinh mới, `chmod 600`), overlay VPS thêm reverse proxy có TLS trước `api` và bỏ `ports` DB/Redis, runbook trong `deploy/`. Quyết định mở cho brainstorm: Caddy hay nginx, domain, cách giữ bí mật trên VPS.
+- **Chuyển dữ liệu:** chép nguyên volume `dlck_pgdata` (8,8 GB) và `dlck_chdata` (`rt` 190 MB) *(đo 2026-09-11)* bằng tar + rsync, cùng phiên bản image; Redis không mang. Thứ tự cắt chuyển: dừng dev → đồng bộ lần cuối → bật VPS (hai máy cùng chạy sẽ gọi nguồn gấp đôi).
+- **Trình xem DB trên Windows:** DbGate (Postgres + ClickHouse + Redis); kết nối bằng user chỉ đọc `agent_reader` / `api_reader`.
+
 ### Điểm vào cho lát 14 — giám sát hợp đồng, đọc khi tới lát 14 *(số cũ: lát 12)*
 
 **Trạng thái bàn giao MỚI NHẤT — 2026-09-11, sau khi lát 13 khép**: `main` = lát 13, merge `5e3c72a` (`--no-ff` từ `feat/etl-scheduler`) · không còn nhánh feature nào mở · số test **do [`database/README.md`](../../database/README.md) sở hữu** · migration head **`0021`** · scheduler chạy trong service `etl` (16 tên job/19 dòng lịch), `ingester` là daemon riêng tự dậy 08:30 · kho dev **là kho thật**, không xoá dựng lại ([4d]) · `price --backfill` đang chạy dạng daemon giữa pass. **TIẾP: lát 14**, đi vào bằng đúng mục này.
