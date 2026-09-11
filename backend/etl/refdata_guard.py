@@ -4,8 +4,9 @@ Module thuần: không I/O, không import module refdata khác. Đầu vào là
 mapping/set trần để test không cần database.
 """
 
+from collections.abc import Mapping
+from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
-from collections.abc import Mapping, Set as AbstractSet
 
 DROP_RATIO = 0.02        # tầng 1 (spec §4)
 DELIST_RATIO = 0.01      # tầng 2

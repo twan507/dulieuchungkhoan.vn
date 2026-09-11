@@ -11,10 +11,10 @@ import sqlalchemy as sa
 
 from etl import news_extract as ne
 from etl import news_job as nj
-from etl import news_store as ns
-from etl import omo_store
 from etl import news_parse as np_
 from etl import news_registry as nr
+from etl import news_store as ns
+from etl import omo_store
 
 FIX = pathlib.Path(__file__).parent / "fixtures" / "news"
 VN = timezone(timedelta(hours=7))

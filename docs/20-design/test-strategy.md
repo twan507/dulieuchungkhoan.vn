@@ -27,6 +27,8 @@
 
 7. **Dev-time nuôi CI, không thay CI.** Agent tự verify bằng lệnh thật (`curl /api/healthz`, chạy `etl` một nhịp, so frame) ngay sau khi sửa, rồi **cập nhật smoke test tương ứng** — công cụ agent bổ sung bộ test, không thay nó.
 
+8. **Lint là một phần của bộ test** *(2026-09-11)*: `backend/tests/test_lint_contract.py` chạy `ruff check` toàn repo và canh `returncode == 0` — bộ luật hẹp `E9/F/I`, cấu hình ở `ruff.toml` gốc repo. `pytest tests -q` do đó tự kéo theo lint sạch, không cần bước CI riêng.
+
 ## Nhắc lại ranh giới (chi tiết ở CLAUDE.md §4.5)
 
 Test tại **seam đã chốt trong plan** · **cấm tautological** (expected đến từ nguồn độc lập, không tính lại theo cách code tính) · mỗi test assert giá trị cụ thể + một case biên/sai · **đỏ trước xanh, lát dọc**.

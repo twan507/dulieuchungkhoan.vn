@@ -1,4 +1,5 @@
 import pathlib
+
 from etl.refdata_merge import merge
 from etl.refdata_normalize import normalize
 

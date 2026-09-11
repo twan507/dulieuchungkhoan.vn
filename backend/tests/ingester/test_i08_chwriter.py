@@ -15,7 +15,7 @@ from decimal import Decimal
 
 from clickhouse_connect.driver.exceptions import DatabaseError as ChDatabaseError
 
-from ingester.chwriter import COLUMNS, ChWriter, RETRY_BUDGET_S
+from ingester.chwriter import COLUMNS, RETRY_BUDGET_S, ChWriter
 from ingester.normalize import Metrics, Normalized, normalize
 from ingester.spill import SpillStore
 
@@ -573,6 +573,7 @@ def test_tls_errors_stay_transient():
     là `http://`, nhưng sống dậy ngay ngày bật TLS (review toàn nhánh 2026-08-28).
     """
     import ssl
+
     from ingester.chwriter import _is_deterministic
     for exc in (ssl.SSLCertVerificationError("certificate verify failed"),
                 ssl.SSLError("handshake failure"),

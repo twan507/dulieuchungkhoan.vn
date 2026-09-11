@@ -1,6 +1,6 @@
 import httpx
 
-from ingester.catalog import BASE, Catalog, INDEX_CODES, build_catalog, fetch_derivative_symbols, topics
+from ingester.catalog import BASE, INDEX_CODES, Catalog, build_catalog, fetch_derivative_symbols, topics
 
 QUOTES = {"s": "ok", "d": [
     {"symbol": "ACB", "StockType": "2", "ceiling": 23950, "floor": 20850, "reference": 22400, "exchange": "HOSE"},

@@ -1,5 +1,9 @@
-import json, os, pathlib
+import json
+import os
+import pathlib
+
 import sqlalchemy as sa
+
 import etl.refdata_job as job_mod
 from etl import refdata_store
 

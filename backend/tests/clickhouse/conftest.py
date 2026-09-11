@@ -8,7 +8,6 @@ trong một lượt `pytest tests/clickhouse tests/ingester`, dù comment ở đ
 """
 from datetime import date, datetime, timedelta
 
-
 TODAY = date.today()
 
 

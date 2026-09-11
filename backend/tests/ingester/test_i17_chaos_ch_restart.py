@@ -23,9 +23,9 @@ from datetime import datetime
 from decimal import Decimal
 
 import clickhouse_connect  # noqa: E402
+from tests.clickhouse.conftest import CH_CONF_DIR, IMAGE  # noqa: E402
 
 from ingester.normalize import Normalized  # noqa: E402
-from tests.clickhouse.conftest import CH_CONF_DIR, IMAGE  # noqa: E402
 
 N_ROWS = 200_000
 RSS_BUDGET_BYTES = 200 * 2**20

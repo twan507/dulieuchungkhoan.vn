@@ -1,6 +1,5 @@
 """Migration 0019: sub nhận thêm '2f'; mã lạ vẫn bị chặn; 21 mã cũ vẫn hợp lệ."""
 import sqlalchemy as sa
-
 from tests.conftest import expect_violation
 
 

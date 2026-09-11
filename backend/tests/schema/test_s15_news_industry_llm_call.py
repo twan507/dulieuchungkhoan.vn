@@ -1,6 +1,5 @@
 """Migration 0018: bài ↔ ngành hai đường (via trong PK), sổ lời gọi model; quyền kiểm dưới ĐÚNG role production (CLAUDE.md §3.5)."""
 import sqlalchemy as sa
-
 from tests.conftest import expect_violation
 
 

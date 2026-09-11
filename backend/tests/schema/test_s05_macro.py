@@ -1,5 +1,4 @@
 import sqlalchemy as sa
-
 from tests.conftest import expect_violation
 
 

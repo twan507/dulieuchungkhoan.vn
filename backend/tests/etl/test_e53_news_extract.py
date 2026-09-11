@@ -1,6 +1,6 @@
 """Bóc 9 trang bài thật chụp 2026-09-05 theo luật article-structure §2: container đúng, boilerplate biến mất, tiền tố/hậu tố literal."""
 import pathlib
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 

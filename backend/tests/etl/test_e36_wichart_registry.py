@@ -52,6 +52,7 @@ def test_scale_and_unit_come_from_the_doc_or_ours_as_designed():
 
 def test_build_raises_when_module_maps_a_series_the_source_table_does_not_collect():
     import copy
+
     from etl import wichart_source as ws
     broken = copy.deepcopy(ws.WICHART)
     entries = list(broken["xang_dau"]["s"])

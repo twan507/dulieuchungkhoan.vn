@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from collections import namedtuple
 from dataclasses import dataclass
-from datetime import datetime, time as dtime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
+from datetime import time as dtime
 
 from core.clock import VN, today_vn
 from etl.scheduler.schedule import RETRY_AFTER_MIN, JobSpec

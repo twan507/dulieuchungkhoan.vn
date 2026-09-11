@@ -18,8 +18,7 @@ import os
 import pytest
 import sqlalchemy as sa
 
-from etl import (events_job, fundamentals_job, omo_job, price_job, refdata_job, screener_job,
-                 snapshot_job, wichart_job)
+from etl import events_job, fundamentals_job, omo_job, price_job, refdata_job, screener_job, snapshot_job, wichart_job
 
 EXIT_REAL_ERROR = 2
 

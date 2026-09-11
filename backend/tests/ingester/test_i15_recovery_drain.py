@@ -16,7 +16,6 @@ import pytest
 import ingester.main as main_mod
 from ingester.chwriter import COLUMNS, ChWriter
 from ingester.config import Config as IngesterConfig
-from ingester.normalize import Normalized
 from ingester.main import (
     DRAIN_CLEAN_BUDGET_S,
     DRAIN_HARD_CAP_S,
@@ -25,6 +24,7 @@ from ingester.main import (
     drain_writer,
     run,
 )
+from ingester.normalize import Normalized
 from ingester.reconcile import ReconcileResult
 from ingester.spill import SpillStore
 

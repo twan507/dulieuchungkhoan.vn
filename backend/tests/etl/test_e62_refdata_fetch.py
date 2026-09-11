@@ -14,7 +14,8 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from etl import http_fetch, refdata_fetch as rf
+from etl import http_fetch
+from etl import refdata_fetch as rf
 
 OK = {k: f'{{"d":"{k}"}}' for k in rf.ENDPOINTS}
 
