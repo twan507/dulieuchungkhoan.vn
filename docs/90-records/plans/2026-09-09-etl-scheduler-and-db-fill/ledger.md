@@ -263,3 +263,21 @@ Lịch nghiệm thu còn lại hôm nay: AC5 stop 11:25 / start 11:35 (bắt m�
 **Step 4 — AC6 trong container (script, 18:10:30):** scheduler spawn `market.events` 18:10:07 (run 1107); `docker compose run --rm etl python -m etl events` lúc 18:10:33 ⇒ stderr `market.events: lock busy: lượt khác đang chạy — bỏ lượt này`, **rc=1**, run 1108 `failed {"lock_busy": true, "guard_refused": true}` đóng ngay 18:10:36. **AC6 đạt.** Chuỗi phụ thuộc chạy lần hai trong container: events success 18:13:49 → snapshot 18:14:07 → fundamentals 18:14:27 success 18:14:36. Trong snapshot, re-crawl lồng đụng khoá backfill (run 1110 `market.price_backfill` `lock busy`, đúng dự báo R33) — **snapshot vẫn đóng `success` 18:14:23** thay vì chết, tức I1/R28 (`LockBusy` bắt được ở `_recrawl`) đã được kiểm chứng trên kho thật. Các mã cần bù sau `pass_complete` đọc từ `stats.recrawl.codes` của các lượt snapshot có `lock_busy`.
 
 Kết quả Task 11 trong ngày 10/09: **AC5 · AC6 · AC7 · AC10 đạt**; còn AC4 (bảng 06:00 + SQL 24 giờ sáng 11/09). Khép lát chiều 11/09 ~19:00 nếu AC4 đạt và ngày 11/09 không sót mốc.
+
+## 11/09 08:00 — AC4 và đêm thứ hai trong container
+
+**AC4 — bảng 06:00 in đúng 06:00** (`docker compose logs etl`, 20 dòng job + 2 dòng daemon "đang sống từ 15:50"); **SQL 24 giờ của plan Task 11 Step 5** *(đo 2026-09-11 08:01)*:
+
+| Job | ok | refused | real_fail | interrupted |
+|---|---|---|---|---|
+| global.binance / yahoo / wichart | 287 / 144 / 285 | 0 | 0 | 1 / 0 / 2 (dừng có chủ đích 15:10, 15:48) |
+| global.fred / ecb / lbma | 2 / 1 / 1 | 0 | 0 | 0 |
+| macro.omo_crawl | 4 | 0 | 0 | 0 |
+| market.refdata / screener / price_daily / events / snapshot / fundamentals | 1 mỗi job | events 1 (= AC6 cố ý) | 0 | price_daily 1 (= AC7 cố ý) |
+| market.price_backfill | 0 (đang chạy pass) | 1 (re-crawl snapshot đụng khoá, R33) | 0 | 2 (rebuild, AC7) |
+| news.classify | 70 | 0 | 0 | 1 |
+| news.collect | 284 (≈ 288 kỳ vọng) | 0 | 0 | 3 |
+
+`real_fail = 0` trên mọi job; mọi `refused`/`interrupted` đều có tên trong ledger; 4 dòng `running` = 4 con đang sống. Không dòng log bất thường từ 18:15 hôm trước. Refdata 11/09 mốc 08:00 success 08:00:04. Classify 24 giờ: **676 bài mới, tồn đọng 9**, quota tuần 74 % (đúng ước lượng ~1,5 %/ngày). **AC4 đạt ⇒ Task 11 đủ AC4–AC7, AC10.**
+
+**Thang nghỉ R30 chạy thật lần đầu (đêm 10→11/09, log `market.price_backfill-20260910.log`):** FiinTrade chết từ ~00:25 tới ~05:25 — nghỉ 10 → 20 → 40 → 60 → 60 → 60 phút tại cùng mã, rồi `05:23:43 bỏ qua KHW sau 6 lần nghỉ, đi tiếp`, thang về 10 phút, pass tiếp tục; tổng đêm 11 lần nghỉ = 19.200 s (5 giờ 20 phút), 808 retry, con trỏ `MBN`, 332 mã từ 15:50 hôm trước, 64 mã hỏng để vòng sau; `06:53 backfill 320/1127 mã, 13.488 trang, 779.092 dòng đổi`. Đúng thiết kế: không bỏ cuộc, lúc nguồn chết chỉ gõ ≤ 4 request mỗi cửa sổ.
