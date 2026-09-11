@@ -50,7 +50,7 @@ def run(accept_drop: bool = False) -> int:
                 apply_stats = refdata_store.apply(conn, t, delist)
         except GuardRefused as e:
             refdata_store.store_refusal_evidence(engine, raw, run_id, e.reasons)
-            omo_store.close_run(engine, run_id, "failed", error=f"guard refused: {'; '.join(e.reasons)}")
+            omo_store.close_run_refused(engine, run_id, f"guard refused: {'; '.join(e.reasons)}")
             log.error("refdata từ chối: %s", e.reasons)
             return 1
         stats = {**apply_stats, "counts": counts, "retries": retries, **t.counters}

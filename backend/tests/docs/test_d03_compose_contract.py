@@ -20,7 +20,7 @@ OVERRIDES = {
 }
 # `etl` là service DUY NHẤT trong nhóm app mount `/backups` (cạnh `clickhouse`) — bốn service kia
 # không mang biến trỏ vào đường không mount (bất đồng nhẹ với phán quyết #9, review toàn nhánh 2026-09-08).
-ETL_OVERRIDES = {**OVERRIDES, "CLICKHOUSE_BACKUP_DIR": "/backups"}
+ETL_OVERRIDES = {**OVERRIDES, "CLICKHOUSE_BACKUP_DIR": "/backups", "ETL_LOG_DIR": "/var/lib/dlck/etl-logs"}
 APP = {"migrate", "api", "etl", "ingester", "ingester-measure", "agent"}
 # Bắt "docs" đứng một mình trong nháy (Path / "docs", os.path.join(..., "docs", ...), D = "docs")
 # và "/docs/" bên trong literal/f-string (p = f"{root}/docs/a.json") — đo review 2026-09-08: mẫu cũ
@@ -73,7 +73,18 @@ def test_ingester_runtime_dirs_are_named_volumes_and_stop_grace_is_generous():
     ing = _services()["ingester"]
     targets = {v.split(":")[1] for v in ing["volumes"]}
     assert targets == {"/var/lib/dlck/logs", "/var/lib/dlck/measure", "/var/lib/dlck/spill"}
-    assert ing["stop_grace_period"] == "90s" and _services()["etl"]["stop_grace_period"] == "60s"
+    # I2: `etl` cũng 90s — bằng đúng `SHUTDOWN_GRACE_S = 60` thì runner không còn giây nào để chờ con
+    # tự đóng sổ rồi mới `kill()`: Docker giết cả scheduler ngay lúc nó bắt đầu chờ.
+    assert ing["stop_grace_period"] == "90s" and _services()["etl"]["stop_grace_period"] == "90s"
+
+
+def test_etl_log_dir_is_a_named_volume_next_to_backups():
+    etl = _services()["etl"]
+    # rsplit vì source của mount /backups mang colon riêng (${CLICKHOUSE_BACKUP_DIR:-...}) —
+    # split(":")[1] thường sẽ vỡ giữa cụm ${...}; rsplit(":", 1) luôn lấy đúng target sau cùng.
+    targets = {v.rsplit(":", 1)[1] for v in etl["volumes"]}
+    assert targets == {"/backups", "/var/lib/dlck/etl-logs"}
+    assert "etl_logs" in yaml.safe_load(COMPOSE.read_text(encoding="utf-8"))["volumes"]
 
 
 def test_image_never_carries_secrets_or_tests():
@@ -85,7 +96,7 @@ def test_image_never_carries_secrets_or_tests():
 def test_image_owns_the_runtime_dirs_for_appuser():
     """Volume có tên lấy quyền từ thư mục điểm gắn trong image; không có sẵn thì Docker tạo root:root và appuser không ghi được (AC4 lát 12)."""
     dockerfile = (REPO / "deploy" / "backend.Dockerfile").read_text(encoding="utf-8")
-    for d in ("/var/lib/dlck/logs", "/var/lib/dlck/measure", "/var/lib/dlck/spill", "/backups"):
+    for d in ("/var/lib/dlck/logs", "/var/lib/dlck/measure", "/var/lib/dlck/spill", "/backups", "/var/lib/dlck/etl-logs"):
         assert d in dockerfile, d
     # [^\n&]* không vắt qua `&&` — chặn regex khớp lem sang một lệnh khác trên cùng dòng RUN (Chuẩn M8).
     assert re.search(r"chown -R appuser [^\n&]*/var/lib/dlck[^\n&]*/backups", dockerfile)

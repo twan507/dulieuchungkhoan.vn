@@ -12,6 +12,7 @@ import sqlalchemy as sa
 from etl import news_extract as ne
 from etl import news_job as nj
 from etl import news_store as ns
+from etl import omo_store
 from etl import news_parse as np_
 from etl import news_registry as nr
 
@@ -316,6 +317,29 @@ def test_loop_calls_classify_only_when_flag_set(clean, monkeypatch):
     ticks2 = iter([0.0, 0.0, 70.0])
     assert nj.run(loop=True, minutes=1, get=_fake_get(), sleep=lambda s: None, now=NOW, clock=lambda: next(ticks2), classify_per_cycle=7) == 0
     assert calls == [{"limit": 7}]
+
+
+def test_a_busy_classify_lock_does_not_kill_the_collect_loop(clean, monkeypatch):
+    """I1 (review toàn nhánh lát 13): `news --loop --classify N` gọi `news_classify.run` NGAY TRONG
+    vòng lặp, mà `omo_store.open_run` ném `SystemExit(1)` khi khoá `news.classify` bận (mốc lịch
+    `classify --limit 1000` chạy cùng lúc là chuyện thường — 8 mốc/ngày). `SystemExit` không phải
+    `Exception` nên nó xuyên thẳng qua vòng lặp và giết cả daemon thu thập tin.
+
+    Sau fix, `LockBusy` được bắt riêng ngay tại chỗ gọi: vòng vẫn chạy hết và `run` trả 0.
+    Dãy clock giống test lưới ngay trên: t0 · started · kiểm phút ⇒ đúng MỘT vòng."""
+    monkeypatch.setattr("etl.http_fetch.Fetcher._throttle", lambda self: None)
+    import etl.news_classify
+    calls = []
+
+    def busy(**kw):
+        calls.append(kw)
+        raise omo_store.LockBusy(1)
+
+    monkeypatch.setattr(etl.news_classify, "run", busy)
+    ticks = iter([0.0, 0.0, 70.0])
+    assert nj.run(loop=True, minutes=1, get=_fake_get(), sleep=lambda s: None, now=NOW,
+                  clock=lambda: next(ticks), classify_per_cycle=5) == 0
+    assert calls == [{"limit": 5}]
 
 
 def test_collect_merges_near_duplicate_from_another_paper(clean, monkeypatch):

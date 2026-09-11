@@ -255,9 +255,16 @@ def run(sources=None, dry_run=False, loop=False, minutes=None, get=None, sleep=t
                 return rc
             if classify_per_cycle:
                 from etl import news_classify
-                crc = news_classify.run(limit=classify_per_cycle)      # sổ riêng `news.classify`; hết quota ⇒ quota_stop, không giết vòng thu thập
-                if crc != 0:
-                    log.warning("classify sau vòng %s trả mã %s — vòng thu thập vẫn tiếp tục", cycle, crc)
+                try:
+                    crc = news_classify.run(limit=classify_per_cycle)  # sổ riêng `news.classify`; hết quota ⇒ quota_stop, không giết vòng thu thập
+                except omo_store.LockBusy:
+                    # I1: mốc lịch `classify --limit 1000` (8 mốc/ngày) đang chạy ⇒ khoá `news.classify`
+                    # bận. `LockBusy` kế thừa `SystemExit` nên nó xuyên thẳng qua vòng lặp và giết cả
+                    # daemon thu thập tin — bắt riêng ở đây, vòng sau lại thử.
+                    log.warning("classify sau vòng %s: khoá bận — vòng thu thập vẫn tiếp tục", cycle)
+                else:
+                    if crc != 0:
+                        log.warning("classify sau vòng %s trả mã %s — vòng thu thập vẫn tiếp tục", cycle, crc)
             cycle += 1
             if minutes is not None:
                 # I5: --minutes là TRẦN tổng thời gian chạy, không phải "thêm tối đa một vòng + một nhịp đầy" —
@@ -428,7 +435,7 @@ def run_backfill(from_month, to_month=None, max_minutes=None, stop_before_open=F
         log.info("news backfill xong: %s", st)
         return 0
     except SourceDown as e:
-        omo_store.close_run(engine, run_id, "failed", e.stats, error=str(e))
+        omo_store.close_run_refused(engine, run_id, str(e), e.stats)
         log.error("%s", e)
         return 1
     except KeyboardInterrupt:

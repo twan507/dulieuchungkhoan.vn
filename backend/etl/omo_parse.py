@@ -9,6 +9,7 @@
   chưa từng quan sát — sbv-omo.md §10).
 - Đối chiếu dòng "Tổng cộng" của nhóm với tổng các dòng kỳ hạn — lệch là parse
   sai đâu đó.
+- Hai dòng cùng nhóm cùng kỳ hạn = hai phiên trong ngày (đo FiinProX 03/02/2026) ⇒ gộp, đếm `merged`.
 """
 from __future__ import annotations
 
@@ -44,6 +45,7 @@ class OmoResult:
     session_date: date
     rows: list[OmoRow]
     groups_present: frozenset[str]   # op_type có mặt
+    merged: int = 0                  # số cặp dòng cùng nhóm cùng kỳ hạn đã gộp
 
 
 def parse_vn_number(s: str) -> Decimal:
@@ -86,6 +88,7 @@ def parse(html: str) -> OmoResult:
         raise ParseError("không tìm thấy bảng có cột 'Loại hình giao dịch'")
 
     rows: list[OmoRow] = []
+    merged = 0
     current: str | None = None
     group_sum: dict[str, Decimal] = {}
     group_total: dict[str, Decimal] = {}
@@ -128,7 +131,18 @@ def parse(html: str) -> OmoResult:
                 part, win = int(p), int(w)
             vol = parse_vn_number(cells[2]) * BILLION
             rate = parse_vn_number(cells[3]) if len(cells) > 3 and cells[3] else None
-            rows.append(OmoRow(current, tenor, part, win, vol, rate))
+            existing = next((i for i, x in enumerate(rows) if x.op_type == current and x.tenor_days == tenor), None)
+            if existing is None:
+                rows.append(OmoRow(current, tenor, part, win, vol, rate))
+            else:
+                prev = rows[existing]
+                if prev.rate_pct != rate:
+                    raise ParseError(f"hai dòng cùng kỳ hạn {tenor} ngày nhóm {current} khác lãi suất: {prev.rate_pct} vs {rate}")
+                rows[existing] = OmoRow(current, tenor,
+                                        None if prev.participants is None or part is None else prev.participants + part,
+                                        None if prev.winners is None or win is None else prev.winners + win,
+                                        prev.volume_vnd + vol, rate)
+                merged += 1
             group_sum[current] = group_sum.get(current, Decimal(0)) + vol
             continue
 
@@ -142,4 +156,4 @@ def parse(html: str) -> OmoResult:
     for g, total in group_total.items():
         if g in group_sum and group_sum[g] != total:
             raise ParseError(f"tổng nhóm {g} lệch: Σdòng={group_sum[g]} vs Tổng={total}")
-    return OmoResult(session_date, rows, frozenset(group_sum))
+    return OmoResult(session_date, rows, frozenset(group_sum), merged)

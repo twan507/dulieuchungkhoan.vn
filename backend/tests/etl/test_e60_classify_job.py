@@ -330,6 +330,22 @@ def test_max_minutes_budget_hit(seeded):
     assert st["selected"] == 4 and st["budget_hit"] is True and st["classified"] == 1 and fake.calls == st["classified"]
 
 
+def test_failed_article_counts_an_attempt_and_is_skipped_after_three(seeded):
+    engine, ids = seeded
+    fake = FakeClient([SCHEMA_ERR, R1, R1, R1])
+    assert nc.run(limit=4, client=fake) == 0
+    assert _n(engine, "SELECT classify_attempts FROM news.article WHERE article_id = :a", a=ids[0]) == 1
+    with engine.begin() as c:
+        c.execute(sa.text("UPDATE news.article SET classify_attempts = 3 WHERE article_id = :a"), {"a": ids[0]})
+    with engine.connect() as c:
+        assert ids[0] not in [r.article_id for r in nc.select_articles(c, limit=10)]
+        assert nc.count_skipped_attempts(c) == 1
+    fake2 = FakeClient([R1])
+    assert nc.run(limit=10, client=fake2) == 0
+    st = json.loads(_n(engine, "SELECT stats::text FROM ops.etl_run WHERE job = 'news.classify' ORDER BY run_id DESC LIMIT 1"))
+    assert st["skipped_attempts"] == 1 and st["selected"] == 1          # chỉ còn ids[4]; ids[0] bị bỏ qua
+
+
 def test_run_disposes_engine_when_industry_count_is_wrong(seeded, monkeypatch):
     engine, ids = seeded
     spy_engine = sa.create_engine(os.environ["TEST_DATABASE_URL"])

@@ -124,6 +124,21 @@ Hai điều đọc được ngay từ bảng này:
 
 *(Suy đoán, chưa kiểm: hôm nào NHNN phát hành tín phiếu thì cùng bảng sẽ có thêm nhóm `Bán hẳn` — vì Vietstock và WiGroup đều mô tả ba nhóm `Mua kỳ hạn` / `Bán kỳ hạn` / `Bán hẳn` trên cùng bộ số gốc. Ngày đo chỉ thấy `Mua kỳ hạn`, nên cấu trúc HTML của hai nhóm kia **chưa từng được quan sát**.)*
 
+### Hai phiên một ngày — hai dòng cùng kỳ hạn, phải gộp
+
+*(phát hiện 2026-09-09 khi seed một năm FiinProX)*
+
+Một ngày có thể có **nhiều dòng trúng thầu cùng kỳ hạn** — NHNN chào thầu hai lần trong ngày. Bản xuất FiinProX
+ngày **03/02/2026** có hai dòng cho mỗi kỳ hạn **7**, **28** và **56**; lãi suất hai dòng bằng nhau.
+
+Kho khoá theo `(ngày, loại hình, kỳ hạn)` nên hai dòng đó **phải gộp thành một**: khối lượng **cộng lại**, `note`
+ghi rõ đã gộp mấy dòng. Luật này nằm ở **cả hai đường vào** — parser HTML của crawler và đường `--seed` — và
+**dừng lượt** khi hai dòng cùng kỳ hạn mang **lãi suất khác nhau**: lúc đó cộng khối lượng là bịa ra một mức giá
+không tồn tại, phải có người nhìn.
+
+⚠️ Cấu trúc HTML của ca này trên trang SBV **chưa từng quan sát được** — luật gộp của parser HTML viết theo bản
+xuất FiinProX, chưa có phiên thật nào của SBV để đối chiếu.
+
 ---
 
 ## 6. Bốn giới hạn
@@ -148,7 +163,9 @@ Bảng chỉ có 4 cột *(mục 4)*. Kiểm chứng: tìm chuỗi `đáo hạn`
 
 Thiếu: `kl_dao_han` · `bom_hut_rong` · `dang_luu_hanh`.
 
-Vượt được **một phần**: kỳ hạn nằm trong nhãn dòng nên **tự dựng được lịch đáo hạn** — nhưng chỉ đúng **sau khi tích luỹ đủ ~140 ngày tự crawl** *(kỳ hạn dài nhất trong danh mục NHNN là 140 ngày)*, và **sai nếu bỏ lỡ một phiên bất kỳ**. Xem [mục 8](#8-cách-dựng-bơm-ròng).
+Vượt được **một phần**: kỳ hạn nằm trong nhãn dòng nên **tự dựng được lịch đáo hạn** — nhưng chỉ đúng **sau khi tích luỹ đủ ~140 ngày lịch sử** *(kỳ hạn dài nhất quan sát được là 140 ngày)*, và **sai nếu thiếu một phiên bất kỳ**. Xem [mục 8](#8-cách-dựng-bơm-ròng).
+
+✅ **2026-09-09 — số dư tính được ngay từ ngày đầu, nhờ seed một năm từ FiinProX.** Không phải chờ 140 ngày tự crawl nữa: 248 phiên 2025-09-08 → 2026-09-07 đã nạp một lần từ bản xuất FiinProX (`etl omo --seed`, [backend/README](../../../backend/README.md) mục job OMO), nối khít phiên 08/09 mà crawler SBV bắt được. Cột lưu hành tính ra **khớp tới từng đồng** với cột của chính FiinProX từ **19/12/2025** trở đi — đó là ngày mà mọi khoản còn hiệu lực đều đã nằm trong cửa sổ seed (trước ngày đó vẫn thiếu phần sinh ra từ các phiên chưa được nạp). Số đo đối chứng: `omo_flow.outstanding_vnd` 07/09/2026 = **250.778,26 tỷ**, 08/09/2026 = **249.363,44 tỷ** *(đo 2026-09-09)*.
 
 ### ⚠️ Giới hạn 3 — HTML viết tay, có thể đổi bất cứ lúc nào
 
@@ -180,7 +197,7 @@ Danh sách trường phân tích cần, đối chiếu với thứ SBV cho *(đo
 |---|---|---|---|
 | `ngay` — ngày đấu thầu | ✅ | ⚠️ gián tiếp | Nằm trong **tiêu đề bài**, không nằm trong bảng |
 | `cong_cu` — `OMO_reverse_repo` \| `SBV_bills` | ✅ | ✅ | Suy từ `Loại hình giao dịch`: `Mua kỳ hạn` = bơm; `Bán hẳn` = hút bằng tín phiếu |
-| `ky_han_ngay` | ✅ | ⚠️ gián tiếp | Trong **nhãn dòng**, không có cột riêng. Danh mục kỳ hạn: 7/14/21/28/35/56/63/91/140 |
+| `ky_han_ngay` | ✅ | ⚠️ gián tiếp | Trong **nhãn dòng**, không có cột riêng. Danh mục kỳ hạn: 7/14/21/28/35/**42**/56/63/91/**105**/140 *(42 và 105 thêm 2026-09-09 — có thật trong bản xuất FiinProX một năm; parser đừng chặn theo danh sách trắng)* |
 | `kl_trung_thau` (tỷ VND) | ✅ | ✅ | Cột 3 |
 | `ls_trung_thau` (%/năm) | ✅ | ✅ | Cột 4 |
 | `so_tv_tham_gia` / `so_tv_trung_thau` | ⭕ | ✅ | Cột 2, dạng `4/4` — tín hiệu độ căng hệ thống |
@@ -210,11 +227,11 @@ Nhóm `Bán hẳn` (tín phiếu) đi ngược dấu: phát hành là **hút**, 
 
 ### 🔴 Ba điều kiện để con số ròng có nghĩa
 
-1. **Phải có đủ ~140 ngày lịch sử tự crawl trước đã.** Kỳ hạn dài nhất là 140 ngày; trước mốc đó, `đáo_hạn(D)` luôn thiếu phần sinh ra từ những phiên chưa được ghi ⇒ ròng **luôn bị thổi phồng về phía bơm**.
+1. ✅ **Phải có đủ ~140 ngày lịch sử — ĐÃ THOẢ bằng seed FiinProX (2026-09-09), không phải chờ crawl.** Kỳ hạn dài nhất là 140 ngày; thiếu phần lịch sử đó thì `đáo_hạn(D)` luôn hụt ⇒ ròng **bị thổi phồng về phía bơm**. Kho nay có 248 phiên từ 2025-09-08, nên số dư có nghĩa từ **19/12/2025** trở đi ([Giới hạn 2](#-giới-hạn-2--thiếu-cột-đáo-hạn-và-bơm-ròng)). Điều kiện 2 và 3 dưới đây **vẫn nguyên giá trị**: seed lấp quá khứ, không miễn cho tương lai.
 2. **Bỏ lỡ một phiên là hỏng cả cửa sổ 140 ngày sau đó** — không có cách vá, vì [Giới hạn 1](#-giới-hạn-1--chỉ-phiên-mới-nhất-không-có-kho-lưu).
 3. **Đây là số suy ra, không phải số đo.** Phải đánh dấu rõ trong kho là *derived*, và đối chiếu chéo với nguồn có sẵn cột ròng trước khi tin.
 
-⚠️ **Trong ~140 ngày đầu, chỉ dùng `kl_trung_thau` + `ls_trung_thau` thô.** Đừng hiển thị chuỗi ròng chưa đủ dữ liệu — nó sai một chiều có hệ thống, khó phát hiện hơn là không có gì.
+⚠️ **Chuỗi ròng chỉ được hiển thị từ ngày cửa sổ đủ dữ liệu** — trước đó chỉ dùng `kl_trung_thau` + `ls_trung_thau` thô. Chuỗi thiếu dữ liệu sai một chiều có hệ thống, khó phát hiện hơn là không có gì. Với kho hiện tại, mốc đó là **19/12/2025**; cột `complete` của `macro.omo_flow` đánh dấu từng ngày đủ hay chưa, đọc cột đó thay vì đoán.
 
 ---
 
@@ -236,6 +253,7 @@ Bối cảnh các đường khác *(khảo sát 2026-08-15)*:
 |---|---|
 | **Vietstock Macro API** `POST /Macro/GetReportDataByIDs` | Endpoint và payload **đã đo chính xác**. Có sẵn trường `TotalVolPumpWithdrawOMO` "Giá trị bơm ròng (tỷ đồng)" ⇒ **không phải tự tính**. Gói Free = **60 ngày** gần nhất. **Cần đăng nhập** — gọi ẩn danh trả `RequestUpgradeAccount_Permission`. Dùng để **backfill 60 ngày** và **kiểm chứng chéo** con số tự dựng từ SBV |
 | **WiFeed / WiGroup gói "Tiền tệ"** | Schema đúng bằng nhu cầu *(có cả đáo hạn và lưu hành)*, nhưng biểu đồ nhúng trên trang WiGroup đã đo là **ảnh chụp tĩnh dừng ở 15/08/2024**, không phải feed sống; WiGroup trả lời **không sửa/không cung cấp API mới**. ⇒ **đóng lại về mặt kỹ thuật** |
+| **FiinProX** *(bản xuất tay, xlsx)* | ✅ **Đang dùng cho phần lịch sử** — 248 phiên 2025-09-08 → 2026-09-07, nạp một lần bằng `etl omo --seed`. Pháp lý: **chủ dự án xác nhận được dùng, 2026-09-09**. Không phải feed — muốn cập nhật tiếp thì xuất tay lần nữa |
 | FiinTrade *(bản BVSC dự án dùng)* | ❌ không có OMO — đã quét toàn bộ bundle |
 | VBMA · HNX · CEIC · DBnomics/IMF/BIS | ❌ đã kiểm, không nguồn nào cho chuỗi OMO Việt Nam theo ngày |
 

@@ -17,7 +17,7 @@ Nền tảng dữ liệu và phân tích chứng khoán Việt Nam: thu thập d
 | Tầng ngữ nghĩa nối dữ liệu ↔ skill | ✅ **dựng lát 10, đóng hợp đồng lát 11** (2026-09-07) | 9 function + vòng chat `python -m agent` — [chatbot-semantic-layer.md](docs/20-design/chatbot-semantic-layer.md) |
 | Hai skill chứng khoán | ✅ xong, đã dừng tối ưu; bộ hồi quy hiện hành là **vòng 7** (bộ vòng 6 đã mất khỏi repo) | 3.046 dòng |
 | Repo vào git | ✅ khởi tạo 2026-08-14 | commit đầu tiên |
-| **Hạ tầng + schema hai kho** | ✅ **2026-08-26** | Postgres **20 migration** (alembic) · ClickHouse **2** · compose PG+CH+Redis |
+| **Hạ tầng + schema hai kho** | ✅ **2026-08-26** | Postgres **21 migration** (alembic) · ClickHouse **2** · compose PG+CH+Redis |
 | **Ingester realtime** | ✅ **ghi thật từ 2026-08-27** — hàng đợi có trần, tràn ra đĩa khi kho trục trặc | 4,72 triệu dòng phiên 28/08 · chưa lần nào phải dùng tới đĩa |
 | **ETL theo lịch** | **15/15 họ job chạy được trong container** (lát 12, 2026-09-08) — `docker compose run --rm etl python -m etl <job>`; lịch chung (giờ chạy, chạy bù, chặn chạy chồng) thuộc **lát 13**. 11 task Windows về hưu — gỡ bằng một lệnh PowerShell ở Task 12 (chủ dự án) | 11 task Scheduler, `LogonType=Interactive` (cửa sổ cmd hiện tên task đang chạy; đảo từ S4U 2026-09-04 để khỏi cần admin); **10 `Disabled`, riêng `dlck-price-backfill` `Ready`** *(đọc trạng thái thật 2026-09-07)* |
 | **`api` · `frontend`** | ❌ chưa bắt đầu | |
@@ -69,7 +69,7 @@ dulieuchungkhoan.vn/
 │   │                    wichart · fred · fx · lbma · yahoo · binance · news · classify
 │   ├── agent/           9 function + vòng chat terminal; agent/skills/ = hai skill chứng khoán
 │   └── tests/           chạy trên Postgres/ClickHouse/Redis THẬT — số test ở database/README.md
-├── database/            migrations: Postgres 20 (alembic) · ClickHouse 2
+├── database/            migrations: Postgres 21 (alembic) · ClickHouse 2
 └── deploy/              backend.Dockerfile · infra/clickhouse/*.xml — compose nằm ở gốc: docker-compose.yml + docker-compose.vps.yml
 ```
 
@@ -89,7 +89,7 @@ dulieuchungkhoan.vn/
    cd backend && uv run python -m core.env check
    ```
 
-2. **Một lệnh lên cả hệ** — kho (Postgres · Redis · ClickHouse), `migrate` one-shot (alembic head · `ch_migrate` · cấp 4 user login · tự seed ngành lớp 2), `api`, `etl` (vỏ job, heartbeat tới lát 13), `ingester` (daemon, tự ngủ ngoài phiên):
+2. **Một lệnh lên cả hệ** — kho (Postgres · Redis · ClickHouse), `migrate` one-shot (alembic head · `ch_migrate` · cấp 4 user login · tự seed ngành lớp 2), `api`, `etl` (**scheduler**: bảng lịch trong code, chạy bù mốc lỡ, log mỗi job một file — lát 13), `ingester` (daemon, tự ngủ ngoài phiên):
 
    ```bash
    docker compose up -d --build

@@ -56,6 +56,27 @@ def _seed(db, d, tenor, vol_billion, op="reverse_repo"):
         {"d": d, "op": op, "t": tenor, "v": Decimal(str(vol_billion)) * 10**9})
 
 
+def test_store_writes_note_when_merged_else_null(db):
+    """`store()` phải ghi `note` bằng đúng chuỗi `_session_note` sinh ra khi `result.merged`
+    dương (nhánh seed FiinProX gộp dòng), và giữ `note` NULL khi `merged == 0` (đường crawl
+    thường, R1)."""
+    merged_result = OmoResult(
+        session_date=date(2026, 2, 3),
+        rows=[OmoRow("reverse_repo", 7, 16, 16, Decimal("40731.40") * 10**9, Decimal("4.5"))],
+        groups_present=frozenset({"reverse_repo"}),
+        merged=1,
+    )
+    store(merged_result, "<html/>", db)
+    note = db.execute(sa.text(
+        "SELECT note FROM macro.omo_session WHERE session_date = '2026-02-03'")).scalar_one()
+    assert note == "gộp 1 dòng cùng kỳ hạn"
+
+    store(R1, "<html/>", db)
+    note_r1 = db.execute(sa.text(
+        "SELECT note FROM macro.omo_session WHERE session_date = '2026-08-14'")).scalar_one()
+    assert note_r1 is None
+
+
 def test_flow_hand_solved(db):
     _seed(db, date(2026, 8, 14), 7, "6307.47")
     _seed(db, date(2026, 8, 21), 7, "5000")

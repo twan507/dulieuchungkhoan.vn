@@ -491,3 +491,7 @@ Skill `finishing-a-development-branch`: cả bộ trên cây sắp tích hợp (
 **Còn lại, quyết định chủ dự án:** (a) lịch sử git trên GitHub vẫn chứa giá trị cũ (đã vô hiệu) — muốn sạch hẳn cần viết lại lịch sử (`git filter-repo --replace-text`) + force-push + mọi clone kéo lại; (b) đánh dấu 5 incident GitGuardian là false positive (literal test) và đóng incident của giá trị thật sau khi xoay; (c) nếu mật khẩu cũ từng dùng lại ở nơi khác ngoài repo (thói quen), đổi nốt ở đó. Bài học vào CLAUDE.md §5 ở lượt kế: **không bao giờ dán `.env` mẫu bằng giá trị thật vào plan/ledger** — test `test_d04` nay canh máy móc.
 
 **Quyết định chủ dự án (2026-09-09 ~08:00):** **không** viết lại lịch sử git (không cần thiết — giá trị đã xoay, vô hiệu; mật khẩu cũ chưa từng dùng ở nơi nào khác); đóng incident GitGuardian — thao tác trên dashboard của chủ dự án (trợ lý không có quyền truy cập dịch vụ đó). Sự cố khép; lát 12 khép hoàn toàn tại `main` `d33861d`.
+
+## Phiên thật đầu tiên trong container — 2026-09-10 (ghi từ lát 13, AC10)
+
+Ingester daemon trong compose (`restart: unless-stopped`) tự dậy 08:30, ghi trọn phiên, đóng 15:05: `reconcile: p1=0 p2=0 ok=858` (log volume `/var/lib/dlck/logs/ingester-20260910.log`); ClickHouse `rt.trade` 205.380 · `rt.quote` 2.894.934 dòng của ngày *(đo 2026-09-10 17:40)*; insert p99 ~74 ms lúc 11:32. Container bị recreate 15:10 (rebuild của lát 13) sau khi phiên đóng — không ảnh hưởng. Đây là phép kiểm ingester dời từ lát 12 sang 10/09 (AC10 lát 13): **đạt**.

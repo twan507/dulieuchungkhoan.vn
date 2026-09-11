@@ -179,6 +179,7 @@ def test_job_runs_under_the_etl_role(price_db, monkeypatch):
         @sa.event.listens_for(eng, "connect")
         def _set_role(dbapi_conn, _rec):
             cur = dbapi_conn.cursor(); cur.execute("SET ROLE dlck_etl"); cur.close()
+            dbapi_conn.commit()   # đóng transaction do SET ROLE mở: `open_run` xin AUTOCOMMIT trên connection này (lát 13)
 
         return eng
 
@@ -300,6 +301,21 @@ def _flaky_get(fail_calls: int):
     return get
 
 
+def _record_pauses(monkeypatch):
+    """Ghi TỔNG mỗi quãng nghỉ, đọc ở seam `_sleep_sliced` (không ở `_sleep`).
+
+    Từ R32 job ngủ thành nhiều lát 30 s, nên danh sách lời gọi `_sleep` không còn tách được đâu là
+    quãng nghỉ nào (600 rồi 1200 = 60 lời gọi 30 s liền nhau). Thang nghỉ vẫn canh bằng literal, chỉ
+    đổi chỗ đọc; việc cắt lát do một test riêng canh. Bản thật của `_sleep_sliced` vẫn được gọi nên
+    vòng cắt lát có chạy, chỉ là `_sleep` không ngủ."""
+    pauses: list[float] = []
+    real_sliced = price_job._sleep_sliced
+    monkeypatch.setattr(price_job, "_sleep", lambda s: None)
+    monkeypatch.setattr(price_job, "_sleep_sliced",
+                        lambda total: pauses.append(float(total)) or real_sliced(total))
+    return pauses
+
+
 def _wire_flaky(monkeypatch, fail_calls):
     _wire(monkeypatch)
 
@@ -308,9 +324,7 @@ def _wire_flaky(monkeypatch, fail_calls):
         yield price_fetch.Fetcher(_flaky_get(fail_calls), sleep=lambda s: None)
     monkeypatch.setattr("etl.price_fetch.open_fetcher", fake_open_fetcher)
     monkeypatch.setattr(price_fetch, "MAX_CONSECUTIVE_FAILURES", 2)      # 3 mã ZZ* — cầu chì 2 mã là đủ để trip
-    slept = []
-    monkeypatch.setattr(price_job, "_sleep", lambda s: slept.append(s))
-    return slept
+    return _record_pauses(monkeypatch)
 
 
 def test_backfill_pauses_ten_minutes_after_a_source_outage_and_resumes_instead_of_ending_the_run(price_db, monkeypatch):
@@ -324,10 +338,110 @@ def test_backfill_pauses_ten_minutes_after_a_source_outage_and_resumes_instead_o
     assert s["failed_tickers"] == ["ZZA"] and s["codes_done"] == 3 and s["cursor"] == "ZZC" and s["pass_complete"] is True
 
 
-def test_backfill_gives_up_after_three_consecutive_pauses_when_the_source_stays_down(price_db, monkeypatch):
-    slept = _wire_flaky(monkeypatch, fail_calls=10_000)
-    assert price_job.run(backfill=True) == 2
+def test_backfill_escalates_pauses_and_never_gives_up_while_the_source_stays_down(price_db, monkeypatch):
+    """Đo 09/09–10/09: FiinTrade nghẽn ~4–9 mã mỗi giờ ở MỌI giờ ⇒ bỏ cuộc sau 3 lần nghỉ là bỏ dở vòng
+    (lượt 09/09 chết 02:02 tại con trỏ CK8, không ai bật lại). Nay nghỉ dài dần 10/20/40/60/60 phút và đi tiếp."""
+    # 24 lời gọi hỏng = ZZA (4) + ZZB hỏng 5 lượt × 4 ⇒ 5 lần trip SourceDown liên tiếp, rồi ZZB qua.
+    slept = _wire_flaky(monkeypatch, fail_calls=24)
+    assert price_job.run(backfill=True) == 0
     status, s, err = _last(price_db, "market.price_backfill")
-    assert status == "failed" and err.startswith("SourceDown")
-    assert slept == [600.0, 600.0, 600.0] and s["source_down_pauses"] == 3
-    assert s["cursor"] == "ZZA"                                            # con trỏ giữ mã đã đi qua, lượt sau nối tiếp
+    assert status == "success" and err is None
+    assert slept == [600.0, 1200.0, 2400.0, 3600.0, 3600.0]
+    assert s["source_down_pauses"] == 5 and s["source_down_pause_s"] == 11400
+    assert s["failed_tickers"] == ["ZZA"] and s["cursor"] == "ZZC" and s["pass_complete"] is True
+    assert _rows(price_db) == 19                                           # 18 phiên của ZZB + 1 của ZZC
+
+
+def _wire_failing_calls(monkeypatch, fail_calls: set[int], invalid_calls=frozenset()):
+    """Nguồn hỏng ĐÚNG những lời gọi thứ n — dựng được kịch bản trip · một mã qua · trip lại.
+    `invalid_calls`: những lời gọi trả `Code not valid` (nguồn CÓ trả lời, không phải mạng chết)."""
+    _wire(monkeypatch)
+    good, n = _get(), {"calls": 0}
+
+    def get(url):
+        n["calls"] += 1
+        if n["calls"] in fail_calls:
+            return 500, "gateway timeout"
+        if n["calls"] in invalid_calls:
+            return 200, INVALID
+        return good(url)
+
+    @contextlib.contextmanager
+    def fake_open_fetcher():
+        yield price_fetch.Fetcher(get, sleep=lambda s: None)
+    monkeypatch.setattr("etl.price_fetch.open_fetcher", fake_open_fetcher)
+    monkeypatch.setattr(price_fetch, "MAX_CONSECUTIVE_FAILURES", 1)       # một mã hỏng là trip: kịch bản ngắn gọn
+    return _record_pauses(monkeypatch)
+
+
+def test_backfill_pause_ladder_resets_after_a_code_loads(price_db, monkeypatch):
+    """Thang nghỉ đếm số lần nghỉ LIÊN TIẾP: một mã tải được là nguồn đã sống lại ⇒ lần nghẽn sau
+    bắt lại từ 10 phút, không nối tiếp 20 phút của quãng nghẽn trước."""
+    # ZZA hỏng 4 lần (gọi 1–4) ⇒ nghỉ; gọi 5 ZZA qua; ZZB hỏng 4 lần (gọi 6–9) ⇒ nghỉ; gọi 10 ZZB qua.
+    slept = _wire_failing_calls(monkeypatch, {1, 2, 3, 4, 6, 7, 8, 9})
+    assert price_job.run(backfill=True) == 0
+    status, s, err = _last(price_db, "market.price_backfill")
+    assert status == "success" and err is None
+    assert slept == [600.0, 600.0]
+    assert s["source_down_pauses"] == 2 and s["source_down_pause_s"] == 1200
+    assert s["failed_tickers"] == [] and s["codes_done"] == 3 and s["pass_complete"] is True
+
+
+def _wire_dead_code(monkeypatch, dead_org: str):
+    """Nguồn chết HẲN với đúng một mã (mọi lời gọi cho mã đó trả 500), bình thường với mã khác."""
+    _wire(monkeypatch)
+    good = _get()
+
+    def get(url):
+        code = url.split("Code=")[1].split("&")[0]
+        return (500, "gateway timeout") if code == dead_org else good(url)
+
+    @contextlib.contextmanager
+    def fake_open_fetcher():
+        yield price_fetch.Fetcher(get, sleep=lambda s: None)
+    monkeypatch.setattr("etl.price_fetch.open_fetcher", fake_open_fetcher)
+    monkeypatch.setattr(price_fetch, "MAX_CONSECUTIVE_FAILURES", 1)
+    return _record_pauses(monkeypatch)
+
+
+def test_backfill_skips_a_code_that_keeps_tripping_and_walks_on_instead_of_stalling_the_pass(price_db, monkeypatch):
+    """R30 (review 2026-09-10): bỏ nhánh bỏ cuộc xong thì MỘT mã hỏng mãi treo cả vòng vĩnh viễn —
+    `f.resume()` chỉ thăm dò lại đúng mã đó, con trỏ đứng im, dòng sổ nằm `running` nên bản tóm tắt
+    06:00 không thấy gì còn dòng daemon vẫn báo 'đang sống'. Nay: nghỉ tối đa 6 lần TẠI CÙNG MỘT VỊ
+    TRÍ con trỏ (~4,5 giờ ở thang đã kịch), rồi ghi mã vào `failed_tickers` và đi tiếp — vòng vẫn
+    không bao giờ bị bỏ dở, mã hỏng làm lại ở vòng sau."""
+    slept = _wire_dead_code(monkeypatch, "ZZAORG")
+    assert price_job.run(backfill=True) == 0
+    status, s, err = _last(price_db, "market.price_backfill")
+    assert status == "success" and err is None
+    assert slept == [600.0, 1200.0, 2400.0, 3600.0, 3600.0, 3600.0]        # đúng 6 lần nghỉ rồi thôi
+    assert s["source_down_pauses"] == 6 and s["source_down_pause_s"] == 15000
+    assert s["failed_tickers"] == ["ZZA"] and s["invalid_tickers"] == []
+    assert s["codes_done"] == 3 and s["cursor"] == "ZZC" and s["pass_complete"] is True
+    assert _rows(price_db) == 19                                            # 18 phiên của ZZB + 1 của ZZC
+
+
+def test_backfill_pause_ladder_resets_when_the_source_answers_code_not_valid(price_db, monkeypatch):
+    """M4: `Code not valid` nghĩa là nguồn CÓ trả lời — `Fetcher` reset cầu chì ở đúng cảnh này, thang
+    nghỉ của job cũng phải reset. Bản trước giữ nguyên bộ đếm nên quãng nghẽn sau bắt từ 20 phút."""
+    # ZZA: gọi 1–4 hỏng ⇒ nghỉ; gọi 5 trả 'Code not valid' ⇒ thang về 0.
+    # ZZB: gọi 6–9 hỏng ⇒ nghỉ (phải là 600 s, không phải 1200 s); gọi 10 ZZB qua.
+    slept = _wire_failing_calls(monkeypatch, {1, 2, 3, 4, 6, 7, 8, 9}, invalid_calls={5})
+    assert price_job.run(backfill=True) == 0
+    status, s, err = _last(price_db, "market.price_backfill")
+    assert status == "success" and err is None
+    assert slept == [600.0, 600.0]
+    assert s["invalid_tickers"] == ["ZZA"] and s["failed_tickers"] == []
+    assert s["source_down_pause_s"] == 1200 and s["pass_complete"] is True
+
+
+def test_a_source_down_pause_sleeps_in_thirty_second_slices(price_db, monkeypatch):
+    """R32 (đo 2026-09-10): trên Windows `time.sleep` KHÔNG bị CTRL_BREAK_EVENT đánh thức. Scheduler
+    xin con tắt rồi chờ 60 s; con đang ngủ một quãng tới 60 phút ⇒ bị giết cứng, để lại dòng
+    `running` mồ côi. Ngủ từng lát 30 s thì nhánh `except KeyboardInterrupt` chạy trong ≤ 30 s."""
+    slept = _wire_failing_calls(monkeypatch, {1, 2, 3, 4})       # ZZA trip đúng một lần rồi qua
+    ticks: list[float] = []
+    monkeypatch.setattr(price_job, "_sleep", ticks.append)
+    assert price_job.run(backfill=True) == 0
+    assert slept == [600.0]
+    assert ticks == [30.0] * 20                                   # 600 s = 20 lát, không lát nào dài hơn

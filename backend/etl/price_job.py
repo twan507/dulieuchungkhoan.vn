@@ -24,8 +24,35 @@ from etl.guard_common import GuardRefused
 log = logging.getLogger("etl.price")
 _wall_clock = time.time      # seam cho test: patch toàn cục time.time thì SQLAlchemy pool cũng ăn tick
 _sleep = time.sleep          # seam cho test: nghỉ khi nguồn nghẽn (backfill)
-SOURCE_DOWN_PAUSE_S = 600    # sự cố 05/09: FiinTrade nghẽn từng quãng ~15 phút tối thứ 7 — nghỉ 10 phút rồi nối tiếp
-SOURCE_DOWN_MAX_PAUSES = 3   # 3 lần nghỉ liên tiếp không có mã nào qua (30 phút) ⇒ coi nguồn chết thật, lượt failed như cũ
+# Thang nghỉ khi nguồn nghẽn: lần nghỉ LIÊN TIẾP thứ n (chưa mã nào qua) dùng phần tử thứ n−1, phần
+# tử cuối lặp mãi ⇒ 10 → 20 → 40 → 60 → 60 … phút. Đo 09/09–10/09: `getPriceData` trả HTTP 200 kèm
+# `status: Failed, "Timeout expired…"` cho ~4–9 mã MỖI GIỜ, ở mọi giờ, dù chạy một luồng hay ba —
+# nghẽn là nền của nguồn, không phải sự cố ngắn. Bản cũ (nghỉ 10 phút, bỏ cuộc sau 3 lần) chết lúc
+# 02:02 ngày 10/09 với exit 2 sau 194 mã (con trỏ CK8) và không ai bật lại. Nay không bỏ cuộc: nghỉ
+# dài dần rồi thử tiếp; mỗi quãng nghỉ chỉ tốn ≤ 4 lời gọi thăm dò (`Fetcher.resume`) nên nguồn đang
+# xấu vẫn được để yên.
+SOURCE_DOWN_PAUSES_S = (600, 1200, 2400, 3600)
+# Trần số lần nghỉ LIÊN TIẾP tại CÙNG MỘT vị trí con trỏ (~4,5 giờ ở thang đã kịch). Quá trần thì mã
+# đó bị bỏ qua chứ vòng KHÔNG bị bỏ dở: một mã hỏng mãi (nguồn không bao giờ trả nổi nó) mà cứ thử
+# lại thì con trỏ đứng im vĩnh viễn, dòng sổ nằm 'running' nên tóm tắt 06:00 không thấy gì mà dòng
+# daemon vẫn báo "đang sống" — hỏng câm, đúng loại §3.5 (review 2026-09-10, phán quyết R30).
+SOURCE_DOWN_MAX_PAUSES_PER_CODE = 6
+_SLEEP_SLICE_S = 30.0        # lát ngủ: xem `_sleep_sliced`
+
+
+def _sleep_sliced(total_s: float, step: float = _SLEEP_SLICE_S) -> None:
+    """Ngủ `total_s` giây bằng nhiều lát `step` giây.
+
+    Đo 2026-09-10: trên Windows `time.sleep` KHÔNG bị CTRL_BREAK_EVENT đánh thức. Scheduler xin con
+    tự tắt rồi chỉ chờ `SHUTDOWN_GRACE_S = 60` giây — con đang nghỉ một quãng tới 60 phút sẽ bị giết
+    cứng giữa chừng và để lại dòng `running` mồ côi. Cắt lát thì nhánh `except KeyboardInterrupt`
+    của `_backfill` chạy trong ≤ 30 giây, kịp đóng sổ (phán quyết R32).
+    """
+    left = float(total_s)
+    while left > 0:
+        chunk = min(step, left)
+        _sleep(chunk)
+        left -= chunk
 
 
 def _now_iso() -> str:
@@ -138,8 +165,7 @@ def _daily(engine, tickers: list[str] | None) -> int:
                 mism, sample = price_store.raw_close_mismatches(conn, bounds)
         except GuardRefused as e:
             price_store.store_refusal_evidence(engine, run_id, e.verdict.reasons, stats, res.pages)
-            omo_store.close_run(engine, run_id, "failed", stats,
-                                error="guard refused: " + "; ".join(e.verdict.reasons))
+            omo_store.close_run_refused(engine, run_id, "guard refused: " + "; ".join(e.verdict.reasons), stats)
             log.error("price từ chối: %s", e.verdict.reasons)
             return 1
         stats.update({"rows_sent": sent, "rows_changed": changed, "dup_dates": dups,
@@ -187,7 +213,8 @@ def _backfill(engine, tickers: list[str] | None, max_minutes: float | None,
                    "codes_done": 0, "pages": 0, "rows_sent": 0, "rows_changed": 0,
                    "dup_dates": 0, "raw_close_mismatch": 0, "raw_close_mismatch_sample": [],
                    "invalid_tickers": [], "failed_tickers": [], "retries": 0,
-                   "budget_hit": False, "pass_complete": False, "elapsed_s": 0, "source_down_pauses": 0}
+                   "budget_hit": False, "pass_complete": False, "elapsed_s": 0,
+                   "source_down_pauses": 0, "source_down_pause_s": 0}
     # Mở sổ là việc CUỐI trước `try`: hỏng ở phần tính hạn giờ phía trên thì không có dòng 'running' treo
     run_id = omo_store.open_run(engine, price_store.JOB_BACKFILL)
     try:
@@ -210,7 +237,9 @@ def _backfill(engine, tickers: list[str] | None, max_minutes: float | None,
                  (cursor or "đầu danh sách") if tickers is None else "(--codes)",
                  len(todo), _short(stop_at))
         with price_fetch.open_fetcher() as f:
-            pauses = 0                  # số lần nghỉ LIÊN TIẾP chưa có mã nào qua; về 0 khi một mã tải được
+            # Số lần nghỉ LIÊN TIẾP tại VỊ TRÍ con trỏ hiện tại; về 0 mỗi khi con trỏ nhích (mã tải
+            # được, nguồn trả `Code not valid`, hoặc mã bị bỏ qua vì hết trần).
+            pauses = 0
             for i, c in enumerate(todo, 1):
                 texts: list[str] = []
                 while True:
@@ -219,18 +248,31 @@ def _backfill(engine, tickers: list[str] | None, max_minutes: float | None,
                         pauses = 0
                     except price_fetch.CodeInvalid:
                         stats["invalid_tickers"].append(c.ticker)
+                        pauses = 0                  # nguồn CÓ trả lời (khuôn `Fetcher`: reset cầu chì)
                     except price_fetch.SourceDown as e:
-                        # Cầu chì trip = nguồn nghẽn (sự cố 05/09: 3 lượt cuối tuần chết vì một quãng nghẽn, task chờ tới
-                        # thứ 7 sau). Nghỉ rồi thử lại ĐÚNG mã này; chỉ bỏ cuộc khi nghỉ 3 lần liên tiếp mà không mã nào qua.
+                        # Cầu chì trip = nguồn nghẽn. Nghỉ rồi thử lại ĐÚNG mã này, nghỉ dài dần theo thang —
+                        # KHÔNG bao giờ bỏ dở vòng: nguồn nghẽn nền thì bỏ cuộc chỉ để lại con trỏ đứng im.
                         pauses += 1
-                        if pauses > SOURCE_DOWN_MAX_PAUSES:
-                            raise
-                        if deadline is not None and _wall_clock() + SOURCE_DOWN_PAUSE_S >= deadline:
+                        if pauses > SOURCE_DOWN_MAX_PAUSES_PER_CODE:
+                            # Nghỉ hết trần mà mã này vẫn không tải nổi ⇒ bỏ qua nó, con trỏ đi tiếp (mã hỏng
+                            # được làm lại ở vòng sau, dấu vết ở `failed_tickers`). `f.resume()` chứ không để
+                            # nguyên: mã kế tiếp chỉ được thăm dò MỘT mã — nguồn còn chết thì trip lại sau ≤ 4
+                            # lời gọi, không đốt thêm 10 mã × 4 lần chờ timeout.
+                            stats["failed_tickers"].append(c.ticker)
+                            log.warning("bỏ qua %s sau %d lần nghỉ, đi tiếp — làm lại ở vòng sau",
+                                        c.ticker, SOURCE_DOWN_MAX_PAUSES_PER_CODE)
+                            pauses = 0              # con trỏ sắp nhích: thang đếm lại từ đầu ở vị trí mới
+                            f.resume()
+                            break
+                        pause_s = SOURCE_DOWN_PAUSES_S[min(pauses - 1, len(SOURCE_DOWN_PAUSES_S) - 1)]
+                        if deadline is not None and _wall_clock() + pause_s >= deadline:
                             raise                                   # nghỉ xong là quá hạn — không lấn giờ giao dịch
-                        stats["source_down_pauses"] += 1            # đếm lần NGHỈ thật, không đếm lần trip bỏ cuộc
-                        log.warning("%s — nghỉ %d phút rồi thử lại (lần %d/%d)", e, SOURCE_DOWN_PAUSE_S // 60, pauses, SOURCE_DOWN_MAX_PAUSES)
+                        stats["source_down_pauses"] += 1            # đếm lần NGHỈ thật
+                        stats["source_down_pause_s"] += pause_s
+                        log.warning("%s — nghỉ %d phút rồi thử lại (lần nghỉ liên tiếp thứ %d)",
+                                    e, pause_s // 60, pauses)
                         price_store.save_progress(engine, run_id, stats)
-                        _sleep(SOURCE_DOWN_PAUSE_S)
+                        _sleep_sliced(pause_s)
                         f.resume()
                         continue
                     except price_fetch.FetchError as e:

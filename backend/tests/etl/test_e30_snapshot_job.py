@@ -5,6 +5,7 @@ from datetime import date
 import pytest
 import sqlalchemy as sa
 
+from etl import omo_store
 from etl import snapshot_job as sj
 from etl import snapshot_store as ss
 
@@ -77,6 +78,16 @@ def _cleanup(engine):
         c.execute(sa.text("DELETE FROM staging.raw_payload WHERE source = 'snapshot'"))
         c.execute(sa.text("DELETE FROM ops.data_domain_state WHERE domain = :d AND source = :s"),
                   {"d": ss.DOMAIN, "s": ss.SOURCE})
+
+
+def _quiet_floor(engine):
+    """Lát 13 bỏ QUOTA: dập nền quét sàn bằng cách coi mọi issuer đang có là vừa kiểm xong (khuôn e29 `_quiet_universe`, ở đây commit thật)."""
+    with engine.begin() as c:
+        for kind in ss.CADENCE_DAYS:
+            c.execute(sa.text(
+                "INSERT INTO ops.snapshot_check (issuer_id, kind, checked_at, keep_hash, found_by)"
+                " SELECT i.issuer_id, :k, clock_timestamp(), 'nen', 'floor' FROM market.issuer i"
+                " ON CONFLICT (issuer_id, kind) DO UPDATE SET checked_at = clock_timestamp()"), {"k": kind})
 
 
 def _seed(engine, organ=ORGAN, ticker=TICKER):
@@ -226,11 +237,11 @@ def test_recrawl_passes_the_time_budget_to_price_job(snapshot_db, monkeypatch):
 
     PHẢI là lượt ĐẦY ĐỦ (`codes=None`, `kinds=None`): vòng sửa 4 chặn hẳn `_recrawl` ở lượt
     con (xem `test_a_codes_run_does_not_trigger_a_price_recrawl` ngay dưới) — test này đổi từ
-    `codes=[TICKER]` sang lượt đầy đủ để còn đứng được sau fix đó, đúng khuôn zero-QUOTA của
+    `codes=[TICKER]` sang lượt đầy đủ để còn đứng được sau fix đó, đúng khuôn `_quiet_floor` của
     `test_the_watermark_written_reflects_the_due_list_snapshot_not_a_later_insert` (không zero
     thì nhánh quét sàn có thể kéo issuer thật còn sót của file test khác vào lượt).
     """
-    monkeypatch.setattr(ss, "QUOTA", {k: 0 for k in ss.QUOTA})
+    _quiet_floor(snapshot_db)
     price_calls = []
     monkeypatch.setattr("etl.price_job.run", lambda **kw: (price_calls.append(kw), 0)[1])
     iid = _seed(snapshot_db)
@@ -242,6 +253,37 @@ def test_recrawl_passes_the_time_budget_to_price_job(snapshot_db, monkeypatch):
     rc = sj.run(get=_fake_get())
     assert rc == 0
     assert price_calls == [{"backfill": True, "codes": [TICKER], "max_minutes": sj.RECRAWL_MAX_MINUTES}]
+
+
+def test_a_busy_price_lock_during_recrawl_does_not_kill_the_snapshot_run(snapshot_db, monkeypatch):
+    """I1 (review toàn nhánh lát 13): `_recrawl` gọi `price_job.run` TRONG TIẾN TRÌNH, mà
+    `omo_store.open_run` ném `SystemExit(1)` khi khoá `market.price_backfill` bận (backfill thứ 7
+    hoặc một lượt chạy tay — đã có một lượt chạy suốt ngày 09/09). `SystemExit` là `BaseException`
+    nên `except Exception` của `_recrawl` KHÔNG bắt: cả tiến trình snapshot chết giữa chừng và để
+    dòng `market.snapshot` treo `running` vĩnh viễn.
+
+    Sau fix, khoá bận là `omo_store.LockBusy` (một lớp con của `SystemExit`, giữ nguyên mã 1 cho
+    hợp đồng CLI) và `_recrawl` bắt riêng nó: lượt snapshot vẫn đóng `success`, và chuyện đã xảy ra
+    nằm lại trong `stats.recrawl.lock_busy` để người vận hành đọc được.
+    """
+    _quiet_floor(snapshot_db)
+
+    def busy(**_kw):
+        raise omo_store.LockBusy(1)
+
+    monkeypatch.setattr("etl.price_job.run", busy)
+    iid = _seed(snapshot_db)
+    with snapshot_db.begin() as c:
+        c.execute(sa.text(
+            "INSERT INTO market.corporate_event (event_type, issuer_id, exright_date, payload)"
+            " VALUES ('CashDividend', :i, current_date, '{}'::jsonb)"), {"i": iid})
+    rc = sj.run(get=_fake_get())
+    assert rc == 0
+    with snapshot_db.begin() as c:
+        row = c.execute(sa.text("SELECT status, stats FROM ops.etl_run WHERE job = :j"
+                                " ORDER BY run_id DESC LIMIT 1"), {"j": ss.JOB}).one()
+    assert row.status == "success"
+    assert row.stats["recrawl"] == {"codes": [TICKER], "lock_busy": True}
 
 
 def test_a_codes_run_does_not_trigger_a_price_recrawl(snapshot_db, monkeypatch):
@@ -300,12 +342,12 @@ def test_the_watermark_written_reflects_the_due_list_snapshot_not_a_later_insert
     mất, không job nào phục vụ nó. Sửa: `max(public_date)` phải lấy CÙNG giao dịch với
     `due_list` ở T0 và ghi đúng giá trị đó ở cuối lượt — bất kể chuyện gì xảy ra ở giữa.
 
-    Zero hoá `QUOTA` để nhánh quét sàn không kéo issuer thật còn sót của file test khác vào
+    Gọi `_quiet_floor` (lát 13 bỏ quota) để nhánh quét sàn không kéo issuer thật còn sót của file test khác vào
     lượt (đây phải là lượt ĐẦY ĐỦ — codes=None, kinds=None — mới thật sự ghi watermark theo
     fix #1). `expected_wm` tự đo NGAY TRƯỚC khi chạy job thay vì hard-code, để test không phụ
     thuộc việc `market.corporate_event` có sạch tuyệt đối hay không (§1.7 — không giả định
     trạng thái người khác để lại)."""
-    monkeypatch.setattr(ss, "QUOTA", {k: 0 for k in ss.QUOTA})
+    _quiet_floor(snapshot_db)
     iid = _seed(snapshot_db)
     with snapshot_db.begin() as c:
         c.execute(sa.text(
@@ -362,7 +404,7 @@ def test_stats_survive_when_upsert_domain_state_fails_after_close_run(snapshot_d
     `stats` dùng `coalesce` nên nếu bước sau ném lỗi, `etl_run` vẫn GIỮ được stats đã ghi, chỉ
     đổi `status` sang `failed`. Trước fix, `snapshot_job` gọi `upsert_domain_state` TRƯỚC
     `close_run` — lỗi ở đó làm `stats = NULL`, mất sạch bằng chứng của lượt đã ghi xong."""
-    monkeypatch.setattr(ss, "QUOTA", {k: 0 for k in ss.QUOTA})
+    _quiet_floor(snapshot_db)
     monkeypatch.setattr(ss, "upsert_domain_state",
                         lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
     iid = _seed(snapshot_db)
@@ -380,7 +422,10 @@ def test_stats_survive_when_upsert_domain_state_fails_after_close_run(snapshot_d
                                 " ORDER BY run_id DESC LIMIT 1"), {"j": ss.JOB}).one()
     assert row.status == "failed"
     assert "boom" in row.error
-    assert row.stats["rows_written"] == 1    # bằng chứng KHÔNG mất, dù status = failed
+    # Lát 13 bỏ quota: issuer mới seed chưa có sổ kiểm ở cả 4 kind, nên lượt ĐẦY ĐỦ (không
+    # --codes) quét sàn phủ luôn cả 4, không chỉ kind bị trigger bởi Earning ở trên — điểm
+    # test cần là stats KHÔNG mất khi status = failed, không phải con số 1.
+    assert row.stats["rows_written"] == 4    # bằng chứng KHÔNG mất, dù status = failed
 
 
 def test_a_partial_outage_refuses_the_run_and_leaves_real_evidence(snapshot_db):

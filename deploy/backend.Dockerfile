@@ -7,7 +7,7 @@ ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PYTHONUNBUFFERED=1 PYTHONIOENCODING=
 # không có sẵn thì volume ra đời root:root và tiến trình non-root không ghi được (AC4 lát 12, 2026-09-08).
 # Tạo user và MỌI thư mục TRƯỚC `uv sync`, rồi `COPY --chown`: bản cũ `chown -R /app` sau `uv sync` nên
 # `.venv` bị chép lại nguyên vẹn thành một layer thứ hai (Chuẩn M10, review toàn nhánh lát 12).
-RUN mkdir -p /var/lib/dlck/logs /var/lib/dlck/measure /var/lib/dlck/spill /backups /app/backend /app/database && useradd -m appuser && chown -R appuser /app /var/lib/dlck /backups
+RUN mkdir -p /var/lib/dlck/logs /var/lib/dlck/measure /var/lib/dlck/spill /var/lib/dlck/etl-logs /backups /app/backend /app/database && useradd -m appuser && chown -R appuser /app /var/lib/dlck /backups
 USER appuser
 WORKDIR /app/backend
 COPY --chown=appuser:appuser backend/pyproject.toml backend/uv.lock ./

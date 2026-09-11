@@ -114,17 +114,22 @@ services:
       migrate:
         condition: service_completed_successfully
 
-  # Vỏ job: lát 12 giữ heartbeat; lát 13 thay `command` bằng scheduler. Job lẻ chạy qua `docker compose run --rm etl …`.
+  # Scheduler (lát 13): `python -m etl` không tham số = vòng lịch trong etl/scheduler/. Job lẻ vẫn chạy qua `docker compose run --rm etl …`.
   etl:
     <<: *app
     restart: unless-stopped
     command: ["python", "-m", "etl"]
-    stop_grace_period: 60s
+    # 90s (bằng `ingester`) để runner còn dư địa: nhịp vòng lặp 20s + `SHUTDOWN_GRACE_S = 60` chờ con
+    # tự đóng sổ rồi mới `kill()`. Đặt đúng 60s thì Docker giết cả scheduler ngay lúc nó bắt đầu chờ,
+    # và con nào chưa kịp ghi `ops.etl_run` sẽ để lại dòng `running` treo.
+    stop_grace_period: 90s
     environment:
       <<: *app-env
       CLICKHOUSE_BACKUP_DIR: /backups
+      ETL_LOG_DIR: /var/lib/dlck/etl-logs
     volumes:
       - ${CLICKHOUSE_BACKUP_DIR:-./deploy/infra/clickhouse-backups}:/backups
+      - etl_logs:/var/lib/dlck/etl-logs
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -184,6 +189,7 @@ volumes:
   ingester_logs:
   ingester_measure:
   ingester_spill:
+  etl_logs:
 
 networks:
   dlck-net:

@@ -3,10 +3,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
+import sys
 
 import sqlalchemy as sa
 
 from etl.omo_parse import OmoResult
+
+log = logging.getLogger("etl.omo_store")
 
 
 def store(result: OmoResult, html: str, conn) -> dict:
@@ -20,15 +24,16 @@ def store(result: OmoResult, html: str, conn) -> dict:
     won = conn.execute(
         sa.text(
             "INSERT INTO macro.omo_session"
-            " (session_date, crawled_at, has_reverse_repo, has_repo, has_outright_sale)"
-            " VALUES (:d, now(), :r, :p, :o)"
+            " (session_date, crawled_at, has_reverse_repo, has_repo, has_outright_sale, note)"
+            " VALUES (:d, now(), :r, :p, :o, :n)"
             " ON CONFLICT (session_date) DO NOTHING"
             " RETURNING session_date"
         ),
         {"d": result.session_date,
          "r": "reverse_repo" in result.groups_present,
          "p": "repo" in result.groups_present,
-         "o": "outright_sale" in result.groups_present},
+         "o": "outright_sale" in result.groups_present,
+         "n": _session_note(None, result.merged)},
     ).first()
     if won is None:
         return {"skipped": True}
@@ -55,13 +60,74 @@ def store(result: OmoResult, html: str, conn) -> dict:
     return {"sessions": 1, "auctions": len(result.rows)}
 
 
+def _session_note(base: str | None, merged: int) -> str | None:
+    tail = f"gộp {merged} dòng cùng kỳ hạn" if merged else None
+    return " · ".join(x for x in (base, tail) if x) or None
+
+
+def store_seed(result: OmoResult, conn, *, crawled_at, note: str) -> dict:
+    """Ghi một phiên từ nguồn ngoài (FiinProX) — cùng khoá PK/ON CONFLICT như `store`, KHÔNG ghi raw_payload."""
+    won = conn.execute(
+        sa.text("INSERT INTO macro.omo_session (session_date, crawled_at, has_reverse_repo, has_repo, has_outright_sale, note)"
+                " VALUES (:d, :c, :r, :p, :o, :n) ON CONFLICT (session_date) DO NOTHING RETURNING session_date"),
+        {"d": result.session_date, "c": crawled_at, "r": "reverse_repo" in result.groups_present,
+         "p": "repo" in result.groups_present, "o": "outright_sale" in result.groups_present,
+         "n": _session_note(note, result.merged)}).first()
+    if won is None:
+        return {"skipped": True}
+    for row in result.rows:
+        conn.execute(
+            sa.text("INSERT INTO macro.omo_auction (session_date, op_type, tenor_days, participants, winners, volume_vnd, rate_pct)"
+                    " VALUES (:d, :op, :t, :p, :w, :v, :r)"),
+            {"d": result.session_date, "op": row.op_type, "t": row.tenor_days, "p": row.participants, "w": row.winners,
+             "v": row.volume_vnd, "r": row.rate_pct})
+    return {"sessions": 1, "auctions": len(result.rows)}
+
+
+_LOCK_CONNS: dict[int, tuple[sa.Connection, str]] = {}   # run_id -> (connection AUTOCOMMIT giữ advisory lock suốt đời lượt, job)
+LOCK_BUSY_ERROR = "lock busy: lượt khác đang chạy"
+
+
+class LockBusy(SystemExit):
+    """Khoá bận — vẫn là `SystemExit(1)` cho tiến trình chạy CLI, nhưng có TÊN để caller lồng nhau bắt được.
+
+    🔴 Vì sao phải là lớp riêng (I1, review toàn nhánh lát 13): `open_run` không chỉ chạy ở biên tiến
+    trình. `snapshot_job._recrawl` gọi `price_job.run(...)` TRONG TIẾN TRÌNH, `news --loop --classify N`
+    gọi `news_classify.run(...)` trong vòng lặp — cả hai bọc bằng `except Exception`, mà `SystemExit`
+    là `BaseException`. Một khoá `market.price_backfill` bận (backfill thứ 7, hay một lượt chạy tay)
+    do đó GIẾT luôn tiến trình snapshot ở giữa lượt và để dòng `market.snapshot` treo `running` mãi.
+    Bắt trần `SystemExit` ở những chỗ đó thì lại nuốt cả `sys.exit` thật, nên khoá bận cần tên riêng.
+    Kế thừa `SystemExit` ⇒ mã thoát vẫn 1, hợp đồng CLI (`test_e63`) không đổi.
+    """
+
+
 def open_run(engine, job: str) -> int:
-    with engine.connect() as c:
-        rid = c.execute(
-            sa.text("INSERT INTO ops.etl_run (job) VALUES (:j) RETURNING run_id"), {"j": job}
-        ).scalar_one()
-        c.commit()
-        return rid
+    """Mở sổ + giành khoá theo tên job (spec lát 13 §5.9). Khoá session-level trên connection riêng AUTOCOMMIT:
+    sống tới `close_run`, tự nhả khi tiến trình chết (Postgres nhả theo phiên). Bận ⇒ ghi một dòng `failed`
+    mang `guard_refused` (planner không bù lại mốc đó trong ngày) rồi `LockBusy(1)` — ném TRƯỚC `try` của mọi
+    job nên không sửa file job nào; exit 1 đúng hợp đồng "dữ liệu lành, không cần người".
+    """
+    lock = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        got = lock.execute(sa.text("SELECT pg_try_advisory_lock(hashtext(:j))"), {"j": job}).scalar_one()
+    except BaseException:                 # M3: lệnh giành khoá tự ném (kho chớp tắt) ⇒ đóng connection riêng, đừng rò pool
+        lock.close()
+        raise
+    if not got:
+        lock.execute(
+            sa.text("INSERT INTO ops.etl_run (job, status, finished_at, error, stats)"
+                    " VALUES (:j, 'failed', now(), :e, cast(:s AS jsonb))"),
+            {"j": job, "e": LOCK_BUSY_ERROR,
+             "s": json.dumps({"lock_busy": True, "guard_refused": True})},
+        )
+        lock.close()
+        print(f"{job}: {LOCK_BUSY_ERROR} — bỏ lượt này", file=sys.stderr, flush=True)
+        raise LockBusy(1)
+    rid = lock.execute(
+        sa.text("INSERT INTO ops.etl_run (job) VALUES (:j) RETURNING run_id"), {"j": job}
+    ).scalar_one()
+    _LOCK_CONNS[rid] = (lock, job)
+    return rid
 
 
 def close_run(engine, run_id: int, status: str, stats: dict | None = None,
@@ -74,16 +140,43 @@ def close_run(engine, run_id: int, status: str, stats: dict | None = None,
     `stats=None` — không có `coalesce` thì lượt đó **mất trắng** counts/rows_written/watermark
     của phần việc đã ghi xong. Kết cục đúng là `status='failed'` mà VẪN GIỮ stats: thấy được
     đã ghi những gì, và biết có thứ hỏng sau đó. Seam: `test_e04_store_flow.py`.
+
+    Sau UPDATE: nhả khoá và đóng connection giữ khoá (lát 13). `pg_advisory_unlock` phải gọi TƯỜNG MINH —
+    connection trả về pool mà chưa nhả thì vẫn giữ khoá, lượt sau của cùng job sẽ chết oan. Seam: `test_e67`.
+
+    Việc nhả khoá nằm trong `finally` của UPDATE: dù UPDATE ném lỗi, khoá vẫn phải được thả — một UPDATE
+    hỏng không được phép khoá chết job đó cho mọi lượt sau. Và nhả khoá thất bại (connection giữ khoá đã
+    chết…) chỉ log cảnh báo rồi vẫn đóng connection — KHÔNG BAO GIỜ làm hỏng lượt đang đóng vì dữ liệu
+    (status/stats) đã ghi quan trọng hơn việc dọn khoá. Seam: `test_e67`.
     """
-    with engine.connect() as c:
-        c.execute(
-            sa.text("UPDATE ops.etl_run SET finished_at = now(), status = :s,"
-                    " stats = coalesce(cast(:st AS jsonb), ops.etl_run.stats),"
-                    " error = :e WHERE run_id = :r"),
-            {"s": status, "st": json.dumps(stats) if stats is not None else None,
-             "e": error, "r": run_id},
-        )
-        c.commit()
+    try:
+        with engine.connect() as c:
+            c.execute(
+                sa.text("UPDATE ops.etl_run SET finished_at = now(), status = :s,"
+                        " stats = coalesce(cast(:st AS jsonb), ops.etl_run.stats),"
+                        " error = :e WHERE run_id = :r"),
+                {"s": status, "st": json.dumps(stats) if stats is not None else None,
+                 "e": error, "r": run_id},
+            )
+            c.commit()
+    finally:
+        held = _LOCK_CONNS.pop(run_id, None)
+        if held is not None:
+            lock, job = held
+            try:
+                try:
+                    lock.execute(sa.text("SELECT pg_advisory_unlock(hashtext(:j))"), {"j": job})
+                except Exception as e:
+                    log.warning("không nhả được advisory lock của %s: %s", job, e)
+            finally:
+                lock.close()
+
+
+def close_run_refused(engine, run_id: int, error: str, stats: dict | None = None) -> None:
+    """Đóng sổ một lượt exit 1 — chốt chặn từ chối, nguồn/model chết, khoá bận: cờ `guard_refused` cho planner."""
+    st = dict(stats or {})
+    st["guard_refused"] = True
+    close_run(engine, run_id, "failed", st, error=error)
 
 
 def upsert_domain_state(engine, watermark: str) -> None:
