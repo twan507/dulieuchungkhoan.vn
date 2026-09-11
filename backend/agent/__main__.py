@@ -13,11 +13,10 @@ from core.env import load_dotenv
 
 load_dotenv()
 
-from agent.chat import repl                      # noqa: E402 — phải nạp .env trước
-from agent.db import ops_engine, read_engine     # noqa: E402
-from core.llm.client import LLMClient            # noqa: E402
-from core.llm.settings import LLMSettings        # noqa: E402
-
+from agent.chat import repl  # noqa: E402 — phải nạp .env trước
+from agent.db import ops_engine, read_engine  # noqa: E402
+from core.llm.client import LLMClient  # noqa: E402
+from core.llm.settings import LLMSettings  # noqa: E402
 
 CHAT_TIMEOUT_S = 600.0
 """Thời gian chờ một request của vòng chat, dài hơn hẳn mặc định 120 s của `core.llm`.

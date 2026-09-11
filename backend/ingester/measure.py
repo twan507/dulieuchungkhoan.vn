@@ -9,7 +9,8 @@ import time
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-from core.clock import VN as TZ, today_vn
+from core.clock import VN as TZ
+from core.clock import today_vn
 
 # Chính sách giữ bản đo thô (roadmap §2.1, đo 2026-08-27): ~93 MB gzip/ngày,
 # giữ 30 ngày ≈ 2,8 GB — đĩa VPS 60 GB không gánh nổi vô thời hạn.

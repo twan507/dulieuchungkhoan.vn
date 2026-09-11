@@ -7,8 +7,17 @@ from datetime import datetime, timedelta
 
 import ingester.main as main_mod
 from ingester.config import Config as IngesterConfig
-from ingester.main import (SESSION_END_MEASURE, SESSION_END_RUN, SESSION_START, TZ, _relay,
-                           _session_with_relay, daemon, install_loop_stop, next_window)
+from ingester.main import (
+    SESSION_END_MEASURE,
+    SESSION_END_RUN,
+    SESSION_START,
+    TZ,
+    _relay,
+    _session_with_relay,
+    daemon,
+    install_loop_stop,
+    next_window,
+)
 
 
 def vn(y, m, d, h, mi):

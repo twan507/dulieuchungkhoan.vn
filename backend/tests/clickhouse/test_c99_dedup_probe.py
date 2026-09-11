@@ -64,7 +64,7 @@ def test_probe_dedup_and_pickle_size(migrated):
     # 1c — chiều thời gian: có giới hạn theo GIÂY không (spec §9: đo, không suy)
     y = _rows("PRB3", 10)
     c.insert("rt.trade", y, column_names=COLS)
-    import time; time.sleep(130)
+    time.sleep(130)
     c.insert("rt.trade", y, column_names=COLS)
     n_1c = _count(c, "PRB3")
     print(f"PROBE 1c (chờ 130s, KHÔNG chen block): count={n_1c} "

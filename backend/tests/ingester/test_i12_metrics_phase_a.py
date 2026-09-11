@@ -3,9 +3,9 @@ import asyncio
 import json
 from collections import deque
 
-from ingester.chwriter import COLUMNS, ChWriter, WARN_DEPTH_ROWS
-from ingester.main import make_on_packet
+from ingester.chwriter import COLUMNS, WARN_DEPTH_ROWS, ChWriter
 from ingester.dedup import FrameDedup, Stamper
+from ingester.main import make_on_packet
 from ingester.normalize import Metrics, Normalized
 
 

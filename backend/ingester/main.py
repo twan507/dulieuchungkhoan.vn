@@ -13,16 +13,18 @@ import os
 import signal
 import sys
 import time
-from datetime import datetime, time as dtime, timedelta
+from datetime import datetime, timedelta
+from datetime import time as dtime
 from pathlib import Path
 
 import clickhouse_connect
-from clickhouse_connect.driver.exceptions import ClickHouseError
 import redis.asyncio as aioredis
 import websockets
+from clickhouse_connect.driver.exceptions import ClickHouseError
 
 from core import ch_migrate
-from core.clock import VN as TZ, today_vn
+from core.clock import VN as TZ
+from core.clock import today_vn
 from ingester import catalog as cat
 from ingester import config, eio
 from ingester import leader as leader_mod

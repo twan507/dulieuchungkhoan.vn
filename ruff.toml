@@ -1,0 +1,14 @@
+# ruff — lint tối thiểu, chốt 2026-09-11 (mục 7 bảng câu hỏi trước lát 12). Không --unsafe-fixes (bài học F841 2026-09-07).
+target-version = "py312"
+line-length = 130          # chỉ để formatter/E501 sau này; E501 KHÔNG bật
+extend-exclude = [".venv", "**/__pycache__", "docs", "deploy"]
+
+[lint]
+# E4/E7 tắt (ruling controller 2026-09-11): quyết định chủ dự án là "F + I, bộ luật hẹp".
+# Đo 2026-09-11: bật E4/E7 lộ 43 E702 + 13 E402 + 1 E701 + 1 E731 trong test/script —
+# đó là kiểu viết (semicolon one-liner, import sau load_dotenv), không phải lỗi cần dọn
+# trong lượt này. Bật lại sau nếu muốn siết kiểu.
+select = ["E9", "F", "I"]
+
+[lint.isort]
+known-first-party = ["core", "etl", "ingester", "api", "agent"]

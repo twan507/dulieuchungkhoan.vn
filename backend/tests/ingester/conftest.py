@@ -11,7 +11,6 @@ import uuid
 import pytest
 
 
-
 def _free_port() -> int:
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))

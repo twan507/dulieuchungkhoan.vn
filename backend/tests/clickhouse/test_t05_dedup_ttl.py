@@ -4,7 +4,6 @@ from decimal import Decimal
 
 import clickhouse_connect
 import pytest
-
 from tests.clickhouse.conftest import dt_ago, part_of
 
 COLS = ["symbol", "ts", "seq", "price", "volume", "side", "change", "cum_volume", "cum_value", "received_at"]

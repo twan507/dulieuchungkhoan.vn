@@ -2,7 +2,6 @@
 from datetime import datetime, timedelta, timezone
 
 from core.clock import VN
-from etl.scheduler import planner
 from etl.scheduler.planner import LedgerRow, day_bounds_utc, due
 from etl.scheduler.schedule import ALL_DAYS, MON_FRI, SCHEDULE, JobSpec
 

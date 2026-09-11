@@ -9,7 +9,7 @@ import logging
 
 import httpx
 
-from etl.http_fetch import BadShape, DEFAULT_HEADERS, FetchError, open_fetcher
+from etl.http_fetch import DEFAULT_HEADERS, BadShape, FetchError, open_fetcher
 
 log = logging.getLogger("etl.binance")
 BASE = "https://api.binance.com/api/v3/klines"

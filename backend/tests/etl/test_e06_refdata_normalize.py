@@ -1,4 +1,8 @@
-import json, pathlib, pytest
+import json
+import pathlib
+
+import pytest
+
 from etl.refdata_normalize import RefdataError, normalize
 
 FIX = pathlib.Path(__file__).parent / "fixtures" / "refdata"

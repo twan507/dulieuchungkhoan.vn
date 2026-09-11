@@ -12,8 +12,7 @@ import os
 import pytest
 import sqlalchemy as sa
 
-from etl import (events_job, fundamentals_job, omo_job, price_job, refdata_job, screener_job,
-                 snapshot_job, wichart_job)
+from etl import events_job, fundamentals_job, omo_job, price_job, refdata_job, screener_job, snapshot_job, wichart_job
 
 INTERRUPT_ERROR = "dừng tay (Ctrl+C)"
 EXIT_INTERRUPTED = 130

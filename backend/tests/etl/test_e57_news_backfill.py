@@ -4,9 +4,9 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 import sqlalchemy as sa
+from tests.etl.test_e56_news_job import NAMES, _cleanup, _page  # noqa: F401 — cùng khuôn dọn/dựng trang
 
 from etl import news_job as nj
-from tests.etl.test_e56_news_job import _cleanup, _page, NAMES  # noqa: F401 — cùng khuôn dọn/dựng trang
 
 VN = timezone(timedelta(hours=7))
 NOW = datetime(2026, 9, 6, 0, 0, tzinfo=VN)

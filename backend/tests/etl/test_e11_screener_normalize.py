@@ -1,4 +1,5 @@
-import json, pathlib
+import json
+import pathlib
 from datetime import date
 
 from etl import screener_normalize as sn

@@ -1,4 +1,5 @@
 """SpillStore — spec spill §3/§4/§6. Seam 1, 2, 10, 12, 13 của spec §13."""
+import gc
 import os
 import pickle
 import subprocess
@@ -8,6 +9,7 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from zoneinfo import ZoneInfo
+
 import pytest
 
 from ingester.spill import SpillStore
@@ -76,7 +78,7 @@ def test_seq_survives_restart_no_clobber(tmp_path):
     # tiến trình "mới": KHÔNG giữ lock cũ (mô phỏng chết) — mở store thứ hai
     s2 = SpillStore(tmp_path, cap_bytes=10**9)
     # lock cũ còn giữ bởi file handle s1? s1 đã del → GC đóng. Windows cần chắc chắn:
-    import gc; gc.collect()
+    gc.collect()
     assert s2.try_acquire()
     s2.scan()
     assert s2.seq == 2                                     # max quét được + 1, KHÔNG đè

@@ -1,8 +1,10 @@
 import pathlib
+
 import sqlalchemy as sa
+
+from etl import refdata_store
 from etl.refdata_merge import merge
 from etl.refdata_normalize import normalize
-from etl import refdata_store
 
 FIX = pathlib.Path(__file__).parent / "fixtures" / "refdata"
 

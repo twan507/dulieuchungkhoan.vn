@@ -8,7 +8,7 @@ import time
 
 import httpx
 
-from etl.http_fetch import BadShape, DEFAULT_HEADERS, FetchError, Fetcher  # noqa: F401 — re-export cho news_job
+from etl.http_fetch import DEFAULT_HEADERS, BadShape, Fetcher, FetchError  # noqa: F401 — re-export cho news_job
 from etl.news_parse import decode
 
 ARTICLE_MIN_BYTES = 5000          # dưới đó là trang lỗi/soft-404 (đo 2026-09-05: bài bị gỡ trả 200 với 3 KB)

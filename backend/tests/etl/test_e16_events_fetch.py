@@ -1,5 +1,7 @@
 import json
+
 import pytest
+
 from etl import events_fetch as ef
 
 

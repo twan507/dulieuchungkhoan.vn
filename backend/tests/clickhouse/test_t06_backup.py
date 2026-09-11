@@ -1,8 +1,9 @@
 from datetime import timedelta
 from decimal import Decimal
 
-from core import ch_backup
 from tests.clickhouse.conftest import TODAY, dt_ago, part_of
+
+from core import ch_backup
 
 COLS = ["symbol", "ts", "seq", "price", "volume", "side", "change", "cum_volume", "cum_value", "received_at"]
 

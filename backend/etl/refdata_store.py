@@ -17,7 +17,6 @@ Ngữ nghĩa ghi (spec §5) — bám sát, không suy diễn:
 from __future__ import annotations
 
 import json
-
 import logging
 
 import sqlalchemy as sa

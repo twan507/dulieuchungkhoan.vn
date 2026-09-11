@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from ingester.normalize import Metrics, NormalizeError, TZ, normalize, symbol_of
+from ingester.normalize import TZ, Metrics, NormalizeError, normalize, symbol_of
 
 RECV = 1786342136000  # 2026-08-10 13:08:56.000 +07 (epoch ms bất kỳ trong phiên)
 

@@ -23,8 +23,7 @@ from pathlib import Path
 
 import pytest
 
-from etl import (events_job, fundamentals_job, guard_common, price_job, refdata_job,
-                 screener_job, snapshot_job)
+from etl import events_job, fundamentals_job, guard_common, price_job, refdata_job, screener_job, snapshot_job
 
 ETL = Path(__file__).resolve().parents[2] / "etl"
 JOB_FILES = sorted(p for p in ETL.glob("*_job.py"))

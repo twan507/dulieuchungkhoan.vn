@@ -1,4 +1,5 @@
-import json, pathlib
+import json
+import pathlib
 from datetime import date
 
 import sqlalchemy as sa

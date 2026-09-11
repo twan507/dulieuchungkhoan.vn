@@ -24,6 +24,7 @@ def test_classify_rejects_missing_or_conflicting_bounds(bad):
 
 def test_ids_file_only_with_dry_run(monkeypatch, tmp_path):
     import json
+
     import etl.news_classify
     seen = {}
     monkeypatch.setattr(etl.news_classify, "run", lambda **kw: seen.update(kw) or 0)
